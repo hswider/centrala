@@ -1,82 +1,49 @@
 # Centrala POOM — Dashboard Zamówień Apilo
 
-Wewnętrzna aplikacja do monitorowania zamówień z systemu ERP Apilo.
+**Produkcja:** https://centrala-poom.vercel.app/
+
+Wewnętrzna aplikacja do zarządzania zamówieniami z systemu ERP Apilo.
 
 ## Tech Stack
 
-- **Backend:** Node.js + Express.js + node-cron
-- **Frontend:** React 18 + Vite + Tailwind CSS
+- **Framework:** Next.js 16
+- **Baza danych:** Vercel Postgres
+- **Styling:** Tailwind CSS
+- **Wykresy:** Recharts
 - **API:** Apilo REST API (poom.apilo.com)
 
-## Instalacja
+## Funkcje
 
-### 1. Sklonuj repozytorium
-
-```bash
-git clone https://github.com/TWOJ_USERNAME/OrdApi.git
-cd OrdApi
-```
-
-### 2. Zainstaluj zależności
-
-```bash
-cd backend
-npm install
-
-cd ../frontend
-npm install
-```
-
-### 3. Konfiguracja
-
-Utwórz plik `backend/.env`:
-
-```env
-PORT=3001
-APILO_BASE_URL=https://poom.apilo.com
-APILO_CLIENT_ID=4
-APILO_CLIENT_SECRET=<twoj_secret>
-APILO_INITIAL_AUTH_CODE=<twoj_auth_code>
-```
-
-## Uruchomienie
-
-### Backend (Terminal 1)
-
-```bash
-cd backend
-node server.js
-```
-
-Serwer uruchomi się na `http://localhost:3001`
-
-### Frontend (Terminal 2)
-
-```bash
-cd frontend
-npm run dev
-```
-
-Aplikacja będzie dostępna na `http://localhost:5173`
+- Dashboard ze statystykami sprzedaży
+- Wykresy: sprzedaż dzienna, podział na platformy
+- Lista zamówień z wyszukiwarką i filtrami
+- Szczegóły zamówienia (dane klienta, produkty, płatności)
+- Automatyczna synchronizacja z Apilo
+- AI Agent do zapytań o statystyki
+- Obsługa wielu platform: Amazon, Allegro, Shopify, Kaufland, eBay, Cdiscount
 
 ## Struktura projektu
 
 ```
 OrdApi/
-├── backend/
-│   ├── server.js              # Entry point + Cron
-│   ├── services/
-│   │   ├── apiloAuth.js       # Obsługa tokenów OAuth2
-│   │   └── apiloSync.js       # Synchronizacja zamówień
-│   ├── data/                  # Generowane pliki (cache)
-│   └── .env                   # Konfiguracja (nie w repo)
-├── frontend/
-│   ├── src/
-│   │   ├── App.jsx
-│   │   └── components/
-│   │       ├── OrderList.jsx
-│   │       └── OrderItem.jsx
-│   └── ...
+├── ordap-vercel/              # Wersja produkcyjna (Vercel)
+│   ├── app/
+│   │   ├── page.js            # Dashboard
+│   │   ├── zamowienia/        # Lista i szczegóły zamówień
+│   │   ├── agent/             # AI Agent
+│   │   ├── crm/               # CRM
+│   │   ├── wms/               # Magazyny
+│   │   ├── login/             # Logowanie
+│   │   └── api/               # API Routes
+│   │       ├── orders/        # Zamówienia
+│   │       ├── sync/          # Synchronizacja
+│   │       ├── stats/         # Statystyki
+│   │       └── auth/          # Autoryzacja
+│   └── lib/
+│       ├── db.js              # Vercel Postgres
+│       └── apilo.js           # Integracja Apilo API
+├── backend/                   # Wersja lokalna (dev)
+├── frontend/                  # Wersja lokalna (dev)
 ├── claude.md                  # Dokumentacja dla Claude AI
 └── README.md
 ```
@@ -85,19 +52,37 @@ OrdApi/
 
 | Endpoint | Metoda | Opis |
 |----------|--------|------|
-| `/api/orders` | GET | Lista 10 ostatnich zamówień |
-| `/api/sync` | POST | Wymusza synchronizację |
-| `/api/health` | GET | Health check |
+| `/api/orders` | GET | Lista zamówień (paginacja, filtry) |
+| `/api/orders/[id]` | GET | Szczegóły zamówienia |
+| `/api/sync` | GET/POST | Synchronizacja z Apilo |
+| `/api/stats` | GET | Statystyki dashboard |
+| `/api/channels` | GET | Lista kanałów sprzedaży |
+| `/api/statuses` | GET | Lista statusów |
+| `/api/agent` | POST | AI Agent |
 
-## Funkcje
+## Deployment (Vercel)
 
-- Automatyczna synchronizacja co 10 minut (cron)
-- Automatyczne odświeżanie tokenów OAuth2
-- Anonimizacja danych klientów (bez PII)
-- Podgląd statusów płatności
+Projekt jest wdrożony na Vercel z automatycznym deploy z GitHub.
 
-## Uwagi
+### Zmienne środowiskowe (Vercel Dashboard)
 
-- Plik `.env` zawiera klucze API — nie commituj go
-- Tokeny są automatycznie odświeżane
-- Szczegółowa dokumentacja w `claude.md`
+```
+APILO_BASE_URL=https://poom.apilo.com
+APILO_CLIENT_ID=xxx
+APILO_CLIENT_SECRET=xxx
+POSTGRES_URL=xxx (automatycznie przez Vercel Postgres)
+```
+
+## Rozwój lokalny
+
+```bash
+cd ordap-vercel
+npm install
+npm run dev
+```
+
+Aplikacja będzie dostępna na `http://localhost:3000`
+
+## Dokumentacja
+
+Szczegółowa dokumentacja techniczna w pliku `claude.md`.
