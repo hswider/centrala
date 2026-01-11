@@ -1,0 +1,54 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Environment files (zawierają sekrety!)
+.env
+.env.local
+.env.*.local
+backend/.env
+frontend/.env
+
+# Token storage (sekrety)
+tokens.json
+backend/tokens.json
+
+# Database files
+data/
+*.db
+db.json
+
+# Build output
+dist/
+build/
+.vite/
+
+# IDE
+.idea/
+*.swp
+*.swo
+.vscode/
+!.vscode/settings.json
+!.vscode/extensions.json
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+
+# Temporary files
+*.tmp
+*.temp
+nul
+
+# Claude AI
+.claude/
+
+# Swagger (duzy plik)
+swagger.txt
