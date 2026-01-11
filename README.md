@@ -1,12 +1,12 @@
-# OrdApi - Apilo Dashboard
+# Centrala POOM — Dashboard Zamówień Apilo
 
-Lekka aplikacja do wyświetlania zamówień z systemu ERP Apilo.
+Wewnętrzna aplikacja do monitorowania zamówień z systemu ERP Apilo.
 
 ## Tech Stack
 
-- **Backend:** Node.js + Express.js
+- **Backend:** Node.js + Express.js + node-cron
 - **Frontend:** React 18 + Vite + Tailwind CSS
-- **API:** Apilo REST API
+- **API:** Apilo REST API (poom.apilo.com)
 
 ## Instalacja
 
@@ -35,8 +35,8 @@ Utwórz plik `backend/.env`:
 PORT=3001
 APILO_BASE_URL=https://poom.apilo.com
 APILO_CLIENT_ID=4
-APILO_CLIENT_SECRET=f5ddd11a-7828-5ce9-8b6c-19b4add6bb48
-APILO_INITIAL_AUTH_CODE=53913fd1-dca3-55ab-89cc-136b7a1f0b3a
+APILO_CLIENT_SECRET=<twoj_secret>
+APILO_INITIAL_AUTH_CODE=<twoj_auth_code>
 ```
 
 ## Uruchomienie
@@ -64,10 +64,11 @@ Aplikacja będzie dostępna na `http://localhost:5173`
 ```
 OrdApi/
 ├── backend/
-│   ├── server.js              # Entry point
+│   ├── server.js              # Entry point + Cron
 │   ├── services/
-│   │   ├── apiloAuth.js       # Obsługa tokenów Apilo
+│   │   ├── apiloAuth.js       # Obsługa tokenów OAuth2
 │   │   └── apiloSync.js       # Synchronizacja zamówień
+│   ├── data/                  # Generowane pliki (cache)
 │   └── .env                   # Konfiguracja (nie w repo)
 ├── frontend/
 │   ├── src/
@@ -76,17 +77,27 @@ OrdApi/
 │   │       ├── OrderList.jsx
 │   │       └── OrderItem.jsx
 │   └── ...
+├── claude.md                  # Dokumentacja dla Claude AI
 └── README.md
 ```
 
 ## API Endpoints
 
-| Endpoint | Opis |
-|----------|------|
-| `GET /api/orders` | Lista 10 ostatnich zamówień |
+| Endpoint | Metoda | Opis |
+|----------|--------|------|
+| `/api/orders` | GET | Lista 10 ostatnich zamówień |
+| `/api/sync` | POST | Wymusza synchronizację |
+| `/api/health` | GET | Health check |
+
+## Funkcje
+
+- Automatyczna synchronizacja co 10 minut (cron)
+- Automatyczne odświeżanie tokenów OAuth2
+- Anonimizacja danych klientów (bez PII)
+- Podgląd statusów płatności
 
 ## Uwagi
 
-- Plik `.env` zawiera klucze API - nie commituj go do repozytorium
-- Tokeny są automatycznie odświeżane przez backend
-- Dane synchronizują się co 10 minut (cron)
+- Plik `.env` zawiera klucze API — nie commituj go
+- Tokeny są automatycznie odświeżane
+- Szczegółowa dokumentacja w `claude.md`
