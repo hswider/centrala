@@ -685,11 +685,15 @@ export default function MagazynyPage() {
           {tabs.map(tab => {
             const items = magazyny[tab.key] || [];
             const totalStan = items.reduce((sum, i) => sum + i.stan, 0);
+            const totalValue = items.reduce((sum, i) => sum + (i.cena || 0) * i.stan, 0);
             return (
               <div key={tab.key} className="bg-white rounded-lg shadow p-3 lg:p-4">
                 <p className="text-xs text-gray-500 truncate">{tab.label}</p>
                 <p className="text-xl lg:text-2xl font-bold text-blue-600">{items.length}</p>
-                <p className="text-xs text-gray-400">{totalStan} szt.</p>
+                <div className="flex items-center gap-2 text-xs">
+                  <span className="text-gray-400">{totalStan} szt.</span>
+                  <span className="text-green-600 font-medium">{totalValue.toFixed(2)} zl</span>
+                </div>
               </div>
             );
           })}
