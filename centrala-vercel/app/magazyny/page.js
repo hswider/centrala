@@ -15,6 +15,8 @@ export default function MagazynyPage() {
   const [editingStanValue, setEditingStanValue] = useState('');
   const [editingCenaId, setEditingCenaId] = useState(null);
   const [editingCenaValue, setEditingCenaValue] = useState('');
+  const [editingCzasId, setEditingCzasId] = useState(null);
+  const [editingCzasValue, setEditingCzasValue] = useState('');
   const [showRecipeModal, setShowRecipeModal] = useState(false);
   const [recipeItem, setRecipeItem] = useState(null);
   const [recipeIngredients, setRecipeIngredients] = useState([]);
@@ -22,6 +24,7 @@ export default function MagazynyPage() {
   const fileInputRef = useRef(null);
   const stanInputRef = useRef(null);
   const cenaInputRef = useRef(null);
+  const czasInputRef = useRef(null);
 
   const tabs = [
     { key: 'gotowe', label: 'Gotowe produkty', icon: '📦' },
@@ -37,7 +40,7 @@ export default function MagazynyPage() {
     surowce: [],
   });
 
-  const [newItem, setNewItem] = useState({ sku: '', nazwa: '', stan: '', cena: '' });
+  const [newItem, setNewItem] = useState({ sku: '', nazwa: '', stan: '', cena: '', czas_produkcji: '' });
 
   // Pobierz dane z API
   const fetchInventory = useCallback(async () => {
@@ -74,6 +77,7 @@ export default function MagazynyPage() {
           nazwa: newItem.nazwa,
           stan: parseInt(newItem.stan) || 0,
           cena: parseFloat(newItem.cena) || 0,
+          czas_produkcji: parseInt(newItem.czas_produkcji) || 0,
           kategoria: activeTab
         })
       });
@@ -82,7 +86,7 @@ export default function MagazynyPage() {
 
       if (data.success) {
         await fetchInventory();
-        setNewItem({ sku: '', nazwa: '', stan: '', cena: '' });
+        setNewItem({ sku: '', nazwa: '', stan: '', cena: '', czas_produkcji: '' });
         setShowAddModal(false);
       } else {
         alert('Blad: ' + data.error);
@@ -135,7 +139,8 @@ export default function MagazynyPage() {
           sku: editingItem.sku,
           nazwa: editingItem.nazwa,
           stan: parseInt(editingItem.stan) || 0,
-          cena: parseFloat(editingItem.cena) || 0
+          cena: parseFloat(editingItem.cena) || 0,
+          czas_produkcji: parseInt(editingItem.czas_produkcji) || 0
         })
       });
 
@@ -295,6 +300,57 @@ export default function MagazynyPage() {
           ...prev,
           [activeTab]: prev[activeTab].map(i =>
             i.id === item.id ? { ...i, cena: oldCena } : i
+          )
+        }));
+      });
+  };
+
+  // Inline edycja czasu produkcji - klikniecie
+  const handleCzasClick = (item) => {
+    setEditingCzasId(item.id);
+    setEditingCzasValue(String(item.czas_produkcji || 0));
+    setTimeout(() => czasInputRef.current?.select(), 0);
+  };
+
+  // Zapisz inline edycje czasu produkcji
+  const handleCzasSubmit = (item) => {
+    const newCzas = Math.max(0, parseInt(editingCzasValue) || 0);
+    const oldCzas = item.czas_produkcji || 0;
+
+    setEditingCzasId(null);
+
+    if (newCzas === oldCzas) return;
+
+    // Optimistic update
+    setMagazyny(prev => ({
+      ...prev,
+      [activeTab]: prev[activeTab].map(i =>
+        i.id === item.id ? { ...i, czas_produkcji: newCzas } : i
+      )
+    }));
+
+    // API w tle
+    fetch('/api/inventory', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: item.id, czas_produkcji: newCzas })
+    })
+      .then(res => res.json())
+      .then(data => {
+        if (!data.success) {
+          setMagazyny(prev => ({
+            ...prev,
+            [activeTab]: prev[activeTab].map(i =>
+              i.id === item.id ? { ...i, czas_produkcji: oldCzas } : i
+            )
+          }));
+        }
+      })
+      .catch(() => {
+        setMagazyny(prev => ({
+          ...prev,
+          [activeTab]: prev[activeTab].map(i =>
+            i.id === item.id ? { ...i, czas_produkcji: oldCzas } : i
           )
         }));
       });
@@ -608,14 +664,19 @@ export default function MagazynyPage() {
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">SKU</th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nazwa produktu</th>
                     <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">Stan</th>
-                    <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">Cena PLN</th>
+                    <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">
+                      {activeTab === 'gotowe' ? 'Cena PLN' : 'Wart. netto'}
+                    </th>
+                    {activeTab === 'gotowe' && (
+                      <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">Czas prod.</th>
+                    )}
                     <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">Akcje</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
                   {currentItems.length === 0 ? (
                     <tr>
-                      <td colSpan="5" className="px-4 py-8 text-center text-gray-500">
+                      <td colSpan={activeTab === 'gotowe' ? 6 : 5} className="px-4 py-8 text-center text-gray-500">
                         {searchQuery
                           ? 'Brak wynikow dla wyszukiwania'
                           : 'Brak pozycji w magazynie. Dodaj recznie lub zaimportuj z CSV.'}
@@ -699,6 +760,33 @@ export default function MagazynyPage() {
                             </button>
                           )}
                         </td>
+                        {activeTab === 'gotowe' && (
+                          <td className="px-4 py-3 text-center">
+                            {editingCzasId === item.id ? (
+                              <input
+                                ref={czasInputRef}
+                                type="number"
+                                value={editingCzasValue}
+                                onChange={(e) => setEditingCzasValue(e.target.value)}
+                                onBlur={() => handleCzasSubmit(item)}
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter') handleCzasSubmit(item);
+                                  if (e.key === 'Escape') setEditingCzasId(null);
+                                }}
+                                className="w-16 px-2 py-1 text-center text-sm font-medium border-2 border-blue-500 rounded focus:outline-none"
+                                min="0"
+                              />
+                            ) : (
+                              <button
+                                onClick={() => handleCzasClick(item)}
+                                className="px-2 py-1 rounded text-sm font-medium text-gray-700 bg-blue-50 hover:bg-blue-100 hover:ring-2 hover:ring-blue-400 transition-all"
+                                title="Kliknij aby edytowac czas produkcji"
+                              >
+                                {item.czas_produkcji || 0} min
+                              </button>
+                            )}
+                          </td>
+                        )}
                         <td className="px-4 py-3">
                           <div className="flex items-center justify-center gap-1 flex-wrap">
                             {activeTab !== 'surowce' && (
@@ -776,7 +864,9 @@ export default function MagazynyPage() {
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Cena PLN</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      {activeTab === 'gotowe' ? 'Cena PLN' : 'Wart. netto PLN'}
+                    </label>
                     <input
                       type="number"
                       step="0.01"
@@ -787,6 +877,18 @@ export default function MagazynyPage() {
                     />
                   </div>
                 </div>
+                {activeTab === 'gotowe' && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Czas produkcji (min)</label>
+                    <input
+                      type="number"
+                      value={newItem.czas_produkcji}
+                      onChange={(e) => setNewItem({ ...newItem, czas_produkcji: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder="np. 30"
+                    />
+                  </div>
+                )}
               </div>
 
               <div className="flex justify-end gap-2 mt-6">
@@ -845,7 +947,9 @@ export default function MagazynyPage() {
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Cena PLN</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      {activeTab === 'gotowe' ? 'Cena PLN' : 'Wart. netto PLN'}
+                    </label>
                     <input
                       type="number"
                       step="0.01"
@@ -855,6 +959,17 @@ export default function MagazynyPage() {
                     />
                   </div>
                 </div>
+                {activeTab === 'gotowe' && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Czas produkcji (min)</label>
+                    <input
+                      type="number"
+                      value={editingItem.czas_produkcji || ''}
+                      onChange={(e) => setEditingItem({ ...editingItem, czas_produkcji: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                )}
               </div>
 
               <div className="flex justify-end gap-2 mt-6">
@@ -962,6 +1077,23 @@ export default function MagazynyPage() {
                 </button>
               </div>
 
+              {/* Podsumowanie wartosci */}
+              {recipeIngredients.length > 0 && (
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <p className="text-sm font-medium text-blue-800">Wartosc netto skladnikow</p>
+                      <p className="text-xs text-blue-600">Suma wartosci netto * ilosc</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-2xl font-bold text-blue-800">
+                        {recipeIngredients.reduce((sum, ing) => sum + (ing.ingredientCena || 0) * ing.quantity, 0).toFixed(2)} zl
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {loadingRecipe ? (
                 <div className="py-8 text-center text-gray-500">Ladowanie receptury...</div>
               ) : (
@@ -980,7 +1112,9 @@ export default function MagazynyPage() {
                             <th className="px-3 py-2 text-left">SKU</th>
                             <th className="px-3 py-2 text-left">Nazwa</th>
                             <th className="px-3 py-2 text-center">Ilosc</th>
-                            <th className="px-3 py-2 text-center">Magazyn</th>
+                            <th className="px-3 py-2 text-right">Wart. netto</th>
+                            <th className="px-3 py-2 text-right">Suma</th>
+                            <th className="px-3 py-2 text-center">Stan</th>
                             <th className="px-3 py-2 text-center">Akcja</th>
                           </tr>
                         </thead>
@@ -998,6 +1132,12 @@ export default function MagazynyPage() {
                                   min="0.01"
                                   step="0.01"
                                 />
+                              </td>
+                              <td className="px-3 py-2 text-right text-gray-600">
+                                {(ing.ingredientCena || 0).toFixed(2)} zl
+                              </td>
+                              <td className="px-3 py-2 text-right font-medium">
+                                {((ing.ingredientCena || 0) * ing.quantity).toFixed(2)} zl
                               </td>
                               <td className="px-3 py-2 text-center">
                                 <span className={`px-2 py-0.5 rounded text-xs ${

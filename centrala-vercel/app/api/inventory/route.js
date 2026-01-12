@@ -54,6 +54,7 @@ export async function GET(request) {
           nazwa: row.nazwa,
           stan: row.stan,
           cena: parseFloat(row.cena) || 0,
+          czas_produkcji: parseInt(row.czas_produkcji) || 0,
           updatedAt: row.updated_at
         });
       }
@@ -77,7 +78,7 @@ export async function GET(request) {
 export async function POST(request) {
   try {
     const body = await request.json();
-    const { sku, nazwa, stan, cena, kategoria } = body;
+    const { sku, nazwa, stan, cena, kategoria, czas_produkcji } = body;
 
     if (!sku || !nazwa || !kategoria) {
       return NextResponse.json(
@@ -87,12 +88,13 @@ export async function POST(request) {
     }
 
     const result = await sql`
-      INSERT INTO inventory (sku, nazwa, stan, cena, kategoria)
-      VALUES (${sku}, ${nazwa}, ${stan || 0}, ${cena || 0}, ${kategoria})
+      INSERT INTO inventory (sku, nazwa, stan, cena, kategoria, czas_produkcji)
+      VALUES (${sku}, ${nazwa}, ${stan || 0}, ${cena || 0}, ${kategoria}, ${czas_produkcji || 0})
       ON CONFLICT (sku, kategoria) DO UPDATE SET
         nazwa = EXCLUDED.nazwa,
         stan = EXCLUDED.stan,
         cena = EXCLUDED.cena,
+        czas_produkcji = EXCLUDED.czas_produkcji,
         updated_at = CURRENT_TIMESTAMP
       RETURNING *
     `;
@@ -110,11 +112,11 @@ export async function POST(request) {
   }
 }
 
-// PUT - aktualizuj pozycje (stan, cena lub dane)
+// PUT - aktualizuj pozycje (stan, cena, czas_produkcji lub dane)
 export async function PUT(request) {
   try {
     const body = await request.json();
-    const { id, sku, nazwa, stan, cena } = body;
+    const { id, sku, nazwa, stan, cena, czas_produkcji } = body;
 
     if (!id) {
       return NextResponse.json(
@@ -129,7 +131,8 @@ export async function PUT(request) {
     if (sku !== undefined && nazwa !== undefined && stan !== undefined && cena !== undefined) {
       result = await sql`
         UPDATE inventory
-        SET sku = ${sku}, nazwa = ${nazwa}, stan = ${stan}, cena = ${cena}, updated_at = CURRENT_TIMESTAMP
+        SET sku = ${sku}, nazwa = ${nazwa}, stan = ${stan}, cena = ${cena},
+            czas_produkcji = ${czas_produkcji || 0}, updated_at = CURRENT_TIMESTAMP
         WHERE id = ${id}
         RETURNING *
       `;
@@ -153,6 +156,14 @@ export async function PUT(request) {
       result = await sql`
         UPDATE inventory
         SET cena = ${cena}, updated_at = CURRENT_TIMESTAMP
+        WHERE id = ${id}
+        RETURNING *
+      `;
+    } else if (czas_produkcji !== undefined) {
+      // Tylko aktualizacja czasu produkcji
+      result = await sql`
+        UPDATE inventory
+        SET czas_produkcji = ${czas_produkcji}, updated_at = CURRENT_TIMESTAMP
         WHERE id = ${id}
         RETURNING *
       `;

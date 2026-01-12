@@ -23,7 +23,8 @@ export async function GET(request) {
         i.sku,
         i.nazwa,
         i.kategoria,
-        i.stan as ingredient_stan
+        i.stan as ingredient_stan,
+        i.cena as ingredient_cena
       FROM recipes r
       JOIN inventory i ON r.ingredient_id = i.id
       WHERE r.product_id = ${productId}
@@ -40,7 +41,8 @@ export async function GET(request) {
         sku: row.sku,
         nazwa: row.nazwa,
         kategoria: row.kategoria,
-        ingredientStan: row.ingredient_stan
+        ingredientStan: row.ingredient_stan,
+        ingredientCena: parseFloat(row.ingredient_cena) || 0
       }))
     });
   } catch (error) {
