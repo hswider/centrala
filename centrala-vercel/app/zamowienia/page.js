@@ -94,22 +94,31 @@ export default function ZamowieniaPage() {
   const [statuses, setStatuses] = useState([]);
   const [selectedStatus, setSelectedStatus] = useState(null);
   const [expandedCategories, setExpandedCategories] = useState({});
+  const [todayStats, setTodayStats] = useState({ total: 0, byPlatform: [] });
 
-  // Fetch available channels and statuses
+  // Fetch available channels, statuses and today stats
   useEffect(() => {
     async function loadFilters() {
       try {
-        const [channelsRes, statusesRes] = await Promise.all([
+        const [channelsRes, statusesRes, statsRes] = await Promise.all([
           fetch('/api/channels'),
-          fetch('/api/statuses')
+          fetch('/api/statuses'),
+          fetch('/api/stats')
         ]);
         const channelsData = await channelsRes.json();
         const statusesData = await statusesRes.json();
+        const statsData = await statsRes.json();
         if (channelsData.channels) {
           setChannels(channelsData.channels);
         }
         if (statusesData.statuses) {
           setStatuses(statusesData.statuses);
+        }
+        if (statsData.summary && statsData.todayByPlatform) {
+          setTodayStats({
+            total: statsData.summary.ordersToday,
+            byPlatform: statsData.todayByPlatform
+          });
         }
       } catch (err) {
         console.error('Failed to load filters:', err);
@@ -268,6 +277,18 @@ export default function ZamowieniaPage() {
                 'System zarzadzania zamowieniami'
               )}
             </p>
+            {todayStats.total > 0 && (
+              <div className="mt-2 flex flex-wrap gap-1">
+                <span className="text-xs font-medium text-green-700 bg-green-100 px-2 py-0.5 rounded">
+                  Dzisiaj: {todayStats.total}
+                </span>
+                {todayStats.byPlatform.map(p => (
+                  <span key={p.platform} className="text-xs text-gray-600 bg-gray-100 px-2 py-0.5 rounded">
+                    {p.platform}: {p.count}
+                  </span>
+                ))}
+              </div>
+            )}
           </div>
           <button
             onClick={triggerSync}
