@@ -2,7 +2,7 @@ import './globals.css';
 import Navigation from '@/components/Navigation';
 
 export const metadata = {
-  title: 'POOM',
+  title: 'POOM | Centrala',
   description: 'Dashboard zamowien POOM',
 };
 
