@@ -260,13 +260,14 @@ export default function ZamowieniaPage() {
         {/* Header */}
         <div className="flex justify-between items-center gap-3 mb-4">
           <div>
-            <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Zamowienia</h1>
-            {pagination && (
-              <p className="text-xs sm:text-sm text-gray-500">
-                {selectedChannel ? `${selectedChannel}: ` : ''}
-                {pagination.totalCount} zam.
-              </p>
-            )}
+            <h1 className="text-xl sm:text-2xl font-bold text-gray-900">OMS - Order Management System</h1>
+            <p className="text-xs sm:text-sm text-gray-500">
+              {pagination ? (
+                <>{selectedChannel ? `${selectedChannel}: ` : ''}{pagination.totalCount} zamowien</>
+              ) : (
+                'System zarzadzania zamowieniami'
+              )}
+            </p>
           </div>
           <button
             onClick={triggerSync}
