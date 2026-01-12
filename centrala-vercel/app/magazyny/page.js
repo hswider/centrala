@@ -40,7 +40,7 @@ export default function MagazynyPage() {
     surowce: [],
   });
 
-  const [newItem, setNewItem] = useState({ sku: '', nazwa: '', stan: '', cena: '', czas_produkcji: '' });
+  const [newItem, setNewItem] = useState({ sku: '', nazwa: '', ean: '', stan: '', cena: '', czas_produkcji: '' });
 
   // Pobierz dane z API
   const fetchInventory = useCallback(async () => {
@@ -75,6 +75,7 @@ export default function MagazynyPage() {
         body: JSON.stringify({
           sku: newItem.sku,
           nazwa: newItem.nazwa,
+          ean: newItem.ean || null,
           stan: parseInt(newItem.stan) || 0,
           cena: parseFloat(newItem.cena) || 0,
           czas_produkcji: parseInt(newItem.czas_produkcji) || 0,
@@ -86,7 +87,7 @@ export default function MagazynyPage() {
 
       if (data.success) {
         await fetchInventory();
-        setNewItem({ sku: '', nazwa: '', stan: '', cena: '', czas_produkcji: '' });
+        setNewItem({ sku: '', nazwa: '', ean: '', stan: '', cena: '', czas_produkcji: '' });
         setShowAddModal(false);
       } else {
         alert('Blad: ' + data.error);
@@ -138,6 +139,7 @@ export default function MagazynyPage() {
           id: editingItem.id,
           sku: editingItem.sku,
           nazwa: editingItem.nazwa,
+          ean: editingItem.ean || null,
           stan: parseInt(editingItem.stan) || 0,
           cena: parseFloat(editingItem.cena) || 0,
           czas_produkcji: parseInt(editingItem.czas_produkcji) || 0
@@ -452,19 +454,19 @@ export default function MagazynyPage() {
     let headers, csvRows;
 
     if (activeTab === 'gotowe') {
-      headers = ['SKU', 'Nazwa', 'Stan', 'Cena PLN', 'Czas produkcji (min)'];
+      headers = ['SKU', 'Nazwa', 'EAN', 'Stan', 'Cena PLN', 'Czas produkcji (min)'];
       csvRows = [
         headers.join(';'),
         ...items.map(item =>
-          [item.sku, item.nazwa, item.stan, (item.cena || 0).toFixed(2), item.czas_produkcji || 0].join(';')
+          [item.sku, item.nazwa, item.ean || '', item.stan, (item.cena || 0).toFixed(2), item.czas_produkcji || 0].join(';')
         )
       ];
     } else {
-      headers = ['SKU', 'Nazwa', 'Stan', 'Wartosc netto PLN'];
+      headers = ['SKU', 'Nazwa', 'EAN', 'Stan', 'Wartosc netto PLN'];
       csvRows = [
         headers.join(';'),
         ...items.map(item =>
-          [item.sku, item.nazwa, item.stan, (item.cena || 0).toFixed(2)].join(';')
+          [item.sku, item.nazwa, item.ean || '', item.stan, (item.cena || 0).toFixed(2)].join(';')
         )
       ];
     }
@@ -487,34 +489,34 @@ export default function MagazynyPage() {
     let headers, exampleRows;
 
     if (activeTab === 'gotowe') {
-      headers = ['SKU', 'Nazwa', 'Stan', 'Cena PLN', 'Czas produkcji (min)'];
+      headers = ['SKU', 'Nazwa', 'EAN', 'Stan', 'Cena PLN', 'Czas produkcji (min)'];
       exampleRows = [
-        'PUFA-MIKI-ROSA;Pufa Miki Rosa;25;299.00;45',
-        'PUFA-MIKI-BLUE;Pufa Miki Blue;18;299.00;45',
-        'LAWKA-OGR-120;Lawka ogrodowa 120cm;12;449.00;90',
-        'FOTEL-RETRO-GR;Fotel Retro Grafit;8;599.00;120'
+        'PUFA-MIKI-ROSA;Pufa Miki Rosa;5901234123457;25;299.00;45',
+        'PUFA-MIKI-BLUE;Pufa Miki Blue;5901234123464;18;299.00;45',
+        'LAWKA-OGR-120;Lawka ogrodowa 120cm;;12;449.00;90',
+        'FOTEL-RETRO-GR;Fotel Retro Grafit;5901234123471;8;599.00;120'
       ];
     } else if (activeTab === 'polprodukty') {
-      headers = ['SKU', 'Nazwa', 'Stan', 'Wartosc netto PLN'];
+      headers = ['SKU', 'Nazwa', 'EAN', 'Stan', 'Wartosc netto PLN'];
       exampleRows = [
-        'PP-STELA-PUFA;Stelaz do pufy;50;45.00',
-        'PP-OPARCIE-FOT;Oparcie fotela;30;85.00',
-        'PP-SIEDZISKO-L;Siedzisko lawki;20;120.00'
+        'PP-STELA-PUFA;Stelaz do pufy;;50;45.00',
+        'PP-OPARCIE-FOT;Oparcie fotela;;30;85.00',
+        'PP-SIEDZISKO-L;Siedzisko lawki;;20;120.00'
       ];
     } else if (activeTab === 'wykroje') {
-      headers = ['SKU', 'Nazwa', 'Stan', 'Wartosc netto PLN'];
+      headers = ['SKU', 'Nazwa', 'EAN', 'Stan', 'Wartosc netto PLN'];
       exampleRows = [
-        'WYK-VELVET-ROSA;Wykroj velvet rosa 1m2;100;35.00',
-        'WYK-VELVET-BLUE;Wykroj velvet blue 1m2;80;35.00',
-        'WYK-SKORA-CZAR;Wykroj skora czarna 1m2;40;95.00'
+        'WYK-VELVET-ROSA;Wykroj velvet rosa 1m2;;100;35.00',
+        'WYK-VELVET-BLUE;Wykroj velvet blue 1m2;;80;35.00',
+        'WYK-SKORA-CZAR;Wykroj skora czarna 1m2;;40;95.00'
       ];
     } else {
-      headers = ['SKU', 'Nazwa', 'Stan', 'Wartosc netto PLN'];
+      headers = ['SKU', 'Nazwa', 'EAN', 'Stan', 'Wartosc netto PLN'];
       exampleRows = [
-        'SUR-PIANKA-T25;Pianka T25 arkusz;200;18.50',
-        'SUR-DREWNO-BUK;Drewno bukowe 2m;150;45.00',
-        'SUR-SRUBY-M6;Sruby M6 opak. 100szt;500;12.00',
-        'SUR-KLEJ-TAPIC;Klej tapicerski 1L;75;28.00'
+        'SUR-PIANKA-T25;Pianka T25 arkusz;;200;18.50',
+        'SUR-DREWNO-BUK;Drewno bukowe 2m;;150;45.00',
+        'SUR-SRUBY-M6;Sruby M6 opak. 100szt;;500;12.00',
+        'SUR-KLEJ-TAPIC;Klej tapicerski 1L;;75;28.00'
       ];
     }
 
@@ -551,12 +553,16 @@ export default function MagazynyPage() {
           if (cols.length >= 3) {
             const sku = cols[0]?.trim();
             const nazwa = cols[1]?.trim();
-            const stan = parseInt(cols[2]?.trim()) || 0;
-            const cena = parseFloat(cols[3]?.trim()) || 0;
-            const czas_produkcji = activeTab === 'gotowe' ? (parseInt(cols[4]?.trim()) || 0) : 0;
+            const ean = cols[2]?.trim() || '';
+            const stan = parseInt(cols[3]?.trim()) || 0;
+            const cena = parseFloat(cols[4]?.trim()) || 0;
+            const czas_produkcji = activeTab === 'gotowe' ? (parseInt(cols[5]?.trim()) || 0) : 0;
+
+            // Walidacja EAN - jesli podany, musi miec 13 cyfr
+            const validEan = ean && /^\d{13}$/.test(ean) ? ean : null;
 
             if (sku && nazwa) {
-              items.push({ sku, nazwa, stan, cena, czas_produkcji });
+              items.push({ sku, nazwa, ean: validEan, stan, cena, czas_produkcji });
             }
           }
         }
@@ -707,11 +713,12 @@ export default function MagazynyPage() {
               <div className="lg:hidden absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-white to-transparent pointer-events-none z-10" />
 
               <div className="overflow-x-auto">
-                <table className="w-full min-w-[900px]">
+                <table className="w-full min-w-[1000px]">
                 <thead className="bg-gray-50">
                   <tr>
                     <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase w-40">SKU</th>
                     <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nazwa produktu</th>
+                    <th className="px-2 py-3 text-center text-xs font-medium text-gray-500 uppercase w-32">EAN-13</th>
                     <th className="px-2 py-3 text-center text-xs font-medium text-gray-500 uppercase w-32">Stan</th>
                     <th className="px-2 py-3 text-center text-xs font-medium text-gray-500 uppercase w-24">
                       {activeTab === 'gotowe' ? 'Cena' : 'Wart. netto'}
@@ -729,7 +736,7 @@ export default function MagazynyPage() {
                 <tbody className="divide-y divide-gray-100">
                   {currentItems.length === 0 ? (
                     <tr>
-                      <td colSpan={activeTab === 'gotowe' ? 8 : 5} className="px-4 py-8 text-center text-gray-500">
+                      <td colSpan={activeTab === 'gotowe' ? 9 : 6} className="px-4 py-8 text-center text-gray-500">
                         {searchQuery
                           ? 'Brak wynikow dla wyszukiwania'
                           : 'Brak pozycji w magazynie. Dodaj recznie lub zaimportuj z CSV.'}
@@ -742,6 +749,9 @@ export default function MagazynyPage() {
                           <span className="font-mono text-xs text-gray-900 whitespace-nowrap">{item.sku}</span>
                         </td>
                         <td className="px-3 py-2 text-sm text-gray-700">{item.nazwa}</td>
+                        <td className="px-2 py-2 text-center">
+                          <span className="font-mono text-xs text-gray-500">{item.ean || '-'}</span>
+                        </td>
                         <td className="px-2 py-2">
                           <div className="flex items-center justify-center gap-2">
                             <button
@@ -928,6 +938,25 @@ export default function MagazynyPage() {
                     placeholder="np. Pufa Miki Rosa"
                   />
                 </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    EAN-13 <span className="text-gray-400 font-normal">(opcjonalne)</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={newItem.ean}
+                    onChange={(e) => {
+                      const val = e.target.value.replace(/\D/g, '').slice(0, 13);
+                      setNewItem({ ...newItem, ean: val });
+                    }}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono"
+                    placeholder="np. 5901234123457"
+                    maxLength={13}
+                  />
+                  {newItem.ean && newItem.ean.length !== 13 && (
+                    <p className="text-xs text-orange-600 mt-1">EAN musi miec 13 cyfr ({newItem.ean.length}/13)</p>
+                  )}
+                </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Stan</label>
@@ -1012,6 +1041,25 @@ export default function MagazynyPage() {
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    EAN-13 <span className="text-gray-400 font-normal">(opcjonalne)</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={editingItem.ean || ''}
+                    onChange={(e) => {
+                      const val = e.target.value.replace(/\D/g, '').slice(0, 13);
+                      setEditingItem({ ...editingItem, ean: val });
+                    }}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono"
+                    placeholder="np. 5901234123457"
+                    maxLength={13}
+                  />
+                  {editingItem.ean && editingItem.ean.length !== 13 && (
+                    <p className="text-xs text-orange-600 mt-1">EAN musi miec 13 cyfr ({editingItem.ean.length}/13)</p>
+                  )}
+                </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Stan</label>
@@ -1084,6 +1132,7 @@ export default function MagazynyPage() {
                   <ol className="text-sm text-blue-700 space-y-1 list-decimal list-inside">
                     <li><strong>SKU</strong> - kod produktu</li>
                     <li><strong>Nazwa</strong> - nazwa produktu</li>
+                    <li><strong>EAN-13</strong> - opcjonalne, 13 cyfr</li>
                     <li><strong>Stan</strong> - ilosc w magazynie</li>
                     <li><strong>Cena PLN</strong> - cena sprzedazy</li>
                     <li><strong>Czas produkcji</strong> - w minutach</li>
@@ -1092,6 +1141,7 @@ export default function MagazynyPage() {
                   <ol className="text-sm text-blue-700 space-y-1 list-decimal list-inside">
                     <li><strong>SKU</strong> - kod produktu</li>
                     <li><strong>Nazwa</strong> - nazwa produktu</li>
+                    <li><strong>EAN-13</strong> - opcjonalne, 13 cyfr</li>
                     <li><strong>Stan</strong> - ilosc w magazynie</li>
                     <li><strong>Wartosc netto PLN</strong> - wartosc jednostkowa</li>
                   </ol>

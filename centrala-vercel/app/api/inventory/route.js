@@ -71,6 +71,7 @@ export async function GET(request) {
           id: row.id,
           sku: row.sku,
           nazwa: row.nazwa,
+          ean: row.ean || '',
           stan: row.stan,
           cena: parseFloat(row.cena) || 0,
           czas_produkcji: parseInt(row.czas_produkcji) || 0,
@@ -108,7 +109,7 @@ export async function GET(request) {
 export async function POST(request) {
   try {
     const body = await request.json();
-    const { sku, nazwa, stan, cena, kategoria, czas_produkcji } = body;
+    const { sku, nazwa, stan, cena, kategoria, czas_produkcji, ean } = body;
 
     if (!sku || !nazwa || !kategoria) {
       return NextResponse.json(
@@ -117,14 +118,23 @@ export async function POST(request) {
       );
     }
 
+    // Walidacja EAN - jesli podany, musi miec 13 cyfr
+    if (ean && !/^\d{13}$/.test(ean)) {
+      return NextResponse.json(
+        { success: false, error: 'EAN musi skladac sie z dokladnie 13 cyfr' },
+        { status: 400 }
+      );
+    }
+
     const result = await sql`
-      INSERT INTO inventory (sku, nazwa, stan, cena, kategoria, czas_produkcji)
-      VALUES (${sku}, ${nazwa}, ${stan || 0}, ${cena || 0}, ${kategoria}, ${czas_produkcji || 0})
+      INSERT INTO inventory (sku, nazwa, stan, cena, kategoria, czas_produkcji, ean)
+      VALUES (${sku}, ${nazwa}, ${stan || 0}, ${cena || 0}, ${kategoria}, ${czas_produkcji || 0}, ${ean || null})
       ON CONFLICT (sku, kategoria) DO UPDATE SET
         nazwa = EXCLUDED.nazwa,
         stan = EXCLUDED.stan,
         cena = EXCLUDED.cena,
         czas_produkcji = EXCLUDED.czas_produkcji,
+        ean = EXCLUDED.ean,
         updated_at = CURRENT_TIMESTAMP
       RETURNING *
     `;
@@ -142,11 +152,11 @@ export async function POST(request) {
   }
 }
 
-// PUT - aktualizuj pozycje (stan, cena, czas_produkcji lub dane)
+// PUT - aktualizuj pozycje (stan, cena, czas_produkcji, ean lub dane)
 export async function PUT(request) {
   try {
     const body = await request.json();
-    const { id, sku, nazwa, stan, cena, czas_produkcji } = body;
+    const { id, sku, nazwa, stan, cena, czas_produkcji, ean } = body;
 
     if (!id) {
       return NextResponse.json(
@@ -155,21 +165,30 @@ export async function PUT(request) {
       );
     }
 
+    // Walidacja EAN - jesli podany, musi miec 13 cyfr
+    if (ean !== undefined && ean !== '' && ean !== null && !/^\d{13}$/.test(ean)) {
+      return NextResponse.json(
+        { success: false, error: 'EAN musi skladac sie z dokladnie 13 cyfr' },
+        { status: 400 }
+      );
+    }
+
     // Aktualizuj tylko przekazane pola
     let result;
 
+    // Pelna aktualizacja z wszystkimi polami
     if (sku !== undefined && nazwa !== undefined && stan !== undefined && cena !== undefined) {
       result = await sql`
         UPDATE inventory
         SET sku = ${sku}, nazwa = ${nazwa}, stan = ${stan}, cena = ${cena},
-            czas_produkcji = ${czas_produkcji || 0}, updated_at = CURRENT_TIMESTAMP
+            czas_produkcji = ${czas_produkcji || 0}, ean = ${ean || null}, updated_at = CURRENT_TIMESTAMP
         WHERE id = ${id}
         RETURNING *
       `;
     } else if (sku !== undefined && nazwa !== undefined && stan !== undefined) {
       result = await sql`
         UPDATE inventory
-        SET sku = ${sku}, nazwa = ${nazwa}, stan = ${stan}, updated_at = CURRENT_TIMESTAMP
+        SET sku = ${sku}, nazwa = ${nazwa}, stan = ${stan}, ean = ${ean || null}, updated_at = CURRENT_TIMESTAMP
         WHERE id = ${id}
         RETURNING *
       `;
@@ -194,6 +213,14 @@ export async function PUT(request) {
       result = await sql`
         UPDATE inventory
         SET czas_produkcji = ${czas_produkcji}, updated_at = CURRENT_TIMESTAMP
+        WHERE id = ${id}
+        RETURNING *
+      `;
+    } else if (ean !== undefined) {
+      // Tylko aktualizacja EAN
+      result = await sql`
+        UPDATE inventory
+        SET ean = ${ean || null}, updated_at = CURRENT_TIMESTAMP
         WHERE id = ${id}
         RETURNING *
       `;

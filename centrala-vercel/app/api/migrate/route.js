@@ -16,6 +16,16 @@ export async function GET() {
       results.push('Kolumna czas_produkcji juz istnieje lub blad: ' + e.message);
     }
 
+    // Dodaj kolumne ean do inventory (EAN-13, opcjonalne)
+    try {
+      await sql`
+        ALTER TABLE inventory ADD COLUMN IF NOT EXISTS ean VARCHAR(13) DEFAULT NULL
+      `;
+      results.push('Dodano kolumne ean');
+    } catch (e) {
+      results.push('Kolumna ean juz istnieje lub blad: ' + e.message);
+    }
+
     return NextResponse.json({
       success: true,
       message: 'Migracja zakonczona',
