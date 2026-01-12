@@ -816,7 +816,7 @@ export default function MagazynyPage() {
                           ) : (
                             <button
                               onClick={() => handleCenaClick(item)}
-                              className="px-1.5 py-0.5 rounded text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 hover:ring-2 hover:ring-blue-400 transition-all"
+                              className="px-1.5 py-0.5 rounded text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 hover:ring-2 hover:ring-blue-400 transition-all whitespace-nowrap"
                               title="Kliknij aby edytowac cene"
                             >
                               {(item.cena || 0).toFixed(2)} zl
@@ -827,8 +827,8 @@ export default function MagazynyPage() {
                           <>
                             {/* Koszt wytworzenia */}
                             <td className="px-2 py-2 text-center">
-                              <span className="px-1.5 py-0.5 rounded text-sm font-medium bg-orange-50 text-orange-700">
-                                {(item.koszt_wytworzenia || 0).toFixed(2)}
+                              <span className="px-1.5 py-0.5 rounded text-sm font-medium bg-orange-50 text-orange-700 whitespace-nowrap">
+                                {(item.koszt_wytworzenia || 0).toFixed(2)} zl
                               </span>
                             </td>
                             {/* Net profit */}
@@ -836,7 +836,7 @@ export default function MagazynyPage() {
                               {(() => {
                                 const netProfit = (item.cena || 0) - (item.koszt_wytworzenia || 0);
                                 return (
-                                  <span className={`px-1.5 py-0.5 rounded text-sm font-bold ${
+                                  <span className={`px-1.5 py-0.5 rounded text-sm font-bold whitespace-nowrap ${
                                     netProfit > 0 ? 'bg-green-100 text-green-800' :
                                     netProfit < 0 ? 'bg-red-100 text-red-800' :
                                     'bg-gray-100 text-gray-600'
