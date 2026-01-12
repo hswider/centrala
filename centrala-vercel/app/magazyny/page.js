@@ -668,7 +668,11 @@ export default function MagazynyPage() {
                       {activeTab === 'gotowe' ? 'Cena PLN' : 'Wart. netto'}
                     </th>
                     {activeTab === 'gotowe' && (
-                      <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">Czas prod.</th>
+                      <>
+                        <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">Koszt wytw.</th>
+                        <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">Net profit</th>
+                        <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">Czas prod.</th>
+                      </>
                     )}
                     <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">Akcje</th>
                   </tr>
@@ -676,7 +680,7 @@ export default function MagazynyPage() {
                 <tbody className="divide-y divide-gray-100">
                   {currentItems.length === 0 ? (
                     <tr>
-                      <td colSpan={activeTab === 'gotowe' ? 6 : 5} className="px-4 py-8 text-center text-gray-500">
+                      <td colSpan={activeTab === 'gotowe' ? 8 : 5} className="px-4 py-8 text-center text-gray-500">
                         {searchQuery
                           ? 'Brak wynikow dla wyszukiwania'
                           : 'Brak pozycji w magazynie. Dodaj recznie lub zaimportuj z CSV.'}
@@ -761,31 +765,55 @@ export default function MagazynyPage() {
                           )}
                         </td>
                         {activeTab === 'gotowe' && (
-                          <td className="px-4 py-3 text-center">
-                            {editingCzasId === item.id ? (
-                              <input
-                                ref={czasInputRef}
-                                type="number"
-                                value={editingCzasValue}
-                                onChange={(e) => setEditingCzasValue(e.target.value)}
-                                onBlur={() => handleCzasSubmit(item)}
-                                onKeyDown={(e) => {
-                                  if (e.key === 'Enter') handleCzasSubmit(item);
-                                  if (e.key === 'Escape') setEditingCzasId(null);
-                                }}
-                                className="w-16 px-2 py-1 text-center text-sm font-medium border-2 border-blue-500 rounded focus:outline-none"
-                                min="0"
-                              />
-                            ) : (
-                              <button
-                                onClick={() => handleCzasClick(item)}
-                                className="px-2 py-1 rounded text-sm font-medium text-gray-700 bg-blue-50 hover:bg-blue-100 hover:ring-2 hover:ring-blue-400 transition-all"
-                                title="Kliknij aby edytowac czas produkcji"
-                              >
-                                {item.czas_produkcji || 0} min
-                              </button>
-                            )}
-                          </td>
+                          <>
+                            {/* Koszt wytworzenia */}
+                            <td className="px-4 py-3 text-center">
+                              <span className="px-2 py-1 rounded text-sm font-medium bg-orange-50 text-orange-700">
+                                {(item.koszt_wytworzenia || 0).toFixed(2)} zl
+                              </span>
+                            </td>
+                            {/* Net profit */}
+                            <td className="px-4 py-3 text-center">
+                              {(() => {
+                                const netProfit = (item.cena || 0) - (item.koszt_wytworzenia || 0);
+                                return (
+                                  <span className={`px-2 py-1 rounded text-sm font-bold ${
+                                    netProfit > 0 ? 'bg-green-100 text-green-800' :
+                                    netProfit < 0 ? 'bg-red-100 text-red-800' :
+                                    'bg-gray-100 text-gray-600'
+                                  }`}>
+                                    {netProfit >= 0 ? '+' : ''}{netProfit.toFixed(2)} zl
+                                  </span>
+                                );
+                              })()}
+                            </td>
+                            {/* Czas produkcji */}
+                            <td className="px-4 py-3 text-center">
+                              {editingCzasId === item.id ? (
+                                <input
+                                  ref={czasInputRef}
+                                  type="number"
+                                  value={editingCzasValue}
+                                  onChange={(e) => setEditingCzasValue(e.target.value)}
+                                  onBlur={() => handleCzasSubmit(item)}
+                                  onKeyDown={(e) => {
+                                    if (e.key === 'Enter') handleCzasSubmit(item);
+                                    if (e.key === 'Escape') setEditingCzasId(null);
+                                  }}
+                                  className="w-16 px-2 py-1 text-center text-sm font-medium border-2 border-blue-500 rounded focus:outline-none"
+                                  min="0"
+                                />
+                              ) : (
+                                <button
+                                  onClick={() => handleCzasClick(item)}
+                                  className="px-2 py-1 rounded text-sm font-medium text-gray-700 bg-blue-50 hover:bg-blue-100 hover:ring-2 hover:ring-blue-400 transition-all"
+                                  title="Kliknij aby edytowac czas produkcji"
+                                >
+                                  {item.czas_produkcji || 0} min
+                                </button>
+                              )}
+                            </td>
+                          </>
                         )}
                         <td className="px-4 py-3">
                           <div className="flex items-center justify-center gap-1 flex-wrap">

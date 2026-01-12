@@ -1,6 +1,9 @@
 import { sql } from '@vercel/postgres';
 import { NextResponse } from 'next/server';
 
+// Stala stawki minutowej (najnizsza krajowa 3606 PLN / 168h / 60min)
+const MINUTE_RATE = 0.358;
+
 // GET - pobierz wszystkie pozycje (opcjonalnie filtruj po kategorii)
 export async function GET(request) {
   try {
@@ -38,6 +41,22 @@ export async function GET(request) {
       `;
     }
 
+    // Pobierz koszty skladnikow dla gotowych produktow
+    const recipeCosts = await sql`
+      SELECT
+        r.product_id,
+        COALESCE(SUM(r.quantity * i.cena), 0) as ingredients_cost
+      FROM recipes r
+      JOIN inventory i ON r.ingredient_id = i.id
+      GROUP BY r.product_id
+    `;
+
+    // Mapa kosztow skladnikow
+    const ingredientsCostMap = {};
+    recipeCosts.rows.forEach(row => {
+      ingredientsCostMap[row.product_id] = parseFloat(row.ingredients_cost) || 0;
+    });
+
     // Grupuj po kategorii
     const grouped = {
       gotowe: [],
@@ -48,7 +67,7 @@ export async function GET(request) {
 
     result.rows.forEach(row => {
       if (grouped[row.kategoria]) {
-        grouped[row.kategoria].push({
+        const item = {
           id: row.id,
           sku: row.sku,
           nazwa: row.nazwa,
@@ -56,7 +75,18 @@ export async function GET(request) {
           cena: parseFloat(row.cena) || 0,
           czas_produkcji: parseInt(row.czas_produkcji) || 0,
           updatedAt: row.updated_at
-        });
+        };
+
+        // Dla gotowych produktow oblicz koszt wytworzenia
+        if (row.kategoria === 'gotowe') {
+          const ingredientsCost = ingredientsCostMap[row.id] || 0;
+          const laborCost = (parseInt(row.czas_produkcji) || 0) * MINUTE_RATE;
+          item.koszt_wytworzenia = ingredientsCost + laborCost;
+          item.koszt_skladnikow = ingredientsCost;
+          item.koszt_pracy = laborCost;
+        }
+
+        grouped[row.kategoria].push(item);
       }
     });
 
