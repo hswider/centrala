@@ -75,6 +75,7 @@ export async function GET(request) {
           stan: row.stan,
           cena: parseFloat(row.cena) || 0,
           czas_produkcji: parseInt(row.czas_produkcji) || 0,
+          jednostka: row.jednostka || 'szt',
           updatedAt: row.updated_at
         };
 
@@ -109,7 +110,7 @@ export async function GET(request) {
 export async function POST(request) {
   try {
     const body = await request.json();
-    const { sku, nazwa, stan, cena, kategoria, czas_produkcji, ean } = body;
+    const { sku, nazwa, stan, cena, kategoria, czas_produkcji, ean, jednostka } = body;
 
     if (!sku || !nazwa || !kategoria) {
       return NextResponse.json(
@@ -127,14 +128,15 @@ export async function POST(request) {
     }
 
     const result = await sql`
-      INSERT INTO inventory (sku, nazwa, stan, cena, kategoria, czas_produkcji, ean)
-      VALUES (${sku}, ${nazwa}, ${stan || 0}, ${cena || 0}, ${kategoria}, ${czas_produkcji || 0}, ${ean || null})
+      INSERT INTO inventory (sku, nazwa, stan, cena, kategoria, czas_produkcji, ean, jednostka)
+      VALUES (${sku}, ${nazwa}, ${stan || 0}, ${cena || 0}, ${kategoria}, ${czas_produkcji || 0}, ${ean || null}, ${jednostka || 'szt'})
       ON CONFLICT (sku, kategoria) DO UPDATE SET
         nazwa = EXCLUDED.nazwa,
         stan = EXCLUDED.stan,
         cena = EXCLUDED.cena,
         czas_produkcji = EXCLUDED.czas_produkcji,
         ean = EXCLUDED.ean,
+        jednostka = EXCLUDED.jednostka,
         updated_at = CURRENT_TIMESTAMP
       RETURNING *
     `;
@@ -152,11 +154,11 @@ export async function POST(request) {
   }
 }
 
-// PUT - aktualizuj pozycje (stan, cena, czas_produkcji, ean lub dane)
+// PUT - aktualizuj pozycje (stan, cena, czas_produkcji, ean, jednostka lub dane)
 export async function PUT(request) {
   try {
     const body = await request.json();
-    const { id, sku, nazwa, stan, cena, czas_produkcji, ean } = body;
+    const { id, sku, nazwa, stan, cena, czas_produkcji, ean, jednostka } = body;
 
     if (!id) {
       return NextResponse.json(
@@ -181,14 +183,14 @@ export async function PUT(request) {
       result = await sql`
         UPDATE inventory
         SET sku = ${sku}, nazwa = ${nazwa}, stan = ${stan}, cena = ${cena},
-            czas_produkcji = ${czas_produkcji || 0}, ean = ${ean || null}, updated_at = CURRENT_TIMESTAMP
+            czas_produkcji = ${czas_produkcji || 0}, ean = ${ean || null}, jednostka = ${jednostka || 'szt'}, updated_at = CURRENT_TIMESTAMP
         WHERE id = ${id}
         RETURNING *
       `;
     } else if (sku !== undefined && nazwa !== undefined && stan !== undefined) {
       result = await sql`
         UPDATE inventory
-        SET sku = ${sku}, nazwa = ${nazwa}, stan = ${stan}, ean = ${ean || null}, updated_at = CURRENT_TIMESTAMP
+        SET sku = ${sku}, nazwa = ${nazwa}, stan = ${stan}, ean = ${ean || null}, jednostka = ${jednostka || 'szt'}, updated_at = CURRENT_TIMESTAMP
         WHERE id = ${id}
         RETURNING *
       `;

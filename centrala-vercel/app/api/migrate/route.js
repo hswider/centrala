@@ -26,6 +26,16 @@ export async function GET() {
       results.push('Kolumna ean juz istnieje lub blad: ' + e.message);
     }
 
+    // Dodaj kolumne jednostka do inventory (mb lub szt, dla surowcow)
+    try {
+      await sql`
+        ALTER TABLE inventory ADD COLUMN IF NOT EXISTS jednostka VARCHAR(10) DEFAULT 'szt'
+      `;
+      results.push('Dodano kolumne jednostka');
+    } catch (e) {
+      results.push('Kolumna jednostka juz istnieje lub blad: ' + e.message);
+    }
+
     return NextResponse.json({
       success: true,
       message: 'Migracja zakonczona',
