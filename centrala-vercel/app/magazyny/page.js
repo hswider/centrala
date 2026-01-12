@@ -439,52 +439,35 @@ export default function MagazynyPage() {
     }
   };
 
-  // Eksport do CSV
+  // Eksport do CSV - tylko aktualny magazyn
   const handleExportCSV = () => {
-    // Zbierz wszystkie pozycje z wszystkich kategorii lub tylko z aktualnej
-    const exportAll = confirm('Czy eksportowac wszystkie magazyny?\n\nTak = wszystkie magazyny\nAnuluj = tylko ' + getTabLabel(activeTab));
+    const items = magazyny[activeTab] || [];
 
-    let dataToExport = [];
-
-    if (exportAll) {
-      // Eksport wszystkich kategorii
-      Object.entries(magazyny).forEach(([kategoria, items]) => {
-        items.forEach(item => {
-          dataToExport.push({
-            kategoria: getTabLabel(kategoria),
-            sku: item.sku,
-            nazwa: item.nazwa,
-            stan: item.stan,
-            cena: item.cena || 0
-          });
-        });
-      });
-    } else {
-      // Eksport tylko aktualnej kategorii
-      currentItems.forEach(item => {
-        dataToExport.push({
-          kategoria: getTabLabel(activeTab),
-          sku: item.sku,
-          nazwa: item.nazwa,
-          stan: item.stan,
-          cena: item.cena || 0
-        });
-      });
-    }
-
-    if (dataToExport.length === 0) {
-      alert('Brak danych do eksportu');
+    if (items.length === 0) {
+      alert('Brak danych do eksportu w magazynie: ' + getTabLabel(activeTab));
       return;
     }
 
-    // Generuj CSV
-    const headers = ['Kategoria', 'SKU', 'Nazwa', 'Stan', 'Cena PLN'];
-    const csvRows = [
-      headers.join(';'),
-      ...dataToExport.map(row =>
-        [row.kategoria, row.sku, row.nazwa, row.stan, row.cena.toFixed(2)].join(';')
-      )
-    ];
+    // Rozne kolumny dla gotowych produktow vs reszty
+    let headers, csvRows;
+
+    if (activeTab === 'gotowe') {
+      headers = ['SKU', 'Nazwa', 'Stan', 'Cena PLN', 'Czas produkcji (min)'];
+      csvRows = [
+        headers.join(';'),
+        ...items.map(item =>
+          [item.sku, item.nazwa, item.stan, (item.cena || 0).toFixed(2), item.czas_produkcji || 0].join(';')
+        )
+      ];
+    } else {
+      headers = ['SKU', 'Nazwa', 'Stan', 'Wartosc netto PLN'];
+      csvRows = [
+        headers.join(';'),
+        ...items.map(item =>
+          [item.sku, item.nazwa, item.stan, (item.cena || 0).toFixed(2)].join(';')
+        )
+      ];
+    }
 
     const csvContent = '\uFEFF' + csvRows.join('\n'); // BOM dla polskich znakow
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
@@ -492,7 +475,56 @@ export default function MagazynyPage() {
     const url = URL.createObjectURL(blob);
 
     link.setAttribute('href', url);
-    link.setAttribute('download', `magazyny_${exportAll ? 'wszystkie' : activeTab}_${new Date().toISOString().slice(0, 10)}.csv`);
+    link.setAttribute('download', `magazyn_${activeTab}_${new Date().toISOString().slice(0, 10)}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  // Pobierz przykladowy CSV
+  const handleDownloadExampleCSV = () => {
+    let headers, exampleRows;
+
+    if (activeTab === 'gotowe') {
+      headers = ['SKU', 'Nazwa', 'Stan', 'Cena PLN', 'Czas produkcji (min)'];
+      exampleRows = [
+        'PUFA-MIKI-ROSA;Pufa Miki Rosa;25;299.00;45',
+        'PUFA-MIKI-BLUE;Pufa Miki Blue;18;299.00;45',
+        'LAWKA-OGR-120;Lawka ogrodowa 120cm;12;449.00;90',
+        'FOTEL-RETRO-GR;Fotel Retro Grafit;8;599.00;120'
+      ];
+    } else if (activeTab === 'polprodukty') {
+      headers = ['SKU', 'Nazwa', 'Stan', 'Wartosc netto PLN'];
+      exampleRows = [
+        'PP-STELA-PUFA;Stelaz do pufy;50;45.00',
+        'PP-OPARCIE-FOT;Oparcie fotela;30;85.00',
+        'PP-SIEDZISKO-L;Siedzisko lawki;20;120.00'
+      ];
+    } else if (activeTab === 'wykroje') {
+      headers = ['SKU', 'Nazwa', 'Stan', 'Wartosc netto PLN'];
+      exampleRows = [
+        'WYK-VELVET-ROSA;Wykroj velvet rosa 1m2;100;35.00',
+        'WYK-VELVET-BLUE;Wykroj velvet blue 1m2;80;35.00',
+        'WYK-SKORA-CZAR;Wykroj skora czarna 1m2;40;95.00'
+      ];
+    } else {
+      headers = ['SKU', 'Nazwa', 'Stan', 'Wartosc netto PLN'];
+      exampleRows = [
+        'SUR-PIANKA-T25;Pianka T25 arkusz;200;18.50',
+        'SUR-DREWNO-BUK;Drewno bukowe 2m;150;45.00',
+        'SUR-SRUBY-M6;Sruby M6 opak. 100szt;500;12.00',
+        'SUR-KLEJ-TAPIC;Klej tapicerski 1L;75;28.00'
+      ];
+    }
+
+    const csvContent = '\uFEFF' + headers.join(';') + '\n' + exampleRows.join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+
+    link.setAttribute('href', url);
+    link.setAttribute('download', `przyklad_${activeTab}.csv`);
     link.style.visibility = 'hidden';
     document.body.appendChild(link);
     link.click();
@@ -511,15 +543,20 @@ export default function MagazynyPage() {
         const lines = text.split('\n').filter(line => line.trim());
 
         const items = [];
-        for (let i = 0; i < lines.length; i++) {
+        // Pomin pierwszy wiersz jesli to naglowek
+        const startIndex = lines[0]?.toLowerCase().includes('sku') ? 1 : 0;
+
+        for (let i = startIndex; i < lines.length; i++) {
           const cols = lines[i].split(/[,;\t]/);
           if (cols.length >= 3) {
             const sku = cols[0]?.trim();
             const nazwa = cols[1]?.trim();
             const stan = parseInt(cols[2]?.trim()) || 0;
+            const cena = parseFloat(cols[3]?.trim()) || 0;
+            const czas_produkcji = activeTab === 'gotowe' ? (parseInt(cols[4]?.trim()) || 0) : 0;
 
             if (sku && nazwa) {
-              items.push({ sku, nazwa, stan });
+              items.push({ sku, nazwa, stan, cena, czas_produkcji });
             }
           }
         }
@@ -1038,32 +1075,47 @@ export default function MagazynyPage() {
         {showImportModal && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
             <div className="bg-white rounded-lg shadow-xl max-w-lg w-full p-6">
-              <h3 className="text-lg font-semibold mb-4">Import z CSV do: {getTabLabel(activeTab)}</h3>
+              <h3 className="text-lg font-semibold mb-4">Import CSV do: {getTabLabel(activeTab)}</h3>
 
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
-                <h4 className="font-medium text-blue-800 mb-2">Instrukcja importu:</h4>
-                <ol className="text-sm text-blue-700 space-y-1 list-decimal list-inside">
-                  <li>Przygotuj plik Excel lub CSV</li>
-                  <li><strong>Kolumna A (1):</strong> SKU produktu</li>
-                  <li><strong>Kolumna B (2):</strong> Nazwa produktu</li>
-                  <li><strong>Kolumna C (3):</strong> Stan magazynowy (liczba)</li>
-                  <li>Zapisz jako CSV (rozdzielany przecinkami lub srednikami)</li>
-                  <li>Nie dodawaj naglowkow - zacznij od danych</li>
-                </ol>
+                <h4 className="font-medium text-blue-800 mb-2">Format pliku CSV:</h4>
+                <p className="text-sm text-blue-700 mb-2">Kolumny rozdzielone srednikiem (;) lub przecinkiem (,):</p>
+                {activeTab === 'gotowe' ? (
+                  <ol className="text-sm text-blue-700 space-y-1 list-decimal list-inside">
+                    <li><strong>SKU</strong> - kod produktu</li>
+                    <li><strong>Nazwa</strong> - nazwa produktu</li>
+                    <li><strong>Stan</strong> - ilosc w magazynie</li>
+                    <li><strong>Cena PLN</strong> - cena sprzedazy</li>
+                    <li><strong>Czas produkcji</strong> - w minutach</li>
+                  </ol>
+                ) : (
+                  <ol className="text-sm text-blue-700 space-y-1 list-decimal list-inside">
+                    <li><strong>SKU</strong> - kod produktu</li>
+                    <li><strong>Nazwa</strong> - nazwa produktu</li>
+                    <li><strong>Stan</strong> - ilosc w magazynie</li>
+                    <li><strong>Wartosc netto PLN</strong> - wartosc jednostkowa</li>
+                  </ol>
+                )}
               </div>
 
-              <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-4">
-                <h4 className="font-medium text-gray-700 mb-2">Przyklad:</h4>
-                <code className="text-xs text-gray-600 block">
-                  MIKI-001;Pufa Miki Rosa;25<br />
-                  MIKI-002;Pufa Miki Blue;18<br />
-                  LAW-001;Lawka ogrodowa;12
-                </code>
+              <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h4 className="font-medium text-green-800">Pobierz przykladowy plik</h4>
+                    <p className="text-xs text-green-600">Wypelniony przykladowymi danymi</p>
+                  </div>
+                  <button
+                    onClick={handleDownloadExampleCSV}
+                    className="px-3 py-1.5 bg-green-600 text-white text-sm rounded hover:bg-green-700"
+                  >
+                    Pobierz CSV
+                  </button>
+                </div>
               </div>
 
               <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mb-4">
                 <p className="text-sm text-yellow-800">
-                  <strong>Uwaga:</strong> Jesli SKU juz istnieje w tej kategorii, dane zostana zaktualizowane.
+                  <strong>Uwaga:</strong> Jesli SKU juz istnieje, dane zostana zaktualizowane. Pierwszy wiersz moze byc naglowkiem (zostanie pominiety).
                 </p>
               </div>
 
@@ -1085,7 +1137,7 @@ export default function MagazynyPage() {
                 </button>
                 <button
                   onClick={() => fileInputRef.current?.click()}
-                  className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50"
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
                   disabled={saving}
                 >
                   {saving ? 'Importowanie...' : 'Wybierz plik CSV'}

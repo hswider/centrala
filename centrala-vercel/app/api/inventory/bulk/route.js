@@ -32,11 +32,13 @@ export async function POST(request) {
         }
 
         await sql`
-          INSERT INTO inventory (sku, nazwa, stan, kategoria)
-          VALUES (${item.sku}, ${item.nazwa}, ${item.stan || 0}, ${kategoria})
+          INSERT INTO inventory (sku, nazwa, stan, cena, czas_produkcji, kategoria)
+          VALUES (${item.sku}, ${item.nazwa}, ${item.stan || 0}, ${item.cena || 0}, ${item.czas_produkcji || 0}, ${kategoria})
           ON CONFLICT (sku, kategoria) DO UPDATE SET
             nazwa = EXCLUDED.nazwa,
             stan = EXCLUDED.stan,
+            cena = EXCLUDED.cena,
+            czas_produkcji = EXCLUDED.czas_produkcji,
             updated_at = CURRENT_TIMESTAMP
         `;
         imported++;
