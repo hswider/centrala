@@ -19,7 +19,7 @@ export default function Navigation() {
     { href: '/magazyny', label: 'WMS', icon: '🏭' },
     { href: '/mes', label: 'MES', icon: '⚙️' },
     { href: '/crm', label: 'CRM', icon: '👥' },
-    { href: '/agent', label: 'Agent AI', icon: '🤖' },
+    { href: '/agent', label: 'Asystent AI', icon: '🤖' },
   ];
 
   // Podziel na 2 linie na mobile
