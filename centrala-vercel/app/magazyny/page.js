@@ -701,7 +701,7 @@ export default function MagazynyPage() {
                         </td>
                         <td className="px-4 py-3">
                           <div className="flex items-center justify-center gap-1 flex-wrap">
-                            {activeTab === 'gotowe' && (
+                            {activeTab !== 'surowce' && (
                               <>
                                 <button
                                   onClick={() => handleOpenRecipe(item)}
@@ -1025,52 +1025,56 @@ export default function MagazynyPage() {
                   <div className="border-t pt-4">
                     <h4 className="font-medium text-gray-700 mb-2">Dodaj skladnik z magazynu</h4>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      {/* Polprodukty */}
-                      <div>
-                        <p className="text-xs font-medium text-gray-500 mb-1">Polprodukty</p>
-                        <div className="max-h-40 overflow-y-auto border rounded">
-                          {(magazyny.polprodukty || []).length === 0 ? (
-                            <p className="text-xs text-gray-400 p-2">Brak polproduktow</p>
-                          ) : (
-                            (magazyny.polprodukty || [])
-                              .filter(p => !recipeIngredients.some(i => i.ingredientId === p.id))
-                              .map(p => (
-                                <button
-                                  key={p.id}
-                                  onClick={() => handleAddIngredient(p.id)}
-                                  className="w-full text-left px-2 py-1.5 text-xs hover:bg-blue-50 border-b last:border-b-0 flex justify-between"
-                                >
-                                  <span>{p.sku} - {p.nazwa}</span>
-                                  <span className="text-gray-400">+</span>
-                                </button>
-                              ))
-                          )}
+                      {/* Polprodukty - tylko dla gotowych produktow */}
+                      {activeTab === 'gotowe' && (
+                        <div>
+                          <p className="text-xs font-medium text-gray-500 mb-1">Polprodukty</p>
+                          <div className="max-h-40 overflow-y-auto border rounded">
+                            {(magazyny.polprodukty || []).length === 0 ? (
+                              <p className="text-xs text-gray-400 p-2">Brak polproduktow</p>
+                            ) : (
+                              (magazyny.polprodukty || [])
+                                .filter(p => !recipeIngredients.some(i => i.ingredientId === p.id))
+                                .map(p => (
+                                  <button
+                                    key={p.id}
+                                    onClick={() => handleAddIngredient(p.id)}
+                                    className="w-full text-left px-2 py-1.5 text-xs hover:bg-blue-50 border-b last:border-b-0 flex justify-between"
+                                  >
+                                    <span>{p.sku} - {p.nazwa}</span>
+                                    <span className="text-gray-400">+</span>
+                                  </button>
+                                ))
+                            )}
+                          </div>
                         </div>
-                      </div>
-                      {/* Wykroje */}
-                      <div>
-                        <p className="text-xs font-medium text-gray-500 mb-1">Wykroje</p>
-                        <div className="max-h-40 overflow-y-auto border rounded">
-                          {(magazyny.wykroje || []).length === 0 ? (
-                            <p className="text-xs text-gray-400 p-2">Brak wykrojow</p>
-                          ) : (
-                            (magazyny.wykroje || [])
-                              .filter(p => !recipeIngredients.some(i => i.ingredientId === p.id))
-                              .map(p => (
-                                <button
-                                  key={p.id}
-                                  onClick={() => handleAddIngredient(p.id)}
-                                  className="w-full text-left px-2 py-1.5 text-xs hover:bg-blue-50 border-b last:border-b-0 flex justify-between"
-                                >
-                                  <span>{p.sku} - {p.nazwa}</span>
-                                  <span className="text-gray-400">+</span>
-                                </button>
-                              ))
-                          )}
+                      )}
+                      {/* Wykroje - dla gotowych i polproduktow */}
+                      {(activeTab === 'gotowe' || activeTab === 'polprodukty') && (
+                        <div>
+                          <p className="text-xs font-medium text-gray-500 mb-1">Wykroje</p>
+                          <div className="max-h-40 overflow-y-auto border rounded">
+                            {(magazyny.wykroje || []).length === 0 ? (
+                              <p className="text-xs text-gray-400 p-2">Brak wykrojow</p>
+                            ) : (
+                              (magazyny.wykroje || [])
+                                .filter(p => !recipeIngredients.some(i => i.ingredientId === p.id))
+                                .map(p => (
+                                  <button
+                                    key={p.id}
+                                    onClick={() => handleAddIngredient(p.id)}
+                                    className="w-full text-left px-2 py-1.5 text-xs hover:bg-blue-50 border-b last:border-b-0 flex justify-between"
+                                  >
+                                    <span>{p.sku} - {p.nazwa}</span>
+                                    <span className="text-gray-400">+</span>
+                                  </button>
+                                ))
+                            )}
+                          </div>
                         </div>
-                      </div>
-                      {/* Surowce */}
-                      <div className="sm:col-span-2">
+                      )}
+                      {/* Surowce - dla wszystkich (gotowe, polprodukty, wykroje) */}
+                      <div className={activeTab === 'wykroje' ? 'sm:col-span-2' : (activeTab === 'polprodukty' ? '' : 'sm:col-span-2')}>
                         <p className="text-xs font-medium text-gray-500 mb-1">Surowce</p>
                         <div className="max-h-40 overflow-y-auto border rounded">
                           {(magazyny.surowce || []).length === 0 ? (
