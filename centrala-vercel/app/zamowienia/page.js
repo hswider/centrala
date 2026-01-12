@@ -265,7 +265,7 @@ export default function ZamowieniaPage() {
 
   return (
     <div className="min-h-screen bg-gray-100">
-      <main className="max-w-3xl mx-auto px-3 py-4 sm:px-6 sm:py-6">
+      <main className="max-w-7xl mx-auto px-3 py-4 sm:px-6 sm:py-6 lg:px-8">
         {/* Header */}
         <div className="flex justify-between items-center gap-3 mb-4">
           <div>
