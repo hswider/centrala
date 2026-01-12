@@ -529,8 +529,9 @@ export default function MagazynyPage() {
       exampleRows = [
         'SUR-PIANKA-T25;Pianka T25 arkusz;200;szt;18.50',
         'SUR-DREWNO-BUK;Drewno bukowe 2m;150;mb;45.00',
-        'SUR-SRUBY-M6;Sruby M6 opak. 100szt;500;szt;12.00',
-        'SUR-TKANINA-01;Tkanina obiciowa;80;mb;35.00'
+        'SUR-TKANINA-01;Tkanina obiciowa welur;80;m2;35.00',
+        'SUR-WATA-POLIE;Wata poliestrowa;25;kg;28.00',
+        'SUR-SRUBY-M6;Sruby M6 opak. 100szt;500;szt;12.00'
       ];
     }
 
@@ -582,7 +583,7 @@ export default function MagazynyPage() {
               ean = '';
               stan = parseInt(cols[2]?.trim()) || 0;
               const jednostkaVal = cols[3]?.trim()?.toLowerCase() || 'szt';
-              jednostka = jednostkaVal === 'mb' ? 'mb' : 'szt';
+              jednostka = ['mb', 'm2', 'kg'].includes(jednostkaVal) ? jednostkaVal : 'szt';
               cena = parseFloat(cols[4]?.trim()) || 0;
               czas_produkcji = 0;
             } else {
@@ -1034,6 +1035,8 @@ export default function MagazynyPage() {
                       >
                         <option value="szt">szt (sztuki)</option>
                         <option value="mb">mb (metr biezacy)</option>
+                        <option value="m2">m2 (metr kwadratowy)</option>
+                        <option value="kg">kg (kilogram)</option>
                       </select>
                     </div>
                   )}
@@ -1151,6 +1154,8 @@ export default function MagazynyPage() {
                       >
                         <option value="szt">szt (sztuki)</option>
                         <option value="mb">mb (metr biezacy)</option>
+                        <option value="m2">m2 (metr kwadratowy)</option>
+                        <option value="kg">kg (kilogram)</option>
                       </select>
                     </div>
                   )}
@@ -1226,7 +1231,7 @@ export default function MagazynyPage() {
                     <li><strong>SKU</strong> - kod produktu</li>
                     <li><strong>Nazwa</strong> - nazwa produktu</li>
                     <li><strong>Stan</strong> - ilosc w magazynie</li>
-                    <li><strong>Jednostka</strong> - szt lub mb</li>
+                    <li><strong>Jednostka</strong> - szt, mb, m2 lub kg</li>
                     <li><strong>Wartosc netto PLN</strong> - wartosc jednostkowa</li>
                   </ol>
                 ) : (
