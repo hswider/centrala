@@ -673,7 +673,7 @@ export default function MagazynyPage() {
                 <table className="w-full min-w-[800px]">
                 <thead className="bg-gray-50">
                   <tr>
-                    <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase w-28">SKU</th>
+                    <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase w-40">SKU</th>
                     <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nazwa produktu</th>
                     <th className="px-2 py-3 text-center text-xs font-medium text-gray-500 uppercase w-32">Stan</th>
                     <th className="px-2 py-3 text-center text-xs font-medium text-gray-500 uppercase w-24">
