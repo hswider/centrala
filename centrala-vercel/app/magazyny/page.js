@@ -1062,7 +1062,7 @@ export default function MagazynyPage() {
             <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full p-6 max-h-[90vh] overflow-y-auto">
               <div className="flex justify-between items-start mb-4">
                 <div>
-                  <h3 className="text-lg font-semibold">Receptura produktu</h3>
+                  <h3 className="text-lg font-semibold">Szczegoly produktu</h3>
                   <p className="text-sm text-gray-500">{recipeItem.sku} - {recipeItem.nazwa}</p>
                 </div>
                 <button
@@ -1077,22 +1077,79 @@ export default function MagazynyPage() {
                 </button>
               </div>
 
-              {/* Podsumowanie wartosci */}
-              {recipeIngredients.length > 0 && (
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
-                  <div className="flex justify-between items-center">
-                    <div>
-                      <p className="text-sm font-medium text-blue-800">Wartosc netto skladnikow</p>
-                      <p className="text-xs text-blue-600">Suma wartosci netto * ilosc</p>
+              {/* Kalkulator kosztow wytworzenia */}
+              {(() => {
+                const MINUTE_RATE = 0.358; // 3606 PLN netto / 168h / 60min
+                const ingredientsCost = recipeIngredients.reduce((sum, ing) => sum + (ing.ingredientCena || 0) * ing.quantity, 0);
+                const productionTime = recipeItem.czas_produkcji || 0;
+                const laborCost = productionTime * MINUTE_RATE;
+                const totalCost = ingredientsCost + laborCost;
+
+                return (
+                  <div className="bg-gradient-to-r from-blue-50 to-green-50 border border-blue-200 rounded-lg p-4 mb-4">
+                    <h4 className="font-semibold text-gray-800 mb-3 border-b pb-2">Kalkulator kosztow wytworzenia</h4>
+
+                    {/* Czas produkcji */}
+                    <div className="flex justify-between items-center py-2 border-b border-gray-200">
+                      <div>
+                        <p className="text-sm font-medium text-gray-700">Czas produkcji</p>
+                        <p className="text-xs text-gray-500">Ustawiony w tabeli glownej</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-lg font-bold text-gray-800">{productionTime} min</p>
+                      </div>
                     </div>
-                    <div className="text-right">
-                      <p className="text-2xl font-bold text-blue-800">
-                        {recipeIngredients.reduce((sum, ing) => sum + (ing.ingredientCena || 0) * ing.quantity, 0).toFixed(2)} zl
-                      </p>
+
+                    {/* Koszt skladnikow */}
+                    <div className="flex justify-between items-center py-2 border-b border-gray-200">
+                      <div>
+                        <p className="text-sm font-medium text-gray-700">Koszt skladnikow</p>
+                        <p className="text-xs text-gray-500">Suma wartosci netto skladnikow</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-lg font-bold text-blue-700">{ingredientsCost.toFixed(2)} zl</p>
+                      </div>
                     </div>
+
+                    {/* Koszt pracy */}
+                    <div className="flex justify-between items-center py-2 border-b border-gray-200">
+                      <div>
+                        <p className="text-sm font-medium text-gray-700">Koszt pracy</p>
+                        <p className="text-xs text-gray-500">{productionTime} min × {MINUTE_RATE.toFixed(3)} zl/min (najnizsza krajowa)</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-lg font-bold text-orange-600">{laborCost.toFixed(2)} zl</p>
+                      </div>
+                    </div>
+
+                    {/* SUMA */}
+                    <div className="flex justify-between items-center pt-3 mt-2">
+                      <div>
+                        <p className="text-base font-bold text-gray-900">KOSZT WYTWORZENIA</p>
+                        <p className="text-xs text-gray-500">Skladniki + praca</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-2xl font-bold text-green-700">{totalCost.toFixed(2)} zl</p>
+                      </div>
+                    </div>
+
+                    {/* Marza */}
+                    {recipeItem.cena > 0 && (
+                      <div className="flex justify-between items-center pt-2 mt-2 border-t border-gray-300">
+                        <div>
+                          <p className="text-sm font-medium text-gray-700">Marza</p>
+                          <p className="text-xs text-gray-500">Cena sprzedazy: {recipeItem.cena.toFixed(2)} zl</p>
+                        </div>
+                        <div className="text-right">
+                          <p className={`text-lg font-bold ${(recipeItem.cena - totalCost) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                            {(recipeItem.cena - totalCost).toFixed(2)} zl ({totalCost > 0 ? (((recipeItem.cena - totalCost) / totalCost) * 100).toFixed(0) : 0}%)
+                          </p>
+                        </div>
+                      </div>
+                    )}
                   </div>
-                </div>
-              )}
+                );
+              })()}
 
               {loadingRecipe ? (
                 <div className="py-8 text-center text-gray-500">Ladowanie receptury...</div>
