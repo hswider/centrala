@@ -619,7 +619,19 @@ export default function MagazynyPage() {
 
           if (data.success) {
             await fetchInventory();
-            alert(`Zaimportowano ${data.imported} z ${data.total} pozycji`);
+            let message = `Zaimportowano ${data.imported} z ${data.total} pozycji`;
+
+            // Pokazuj bledy jesli sa
+            if (data.errors && data.errors.length > 0) {
+              const maxErrorsToShow = 10;
+              const errorsToShow = data.errors.slice(0, maxErrorsToShow);
+              message += `\n\nBledy (${data.errors.length}):\n` + errorsToShow.join('\n');
+              if (data.errors.length > maxErrorsToShow) {
+                message += `\n... i ${data.errors.length - maxErrorsToShow} wiecej bledow`;
+              }
+            }
+
+            alert(message);
           } else {
             alert('Blad: ' + data.error);
           }
