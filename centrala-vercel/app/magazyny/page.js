@@ -472,11 +472,12 @@ export default function MagazynyPage() {
         )
       ];
     } else {
-      headers = ['SKU', 'Nazwa', 'EAN', 'Stan', 'Wartosc netto PLN'];
+      // polprodukty, wykroje - bez EAN
+      headers = ['SKU', 'Nazwa', 'Stan', 'Wartosc netto PLN'];
       csvRows = [
         headers.join(';'),
         ...items.map(item =>
-          [item.sku, item.nazwa, item.ean || '', item.stan, (item.cena || 0).toFixed(2)].join(';')
+          [item.sku, item.nazwa, item.stan, (item.cena || 0).toFixed(2)].join(';')
         )
       ];
     }
@@ -507,18 +508,20 @@ export default function MagazynyPage() {
         'FOTEL-RETRO-GR;Fotel Retro Grafit;5901234123471;8;599.00;120'
       ];
     } else if (activeTab === 'polprodukty') {
-      headers = ['SKU', 'Nazwa', 'EAN', 'Stan', 'Wartosc netto PLN'];
+      // polprodukty - bez EAN
+      headers = ['SKU', 'Nazwa', 'Stan', 'Wartosc netto PLN'];
       exampleRows = [
-        'PP-STELA-PUFA;Stelaz do pufy;;50;45.00',
-        'PP-OPARCIE-FOT;Oparcie fotela;;30;85.00',
-        'PP-SIEDZISKO-L;Siedzisko lawki;;20;120.00'
+        'PP-STELA-PUFA;Stelaz do pufy;50;45.00',
+        'PP-OPARCIE-FOT;Oparcie fotela;30;85.00',
+        'PP-SIEDZISKO-L;Siedzisko lawki;20;120.00'
       ];
     } else if (activeTab === 'wykroje') {
-      headers = ['SKU', 'Nazwa', 'EAN', 'Stan', 'Wartosc netto PLN'];
+      // wykroje - bez EAN
+      headers = ['SKU', 'Nazwa', 'Stan', 'Wartosc netto PLN'];
       exampleRows = [
-        'WYK-VELVET-ROSA;Wykroj velvet rosa 1m2;;100;35.00',
-        'WYK-VELVET-BLUE;Wykroj velvet blue 1m2;;80;35.00',
-        'WYK-SKORA-CZAR;Wykroj skora czarna 1m2;;40;95.00'
+        'WYK-VELVET-ROSA;Wykroj velvet rosa 1m2;100;35.00',
+        'WYK-VELVET-BLUE;Wykroj velvet blue 1m2;80;35.00',
+        'WYK-SKORA-CZAR;Wykroj skora czarna 1m2;40;95.00'
       ];
     } else {
       // surowce - bez EAN, z jednostka
@@ -583,10 +586,10 @@ export default function MagazynyPage() {
               cena = parseFloat(cols[4]?.trim()) || 0;
               czas_produkcji = 0;
             } else {
-              // polprodukty, wykroje: SKU, Nazwa, EAN, Stan, Wartosc netto
-              ean = cols[2]?.trim() || '';
-              stan = parseInt(cols[3]?.trim()) || 0;
-              cena = parseFloat(cols[4]?.trim()) || 0;
+              // polprodukty, wykroje: SKU, Nazwa, Stan, Wartosc netto (bez EAN)
+              ean = '';
+              stan = parseInt(cols[2]?.trim()) || 0;
+              cena = parseFloat(cols[3]?.trim()) || 0;
               czas_produkcji = 0;
               jednostka = 'szt';
             }
@@ -751,14 +754,14 @@ export default function MagazynyPage() {
                   <tr>
                     <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase w-40">SKU</th>
                     <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nazwa produktu</th>
-                    {activeTab !== 'surowce' && (
+                    {activeTab === 'gotowe' && (
                       <th className="px-2 py-3 text-center text-xs font-medium text-gray-500 uppercase w-32">EAN-13</th>
                     )}
                     <th className="px-2 py-3 text-center text-xs font-medium text-gray-500 uppercase w-32">Stan</th>
                     <th className="px-2 py-3 text-center text-xs font-medium text-gray-500 uppercase w-24">
                       {activeTab === 'gotowe' ? 'Cena' : 'Wart. netto'}
                     </th>
-                    {activeTab === 'surowce' && (
+                    {activeTab !== 'gotowe' && (
                       <th className="px-2 py-3 text-center text-xs font-medium text-gray-500 uppercase w-28">Wart. suma</th>
                     )}
                     {activeTab === 'gotowe' && (
@@ -774,7 +777,7 @@ export default function MagazynyPage() {
                 <tbody className="divide-y divide-gray-100">
                   {currentItems.length === 0 ? (
                     <tr>
-                      <td colSpan={activeTab === 'gotowe' ? 9 : (activeTab === 'surowce' ? 6 : 5)} className="px-4 py-8 text-center text-gray-500">
+                      <td colSpan={activeTab === 'gotowe' ? 9 : 6} className="px-4 py-8 text-center text-gray-500">
                         {searchQuery
                           ? 'Brak wynikow dla wyszukiwania'
                           : 'Brak pozycji w magazynie. Dodaj recznie lub zaimportuj z CSV.'}
@@ -787,7 +790,7 @@ export default function MagazynyPage() {
                           <span className="font-mono text-xs text-gray-900 whitespace-nowrap">{item.sku}</span>
                         </td>
                         <td className="px-3 py-2 text-sm text-gray-700">{item.nazwa}</td>
-                        {activeTab !== 'surowce' && (
+                        {activeTab === 'gotowe' && (
                           <td className="px-2 py-2 text-center">
                             <span className="font-mono text-xs text-gray-500">{item.ean || '-'}</span>
                           </td>
@@ -863,7 +866,7 @@ export default function MagazynyPage() {
                             </button>
                           )}
                         </td>
-                        {activeTab === 'surowce' && (
+                        {activeTab !== 'gotowe' && (
                           <td className="px-2 py-2 text-center">
                             <span className="px-1.5 py-0.5 rounded text-sm font-bold text-green-800 bg-green-100 whitespace-nowrap">
                               {((item.cena || 0) * item.stan).toFixed(2)} zl
@@ -985,7 +988,7 @@ export default function MagazynyPage() {
                     placeholder="np. Pufa Miki Rosa"
                   />
                 </div>
-                {activeTab !== 'surowce' && (
+                {activeTab === 'gotowe' && (
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       EAN-13 <span className="text-gray-400 font-normal">(opcjonalne)</span>
@@ -1103,7 +1106,7 @@ export default function MagazynyPage() {
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
-                {activeTab !== 'surowce' && (
+                {activeTab === 'gotowe' && (
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       EAN-13 <span className="text-gray-400 font-normal">(opcjonalne)</span>
@@ -1226,7 +1229,6 @@ export default function MagazynyPage() {
                   <ol className="text-sm text-blue-700 space-y-1 list-decimal list-inside">
                     <li><strong>SKU</strong> - kod produktu</li>
                     <li><strong>Nazwa</strong> - nazwa produktu</li>
-                    <li><strong>EAN-13</strong> - opcjonalne, 13 cyfr</li>
                     <li><strong>Stan</strong> - ilosc w magazynie</li>
                     <li><strong>Wartosc netto PLN</strong> - wartosc jednostkowa</li>
                   </ol>
