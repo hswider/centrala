@@ -1,11 +1,16 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 
 export default function MagazynyPage() {
   const [activeTab, setActiveTab] = useState('gotowe');
   const [showAddModal, setShowAddModal] = useState(false);
   const [showImportModal, setShowImportModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editingItem, setEditingItem] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
   const fileInputRef = useRef(null);
 
   const tabs = [
@@ -15,69 +20,171 @@ export default function MagazynyPage() {
     { key: 'surowce', label: 'Surowce', icon: '🪵' },
   ];
 
-  // Sample data - will be replaced with API data
   const [magazyny, setMagazyny] = useState({
-    gotowe: [
-      { id: 1, sku: 'MIKI-001', nazwa: 'Pufa Miki Rosa', stan: 25 },
-      { id: 2, sku: 'MIKI-002', nazwa: 'Pufa Miki Blue', stan: 18 },
-      { id: 3, sku: 'LAW-001', nazwa: 'Lawka ogrodowa 150cm', stan: 12 },
-    ],
-    polprodukty: [
-      { id: 1, sku: 'PP-001', nazwa: 'Szkielet pufy Miki', stan: 45 },
-      { id: 2, sku: 'PP-002', nazwa: 'Nogi lawki drewniane', stan: 30 },
-    ],
-    wykroje: [
-      { id: 1, sku: 'WK-001', nazwa: 'Wykroj pufa Miki uszy', stan: 100 },
-      { id: 2, sku: 'WK-002', nazwa: 'Wykroj pufa Miki korpus', stan: 85 },
-    ],
-    surowce: [
-      { id: 1, sku: 'SR-001', nazwa: 'Tkanina welurowa Rosa', stan: 150 },
-      { id: 2, sku: 'SR-002', nazwa: 'Tkanina welurowa Blue', stan: 120 },
-      { id: 3, sku: 'SR-003', nazwa: 'Drewno sosnowe', stan: 500 },
-      { id: 4, sku: 'SR-004', nazwa: 'Granulat styropianowy', stan: 200 },
-    ],
+    gotowe: [],
+    polprodukty: [],
+    wykroje: [],
+    surowce: [],
   });
 
   const [newItem, setNewItem] = useState({ sku: '', nazwa: '', stan: '' });
 
-  const handleAddItem = () => {
+  // Pobierz dane z API
+  const fetchInventory = useCallback(async () => {
+    try {
+      setLoading(true);
+      const res = await fetch('/api/inventory');
+      const data = await res.json();
+
+      if (data.success) {
+        setMagazyny(data.data);
+      }
+    } catch (error) {
+      console.error('Blad pobierania danych:', error);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchInventory();
+  }, [fetchInventory]);
+
+  // Dodaj nowa pozycje
+  const handleAddItem = async () => {
     if (!newItem.sku || !newItem.nazwa || !newItem.stan) return;
 
-    const item = {
-      id: Date.now(),
-      sku: newItem.sku,
-      nazwa: newItem.nazwa,
-      stan: parseInt(newItem.stan) || 0,
-    };
+    setSaving(true);
+    try {
+      const res = await fetch('/api/inventory', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          sku: newItem.sku,
+          nazwa: newItem.nazwa,
+          stan: parseInt(newItem.stan) || 0,
+          kategoria: activeTab
+        })
+      });
 
-    setMagazyny(prev => ({
-      ...prev,
-      [activeTab]: [...prev[activeTab], item]
-    }));
+      const data = await res.json();
 
-    setNewItem({ sku: '', nazwa: '', stan: '' });
-    setShowAddModal(false);
+      if (data.success) {
+        await fetchInventory();
+        setNewItem({ sku: '', nazwa: '', stan: '' });
+        setShowAddModal(false);
+      } else {
+        alert('Blad: ' + data.error);
+      }
+    } catch (error) {
+      alert('Blad: ' + error.message);
+    } finally {
+      setSaving(false);
+    }
   };
 
-  const handleDeleteItem = (id) => {
-    setMagazyny(prev => ({
-      ...prev,
-      [activeTab]: prev[activeTab].filter(item => item.id !== id)
-    }));
+  // Usun pozycje
+  const handleDeleteItem = async (id) => {
+    if (!confirm('Czy na pewno chcesz usunac te pozycje?')) return;
+
+    try {
+      const res = await fetch(`/api/inventory?id=${id}`, {
+        method: 'DELETE'
+      });
+
+      const data = await res.json();
+
+      if (data.success) {
+        await fetchInventory();
+      } else {
+        alert('Blad: ' + data.error);
+      }
+    } catch (error) {
+      alert('Blad: ' + error.message);
+    }
   };
 
-  const handleFileUpload = (e) => {
+  // Edytuj pozycje
+  const handleEditItem = (item) => {
+    setEditingItem({ ...item });
+    setShowEditModal(true);
+  };
+
+  // Zapisz edycje
+  const handleSaveEdit = async () => {
+    if (!editingItem) return;
+
+    setSaving(true);
+    try {
+      const res = await fetch('/api/inventory', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: editingItem.id,
+          sku: editingItem.sku,
+          nazwa: editingItem.nazwa,
+          stan: parseInt(editingItem.stan) || 0
+        })
+      });
+
+      const data = await res.json();
+
+      if (data.success) {
+        await fetchInventory();
+        setShowEditModal(false);
+        setEditingItem(null);
+      } else {
+        alert('Blad: ' + data.error);
+      }
+    } catch (error) {
+      alert('Blad: ' + error.message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // Szybka edycja stanu (+/-)
+  const handleQuickStanChange = async (item, delta) => {
+    const newStan = Math.max(0, item.stan + delta);
+
+    try {
+      const res = await fetch('/api/inventory', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: item.id,
+          stan: newStan
+        })
+      });
+
+      const data = await res.json();
+
+      if (data.success) {
+        // Aktualizuj lokalnie dla szybszego UX
+        setMagazyny(prev => ({
+          ...prev,
+          [activeTab]: prev[activeTab].map(i =>
+            i.id === item.id ? { ...i, stan: newStan } : i
+          )
+        }));
+      }
+    } catch (error) {
+      console.error('Blad aktualizacji:', error);
+    }
+  };
+
+  // Import z pliku
+  const handleFileUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
 
     const reader = new FileReader();
-    reader.onload = (event) => {
+    reader.onload = async (event) => {
       try {
-        // Simple CSV parsing (Excel saved as CSV)
         const text = event.target.result;
         const lines = text.split('\n').filter(line => line.trim());
 
-        const newItems = [];
+        const items = [];
         for (let i = 0; i < lines.length; i++) {
           const cols = lines[i].split(/[,;\t]/);
           if (cols.length >= 3) {
@@ -86,27 +193,37 @@ export default function MagazynyPage() {
             const stan = parseInt(cols[2]?.trim()) || 0;
 
             if (sku && nazwa) {
-              newItems.push({
-                id: Date.now() + i,
-                sku,
-                nazwa,
-                stan
-              });
+              items.push({ sku, nazwa, stan });
             }
           }
         }
 
-        if (newItems.length > 0) {
-          setMagazyny(prev => ({
-            ...prev,
-            [activeTab]: [...prev[activeTab], ...newItems]
-          }));
-          alert(`Zaimportowano ${newItems.length} pozycji`);
+        if (items.length > 0) {
+          setSaving(true);
+          const res = await fetch('/api/inventory/bulk', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              items,
+              kategoria: activeTab
+            })
+          });
+
+          const data = await res.json();
+
+          if (data.success) {
+            await fetchInventory();
+            alert(`Zaimportowano ${data.imported} z ${data.total} pozycji`);
+          } else {
+            alert('Blad: ' + data.error);
+          }
+          setSaving(false);
         } else {
           alert('Nie znaleziono poprawnych danych w pliku');
         }
       } catch (error) {
         alert('Blad podczas importu: ' + error.message);
+        setSaving(false);
       }
     };
     reader.readAsText(file);
@@ -118,7 +235,13 @@ export default function MagazynyPage() {
     return tabs.find(t => t.key === key)?.label || key;
   };
 
-  const currentItems = magazyny[activeTab] || [];
+  // Filtrowanie po wyszukiwaniu
+  const currentItems = (magazyny[activeTab] || []).filter(item => {
+    if (!searchQuery) return true;
+    const q = searchQuery.toLowerCase();
+    return item.sku.toLowerCase().includes(q) || item.nazwa.toLowerCase().includes(q);
+  });
+
   const totalItems = currentItems.reduce((sum, item) => sum + item.stan, 0);
 
   return (
@@ -135,7 +258,7 @@ export default function MagazynyPage() {
               onClick={() => setShowImportModal(true)}
               className="px-3 py-1.5 text-sm bg-green-600 text-white rounded-lg hover:bg-green-700"
             >
-              Import Excel
+              Import CSV
             </button>
             <button
               onClick={() => setShowAddModal(true)}
@@ -148,15 +271,17 @@ export default function MagazynyPage() {
 
         {/* Stats */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
-          {tabs.map(tab => (
-            <div key={tab.key} className="bg-white rounded-lg shadow p-4">
-              <p className="text-xs text-gray-500">{tab.label}</p>
-              <p className="text-2xl font-bold text-blue-600">
-                {magazyny[tab.key]?.length || 0}
-              </p>
-              <p className="text-xs text-gray-400">pozycji</p>
-            </div>
-          ))}
+          {tabs.map(tab => {
+            const items = magazyny[tab.key] || [];
+            const totalStan = items.reduce((sum, i) => sum + i.stan, 0);
+            return (
+              <div key={tab.key} className="bg-white rounded-lg shadow p-4">
+                <p className="text-xs text-gray-500">{tab.label}</p>
+                <p className="text-2xl font-bold text-blue-600">{items.length}</p>
+                <p className="text-xs text-gray-400">{totalStan} szt. lacznie</p>
+              </div>
+            );
+          })}
         </div>
 
         {/* Tabs */}
@@ -188,58 +313,93 @@ export default function MagazynyPage() {
             </div>
             <input
               type="text"
-              placeholder="Szukaj SKU..."
+              placeholder="Szukaj SKU lub nazwy..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
               className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
 
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">SKU</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nazwa produktu</th>
-                  <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">Stan</th>
-                  <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">Akcje</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                {currentItems.length === 0 ? (
+          {loading ? (
+            <div className="px-4 py-12 text-center text-gray-500">
+              Ladowanie danych...
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-gray-50">
                   <tr>
-                    <td colSpan="4" className="px-4 py-8 text-center text-gray-500">
-                      Brak pozycji w magazynie. Dodaj recznie lub zaimportuj z Excel.
-                    </td>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">SKU</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nazwa produktu</th>
+                    <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">Stan</th>
+                    <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">Akcje</th>
                   </tr>
-                ) : (
-                  currentItems.map((item) => (
-                    <tr key={item.id} className="hover:bg-gray-50">
-                      <td className="px-4 py-3">
-                        <span className="font-mono text-sm text-gray-900">{item.sku}</span>
-                      </td>
-                      <td className="px-4 py-3 text-sm text-gray-700">{item.nazwa}</td>
-                      <td className="px-4 py-3 text-center">
-                        <span className={`px-2 py-1 rounded text-xs font-bold ${
-                          item.stan <= 10 ? 'bg-red-100 text-red-800' :
-                          item.stan <= 30 ? 'bg-yellow-100 text-yellow-800' :
-                          'bg-green-100 text-green-800'
-                        }`}>
-                          {item.stan}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 text-center">
-                        <button
-                          onClick={() => handleDeleteItem(item.id)}
-                          className="text-red-600 hover:text-red-800 text-sm"
-                        >
-                          Usun
-                        </button>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {currentItems.length === 0 ? (
+                    <tr>
+                      <td colSpan="4" className="px-4 py-8 text-center text-gray-500">
+                        {searchQuery
+                          ? 'Brak wynikow dla wyszukiwania'
+                          : 'Brak pozycji w magazynie. Dodaj recznie lub zaimportuj z CSV.'}
                       </td>
                     </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
+                  ) : (
+                    currentItems.map((item) => (
+                      <tr key={item.id} className="hover:bg-gray-50">
+                        <td className="px-4 py-3">
+                          <span className="font-mono text-sm text-gray-900">{item.sku}</span>
+                        </td>
+                        <td className="px-4 py-3 text-sm text-gray-700">{item.nazwa}</td>
+                        <td className="px-4 py-3">
+                          <div className="flex items-center justify-center gap-2">
+                            <button
+                              onClick={() => handleQuickStanChange(item, -1)}
+                              className="w-7 h-7 flex items-center justify-center bg-red-100 text-red-700 rounded hover:bg-red-200 font-bold"
+                              title="Zmniejsz o 1"
+                            >
+                              -
+                            </button>
+                            <span className={`px-3 py-1 rounded text-sm font-bold min-w-[50px] text-center ${
+                              item.stan <= 10 ? 'bg-red-100 text-red-800' :
+                              item.stan <= 30 ? 'bg-yellow-100 text-yellow-800' :
+                              'bg-green-100 text-green-800'
+                            }`}>
+                              {item.stan}
+                            </span>
+                            <button
+                              onClick={() => handleQuickStanChange(item, 1)}
+                              className="w-7 h-7 flex items-center justify-center bg-green-100 text-green-700 rounded hover:bg-green-200 font-bold"
+                              title="Zwieksz o 1"
+                            >
+                              +
+                            </button>
+                          </div>
+                        </td>
+                        <td className="px-4 py-3">
+                          <div className="flex items-center justify-center gap-2">
+                            <button
+                              onClick={() => handleEditItem(item)}
+                              className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+                            >
+                              Edytuj
+                            </button>
+                            <span className="text-gray-300">|</span>
+                            <button
+                              onClick={() => handleDeleteItem(item.id)}
+                              className="text-red-600 hover:text-red-800 text-sm"
+                            >
+                              Usun
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
 
         {/* Add Modal */}
@@ -285,14 +445,75 @@ export default function MagazynyPage() {
                 <button
                   onClick={() => setShowAddModal(false)}
                   className="px-4 py-2 text-gray-600 hover:text-gray-800"
+                  disabled={saving}
                 >
                   Anuluj
                 </button>
                 <button
                   onClick={handleAddItem}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
+                  disabled={saving}
                 >
-                  Dodaj
+                  {saving ? 'Zapisywanie...' : 'Dodaj'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Edit Modal */}
+        {showEditModal && editingItem && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
+              <h3 className="text-lg font-semibold mb-4">Edytuj pozycje</h3>
+
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">SKU</label>
+                  <input
+                    type="text"
+                    value={editingItem.sku}
+                    onChange={(e) => setEditingItem({ ...editingItem, sku: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Nazwa produktu</label>
+                  <input
+                    type="text"
+                    value={editingItem.nazwa}
+                    onChange={(e) => setEditingItem({ ...editingItem, nazwa: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Stan</label>
+                  <input
+                    type="number"
+                    value={editingItem.stan}
+                    onChange={(e) => setEditingItem({ ...editingItem, stan: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-2 mt-6">
+                <button
+                  onClick={() => {
+                    setShowEditModal(false);
+                    setEditingItem(null);
+                  }}
+                  className="px-4 py-2 text-gray-600 hover:text-gray-800"
+                  disabled={saving}
+                >
+                  Anuluj
+                </button>
+                <button
+                  onClick={handleSaveEdit}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
+                  disabled={saving}
+                >
+                  {saving ? 'Zapisywanie...' : 'Zapisz'}
                 </button>
               </div>
             </div>
@@ -303,7 +524,7 @@ export default function MagazynyPage() {
         {showImportModal && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
             <div className="bg-white rounded-lg shadow-xl max-w-lg w-full p-6">
-              <h3 className="text-lg font-semibold mb-4">Import z Excel do: {getTabLabel(activeTab)}</h3>
+              <h3 className="text-lg font-semibold mb-4">Import z CSV do: {getTabLabel(activeTab)}</h3>
 
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
                 <h4 className="font-medium text-blue-800 mb-2">Instrukcja importu:</h4>
@@ -326,6 +547,12 @@ export default function MagazynyPage() {
                 </code>
               </div>
 
+              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mb-4">
+                <p className="text-sm text-yellow-800">
+                  <strong>Uwaga:</strong> Jesli SKU juz istnieje w tej kategorii, dane zostana zaktualizowane.
+                </p>
+              </div>
+
               <input
                 ref={fileInputRef}
                 type="file"
@@ -338,14 +565,16 @@ export default function MagazynyPage() {
                 <button
                   onClick={() => setShowImportModal(false)}
                   className="px-4 py-2 text-gray-600 hover:text-gray-800"
+                  disabled={saving}
                 >
                   Anuluj
                 </button>
                 <button
                   onClick={() => fileInputRef.current?.click()}
-                  className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+                  className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50"
+                  disabled={saving}
                 >
-                  Wybierz plik CSV
+                  {saving ? 'Importowanie...' : 'Wybierz plik CSV'}
                 </button>
               </div>
             </div>
