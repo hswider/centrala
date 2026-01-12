@@ -383,6 +383,66 @@ export default function MagazynyPage() {
     }
   };
 
+  // Eksport do CSV
+  const handleExportCSV = () => {
+    // Zbierz wszystkie pozycje z wszystkich kategorii lub tylko z aktualnej
+    const exportAll = confirm('Czy eksportowac wszystkie magazyny?\n\nTak = wszystkie magazyny\nAnuluj = tylko ' + getTabLabel(activeTab));
+
+    let dataToExport = [];
+
+    if (exportAll) {
+      // Eksport wszystkich kategorii
+      Object.entries(magazyny).forEach(([kategoria, items]) => {
+        items.forEach(item => {
+          dataToExport.push({
+            kategoria: getTabLabel(kategoria),
+            sku: item.sku,
+            nazwa: item.nazwa,
+            stan: item.stan,
+            cena: item.cena || 0
+          });
+        });
+      });
+    } else {
+      // Eksport tylko aktualnej kategorii
+      currentItems.forEach(item => {
+        dataToExport.push({
+          kategoria: getTabLabel(activeTab),
+          sku: item.sku,
+          nazwa: item.nazwa,
+          stan: item.stan,
+          cena: item.cena || 0
+        });
+      });
+    }
+
+    if (dataToExport.length === 0) {
+      alert('Brak danych do eksportu');
+      return;
+    }
+
+    // Generuj CSV
+    const headers = ['Kategoria', 'SKU', 'Nazwa', 'Stan', 'Cena PLN'];
+    const csvRows = [
+      headers.join(';'),
+      ...dataToExport.map(row =>
+        [row.kategoria, row.sku, row.nazwa, row.stan, row.cena.toFixed(2)].join(';')
+      )
+    ];
+
+    const csvContent = '\uFEFF' + csvRows.join('\n'); // BOM dla polskich znakow
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+
+    link.setAttribute('href', url);
+    link.setAttribute('download', `magazyny_${exportAll ? 'wszystkie' : activeTab}_${new Date().toISOString().slice(0, 10)}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   // Import z pliku
   const handleFileUpload = async (e) => {
     const file = e.target.files[0];
@@ -464,6 +524,12 @@ export default function MagazynyPage() {
             <p className="text-xs sm:text-sm text-gray-500">Zarzadzanie stanami magazynowymi</p>
           </div>
           <div className="flex gap-2">
+            <button
+              onClick={handleExportCSV}
+              className="px-3 py-1.5 text-sm bg-gray-600 text-white rounded-lg hover:bg-gray-700"
+            >
+              Export CSV
+            </button>
             <button
               onClick={() => setShowImportModal(true)}
               className="px-3 py-1.5 text-sm bg-green-600 text-white rounded-lg hover:bg-green-700"
