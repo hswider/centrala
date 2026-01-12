@@ -652,13 +652,25 @@ export default function MagazynyPage() {
             />
           </div>
 
+          {/* Wskaznik przewijania na mobile */}
+          <div className="lg:hidden flex items-center justify-end gap-2 px-4 py-2 bg-gray-50 border-b border-gray-100 text-xs text-gray-500">
+            <span>Przesun w prawo</span>
+            <svg className="w-4 h-4 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 5l7 7-7 7M5 5l7 7-7 7" />
+            </svg>
+          </div>
+
           {loading ? (
             <div className="px-4 py-12 text-center text-gray-500">
               Ladowanie danych...
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[800px]">
+            <div className="relative">
+              {/* Gradient fade na prawej krawedzi - tylko mobile */}
+              <div className="lg:hidden absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-white to-transparent pointer-events-none z-10" />
+
+              <div className="overflow-x-auto">
+                <table className="w-full min-w-[800px]">
                 <thead className="bg-gray-50">
                   <tr>
                     <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase w-28">SKU</th>
@@ -846,7 +858,8 @@ export default function MagazynyPage() {
                     ))
                   )}
                 </tbody>
-              </table>
+                </table>
+              </div>
             </div>
           )}
         </div>
