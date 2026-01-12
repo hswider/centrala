@@ -23,6 +23,7 @@ export default function MagazynyPage() {
   const [loadingRecipe, setLoadingRecipe] = useState(false);
   const [perPage, setPerPage] = useState(50);
   const [currentPage, setCurrentPage] = useState(1);
+  const [selectedIds, setSelectedIds] = useState(new Set());
   const fileInputRef = useRef(null);
   const stanInputRef = useRef(null);
   const cenaInputRef = useRef(null);
@@ -120,6 +121,77 @@ export default function MagazynyPage() {
       }
     } catch (error) {
       alert('Blad: ' + error.message);
+    }
+  };
+
+  // Zaznaczanie pozycji
+  const toggleSelectItem = (id) => {
+    setSelectedIds(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(id)) {
+        newSet.delete(id);
+      } else {
+        newSet.add(id);
+      }
+      return newSet;
+    });
+  };
+
+  const toggleSelectAll = () => {
+    const allIds = filteredItems.map(item => item.id);
+    const allSelected = allIds.every(id => selectedIds.has(id));
+
+    if (allSelected) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(allIds));
+    }
+  };
+
+  const toggleSelectPage = () => {
+    const pageIds = currentItems.map(item => item.id);
+    const allPageSelected = pageIds.every(id => selectedIds.has(id));
+
+    setSelectedIds(prev => {
+      const newSet = new Set(prev);
+      if (allPageSelected) {
+        pageIds.forEach(id => newSet.delete(id));
+      } else {
+        pageIds.forEach(id => newSet.add(id));
+      }
+      return newSet;
+    });
+  };
+
+  // Masowe usuwanie
+  const handleBulkDelete = async () => {
+    if (selectedIds.size === 0) return;
+
+    if (!confirm(`Czy na pewno chcesz usunac ${selectedIds.size} zaznaczonych pozycji?`)) return;
+
+    try {
+      setSaving(true);
+      const idsArray = Array.from(selectedIds);
+
+      const res = await fetch('/api/inventory/bulk-delete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids: idsArray })
+      });
+
+      const data = await res.json();
+
+      if (data.success) {
+        setSelectedIds(new Set());
+        await fetchInventory();
+        alert(`Usunieto ${data.deleted} pozycji`);
+      } else {
+        alert('Blad: ' + data.error);
+      }
+    } catch (error) {
+      alert('Blad: ' + error.message);
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -725,7 +797,7 @@ export default function MagazynyPage() {
             {tabs.map((tab) => (
               <button
                 key={tab.key}
-                onClick={() => { setActiveTab(tab.key); setCurrentPage(1); }}
+                onClick={() => { setActiveTab(tab.key); setCurrentPage(1); setSelectedIds(new Set()); }}
                 className={`flex-1 flex items-center justify-center gap-2 py-3 text-sm font-medium transition-colors whitespace-nowrap px-4 ${
                   activeTab === tab.key
                     ? 'text-blue-600 border-b-2 border-blue-600 bg-blue-50'
@@ -769,6 +841,39 @@ export default function MagazynyPage() {
             </div>
           ) : (
             <div className="relative">
+              {/* Bulk action toolbar */}
+              {selectedIds.size > 0 && (
+                <div className="bg-blue-50 border-b border-blue-200 px-4 py-3 flex flex-wrap items-center justify-between gap-3">
+                  <div className="flex items-center gap-3">
+                    <span className="text-sm font-medium text-blue-800">
+                      Zaznaczono: {selectedIds.size} {selectedIds.size === 1 ? 'pozycje' : selectedIds.size < 5 ? 'pozycje' : 'pozycji'}
+                    </span>
+                    <button
+                      onClick={toggleSelectAll}
+                      className="text-sm text-blue-600 hover:text-blue-800 underline"
+                    >
+                      {filteredItems.length === selectedIds.size ? 'Odznacz wszystkie' : `Zaznacz wszystkie (${filteredItems.length})`}
+                    </button>
+                    <button
+                      onClick={() => setSelectedIds(new Set())}
+                      className="text-sm text-gray-500 hover:text-gray-700"
+                    >
+                      Wyczysc zaznaczenie
+                    </button>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={handleBulkDelete}
+                      disabled={saving}
+                      className="px-3 py-1.5 text-sm bg-red-600 text-white rounded hover:bg-red-700 disabled:opacity-50 flex items-center gap-1"
+                    >
+                      <span>🗑️</span>
+                      <span>Usun zaznaczone ({selectedIds.size})</span>
+                    </button>
+                  </div>
+                </div>
+              )}
+
               {/* Gradient fade na prawej krawedzi - tylko mobile */}
               <div className="lg:hidden absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-white to-transparent pointer-events-none z-10" />
 
@@ -776,6 +881,15 @@ export default function MagazynyPage() {
                 <table className="w-full min-w-[1000px]">
                 <thead className="bg-gray-50">
                   <tr>
+                    <th className="px-2 py-3 text-center w-10">
+                      <input
+                        type="checkbox"
+                        checked={currentItems.length > 0 && currentItems.every(item => selectedIds.has(item.id))}
+                        onChange={toggleSelectPage}
+                        className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
+                        title="Zaznacz strone"
+                      />
+                    </th>
                     <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase w-40">SKU</th>
                     <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nazwa produktu</th>
                     {activeTab === 'gotowe' && (
@@ -801,7 +915,7 @@ export default function MagazynyPage() {
                 <tbody className="divide-y divide-gray-100">
                   {currentItems.length === 0 ? (
                     <tr>
-                      <td colSpan={activeTab === 'gotowe' ? 9 : 6} className="px-4 py-8 text-center text-gray-500">
+                      <td colSpan={activeTab === 'gotowe' ? 10 : 7} className="px-4 py-8 text-center text-gray-500">
                         {searchQuery
                           ? 'Brak wynikow dla wyszukiwania'
                           : 'Brak pozycji w magazynie. Dodaj recznie lub zaimportuj z CSV.'}
@@ -809,7 +923,15 @@ export default function MagazynyPage() {
                     </tr>
                   ) : (
                     currentItems.map((item) => (
-                      <tr key={item.id} className="hover:bg-gray-50">
+                      <tr key={item.id} className={`hover:bg-gray-50 ${selectedIds.has(item.id) ? 'bg-blue-50' : ''}`}>
+                        <td className="px-2 py-2 text-center">
+                          <input
+                            type="checkbox"
+                            checked={selectedIds.has(item.id)}
+                            onChange={() => toggleSelectItem(item.id)}
+                            className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
+                          />
+                        </td>
                         <td className="px-3 py-2 w-40 min-w-[160px]">
                           <span className="font-mono text-xs text-gray-900 whitespace-nowrap">{item.sku}</span>
                         </td>
