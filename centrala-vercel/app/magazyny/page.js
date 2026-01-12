@@ -143,34 +143,46 @@ export default function MagazynyPage() {
     }
   };
 
-  // Szybka edycja stanu (+/-)
-  const handleQuickStanChange = async (item, delta) => {
-    const newStan = Math.max(0, item.stan + delta);
+  // Szybka edycja stanu (+/-) - optimistic update
+  const handleQuickStanChange = (item, delta) => {
+    const oldStan = item.stan;
+    const newStan = Math.max(0, oldStan + delta);
 
-    try {
-      const res = await fetch('/api/inventory', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          id: item.id,
-          stan: newStan
-        })
-      });
+    // Natychmiastowa aktualizacja UI (optimistic)
+    setMagazyny(prev => ({
+      ...prev,
+      [activeTab]: prev[activeTab].map(i =>
+        i.id === item.id ? { ...i, stan: newStan } : i
+      )
+    }));
 
-      const data = await res.json();
-
-      if (data.success) {
-        // Aktualizuj lokalnie dla szybszego UX
+    // API w tle - bez await
+    fetch('/api/inventory', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: item.id, stan: newStan })
+    })
+      .then(res => res.json())
+      .then(data => {
+        if (!data.success) {
+          // Cofnij zmiane jesli API nie powiodlo sie
+          setMagazyny(prev => ({
+            ...prev,
+            [activeTab]: prev[activeTab].map(i =>
+              i.id === item.id ? { ...i, stan: oldStan } : i
+            )
+          }));
+        }
+      })
+      .catch(() => {
+        // Cofnij zmiane przy bledzie sieci
         setMagazyny(prev => ({
           ...prev,
           [activeTab]: prev[activeTab].map(i =>
-            i.id === item.id ? { ...i, stan: newStan } : i
+            i.id === item.id ? { ...i, stan: oldStan } : i
           )
         }));
-      }
-    } catch (error) {
-      console.error('Blad aktualizacji:', error);
-    }
+      });
   };
 
   // Import z pliku
