@@ -670,7 +670,7 @@ export default function MagazynyPage() {
               <div className="lg:hidden absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-white to-transparent pointer-events-none z-10" />
 
               <div className="overflow-x-auto">
-                <table className="w-full min-w-[800px]">
+                <table className="w-full min-w-[900px]">
                 <thead className="bg-gray-50">
                   <tr>
                     <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase w-40">SKU</th>
@@ -701,7 +701,7 @@ export default function MagazynyPage() {
                   ) : (
                     currentItems.map((item) => (
                       <tr key={item.id} className="hover:bg-gray-50">
-                        <td className="px-3 py-2">
+                        <td className="px-3 py-2 w-40 min-w-[160px]">
                           <span className="font-mono text-xs text-gray-900 whitespace-nowrap">{item.sku}</span>
                         </td>
                         <td className="px-3 py-2 text-sm text-gray-700">{item.nazwa}</td>
