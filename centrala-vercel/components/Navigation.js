@@ -16,7 +16,7 @@ export default function Navigation() {
   const navItems = [
     { href: '/', label: 'Dashboard', icon: '📊' },
     { href: '/zamowienia', label: 'Zamowienia', icon: '📦' },
-    { href: '/magazyny', label: 'Magazyny', icon: '🏭' },
+    { href: '/magazyny', label: 'WMS', icon: '🏭' },
     { href: '/mes', label: 'MES', icon: '⚙️' },
     { href: '/crm', label: 'CRM', icon: '👥' },
     { href: '/agent', label: 'Agent AI', icon: '🤖' },

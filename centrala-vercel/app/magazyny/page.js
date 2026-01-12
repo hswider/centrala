@@ -655,8 +655,8 @@ export default function MagazynyPage() {
         {/* Header */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-6">
           <div>
-            <h1 className="text-xl lg:text-2xl font-bold text-gray-900">Magazyny</h1>
-            <p className="text-xs sm:text-sm text-gray-500">Zarzadzanie stanami magazynowymi</p>
+            <h1 className="text-xl lg:text-2xl font-bold text-gray-900">WMS - Warehouse Management System</h1>
+            <p className="text-xs sm:text-sm text-gray-500">Zarzadzanie stanami magazynowymi i zapasami</p>
           </div>
           <div className="flex flex-wrap gap-2">
             <button
