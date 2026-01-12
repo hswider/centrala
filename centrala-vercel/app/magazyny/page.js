@@ -819,7 +819,7 @@ export default function MagazynyPage() {
                               className="px-1.5 py-0.5 rounded text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 hover:ring-2 hover:ring-blue-400 transition-all"
                               title="Kliknij aby edytowac cene"
                             >
-                              {(item.cena || 0).toFixed(2)}
+                              {(item.cena || 0).toFixed(2)} zl
                             </button>
                           )}
                         </td>
@@ -841,7 +841,7 @@ export default function MagazynyPage() {
                                     netProfit < 0 ? 'bg-red-100 text-red-800' :
                                     'bg-gray-100 text-gray-600'
                                   }`}>
-                                    {netProfit >= 0 ? '+' : ''}{netProfit.toFixed(2)}
+                                    {netProfit >= 0 ? '+' : ''}{netProfit.toFixed(2)} zl
                                   </span>
                                 );
                               })()}
