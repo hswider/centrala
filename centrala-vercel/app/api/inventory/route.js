@@ -53,6 +53,7 @@ export async function GET(request) {
           sku: row.sku,
           nazwa: row.nazwa,
           stan: row.stan,
+          cena: parseFloat(row.cena) || 0,
           updatedAt: row.updated_at
         });
       }
@@ -76,7 +77,7 @@ export async function GET(request) {
 export async function POST(request) {
   try {
     const body = await request.json();
-    const { sku, nazwa, stan, kategoria } = body;
+    const { sku, nazwa, stan, cena, kategoria } = body;
 
     if (!sku || !nazwa || !kategoria) {
       return NextResponse.json(
@@ -86,11 +87,12 @@ export async function POST(request) {
     }
 
     const result = await sql`
-      INSERT INTO inventory (sku, nazwa, stan, kategoria)
-      VALUES (${sku}, ${nazwa}, ${stan || 0}, ${kategoria})
+      INSERT INTO inventory (sku, nazwa, stan, cena, kategoria)
+      VALUES (${sku}, ${nazwa}, ${stan || 0}, ${cena || 0}, ${kategoria})
       ON CONFLICT (sku, kategoria) DO UPDATE SET
         nazwa = EXCLUDED.nazwa,
         stan = EXCLUDED.stan,
+        cena = EXCLUDED.cena,
         updated_at = CURRENT_TIMESTAMP
       RETURNING *
     `;
@@ -108,11 +110,11 @@ export async function POST(request) {
   }
 }
 
-// PUT - aktualizuj pozycje (stan lub dane)
+// PUT - aktualizuj pozycje (stan, cena lub dane)
 export async function PUT(request) {
   try {
     const body = await request.json();
-    const { id, sku, nazwa, stan } = body;
+    const { id, sku, nazwa, stan, cena } = body;
 
     if (!id) {
       return NextResponse.json(
@@ -124,7 +126,14 @@ export async function PUT(request) {
     // Aktualizuj tylko przekazane pola
     let result;
 
-    if (sku !== undefined && nazwa !== undefined && stan !== undefined) {
+    if (sku !== undefined && nazwa !== undefined && stan !== undefined && cena !== undefined) {
+      result = await sql`
+        UPDATE inventory
+        SET sku = ${sku}, nazwa = ${nazwa}, stan = ${stan}, cena = ${cena}, updated_at = CURRENT_TIMESTAMP
+        WHERE id = ${id}
+        RETURNING *
+      `;
+    } else if (sku !== undefined && nazwa !== undefined && stan !== undefined) {
       result = await sql`
         UPDATE inventory
         SET sku = ${sku}, nazwa = ${nazwa}, stan = ${stan}, updated_at = CURRENT_TIMESTAMP
@@ -136,6 +145,14 @@ export async function PUT(request) {
       result = await sql`
         UPDATE inventory
         SET stan = ${stan}, updated_at = CURRENT_TIMESTAMP
+        WHERE id = ${id}
+        RETURNING *
+      `;
+    } else if (cena !== undefined) {
+      // Tylko aktualizacja ceny
+      result = await sql`
+        UPDATE inventory
+        SET cena = ${cena}, updated_at = CURRENT_TIMESTAMP
         WHERE id = ${id}
         RETURNING *
       `;

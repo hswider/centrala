@@ -13,8 +13,15 @@ export default function MagazynyPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [editingStanId, setEditingStanId] = useState(null);
   const [editingStanValue, setEditingStanValue] = useState('');
+  const [editingCenaId, setEditingCenaId] = useState(null);
+  const [editingCenaValue, setEditingCenaValue] = useState('');
+  const [showRecipeModal, setShowRecipeModal] = useState(false);
+  const [recipeItem, setRecipeItem] = useState(null);
+  const [recipeIngredients, setRecipeIngredients] = useState([]);
+  const [loadingRecipe, setLoadingRecipe] = useState(false);
   const fileInputRef = useRef(null);
   const stanInputRef = useRef(null);
+  const cenaInputRef = useRef(null);
 
   const tabs = [
     { key: 'gotowe', label: 'Gotowe produkty', icon: '📦' },
@@ -30,7 +37,7 @@ export default function MagazynyPage() {
     surowce: [],
   });
 
-  const [newItem, setNewItem] = useState({ sku: '', nazwa: '', stan: '' });
+  const [newItem, setNewItem] = useState({ sku: '', nazwa: '', stan: '', cena: '' });
 
   // Pobierz dane z API
   const fetchInventory = useCallback(async () => {
@@ -55,7 +62,7 @@ export default function MagazynyPage() {
 
   // Dodaj nowa pozycje
   const handleAddItem = async () => {
-    if (!newItem.sku || !newItem.nazwa || !newItem.stan) return;
+    if (!newItem.sku || !newItem.nazwa) return;
 
     setSaving(true);
     try {
@@ -66,6 +73,7 @@ export default function MagazynyPage() {
           sku: newItem.sku,
           nazwa: newItem.nazwa,
           stan: parseInt(newItem.stan) || 0,
+          cena: parseFloat(newItem.cena) || 0,
           kategoria: activeTab
         })
       });
@@ -74,7 +82,7 @@ export default function MagazynyPage() {
 
       if (data.success) {
         await fetchInventory();
-        setNewItem({ sku: '', nazwa: '', stan: '' });
+        setNewItem({ sku: '', nazwa: '', stan: '', cena: '' });
         setShowAddModal(false);
       } else {
         alert('Blad: ' + data.error);
@@ -126,7 +134,8 @@ export default function MagazynyPage() {
           id: editingItem.id,
           sku: editingItem.sku,
           nazwa: editingItem.nazwa,
-          stan: parseInt(editingItem.stan) || 0
+          stan: parseInt(editingItem.stan) || 0,
+          cena: parseFloat(editingItem.cena) || 0
         })
       });
 
@@ -238,6 +247,140 @@ export default function MagazynyPage() {
           )
         }));
       });
+  };
+
+  // Inline edycja ceny - klikniecie w cene
+  const handleCenaClick = (item) => {
+    setEditingCenaId(item.id);
+    setEditingCenaValue(String(item.cena || 0));
+    setTimeout(() => cenaInputRef.current?.select(), 0);
+  };
+
+  // Zapisz inline edycje ceny
+  const handleCenaSubmit = (item) => {
+    const newCena = Math.max(0, parseFloat(editingCenaValue) || 0);
+    const oldCena = item.cena || 0;
+
+    setEditingCenaId(null);
+
+    if (newCena === oldCena) return;
+
+    // Optimistic update
+    setMagazyny(prev => ({
+      ...prev,
+      [activeTab]: prev[activeTab].map(i =>
+        i.id === item.id ? { ...i, cena: newCena } : i
+      )
+    }));
+
+    // API w tle
+    fetch('/api/inventory', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: item.id, cena: newCena })
+    })
+      .then(res => res.json())
+      .then(data => {
+        if (!data.success) {
+          setMagazyny(prev => ({
+            ...prev,
+            [activeTab]: prev[activeTab].map(i =>
+              i.id === item.id ? { ...i, cena: oldCena } : i
+            )
+          }));
+        }
+      })
+      .catch(() => {
+        setMagazyny(prev => ({
+          ...prev,
+          [activeTab]: prev[activeTab].map(i =>
+            i.id === item.id ? { ...i, cena: oldCena } : i
+          )
+        }));
+      });
+  };
+
+  // Receptura - otworz modal
+  const handleOpenRecipe = async (item) => {
+    setRecipeItem(item);
+    setShowRecipeModal(true);
+    setLoadingRecipe(true);
+
+    try {
+      const res = await fetch(`/api/recipes?productId=${item.id}`);
+      const data = await res.json();
+      if (data.success) {
+        setRecipeIngredients(data.data);
+      }
+    } catch (error) {
+      console.error('Blad pobierania receptury:', error);
+    } finally {
+      setLoadingRecipe(false);
+    }
+  };
+
+  // Dodaj skladnik do receptury
+  const handleAddIngredient = async (ingredientId, quantity = 1) => {
+    if (!recipeItem) return;
+
+    try {
+      const res = await fetch('/api/recipes', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          productId: recipeItem.id,
+          ingredientId,
+          quantity
+        })
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        // Odswież recepture
+        const res2 = await fetch(`/api/recipes?productId=${recipeItem.id}`);
+        const data2 = await res2.json();
+        if (data2.success) {
+          setRecipeIngredients(data2.data);
+        }
+      } else {
+        alert('Blad: ' + data.error);
+      }
+    } catch (error) {
+      alert('Blad: ' + error.message);
+    }
+  };
+
+  // Usun skladnik z receptury
+  const handleRemoveIngredient = async (recipeId) => {
+    try {
+      const res = await fetch(`/api/recipes?id=${recipeId}`, {
+        method: 'DELETE'
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        setRecipeIngredients(prev => prev.filter(i => i.id !== recipeId));
+      }
+    } catch (error) {
+      console.error('Blad usuwania skladnika:', error);
+    }
+  };
+
+  // Aktualizuj ilosc skladnika
+  const handleUpdateIngredientQty = async (recipeId, newQty) => {
+    try {
+      await fetch('/api/recipes', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: recipeId, quantity: newQty })
+      });
+
+      setRecipeIngredients(prev =>
+        prev.map(i => i.id === recipeId ? { ...i, quantity: newQty } : i)
+      );
+    } catch (error) {
+      console.error('Blad aktualizacji ilosci:', error);
+    }
   };
 
   // Import z pliku
@@ -399,13 +542,14 @@ export default function MagazynyPage() {
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">SKU</th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nazwa produktu</th>
                     <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">Stan</th>
+                    <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">Cena PLN</th>
                     <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">Akcje</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
                   {currentItems.length === 0 ? (
                     <tr>
-                      <td colSpan="4" className="px-4 py-8 text-center text-gray-500">
+                      <td colSpan="5" className="px-4 py-8 text-center text-gray-500">
                         {searchQuery
                           ? 'Brak wynikow dla wyszukiwania'
                           : 'Brak pozycji w magazynie. Dodaj recznie lub zaimportuj z CSV.'}
@@ -463,8 +607,46 @@ export default function MagazynyPage() {
                             </button>
                           </div>
                         </td>
+                        <td className="px-4 py-3 text-center">
+                          {editingCenaId === item.id ? (
+                            <input
+                              ref={cenaInputRef}
+                              type="number"
+                              step="0.01"
+                              value={editingCenaValue}
+                              onChange={(e) => setEditingCenaValue(e.target.value)}
+                              onBlur={() => handleCenaSubmit(item)}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter') handleCenaSubmit(item);
+                                if (e.key === 'Escape') setEditingCenaId(null);
+                              }}
+                              className="w-20 px-2 py-1 text-center text-sm font-medium border-2 border-blue-500 rounded focus:outline-none"
+                              min="0"
+                            />
+                          ) : (
+                            <button
+                              onClick={() => handleCenaClick(item)}
+                              className="px-2 py-1 rounded text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 hover:ring-2 hover:ring-blue-400 transition-all"
+                              title="Kliknij aby edytowac cene"
+                            >
+                              {(item.cena || 0).toFixed(2)} zl
+                            </button>
+                          )}
+                        </td>
                         <td className="px-4 py-3">
-                          <div className="flex items-center justify-center gap-2">
+                          <div className="flex items-center justify-center gap-1 flex-wrap">
+                            {activeTab === 'gotowe' && (
+                              <>
+                                <button
+                                  onClick={() => handleOpenRecipe(item)}
+                                  className="text-purple-600 hover:text-purple-800 text-sm font-medium"
+                                  title="Receptura produktu"
+                                >
+                                  Receptura
+                                </button>
+                                <span className="text-gray-300">|</span>
+                              </>
+                            )}
                             <button
                               onClick={() => handleEditItem(item)}
                               className="text-blue-600 hover:text-blue-800 text-sm font-medium"
@@ -516,15 +698,28 @@ export default function MagazynyPage() {
                     placeholder="np. Pufa Miki Rosa"
                   />
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Stan</label>
-                  <input
-                    type="number"
-                    value={newItem.stan}
-                    onChange={(e) => setNewItem({ ...newItem, stan: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="np. 25"
-                  />
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Stan</label>
+                    <input
+                      type="number"
+                      value={newItem.stan}
+                      onChange={(e) => setNewItem({ ...newItem, stan: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder="np. 25"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Cena PLN</label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      value={newItem.cena}
+                      onChange={(e) => setNewItem({ ...newItem, cena: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder="np. 99.99"
+                    />
+                  </div>
                 </div>
               </div>
 
@@ -573,14 +768,26 @@ export default function MagazynyPage() {
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Stan</label>
-                  <input
-                    type="number"
-                    value={editingItem.stan}
-                    onChange={(e) => setEditingItem({ ...editingItem, stan: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Stan</label>
+                    <input
+                      type="number"
+                      value={editingItem.stan}
+                      onChange={(e) => setEditingItem({ ...editingItem, stan: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Cena PLN</label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      value={editingItem.cena || ''}
+                      onChange={(e) => setEditingItem({ ...editingItem, cena: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
                 </div>
               </div>
 
@@ -664,6 +871,177 @@ export default function MagazynyPage() {
                   {saving ? 'Importowanie...' : 'Wybierz plik CSV'}
                 </button>
               </div>
+            </div>
+          </div>
+        )}
+
+        {/* Recipe Modal */}
+        {showRecipeModal && recipeItem && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full p-6 max-h-[90vh] overflow-y-auto">
+              <div className="flex justify-between items-start mb-4">
+                <div>
+                  <h3 className="text-lg font-semibold">Receptura produktu</h3>
+                  <p className="text-sm text-gray-500">{recipeItem.sku} - {recipeItem.nazwa}</p>
+                </div>
+                <button
+                  onClick={() => {
+                    setShowRecipeModal(false);
+                    setRecipeItem(null);
+                    setRecipeIngredients([]);
+                  }}
+                  className="text-gray-400 hover:text-gray-600 text-2xl"
+                >
+                  &times;
+                </button>
+              </div>
+
+              {loadingRecipe ? (
+                <div className="py-8 text-center text-gray-500">Ladowanie receptury...</div>
+              ) : (
+                <>
+                  {/* Lista skladnikow */}
+                  <div className="mb-6">
+                    <h4 className="font-medium text-gray-700 mb-2">Skladniki ({recipeIngredients.length})</h4>
+                    {recipeIngredients.length === 0 ? (
+                      <p className="text-sm text-gray-500 py-4 text-center bg-gray-50 rounded">
+                        Brak skladnikow. Dodaj skladniki z listy ponizej.
+                      </p>
+                    ) : (
+                      <table className="w-full text-sm">
+                        <thead className="bg-gray-50">
+                          <tr>
+                            <th className="px-3 py-2 text-left">SKU</th>
+                            <th className="px-3 py-2 text-left">Nazwa</th>
+                            <th className="px-3 py-2 text-center">Ilosc</th>
+                            <th className="px-3 py-2 text-center">Magazyn</th>
+                            <th className="px-3 py-2 text-center">Akcja</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y">
+                          {recipeIngredients.map(ing => (
+                            <tr key={ing.id}>
+                              <td className="px-3 py-2 font-mono text-xs">{ing.sku}</td>
+                              <td className="px-3 py-2">{ing.nazwa}</td>
+                              <td className="px-3 py-2 text-center">
+                                <input
+                                  type="number"
+                                  value={ing.quantity}
+                                  onChange={(e) => handleUpdateIngredientQty(ing.id, parseFloat(e.target.value) || 1)}
+                                  className="w-16 px-2 py-1 text-center border rounded"
+                                  min="0.01"
+                                  step="0.01"
+                                />
+                              </td>
+                              <td className="px-3 py-2 text-center">
+                                <span className={`px-2 py-0.5 rounded text-xs ${
+                                  ing.ingredientStan > 0 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                                }`}>
+                                  {ing.ingredientStan} szt.
+                                </span>
+                              </td>
+                              <td className="px-3 py-2 text-center">
+                                <button
+                                  onClick={() => handleRemoveIngredient(ing.id)}
+                                  className="text-red-600 hover:text-red-800"
+                                >
+                                  Usun
+                                </button>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    )}
+                  </div>
+
+                  {/* Dodaj skladnik */}
+                  <div className="border-t pt-4">
+                    <h4 className="font-medium text-gray-700 mb-2">Dodaj skladnik z magazynu</h4>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      {/* Polprodukty */}
+                      <div>
+                        <p className="text-xs font-medium text-gray-500 mb-1">Polprodukty</p>
+                        <div className="max-h-40 overflow-y-auto border rounded">
+                          {(magazyny.polprodukty || []).length === 0 ? (
+                            <p className="text-xs text-gray-400 p-2">Brak polproduktow</p>
+                          ) : (
+                            (magazyny.polprodukty || [])
+                              .filter(p => !recipeIngredients.some(i => i.ingredientId === p.id))
+                              .map(p => (
+                                <button
+                                  key={p.id}
+                                  onClick={() => handleAddIngredient(p.id)}
+                                  className="w-full text-left px-2 py-1.5 text-xs hover:bg-blue-50 border-b last:border-b-0 flex justify-between"
+                                >
+                                  <span>{p.sku} - {p.nazwa}</span>
+                                  <span className="text-gray-400">+</span>
+                                </button>
+                              ))
+                          )}
+                        </div>
+                      </div>
+                      {/* Wykroje */}
+                      <div>
+                        <p className="text-xs font-medium text-gray-500 mb-1">Wykroje</p>
+                        <div className="max-h-40 overflow-y-auto border rounded">
+                          {(magazyny.wykroje || []).length === 0 ? (
+                            <p className="text-xs text-gray-400 p-2">Brak wykrojow</p>
+                          ) : (
+                            (magazyny.wykroje || [])
+                              .filter(p => !recipeIngredients.some(i => i.ingredientId === p.id))
+                              .map(p => (
+                                <button
+                                  key={p.id}
+                                  onClick={() => handleAddIngredient(p.id)}
+                                  className="w-full text-left px-2 py-1.5 text-xs hover:bg-blue-50 border-b last:border-b-0 flex justify-between"
+                                >
+                                  <span>{p.sku} - {p.nazwa}</span>
+                                  <span className="text-gray-400">+</span>
+                                </button>
+                              ))
+                          )}
+                        </div>
+                      </div>
+                      {/* Surowce */}
+                      <div className="sm:col-span-2">
+                        <p className="text-xs font-medium text-gray-500 mb-1">Surowce</p>
+                        <div className="max-h-40 overflow-y-auto border rounded">
+                          {(magazyny.surowce || []).length === 0 ? (
+                            <p className="text-xs text-gray-400 p-2">Brak surowcow</p>
+                          ) : (
+                            (magazyny.surowce || [])
+                              .filter(p => !recipeIngredients.some(i => i.ingredientId === p.id))
+                              .map(p => (
+                                <button
+                                  key={p.id}
+                                  onClick={() => handleAddIngredient(p.id)}
+                                  className="w-full text-left px-2 py-1.5 text-xs hover:bg-blue-50 border-b last:border-b-0 flex justify-between"
+                                >
+                                  <span>{p.sku} - {p.nazwa}</span>
+                                  <span className="text-gray-400">+</span>
+                                </button>
+                              ))
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex justify-end mt-6">
+                    <button
+                      onClick={() => {
+                        setShowRecipeModal(false);
+                        setRecipeItem(null);
+                        setRecipeIngredients([]);
+                      }}
+                      className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700"
+                    >
+                      Zamknij
+                    </button>
+                  </div>
+                </>
+              )}
             </div>
           </div>
         )}
