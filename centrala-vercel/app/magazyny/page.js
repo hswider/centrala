@@ -21,6 +21,8 @@ export default function MagazynyPage() {
   const [recipeItem, setRecipeItem] = useState(null);
   const [recipeIngredients, setRecipeIngredients] = useState([]);
   const [loadingRecipe, setLoadingRecipe] = useState(false);
+  const [perPage, setPerPage] = useState(50);
+  const [currentPage, setCurrentPage] = useState(1);
   const fileInputRef = useRef(null);
   const stanInputRef = useRef(null);
   const cenaInputRef = useRef(null);
@@ -654,13 +656,18 @@ export default function MagazynyPage() {
   };
 
   // Filtrowanie po wyszukiwaniu
-  const currentItems = (magazyny[activeTab] || []).filter(item => {
+  const filteredItems = (magazyny[activeTab] || []).filter(item => {
     if (!searchQuery) return true;
     const q = searchQuery.toLowerCase();
     return item.sku.toLowerCase().includes(q) || item.nazwa.toLowerCase().includes(q);
   });
 
-  const totalItems = currentItems.reduce((sum, item) => sum + item.stan, 0);
+  // Paginacja
+  const totalPages = Math.ceil(filteredItems.length / perPage);
+  const startIndex = (currentPage - 1) * perPage;
+  const currentItems = filteredItems.slice(startIndex, startIndex + perPage);
+
+  const totalItems = filteredItems.reduce((sum, item) => sum + item.stan, 0);
 
   return (
     <div className="min-h-screen bg-gray-100">
@@ -718,7 +725,7 @@ export default function MagazynyPage() {
             {tabs.map((tab) => (
               <button
                 key={tab.key}
-                onClick={() => setActiveTab(tab.key)}
+                onClick={() => { setActiveTab(tab.key); setCurrentPage(1); }}
                 className={`flex-1 flex items-center justify-center gap-2 py-3 text-sm font-medium transition-colors whitespace-nowrap px-4 ${
                   activeTab === tab.key
                     ? 'text-blue-600 border-b-2 border-blue-600 bg-blue-50'
@@ -743,7 +750,7 @@ export default function MagazynyPage() {
               type="text"
               placeholder="Szukaj SKU lub nazwy..."
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1); }}
               className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
@@ -974,6 +981,59 @@ export default function MagazynyPage() {
                 </tbody>
                 </table>
               </div>
+
+              {/* Pagination */}
+              {filteredItems.length > 0 && (
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-3 mt-4 pt-4 border-t border-gray-200">
+                  <div className="flex items-center gap-2 text-sm text-gray-600">
+                    <span>Pokazuje {startIndex + 1}-{Math.min(startIndex + perPage, filteredItems.length)} z {filteredItems.length}</span>
+                    <span className="text-gray-400">|</span>
+                    <span>Na stronie:</span>
+                    <select
+                      value={perPage}
+                      onChange={(e) => { setPerPage(Number(e.target.value)); setCurrentPage(1); }}
+                      className="px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    >
+                      <option value={50}>50</option>
+                      <option value={100}>100</option>
+                      <option value={250}>250</option>
+                    </select>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <button
+                      onClick={() => setCurrentPage(1)}
+                      disabled={currentPage === 1}
+                      className="px-2 py-1 text-sm border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      «
+                    </button>
+                    <button
+                      onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                      disabled={currentPage === 1}
+                      className="px-3 py-1 text-sm border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      Poprzednia
+                    </button>
+                    <span className="px-3 py-1 text-sm text-gray-700">
+                      {currentPage} / {totalPages}
+                    </span>
+                    <button
+                      onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                      disabled={currentPage === totalPages}
+                      className="px-3 py-1 text-sm border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      Nastepna
+                    </button>
+                    <button
+                      onClick={() => setCurrentPage(totalPages)}
+                      disabled={currentPage === totalPages}
+                      className="px-2 py-1 text-sm border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      »
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </div>
