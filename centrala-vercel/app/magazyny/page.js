@@ -11,7 +11,10 @@ export default function MagazynyPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [editingStanId, setEditingStanId] = useState(null);
+  const [editingStanValue, setEditingStanValue] = useState('');
   const fileInputRef = useRef(null);
+  const stanInputRef = useRef(null);
 
   const tabs = [
     { key: 'gotowe', label: 'Gotowe produkty', icon: '📦' },
@@ -176,6 +179,58 @@ export default function MagazynyPage() {
       })
       .catch(() => {
         // Cofnij zmiane przy bledzie sieci
+        setMagazyny(prev => ({
+          ...prev,
+          [activeTab]: prev[activeTab].map(i =>
+            i.id === item.id ? { ...i, stan: oldStan } : i
+          )
+        }));
+      });
+  };
+
+  // Inline edycja stanu - klikniecie w liczbe
+  const handleStanClick = (item) => {
+    setEditingStanId(item.id);
+    setEditingStanValue(String(item.stan));
+    // Focus na input po renderze
+    setTimeout(() => stanInputRef.current?.select(), 0);
+  };
+
+  // Zapisz inline edycje stanu
+  const handleStanSubmit = (item) => {
+    const newStan = Math.max(0, parseInt(editingStanValue) || 0);
+    const oldStan = item.stan;
+
+    setEditingStanId(null);
+
+    if (newStan === oldStan) return;
+
+    // Optimistic update
+    setMagazyny(prev => ({
+      ...prev,
+      [activeTab]: prev[activeTab].map(i =>
+        i.id === item.id ? { ...i, stan: newStan } : i
+      )
+    }));
+
+    // API w tle
+    fetch('/api/inventory', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: item.id, stan: newStan })
+    })
+      .then(res => res.json())
+      .then(data => {
+        if (!data.success) {
+          setMagazyny(prev => ({
+            ...prev,
+            [activeTab]: prev[activeTab].map(i =>
+              i.id === item.id ? { ...i, stan: oldStan } : i
+            )
+          }));
+        }
+      })
+      .catch(() => {
         setMagazyny(prev => ({
           ...prev,
           [activeTab]: prev[activeTab].map(i =>
@@ -372,13 +427,33 @@ export default function MagazynyPage() {
                             >
                               -
                             </button>
-                            <span className={`px-3 py-1 rounded text-sm font-bold min-w-[50px] text-center ${
-                              item.stan <= 10 ? 'bg-red-100 text-red-800' :
-                              item.stan <= 30 ? 'bg-yellow-100 text-yellow-800' :
-                              'bg-green-100 text-green-800'
-                            }`}>
-                              {item.stan}
-                            </span>
+                            {editingStanId === item.id ? (
+                              <input
+                                ref={stanInputRef}
+                                type="number"
+                                value={editingStanValue}
+                                onChange={(e) => setEditingStanValue(e.target.value)}
+                                onBlur={() => handleStanSubmit(item)}
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter') handleStanSubmit(item);
+                                  if (e.key === 'Escape') setEditingStanId(null);
+                                }}
+                                className="w-16 px-2 py-1 text-center text-sm font-bold border-2 border-blue-500 rounded focus:outline-none"
+                                min="0"
+                              />
+                            ) : (
+                              <button
+                                onClick={() => handleStanClick(item)}
+                                className={`px-3 py-1 rounded text-sm font-bold min-w-[50px] text-center cursor-pointer hover:ring-2 hover:ring-blue-400 transition-all ${
+                                  item.stan <= 10 ? 'bg-red-100 text-red-800' :
+                                  item.stan <= 30 ? 'bg-yellow-100 text-yellow-800' :
+                                  'bg-green-100 text-green-800'
+                                }`}
+                                title="Kliknij aby edytowac"
+                              >
+                                {item.stan}
+                              </button>
+                            )}
                             <button
                               onClick={() => handleQuickStanChange(item, 1)}
                               className="w-7 h-7 flex items-center justify-center bg-green-100 text-green-700 rounded hover:bg-green-200 font-bold"
