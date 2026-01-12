@@ -1,16 +1,23 @@
 {
-  "name": "ordap-vercel",
+  "name": "centrala-vercel",
   "version": "1.0.0",
   "private": true,
+  "type": "module",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "test-db": "node scripts/test-db.mjs",
+    "sync": "node scripts/sync-orders.mjs",
+    "sync:historical": "node scripts/sync-orders.mjs --historical 30",
+    "stats": "node scripts/stats.mjs",
+    "db:query": "node scripts/db-query.mjs"
   },
   "dependencies": {
     "@vercel/postgres": "^0.10.0",
     "axios": "^1.6.0",
+    "dotenv": "^17.2.3",
     "next": "^16.1.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",

@@ -49,6 +49,8 @@ nul
 
 # Claude AI
 .claude/
+tmpclaude-*
+**/tmpclaude-*
 
 # Swagger (duzy plik)
 swagger.txt

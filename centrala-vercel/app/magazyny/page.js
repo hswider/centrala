@@ -702,7 +702,7 @@ export default function MagazynyPage() {
                     currentItems.map((item) => (
                       <tr key={item.id} className="hover:bg-gray-50">
                         <td className="px-3 py-2">
-                          <span className="font-mono text-sm text-gray-900">{item.sku}</span>
+                          <span className="font-mono text-xs text-gray-900 whitespace-nowrap">{item.sku}</span>
                         </td>
                         <td className="px-3 py-2 text-sm text-gray-700">{item.nazwa}</td>
                         <td className="px-2 py-2">
