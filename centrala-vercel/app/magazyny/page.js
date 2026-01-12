@@ -572,29 +572,29 @@ export default function MagazynyPage() {
 
   return (
     <div className="min-h-screen bg-gray-100">
-      <main className="max-w-5xl mx-auto px-3 py-4 sm:px-6 sm:py-6">
+      <main className="max-w-7xl mx-auto px-3 py-4 sm:px-6 sm:py-6 lg:px-8">
         {/* Header */}
-        <div className="flex justify-between items-center mb-6">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-6">
           <div>
-            <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Magazyny</h1>
+            <h1 className="text-xl lg:text-2xl font-bold text-gray-900">Magazyny</h1>
             <p className="text-xs sm:text-sm text-gray-500">Zarzadzanie stanami magazynowymi</p>
           </div>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             <button
               onClick={handleExportCSV}
-              className="px-3 py-1.5 text-sm bg-gray-600 text-white rounded-lg hover:bg-gray-700"
+              className="px-2.5 py-1.5 text-xs sm:text-sm bg-gray-600 text-white rounded-lg hover:bg-gray-700"
             >
               Export CSV
             </button>
             <button
               onClick={() => setShowImportModal(true)}
-              className="px-3 py-1.5 text-sm bg-green-600 text-white rounded-lg hover:bg-green-700"
+              className="px-2.5 py-1.5 text-xs sm:text-sm bg-green-600 text-white rounded-lg hover:bg-green-700"
             >
               Import CSV
             </button>
             <button
               onClick={() => setShowAddModal(true)}
-              className="px-3 py-1.5 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+              className="px-2.5 py-1.5 text-xs sm:text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700"
             >
               + Dodaj
             </button>
@@ -602,15 +602,15 @@ export default function MagazynyPage() {
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
           {tabs.map(tab => {
             const items = magazyny[tab.key] || [];
             const totalStan = items.reduce((sum, i) => sum + i.stan, 0);
             return (
-              <div key={tab.key} className="bg-white rounded-lg shadow p-4">
-                <p className="text-xs text-gray-500">{tab.label}</p>
-                <p className="text-2xl font-bold text-blue-600">{items.length}</p>
-                <p className="text-xs text-gray-400">{totalStan} szt. lacznie</p>
+              <div key={tab.key} className="bg-white rounded-lg shadow p-3 lg:p-4">
+                <p className="text-xs text-gray-500 truncate">{tab.label}</p>
+                <p className="text-xl lg:text-2xl font-bold text-blue-600">{items.length}</p>
+                <p className="text-xs text-gray-400">{totalStan} szt.</p>
               </div>
             );
           })}
@@ -658,23 +658,23 @@ export default function MagazynyPage() {
             </div>
           ) : (
             <div className="overflow-x-auto">
-              <table className="w-full">
+              <table className="w-full min-w-[800px]">
                 <thead className="bg-gray-50">
                   <tr>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">SKU</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nazwa produktu</th>
-                    <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">Stan</th>
-                    <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">
-                      {activeTab === 'gotowe' ? 'Cena PLN' : 'Wart. netto'}
+                    <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase w-28">SKU</th>
+                    <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nazwa produktu</th>
+                    <th className="px-2 py-3 text-center text-xs font-medium text-gray-500 uppercase w-32">Stan</th>
+                    <th className="px-2 py-3 text-center text-xs font-medium text-gray-500 uppercase w-24">
+                      {activeTab === 'gotowe' ? 'Cena' : 'Wart. netto'}
                     </th>
                     {activeTab === 'gotowe' && (
                       <>
-                        <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">Koszt wytw.</th>
-                        <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">Net profit</th>
-                        <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">Czas prod.</th>
+                        <th className="px-2 py-3 text-center text-xs font-medium text-gray-500 uppercase w-24">Koszt wytw.</th>
+                        <th className="px-2 py-3 text-center text-xs font-medium text-gray-500 uppercase w-24">Net profit</th>
+                        <th className="px-2 py-3 text-center text-xs font-medium text-gray-500 uppercase w-20">Czas</th>
                       </>
                     )}
-                    <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">Akcje</th>
+                    <th className="px-2 py-3 text-center text-xs font-medium text-gray-500 uppercase w-32">Akcje</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
@@ -689,11 +689,11 @@ export default function MagazynyPage() {
                   ) : (
                     currentItems.map((item) => (
                       <tr key={item.id} className="hover:bg-gray-50">
-                        <td className="px-4 py-3">
+                        <td className="px-3 py-2">
                           <span className="font-mono text-sm text-gray-900">{item.sku}</span>
                         </td>
-                        <td className="px-4 py-3 text-sm text-gray-700">{item.nazwa}</td>
-                        <td className="px-4 py-3">
+                        <td className="px-3 py-2 text-sm text-gray-700">{item.nazwa}</td>
+                        <td className="px-2 py-2">
                           <div className="flex items-center justify-center gap-2">
                             <button
                               onClick={() => handleQuickStanChange(item, -1)}
@@ -738,7 +738,7 @@ export default function MagazynyPage() {
                             </button>
                           </div>
                         </td>
-                        <td className="px-4 py-3 text-center">
+                        <td className="px-2 py-2 text-center">
                           {editingCenaId === item.id ? (
                             <input
                               ref={cenaInputRef}
@@ -751,44 +751,44 @@ export default function MagazynyPage() {
                                 if (e.key === 'Enter') handleCenaSubmit(item);
                                 if (e.key === 'Escape') setEditingCenaId(null);
                               }}
-                              className="w-20 px-2 py-1 text-center text-sm font-medium border-2 border-blue-500 rounded focus:outline-none"
+                              className="w-18 px-1 py-0.5 text-center text-sm font-medium border-2 border-blue-500 rounded focus:outline-none"
                               min="0"
                             />
                           ) : (
                             <button
                               onClick={() => handleCenaClick(item)}
-                              className="px-2 py-1 rounded text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 hover:ring-2 hover:ring-blue-400 transition-all"
+                              className="px-1.5 py-0.5 rounded text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 hover:ring-2 hover:ring-blue-400 transition-all"
                               title="Kliknij aby edytowac cene"
                             >
-                              {(item.cena || 0).toFixed(2)} zl
+                              {(item.cena || 0).toFixed(2)}
                             </button>
                           )}
                         </td>
                         {activeTab === 'gotowe' && (
                           <>
                             {/* Koszt wytworzenia */}
-                            <td className="px-4 py-3 text-center">
-                              <span className="px-2 py-1 rounded text-sm font-medium bg-orange-50 text-orange-700">
-                                {(item.koszt_wytworzenia || 0).toFixed(2)} zl
+                            <td className="px-2 py-2 text-center">
+                              <span className="px-1.5 py-0.5 rounded text-sm font-medium bg-orange-50 text-orange-700">
+                                {(item.koszt_wytworzenia || 0).toFixed(2)}
                               </span>
                             </td>
                             {/* Net profit */}
-                            <td className="px-4 py-3 text-center">
+                            <td className="px-2 py-2 text-center">
                               {(() => {
                                 const netProfit = (item.cena || 0) - (item.koszt_wytworzenia || 0);
                                 return (
-                                  <span className={`px-2 py-1 rounded text-sm font-bold ${
+                                  <span className={`px-1.5 py-0.5 rounded text-sm font-bold ${
                                     netProfit > 0 ? 'bg-green-100 text-green-800' :
                                     netProfit < 0 ? 'bg-red-100 text-red-800' :
                                     'bg-gray-100 text-gray-600'
                                   }`}>
-                                    {netProfit >= 0 ? '+' : ''}{netProfit.toFixed(2)} zl
+                                    {netProfit >= 0 ? '+' : ''}{netProfit.toFixed(2)}
                                   </span>
                                 );
                               })()}
                             </td>
                             {/* Czas produkcji */}
-                            <td className="px-4 py-3 text-center">
+                            <td className="px-2 py-2 text-center">
                               {editingCzasId === item.id ? (
                                 <input
                                   ref={czasInputRef}
@@ -800,45 +800,43 @@ export default function MagazynyPage() {
                                     if (e.key === 'Enter') handleCzasSubmit(item);
                                     if (e.key === 'Escape') setEditingCzasId(null);
                                   }}
-                                  className="w-16 px-2 py-1 text-center text-sm font-medium border-2 border-blue-500 rounded focus:outline-none"
+                                  className="w-14 px-1 py-0.5 text-center text-sm font-medium border-2 border-blue-500 rounded focus:outline-none"
                                   min="0"
                                 />
                               ) : (
                                 <button
                                   onClick={() => handleCzasClick(item)}
-                                  className="px-2 py-1 rounded text-sm font-medium text-gray-700 bg-blue-50 hover:bg-blue-100 hover:ring-2 hover:ring-blue-400 transition-all"
+                                  className="px-1.5 py-0.5 rounded text-sm font-medium text-gray-700 bg-blue-50 hover:bg-blue-100 hover:ring-2 hover:ring-blue-400 transition-all"
                                   title="Kliknij aby edytowac czas produkcji"
                                 >
-                                  {item.czas_produkcji || 0} min
+                                  {item.czas_produkcji || 0}m
                                 </button>
                               )}
                             </td>
                           </>
                         )}
-                        <td className="px-4 py-3">
-                          <div className="flex items-center justify-center gap-1 flex-wrap">
+                        <td className="px-2 py-2">
+                          <div className="flex items-center justify-center gap-1 flex-nowrap">
                             {activeTab !== 'surowce' && (
-                              <>
-                                <button
-                                  onClick={() => handleOpenRecipe(item)}
-                                  className="text-purple-600 hover:text-purple-800 text-sm font-medium"
-                                  title="Receptura produktu"
-                                >
-                                  Receptura
-                                </button>
-                                <span className="text-gray-300">|</span>
-                              </>
+                              <button
+                                onClick={() => handleOpenRecipe(item)}
+                                className="text-purple-600 hover:text-purple-800 text-xs font-medium px-1.5 py-0.5 bg-purple-50 rounded hover:bg-purple-100"
+                                title="Szczegoly produktu"
+                              >
+                                Szczegoly
+                              </button>
                             )}
                             <button
                               onClick={() => handleEditItem(item)}
-                              className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+                              className="text-blue-600 hover:text-blue-800 text-xs font-medium px-1.5 py-0.5 bg-blue-50 rounded hover:bg-blue-100"
+                              title="Edytuj pozycje"
                             >
                               Edytuj
                             </button>
-                            <span className="text-gray-300">|</span>
                             <button
                               onClick={() => handleDeleteItem(item.id)}
-                              className="text-red-600 hover:text-red-800 text-sm"
+                              className="text-red-600 hover:text-red-800 text-xs px-1.5 py-0.5 bg-red-50 rounded hover:bg-red-100"
+                              title="Usun pozycje"
                             >
                               Usun
                             </button>
