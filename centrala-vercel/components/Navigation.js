@@ -17,6 +17,7 @@ export default function Navigation() {
     { href: '/', label: 'Dashboard', icon: '📊' },
     { href: '/zamowienia', label: 'Zamowienia', icon: '📦' },
     { href: '/magazyny', label: 'Magazyny', icon: '🏭' },
+    { href: '/mes', label: 'MES', icon: '⚙️' },
     { href: '/crm', label: 'CRM', icon: '👥' },
     { href: '/agent', label: 'Agent AI', icon: '🤖' },
   ];
@@ -29,6 +30,7 @@ export default function Navigation() {
             const isActive = pathname === item.href ||
               (item.href === '/zamowienia' && pathname.startsWith('/zamowienia')) ||
               (item.href === '/magazyny' && pathname.startsWith('/magazyny')) ||
+              (item.href === '/mes' && pathname.startsWith('/mes')) ||
               (item.href === '/agent' && pathname.startsWith('/agent'));
             return (
               <Link
