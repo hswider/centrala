@@ -1,9 +1,9 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 
-export default function CRMPage() {
+function CRMContent() {
   const searchParams = useSearchParams();
   const [activeTab, setActiveTab] = useState('wiadomosci');
 
@@ -537,5 +537,13 @@ export default function CRMPage() {
         </div>
       </main>
     </div>
+  );
+}
+
+export default function CRMPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-gray-100 flex items-center justify-center">Ladowanie...</div>}>
+      <CRMContent />
+    </Suspense>
   );
 }
