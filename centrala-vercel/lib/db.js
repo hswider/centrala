@@ -74,6 +74,20 @@ export async function initDatabase() {
     // Column might already exist
   }
 
+  // Users table migrations - add permissions
+  try {
+    await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS permissions JSONB DEFAULT '["dashboard","oms","wms","mes","crm","agent"]'::jsonb`;
+  } catch (e) {
+    // Column might already exist
+  }
+
+  // Update admin users to have all permissions
+  try {
+    await sql`UPDATE users SET permissions = '["dashboard","oms","wms","mes","crm","agent","admin"]'::jsonb WHERE role = 'admin'`;
+  } catch (e) {
+    // Ignore errors
+  }
+
   await sql`
     CREATE TABLE IF NOT EXISTS sync_status (
       id SERIAL PRIMARY KEY,
@@ -773,7 +787,7 @@ export async function createUser(username, password, role = 'user') {
 // Verify user credentials
 export async function verifyUser(username, password) {
   const { rows } = await sql`
-    SELECT id, username, password_hash, role
+    SELECT id, username, password_hash, role, permissions
     FROM users
     WHERE username = ${username}
   `;
@@ -794,10 +808,15 @@ export async function verifyUser(username, password) {
     UPDATE users SET last_login = CURRENT_TIMESTAMP WHERE id = ${user.id}
   `;
 
+  // Default permissions for admin
+  const defaultAdminPermissions = ['dashboard', 'oms', 'wms', 'mes', 'crm', 'agent', 'admin'];
+  const defaultUserPermissions = ['dashboard', 'oms', 'wms', 'mes', 'crm', 'agent'];
+
   return {
     id: user.id,
     username: user.username,
-    role: user.role
+    role: user.role,
+    permissions: user.permissions || (user.role === 'admin' ? defaultAdminPermissions : defaultUserPermissions)
   };
 }
 

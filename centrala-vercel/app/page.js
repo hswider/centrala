@@ -8,6 +8,30 @@ export default function Home() {
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
+  const [user, setUser] = useState(null);
+
+  // Permission labels mapping
+  const permissionLabels = {
+    dashboard: 'Dashboard',
+    oms: 'OMS (Zamowienia)',
+    wms: 'WMS (Magazyny)',
+    mes: 'MES (Produkcja)',
+    crm: 'CRM (Klienci)',
+    agent: 'Asystent AI',
+    admin: 'Administracja'
+  };
+
+  const fetchUser = async () => {
+    try {
+      const res = await fetch('/api/auth/me');
+      const data = await res.json();
+      if (data.success) {
+        setUser(data.user);
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
   const fetchStats = async () => {
     try {
@@ -37,6 +61,7 @@ export default function Home() {
   };
 
   useEffect(() => {
+    fetchUser();
     fetchStats();
   }, []);
 
@@ -122,6 +147,31 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-gray-100">
       <main className="max-w-3xl mx-auto px-3 py-4 sm:px-6 sm:py-6">
+        {/* Welcome Banner */}
+        {user && (
+          <div className="bg-gradient-to-r from-blue-600 to-blue-800 rounded-lg shadow-lg p-4 sm:p-6 mb-6 text-white">
+            <h1 className="text-xl sm:text-2xl font-bold mb-2">
+              Witaj {user.username} w Centrali POOM
+            </h1>
+            <p className="text-blue-100 text-sm mb-3">
+              Rola: <span className="font-medium text-white">{user.role === 'admin' ? 'Administrator' : 'Uzytkownik'}</span>
+            </p>
+            <div className="text-sm">
+              <p className="text-blue-200 mb-2">Aktualnie masz dostep do zakladek:</p>
+              <div className="flex flex-wrap gap-2">
+                {user.permissions?.filter(p => p !== 'admin').map(permission => (
+                  <span
+                    key={permission}
+                    className="px-2 py-1 bg-white/20 rounded text-xs font-medium"
+                  >
+                    {permissionLabels[permission] || permission}
+                  </span>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Header */}
         <div className="flex justify-between items-center mb-6">
           <div>

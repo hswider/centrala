@@ -34,7 +34,12 @@ export async function POST(request) {
       });
 
       // Store user info in cookie
-      cookieStore.set('poom_user', JSON.stringify({ id: user.id, username: user.username, role: user.role }), {
+      cookieStore.set('poom_user', JSON.stringify({
+        id: user.id,
+        username: user.username,
+        role: user.role,
+        permissions: user.permissions
+      }), {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
         sameSite: 'lax',
@@ -42,7 +47,14 @@ export async function POST(request) {
         path: '/'
       });
 
-      return NextResponse.json({ success: true, user: { username: user.username, role: user.role } });
+      return NextResponse.json({
+        success: true,
+        user: {
+          username: user.username,
+          role: user.role,
+          permissions: user.permissions
+        }
+      });
     }
 
     return NextResponse.json({ success: false, error: 'Invalid credentials' }, { status: 401 });
