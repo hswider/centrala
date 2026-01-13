@@ -81,7 +81,7 @@ export default function MagazynyPage() {
           sku: newItem.sku,
           nazwa: newItem.nazwa,
           ean: newItem.ean || null,
-          stan: parseFloat(newItem.stan) || 0,
+          stan: parseFloat(String(newItem.stan).replace(',', '.')) || 0,
           cena: parseFloat(newItem.cena) || 0,
           czas_produkcji: parseInt(newItem.czas_produkcji) || 0,
           jednostka: activeTab === 'surowce' ? newItem.jednostka : 'szt',
@@ -217,7 +217,7 @@ export default function MagazynyPage() {
           sku: editingItem.sku,
           nazwa: editingItem.nazwa,
           ean: editingItem.ean || null,
-          stan: parseFloat(editingItem.stan) || 0,
+          stan: parseFloat(String(editingItem.stan).replace(',', '.')) || 0,
           cena: parseFloat(editingItem.cena) || 0,
           czas_produkcji: parseInt(editingItem.czas_produkcji) || 0,
           jednostka: editingItem.jednostka || 'szt'
@@ -292,7 +292,7 @@ export default function MagazynyPage() {
 
   // Zapisz inline edycje stanu
   const handleStanSubmit = (item) => {
-    const newStan = Math.max(0, parseFloat(editingStanValue) || 0);
+    const newStan = Math.max(0, parseFloat(editingStanValue.replace(',', '.')) || 0);
     const oldStan = item.stan;
 
     setEditingStanId(null);
@@ -641,7 +641,11 @@ export default function MagazynyPage() {
         const startIndex = lines[0]?.toLowerCase().includes('sku') ? 1 : 0;
 
         for (let i = startIndex; i < lines.length; i++) {
-          const cols = lines[i].split(/[,;\t]/);
+          const line = lines[i];
+          // Uzyj srednika jako separatora jesli wystepuje, inaczej tab
+          // NIE uzywaj przecinka bo moze byc separatorem dziesietnym (12,30)
+          const separator = line.includes(';') ? ';' : '\t';
+          const cols = line.split(separator);
           if (cols.length >= 3) {
             const sku = cols[0]?.trim();
             const nazwa = cols[1]?.trim();
@@ -1012,17 +1016,20 @@ export default function MagazynyPage() {
                             {editingStanId === item.id ? (
                               <input
                                 ref={stanInputRef}
-                                type="number"
-                                step="0.01"
+                                type="text"
+                                inputMode="decimal"
                                 value={editingStanValue}
-                                onChange={(e) => setEditingStanValue(e.target.value)}
+                                onChange={(e) => {
+                                  // Pozwol tylko na cyfry, kropke i przecinek
+                                  const val = e.target.value.replace(/[^0-9.,]/g, '');
+                                  setEditingStanValue(val);
+                                }}
                                 onBlur={() => handleStanSubmit(item)}
                                 onKeyDown={(e) => {
                                   if (e.key === 'Enter') handleStanSubmit(item);
                                   if (e.key === 'Escape') setEditingStanId(null);
                                 }}
                                 className="w-20 px-2 py-1 text-center text-sm font-bold border-2 border-blue-500 rounded focus:outline-none"
-                                min="0"
                               />
                             ) : (
                               <button
@@ -1272,12 +1279,15 @@ export default function MagazynyPage() {
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Stan</label>
                     <input
-                      type="number"
-                      step="0.01"
+                      type="text"
+                      inputMode="decimal"
                       value={newItem.stan}
-                      onChange={(e) => setNewItem({ ...newItem, stan: e.target.value })}
+                      onChange={(e) => {
+                        const val = e.target.value.replace(/[^0-9.,]/g, '');
+                        setNewItem({ ...newItem, stan: val });
+                      }}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      placeholder="np. 25 lub 12.5"
+                      placeholder="np. 25 lub 12,50"
                     />
                   </div>
                   {activeTab === 'surowce' && (
@@ -1394,10 +1404,13 @@ export default function MagazynyPage() {
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Stan</label>
                     <input
-                      type="number"
-                      step="0.01"
+                      type="text"
+                      inputMode="decimal"
                       value={editingItem.stan}
-                      onChange={(e) => setEditingItem({ ...editingItem, stan: e.target.value })}
+                      onChange={(e) => {
+                        const val = e.target.value.replace(/[^0-9.,]/g, '');
+                        setEditingItem({ ...editingItem, stan: val });
+                      }}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
                   </div>
