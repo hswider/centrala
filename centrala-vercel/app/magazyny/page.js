@@ -927,9 +927,16 @@ export default function MagazynyPage() {
               <div key={tab.key} className="bg-white rounded-lg shadow p-3 lg:p-4">
                 <p className="text-xs text-gray-500 truncate">{tab.label}</p>
                 <p className="text-xl lg:text-2xl font-bold text-blue-600">{items.length}</p>
-                <div className="flex items-center gap-2 text-xs">
-                  <span className="text-gray-400">{totalStan.toFixed(2)} szt.</span>
-                  <span className="text-green-600 font-medium">{totalValue.toFixed(2)} zl</span>
+                <p className="text-[10px] text-gray-400 -mt-1 mb-1">pozycji w magazynie</p>
+                <div className="flex flex-col gap-0.5 text-xs">
+                  <div className="flex justify-between">
+                    <span className="text-gray-400">{totalStan.toFixed(2)} szt.</span>
+                    <span className="text-[10px] text-gray-400">stan magazynu</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-green-600 font-medium">{totalValue.toFixed(2)} zl</span>
+                    <span className="text-[10px] text-gray-400">wartosc</span>
+                  </div>
                 </div>
               </div>
             );
