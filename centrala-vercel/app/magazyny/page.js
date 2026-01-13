@@ -793,7 +793,7 @@ export default function MagazynyPage() {
   const startIndex = (currentPage - 1) * perPage;
   const currentItems = filteredItems.slice(startIndex, startIndex + perPage);
 
-  const totalItems = filteredItems.reduce((sum, item) => sum + item.stan, 0);
+  const totalItems = Math.round(filteredItems.reduce((sum, item) => sum + item.stan, 0) * 100) / 100;
 
   return (
     <div className="min-h-screen bg-gray-100">
@@ -830,14 +830,14 @@ export default function MagazynyPage() {
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
           {tabs.map(tab => {
             const items = magazyny[tab.key] || [];
-            const totalStan = items.reduce((sum, i) => sum + i.stan, 0);
-            const totalValue = items.reduce((sum, i) => sum + (i.cena || 0) * i.stan, 0);
+            const totalStan = Math.round(items.reduce((sum, i) => sum + i.stan, 0) * 100) / 100;
+            const totalValue = Math.round(items.reduce((sum, i) => sum + (i.cena || 0) * i.stan, 0) * 100) / 100;
             return (
               <div key={tab.key} className="bg-white rounded-lg shadow p-3 lg:p-4">
                 <p className="text-xs text-gray-500 truncate">{tab.label}</p>
                 <p className="text-xl lg:text-2xl font-bold text-blue-600">{items.length}</p>
                 <div className="flex items-center gap-2 text-xs">
-                  <span className="text-gray-400">{totalStan} szt.</span>
+                  <span className="text-gray-400">{totalStan.toFixed(2)} szt.</span>
                   <span className="text-green-600 font-medium">{totalValue.toFixed(2)} zl</span>
                 </div>
               </div>
@@ -870,7 +870,7 @@ export default function MagazynyPage() {
           <div className="px-4 py-3 border-b border-gray-100 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
             <div>
               <h2 className="font-semibold text-gray-900">{getTabLabel(activeTab)}</h2>
-              <p className="text-xs text-gray-500">Laczny stan: {totalItems} szt.</p>
+              <p className="text-xs text-gray-500">Laczny stan: {totalItems.toFixed(2)} szt.</p>
             </div>
             <div className="flex flex-wrap items-center gap-2">
               <div className="flex items-center gap-1.5">
