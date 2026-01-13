@@ -21,6 +21,7 @@ export default function MagazynyPage() {
   const [recipeItem, setRecipeItem] = useState(null);
   const [recipeIngredients, setRecipeIngredients] = useState([]);
   const [loadingRecipe, setLoadingRecipe] = useState(false);
+  const [ingredientSearch, setIngredientSearch] = useState('');
   const [perPage, setPerPage] = useState(50);
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedIds, setSelectedIds] = useState(new Set());
@@ -1723,6 +1724,7 @@ export default function MagazynyPage() {
                     setShowRecipeModal(false);
                     setRecipeItem(null);
                     setRecipeIngredients([]);
+                    setIngredientSearch('');
                   }}
                   className="text-gray-400 hover:text-gray-600 text-2xl"
                 >
@@ -1874,6 +1876,18 @@ export default function MagazynyPage() {
                   {/* Dodaj skladnik */}
                   <div className="border-t pt-4">
                     <h4 className="font-medium text-gray-700 mb-2">Dodaj skladnik z magazynu</h4>
+
+                    {/* Wyszukiwarka skladnikow */}
+                    <div className="mb-3">
+                      <input
+                        type="text"
+                        value={ingredientSearch}
+                        onChange={(e) => setIngredientSearch(e.target.value)}
+                        placeholder="Szukaj po nazwie lub SKU..."
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                      />
+                    </div>
+
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       {/* Polprodukty - tylko dla gotowych produktow */}
                       {activeTab === 'gotowe' && (
@@ -1883,18 +1897,29 @@ export default function MagazynyPage() {
                             {(magazyny.polprodukty || []).length === 0 ? (
                               <p className="text-xs text-gray-400 p-2">Brak polproduktow</p>
                             ) : (
-                              (magazyny.polprodukty || [])
-                                .filter(p => !recipeIngredients.some(i => i.ingredientId === p.id))
-                                .map(p => (
-                                  <button
-                                    key={p.id}
-                                    onClick={() => handleAddIngredient(p.id)}
-                                    className="w-full text-left px-2 py-1.5 text-xs hover:bg-blue-50 border-b last:border-b-0 flex justify-between"
-                                  >
-                                    <span>{p.sku} - {p.nazwa}</span>
-                                    <span className="text-gray-400">+</span>
-                                  </button>
-                                ))
+                              (() => {
+                                const filtered = (magazyny.polprodukty || [])
+                                  .filter(p => !recipeIngredients.some(i => i.ingredientId === p.id))
+                                  .filter(p => {
+                                    if (!ingredientSearch.trim()) return true;
+                                    const search = ingredientSearch.toLowerCase().trim();
+                                    return p.nazwa.toLowerCase().includes(search) || p.sku.toLowerCase().includes(search);
+                                  });
+                                return filtered.length === 0 ? (
+                                  <p className="text-xs text-gray-400 p-2">{ingredientSearch ? 'Brak wynikow' : 'Wszystkie dodane'}</p>
+                                ) : (
+                                  filtered.map(p => (
+                                    <button
+                                      key={p.id}
+                                      onClick={() => handleAddIngredient(p.id)}
+                                      className="w-full text-left px-2 py-1.5 text-xs hover:bg-blue-50 border-b last:border-b-0 flex justify-between"
+                                    >
+                                      <span>{p.sku} - {p.nazwa}</span>
+                                      <span className="text-gray-400">+</span>
+                                    </button>
+                                  ))
+                                );
+                              })()
                             )}
                           </div>
                         </div>
@@ -1907,18 +1932,29 @@ export default function MagazynyPage() {
                             {(magazyny.wykroje || []).length === 0 ? (
                               <p className="text-xs text-gray-400 p-2">Brak wykrojow</p>
                             ) : (
-                              (magazyny.wykroje || [])
-                                .filter(p => !recipeIngredients.some(i => i.ingredientId === p.id))
-                                .map(p => (
-                                  <button
-                                    key={p.id}
-                                    onClick={() => handleAddIngredient(p.id)}
-                                    className="w-full text-left px-2 py-1.5 text-xs hover:bg-blue-50 border-b last:border-b-0 flex justify-between"
-                                  >
-                                    <span>{p.sku} - {p.nazwa}</span>
-                                    <span className="text-gray-400">+</span>
-                                  </button>
-                                ))
+                              (() => {
+                                const filtered = (magazyny.wykroje || [])
+                                  .filter(p => !recipeIngredients.some(i => i.ingredientId === p.id))
+                                  .filter(p => {
+                                    if (!ingredientSearch.trim()) return true;
+                                    const search = ingredientSearch.toLowerCase().trim();
+                                    return p.nazwa.toLowerCase().includes(search) || p.sku.toLowerCase().includes(search);
+                                  });
+                                return filtered.length === 0 ? (
+                                  <p className="text-xs text-gray-400 p-2">{ingredientSearch ? 'Brak wynikow' : 'Wszystkie dodane'}</p>
+                                ) : (
+                                  filtered.map(p => (
+                                    <button
+                                      key={p.id}
+                                      onClick={() => handleAddIngredient(p.id)}
+                                      className="w-full text-left px-2 py-1.5 text-xs hover:bg-blue-50 border-b last:border-b-0 flex justify-between"
+                                    >
+                                      <span>{p.sku} - {p.nazwa}</span>
+                                      <span className="text-gray-400">+</span>
+                                    </button>
+                                  ))
+                                );
+                              })()
                             )}
                           </div>
                         </div>
@@ -1930,18 +1966,29 @@ export default function MagazynyPage() {
                           {(magazyny.surowce || []).length === 0 ? (
                             <p className="text-xs text-gray-400 p-2">Brak surowcow</p>
                           ) : (
-                            (magazyny.surowce || [])
-                              .filter(p => !recipeIngredients.some(i => i.ingredientId === p.id))
-                              .map(p => (
-                                <button
-                                  key={p.id}
-                                  onClick={() => handleAddIngredient(p.id)}
-                                  className="w-full text-left px-2 py-1.5 text-xs hover:bg-blue-50 border-b last:border-b-0 flex justify-between"
-                                >
-                                  <span>{p.sku} - {p.nazwa}</span>
-                                  <span className="text-gray-400">+</span>
-                                </button>
-                              ))
+                            (() => {
+                              const filtered = (magazyny.surowce || [])
+                                .filter(p => !recipeIngredients.some(i => i.ingredientId === p.id))
+                                .filter(p => {
+                                  if (!ingredientSearch.trim()) return true;
+                                  const search = ingredientSearch.toLowerCase().trim();
+                                  return p.nazwa.toLowerCase().includes(search) || p.sku.toLowerCase().includes(search);
+                                });
+                              return filtered.length === 0 ? (
+                                <p className="text-xs text-gray-400 p-2">{ingredientSearch ? 'Brak wynikow' : 'Wszystkie dodane'}</p>
+                              ) : (
+                                filtered.map(p => (
+                                  <button
+                                    key={p.id}
+                                    onClick={() => handleAddIngredient(p.id)}
+                                    className="w-full text-left px-2 py-1.5 text-xs hover:bg-blue-50 border-b last:border-b-0 flex justify-between"
+                                  >
+                                    <span>{p.sku} - {p.nazwa}</span>
+                                    <span className="text-gray-400">+</span>
+                                  </button>
+                                ))
+                              );
+                            })()
                           )}
                         </div>
                       </div>
@@ -1954,6 +2001,7 @@ export default function MagazynyPage() {
                         setShowRecipeModal(false);
                         setRecipeItem(null);
                         setRecipeIngredients([]);
+                        setIngredientSearch('');
                       }}
                       className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700"
                     >
