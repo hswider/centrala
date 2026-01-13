@@ -14,10 +14,19 @@ const getCredentials = () => ({
 // Generate authorization URL
 export function getAuthorizationUrl() {
   const { clientId, redirectUri } = getCredentials();
+  const scopes = [
+    'allegro:api:messaging',
+    'allegro:api:orders:read',
+    'allegro:api:profile:read',
+    'allegro:api:sale:offers:read',
+    'allegro:api:shipments:read'
+  ].join(' ');
+
   const params = new URLSearchParams({
     response_type: 'code',
     client_id: clientId,
     redirect_uri: redirectUri,
+    scope: scopes,
     prompt: 'confirm'
   });
   return `${ALLEGRO_AUTH_URL}/authorize?${params.toString()}`;
