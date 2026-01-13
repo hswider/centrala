@@ -21,7 +21,9 @@ export default function MagazynyPage() {
   const [recipeItem, setRecipeItem] = useState(null);
   const [recipeIngredients, setRecipeIngredients] = useState([]);
   const [loadingRecipe, setLoadingRecipe] = useState(false);
-  const [ingredientSearch, setIngredientSearch] = useState('');
+  const [ingredientSearchPolprodukty, setIngredientSearchPolprodukty] = useState('');
+  const [ingredientSearchWykroje, setIngredientSearchWykroje] = useState('');
+  const [ingredientSearchSurowce, setIngredientSearchSurowce] = useState('');
   const [perPage, setPerPage] = useState(50);
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedIds, setSelectedIds] = useState(new Set());
@@ -1724,7 +1726,9 @@ export default function MagazynyPage() {
                     setShowRecipeModal(false);
                     setRecipeItem(null);
                     setRecipeIngredients([]);
-                    setIngredientSearch('');
+                    setIngredientSearchPolprodukty('');
+                    setIngredientSearchWykroje('');
+                    setIngredientSearchSurowce('');
                   }}
                   className="text-gray-400 hover:text-gray-600 text-2xl"
                 >
@@ -1877,22 +1881,18 @@ export default function MagazynyPage() {
                   <div className="border-t pt-4">
                     <h4 className="font-medium text-gray-700 mb-2">Dodaj skladnik z magazynu</h4>
 
-                    {/* Wyszukiwarka skladnikow */}
-                    <div className="mb-3">
-                      <input
-                        type="text"
-                        value={ingredientSearch}
-                        onChange={(e) => setIngredientSearch(e.target.value)}
-                        placeholder="Szukaj po nazwie lub SKU..."
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-                      />
-                    </div>
-
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       {/* Polprodukty - tylko dla gotowych produktow */}
                       {activeTab === 'gotowe' && (
                         <div>
                           <p className="text-xs font-medium text-gray-500 mb-1">Polprodukty</p>
+                          <input
+                            type="text"
+                            value={ingredientSearchPolprodukty}
+                            onChange={(e) => setIngredientSearchPolprodukty(e.target.value)}
+                            placeholder="Szukaj polproduktow..."
+                            className="w-full px-2 py-1.5 border border-gray-300 rounded text-xs mb-1 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                          />
                           <div className="max-h-40 overflow-y-auto border rounded">
                             {(magazyny.polprodukty || []).length === 0 ? (
                               <p className="text-xs text-gray-400 p-2">Brak polproduktow</p>
@@ -1901,12 +1901,12 @@ export default function MagazynyPage() {
                                 const filtered = (magazyny.polprodukty || [])
                                   .filter(p => !recipeIngredients.some(i => i.ingredientId === p.id))
                                   .filter(p => {
-                                    if (!ingredientSearch.trim()) return true;
-                                    const search = ingredientSearch.toLowerCase().trim();
+                                    if (!ingredientSearchPolprodukty.trim()) return true;
+                                    const search = ingredientSearchPolprodukty.toLowerCase().trim();
                                     return p.nazwa.toLowerCase().includes(search) || p.sku.toLowerCase().includes(search);
                                   });
                                 return filtered.length === 0 ? (
-                                  <p className="text-xs text-gray-400 p-2">{ingredientSearch ? 'Brak wynikow' : 'Wszystkie dodane'}</p>
+                                  <p className="text-xs text-gray-400 p-2">{ingredientSearchPolprodukty ? 'Brak wynikow' : 'Wszystkie dodane'}</p>
                                 ) : (
                                   filtered.map(p => (
                                     <button
@@ -1928,6 +1928,13 @@ export default function MagazynyPage() {
                       {(activeTab === 'gotowe' || activeTab === 'polprodukty') && (
                         <div>
                           <p className="text-xs font-medium text-gray-500 mb-1">Wykroje</p>
+                          <input
+                            type="text"
+                            value={ingredientSearchWykroje}
+                            onChange={(e) => setIngredientSearchWykroje(e.target.value)}
+                            placeholder="Szukaj wykrojow..."
+                            className="w-full px-2 py-1.5 border border-gray-300 rounded text-xs mb-1 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                          />
                           <div className="max-h-40 overflow-y-auto border rounded">
                             {(magazyny.wykroje || []).length === 0 ? (
                               <p className="text-xs text-gray-400 p-2">Brak wykrojow</p>
@@ -1936,12 +1943,12 @@ export default function MagazynyPage() {
                                 const filtered = (magazyny.wykroje || [])
                                   .filter(p => !recipeIngredients.some(i => i.ingredientId === p.id))
                                   .filter(p => {
-                                    if (!ingredientSearch.trim()) return true;
-                                    const search = ingredientSearch.toLowerCase().trim();
+                                    if (!ingredientSearchWykroje.trim()) return true;
+                                    const search = ingredientSearchWykroje.toLowerCase().trim();
                                     return p.nazwa.toLowerCase().includes(search) || p.sku.toLowerCase().includes(search);
                                   });
                                 return filtered.length === 0 ? (
-                                  <p className="text-xs text-gray-400 p-2">{ingredientSearch ? 'Brak wynikow' : 'Wszystkie dodane'}</p>
+                                  <p className="text-xs text-gray-400 p-2">{ingredientSearchWykroje ? 'Brak wynikow' : 'Wszystkie dodane'}</p>
                                 ) : (
                                   filtered.map(p => (
                                     <button
@@ -1962,6 +1969,13 @@ export default function MagazynyPage() {
                       {/* Surowce - dla wszystkich (gotowe, polprodukty, wykroje) */}
                       <div className={activeTab === 'wykroje' ? 'sm:col-span-2' : (activeTab === 'polprodukty' ? '' : 'sm:col-span-2')}>
                         <p className="text-xs font-medium text-gray-500 mb-1">Surowce</p>
+                        <input
+                          type="text"
+                          value={ingredientSearchSurowce}
+                          onChange={(e) => setIngredientSearchSurowce(e.target.value)}
+                          placeholder="Szukaj surowcow..."
+                          className="w-full px-2 py-1.5 border border-gray-300 rounded text-xs mb-1 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                        />
                         <div className="max-h-40 overflow-y-auto border rounded">
                           {(magazyny.surowce || []).length === 0 ? (
                             <p className="text-xs text-gray-400 p-2">Brak surowcow</p>
@@ -1970,12 +1984,12 @@ export default function MagazynyPage() {
                               const filtered = (magazyny.surowce || [])
                                 .filter(p => !recipeIngredients.some(i => i.ingredientId === p.id))
                                 .filter(p => {
-                                  if (!ingredientSearch.trim()) return true;
-                                  const search = ingredientSearch.toLowerCase().trim();
+                                  if (!ingredientSearchSurowce.trim()) return true;
+                                  const search = ingredientSearchSurowce.toLowerCase().trim();
                                   return p.nazwa.toLowerCase().includes(search) || p.sku.toLowerCase().includes(search);
                                 });
                               return filtered.length === 0 ? (
-                                <p className="text-xs text-gray-400 p-2">{ingredientSearch ? 'Brak wynikow' : 'Wszystkie dodane'}</p>
+                                <p className="text-xs text-gray-400 p-2">{ingredientSearchSurowce ? 'Brak wynikow' : 'Wszystkie dodane'}</p>
                               ) : (
                                 filtered.map(p => (
                                   <button
@@ -2001,7 +2015,9 @@ export default function MagazynyPage() {
                         setShowRecipeModal(false);
                         setRecipeItem(null);
                         setRecipeIngredients([]);
-                        setIngredientSearch('');
+                        setIngredientSearchPolprodukty('');
+                        setIngredientSearchWykroje('');
+                        setIngredientSearchSurowce('');
                       }}
                       className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700"
                     >
