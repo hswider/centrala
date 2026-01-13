@@ -1,19 +1,26 @@
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
+import { verifyUser, initDatabase } from '../../../../lib/db';
 
-// Password is stored in environment variable for security
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'poom2024';
-
-// Simple token - in production use a proper JWT
+// Simple token generator
 function generateToken() {
   return Buffer.from(`poom_auth_${Date.now()}_${Math.random().toString(36)}`).toString('base64');
 }
 
 export async function POST(request) {
   try {
-    const { password } = await request.json();
+    // Ensure database is initialized
+    await initDatabase();
 
-    if (password === ADMIN_PASSWORD) {
+    const { username, password } = await request.json();
+
+    if (!username || !password) {
+      return NextResponse.json({ success: false, error: 'Username and password required' }, { status: 400 });
+    }
+
+    const user = await verifyUser(username, password);
+
+    if (user) {
       const token = generateToken();
 
       // Set auth cookie (7 days expiry)
@@ -26,11 +33,21 @@ export async function POST(request) {
         path: '/'
       });
 
-      return NextResponse.json({ success: true });
+      // Store user info in cookie
+      cookieStore.set('poom_user', JSON.stringify({ id: user.id, username: user.username, role: user.role }), {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        maxAge: 60 * 60 * 24 * 7,
+        path: '/'
+      });
+
+      return NextResponse.json({ success: true, user: { username: user.username, role: user.role } });
     }
 
-    return NextResponse.json({ success: false, error: 'Invalid password' }, { status: 401 });
+    return NextResponse.json({ success: false, error: 'Invalid credentials' }, { status: 401 });
   } catch (error) {
+    console.error('Login error:', error);
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });
   }
 }

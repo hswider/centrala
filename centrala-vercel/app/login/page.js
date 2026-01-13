@@ -3,6 +3,7 @@
 import { useState } from 'react';
 
 export default function LoginPage() {
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
@@ -17,19 +18,18 @@ export default function LoginPage() {
       const response = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ password })
+        body: JSON.stringify({ username, password })
       });
 
       const data = await response.json();
 
       if (data.success) {
         setSuccess(true);
-        // Szybkie przekierowanie bez laga
         setTimeout(() => {
           window.location.href = '/';
         }, 500);
       } else {
-        setError('Nieprawidlowe haslo');
+        setError('Nieprawidlowy login lub haslo');
         setIsLoading(false);
       }
     } catch (err) {
@@ -48,6 +48,21 @@ export default function LoginPage() {
           </div>
 
           <form onSubmit={handleSubmit}>
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Login
+              </label>
+              <input
+                type="text"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                placeholder="Wprowadz login"
+                required
+                autoFocus
+              />
+            </div>
+
             <div className="mb-6">
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Haslo
@@ -59,7 +74,6 @@ export default function LoginPage() {
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 placeholder="Wprowadz haslo"
                 required
-                autoFocus
               />
             </div>
 

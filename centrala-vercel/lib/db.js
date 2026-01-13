@@ -1,7 +1,19 @@
 import { sql } from '@vercel/postgres';
+import bcrypt from 'bcryptjs';
 
 // Initialize database tables
 export async function initDatabase() {
+  // Users table
+  await sql`
+    CREATE TABLE IF NOT EXISTS users (
+      id SERIAL PRIMARY KEY,
+      username VARCHAR(100) UNIQUE NOT NULL,
+      password_hash TEXT NOT NULL,
+      role VARCHAR(50) DEFAULT 'user',
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      last_login TIMESTAMP
+    )
+  `;
   await sql`
     CREATE TABLE IF NOT EXISTS tokens (
       id SERIAL PRIMARY KEY,
@@ -731,4 +743,76 @@ export async function searchOrderForAgent(searchTerm) {
     customer: row.customer || {},
     shipping: row.shipping || {}
   }));
+}
+
+// ============== User Management Functions ==============
+
+// Create a new user
+export async function createUser(username, password, role = 'user') {
+  const passwordHash = await bcrypt.hash(password, 10);
+
+  const { rows } = await sql`
+    INSERT INTO users (username, password_hash, role)
+    VALUES (${username}, ${passwordHash}, ${role})
+    ON CONFLICT (username) DO UPDATE SET
+      password_hash = ${passwordHash},
+      role = ${role}
+    RETURNING id, username, role, created_at
+  `;
+
+  return rows[0];
+}
+
+// Verify user credentials
+export async function verifyUser(username, password) {
+  const { rows } = await sql`
+    SELECT id, username, password_hash, role
+    FROM users
+    WHERE username = ${username}
+  `;
+
+  if (rows.length === 0) {
+    return null;
+  }
+
+  const user = rows[0];
+  const isValid = await bcrypt.compare(password, user.password_hash);
+
+  if (!isValid) {
+    return null;
+  }
+
+  // Update last login
+  await sql`
+    UPDATE users SET last_login = CURRENT_TIMESTAMP WHERE id = ${user.id}
+  `;
+
+  return {
+    id: user.id,
+    username: user.username,
+    role: user.role
+  };
+}
+
+// Get all users
+export async function getUsers() {
+  const { rows } = await sql`
+    SELECT id, username, role, created_at, last_login
+    FROM users
+    ORDER BY created_at DESC
+  `;
+  return rows;
+}
+
+// Delete user
+export async function deleteUser(id) {
+  await sql`DELETE FROM users WHERE id = ${id}`;
+}
+
+// Change user password
+export async function changeUserPassword(id, newPassword) {
+  const passwordHash = await bcrypt.hash(newPassword, 10);
+  await sql`
+    UPDATE users SET password_hash = ${passwordHash} WHERE id = ${id}
+  `;
 }
