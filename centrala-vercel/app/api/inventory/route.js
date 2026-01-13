@@ -1,5 +1,6 @@
 import { sql } from '@vercel/postgres';
 import { NextResponse } from 'next/server';
+import { initDatabase } from '../../../lib/db';
 
 // Stala stawki minutowej (najnizsza krajowa 3606 PLN / 168h / 60min)
 const MINUTE_RATE = 0.358;
@@ -7,6 +8,9 @@ const MINUTE_RATE = 0.358;
 // GET - pobierz wszystkie pozycje (opcjonalnie filtruj po kategorii)
 export async function GET(request) {
   try {
+    // Ensure database migrations are run (e.g. tkanina column)
+    await initDatabase();
+
     const { searchParams } = new URL(request.url);
     const kategoria = searchParams.get('kategoria');
     const search = searchParams.get('search');

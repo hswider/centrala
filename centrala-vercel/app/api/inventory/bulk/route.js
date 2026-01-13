@@ -1,9 +1,13 @@
 import { sql } from '@vercel/postgres';
 import { NextResponse } from 'next/server';
+import { initDatabase } from '../../../../lib/db';
 
 // POST - bulk import wielu pozycji
 export async function POST(request) {
   try {
+    // Ensure database migrations are run (e.g. tkanina column)
+    await initDatabase();
+
     const body = await request.json();
     const { items, kategoria } = body;
 

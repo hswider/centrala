@@ -70,8 +70,8 @@ export default function MagazynyPage() {
 
   // Dodaj nowa pozycje
   const handleAddItem = async () => {
-    // Dla wykrojow i surowcow SKU jest opcjonalne
-    if (activeTab === 'wykroje' || activeTab === 'surowce') {
+    // Dla wykrojow, polproduktow i surowcow SKU jest opcjonalne
+    if (activeTab === 'wykroje' || activeTab === 'polprodukty' || activeTab === 'surowce') {
       if (!newItem.nazwa) return;
     } else {
       if (!newItem.sku || !newItem.nazwa) return;
@@ -86,10 +86,11 @@ export default function MagazynyPage() {
       return;
     }
 
-    // Generuj SKU automatycznie dla wykrojow i surowcow jesli puste
+    // Generuj SKU automatycznie dla wykrojow, polproduktow i surowcow jesli puste
     let finalSku = newItem.sku;
     if (!finalSku) {
       if (activeTab === 'wykroje') finalSku = `WYK-${Date.now()}`;
+      else if (activeTab === 'polprodukty') finalSku = `PP-${Date.now()}`;
       else if (activeTab === 'surowce') finalSku = `SUR-${Date.now()}`;
       else finalSku = '';
     }
@@ -107,7 +108,7 @@ export default function MagazynyPage() {
           cena: parseFloat(newItem.cena) || 0,
           czas_produkcji: parseInt(newItem.czas_produkcji) || 0,
           jednostka: activeTab === 'surowce' ? newItem.jednostka : 'szt',
-          tkanina: activeTab === 'wykroje' ? (newItem.tkanina || null) : null,
+          tkanina: (activeTab === 'wykroje' || activeTab === 'polprodukty') ? (newItem.tkanina || null) : null,
           kategoria: activeTab
         })
       });
@@ -608,12 +609,12 @@ export default function MagazynyPage() {
         'FOTEL-RETRO-GR;Fotel Retro Grafit;5901234123471;8;599.00;120'
       ];
     } else if (activeTab === 'polprodukty') {
-      // polprodukty - bez EAN
-      headers = ['SKU', 'Nazwa', 'Stan', 'Wartosc netto PLN'];
+      // polprodukty - SKU i Tkanina opcjonalne
+      headers = ['SKU (opcjonalne)', 'Nazwa', 'Tkanina (opcjonalne)', 'Stan', 'Wartosc netto PLN'];
       exampleRows = [
-        'PP-STELA-PUFA;Stelaz do pufy;50;45.00',
-        'PP-OPARCIE-FOT;Oparcie fotela;30;85.00',
-        'PP-SIEDZISKO-L;Siedzisko lawki;20;120.00'
+        'PP-STELA-PUFA;Stelaz do pufy;Velvet Gray;50;45.00',
+        ';Oparcie fotela;Skora ekologiczna;30;85.00',
+        ';Siedzisko lawki;;20;120.00'
       ];
     } else if (activeTab === 'wykroje') {
       // wykroje - SKU i Tkanina opcjonalne
@@ -701,31 +702,24 @@ export default function MagazynyPage() {
               cena = parseFloat(cols[4]?.trim()?.replace(',', '.')) || 0;
               czas_produkcji = 0;
               tkanina = '';
-            } else if (activeTab === 'wykroje') {
-              // wykroje: SKU (opcjonalne), Nazwa, Tkanina (opcjonalne), Stan, Wartosc netto
+            } else if (activeTab === 'wykroje' || activeTab === 'polprodukty') {
+              // wykroje/polprodukty: SKU (opcjonalne), Nazwa, Tkanina (opcjonalne), Stan, Wartosc netto
               ean = '';
               tkanina = cols[2]?.trim() || '';
               stan = parseFloat(cols[3]?.trim()?.replace(',', '.')) || 0;
               cena = parseFloat(cols[4]?.trim()?.replace(',', '.')) || 0;
               czas_produkcji = 0;
               jednostka = 'szt';
-            } else {
-              // polprodukty: SKU, Nazwa, Stan, Wartosc netto (bez EAN)
-              ean = '';
-              stan = parseFloat(cols[2]?.trim()?.replace(',', '.')) || 0;
-              cena = parseFloat(cols[3]?.trim()?.replace(',', '.')) || 0;
-              czas_produkcji = 0;
-              jednostka = 'szt';
-              tkanina = '';
             }
 
             // Walidacja EAN - jesli podany, musi miec 13 cyfr
             const validEan = ean && /^\d{13}$/.test(ean) ? ean : null;
 
-            // Dla wykrojow i surowcow SKU jest opcjonalne - generuj automatycznie jesli puste
+            // Dla wykrojow, polproduktow i surowcow SKU jest opcjonalne - generuj automatycznie jesli puste
             let finalSku = sku;
             if (!finalSku) {
               if (activeTab === 'wykroje') finalSku = `WYK-${Date.now()}-${i}`;
+              else if (activeTab === 'polprodukty') finalSku = `PP-${Date.now()}-${i}`;
               else if (activeTab === 'surowce') finalSku = `SUR-${Date.now()}-${i}`;
               else finalSku = null;
             }
@@ -748,6 +742,10 @@ export default function MagazynyPage() {
               // Dla wykrojow wystarczy sama nazwa
               importedNames.add(nazwaLower);
               items.push({ sku: `WYK-${Date.now()}-${i}`, nazwa, ean: validEan, stan, cena, czas_produkcji, jednostka, tkanina: tkanina || null });
+            } else if (activeTab === 'polprodukty' && nazwa) {
+              // Dla polproduktow wystarczy sama nazwa
+              importedNames.add(nazwaLower);
+              items.push({ sku: `PP-${Date.now()}-${i}`, nazwa, ean: validEan, stan, cena, czas_produkcji, jednostka, tkanina: tkanina || null });
             } else if (activeTab === 'surowce' && nazwa) {
               // Dla surowcow wystarczy sama nazwa
               importedNames.add(nazwaLower);
@@ -1050,7 +1048,7 @@ export default function MagazynyPage() {
                     </th>
                     <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase w-40">SKU</th>
                     <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nazwa produktu</th>
-                    {activeTab === 'wykroje' && (
+                    {(activeTab === 'wykroje' || activeTab === 'polprodukty') && (
                       <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase w-40">Tkanina</th>
                     )}
                     {activeTab === 'gotowe' && (
@@ -1076,7 +1074,7 @@ export default function MagazynyPage() {
                 <tbody className="divide-y divide-gray-100">
                   {currentItems.length === 0 ? (
                     <tr>
-                      <td colSpan={activeTab === 'gotowe' ? 10 : activeTab === 'wykroje' ? 8 : 7} className="px-4 py-8 text-center text-gray-500">
+                      <td colSpan={activeTab === 'gotowe' ? 10 : (activeTab === 'wykroje' || activeTab === 'polprodukty') ? 8 : 7} className="px-4 py-8 text-center text-gray-500">
                         {searchQuery
                           ? 'Brak wynikow dla wyszukiwania'
                           : 'Brak pozycji w magazynie. Dodaj recznie lub zaimportuj z CSV.'}
@@ -1097,7 +1095,7 @@ export default function MagazynyPage() {
                           <span className="font-mono text-xs text-gray-900 whitespace-nowrap">{item.sku}</span>
                         </td>
                         <td className="px-3 py-2 text-sm text-gray-700">{item.nazwa}</td>
-                        {activeTab === 'wykroje' && (
+                        {(activeTab === 'wykroje' || activeTab === 'polprodukty') && (
                           <td className="px-3 py-2 text-sm text-gray-600">{item.tkanina || '-'}</td>
                         )}
                         {activeTab === 'gotowe' && (
@@ -1337,14 +1335,14 @@ export default function MagazynyPage() {
               <div className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    SKU {(activeTab === 'wykroje' || activeTab === 'surowce') && <span className="text-gray-400 font-normal">(opcjonalne)</span>}
+                    SKU {(activeTab === 'wykroje' || activeTab === 'polprodukty' || activeTab === 'surowce') && <span className="text-gray-400 font-normal">(opcjonalne)</span>}
                   </label>
                   <input
                     type="text"
                     value={newItem.sku}
                     onChange={(e) => setNewItem({ ...newItem, sku: e.target.value })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder={activeTab === 'wykroje' ? 'np. WYK-001 (generowane automatycznie)' : activeTab === 'surowce' ? 'np. SUR-001 (generowane automatycznie)' : 'np. MIKI-001'}
+                    placeholder={activeTab === 'wykroje' ? 'np. WYK-001 (generowane automatycznie)' : activeTab === 'polprodukty' ? 'np. PP-001 (generowane automatycznie)' : activeTab === 'surowce' ? 'np. SUR-001 (generowane automatycznie)' : 'np. MIKI-001'}
                   />
                 </div>
                 <div>
@@ -1357,7 +1355,7 @@ export default function MagazynyPage() {
                     placeholder="np. Pufa Miki Rosa"
                   />
                 </div>
-                {activeTab === 'wykroje' && (
+                {(activeTab === 'wykroje' || activeTab === 'polprodukty') && (
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       Tkanina <span className="text-gray-400 font-normal">(opcjonalne)</span>
@@ -1496,7 +1494,7 @@ export default function MagazynyPage() {
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
-                {activeTab === 'wykroje' && (
+                {(activeTab === 'wykroje' || activeTab === 'polprodukty') && (
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       Tkanina <span className="text-gray-400 font-normal">(opcjonalne)</span>
@@ -1640,6 +1638,14 @@ export default function MagazynyPage() {
                   <ol className="text-sm text-blue-700 space-y-1 list-decimal list-inside">
                     <li><strong>SKU</strong> - opcjonalne (generowane automatycznie)</li>
                     <li><strong>Nazwa</strong> - nazwa wykroju</li>
+                    <li><strong>Tkanina</strong> - opcjonalne (np. Velvet Rosa)</li>
+                    <li><strong>Stan</strong> - ilosc w magazynie (np. 25 lub 12,5)</li>
+                    <li><strong>Wartosc netto PLN</strong> - wartosc jednostkowa</li>
+                  </ol>
+                ) : activeTab === 'polprodukty' ? (
+                  <ol className="text-sm text-blue-700 space-y-1 list-decimal list-inside">
+                    <li><strong>SKU</strong> - opcjonalne (generowane automatycznie)</li>
+                    <li><strong>Nazwa</strong> - nazwa produktu</li>
                     <li><strong>Tkanina</strong> - opcjonalne (np. Velvet Rosa)</li>
                     <li><strong>Stan</strong> - ilosc w magazynie (np. 25 lub 12,5)</li>
                     <li><strong>Wartosc netto PLN</strong> - wartosc jednostkowa</li>
