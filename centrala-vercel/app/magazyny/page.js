@@ -77,6 +77,15 @@ export default function MagazynyPage() {
       if (!newItem.sku || !newItem.nazwa) return;
     }
 
+    // Sprawdz czy nazwa juz istnieje w tym magazynie
+    const existingByName = (magazyny[activeTab] || []).find(
+      item => item.nazwa.toLowerCase().trim() === newItem.nazwa.toLowerCase().trim()
+    );
+    if (existingByName) {
+      alert(`Pozycja o nazwie "${newItem.nazwa}" juz istnieje w tym magazynie (SKU: ${existingByName.sku})`);
+      return;
+    }
+
     // Generuj SKU automatycznie dla wykrojow jesli puste
     const finalSku = newItem.sku || (activeTab === 'wykroje' ? `WYK-${Date.now()}` : '');
 
@@ -645,8 +654,16 @@ export default function MagazynyPage() {
         const lines = text.split('\n').filter(line => line.trim());
 
         const items = [];
+        const skippedDuplicates = [];
         // Pomin pierwszy wiersz jesli to naglowek
         const startIndex = lines[0]?.toLowerCase().includes('sku') ? 1 : 0;
+
+        // Pobierz istniejace nazwy w magazynie (lowercase dla porownania)
+        const existingNames = new Set(
+          (magazyny[activeTab] || []).map(item => item.nazwa.toLowerCase().trim())
+        );
+        // Nazwy dodane w tym imporcie (zeby wykryc duplikaty w pliku)
+        const importedNames = new Set();
 
         for (let i = startIndex; i < lines.length; i++) {
           const line = lines[i];
@@ -690,10 +707,23 @@ export default function MagazynyPage() {
             // Dla wykrojow SKU jest opcjonalne - generuj automatycznie jesli puste
             const finalSku = sku || (activeTab === 'wykroje' ? `WYK-${Date.now()}-${i}` : null);
 
+            // Sprawdz duplikaty nazw
+            const nazwaLower = nazwa?.toLowerCase().trim();
+            if (nazwaLower && existingNames.has(nazwaLower)) {
+              skippedDuplicates.push(`"${nazwa}" - juz istnieje w magazynie`);
+              continue;
+            }
+            if (nazwaLower && importedNames.has(nazwaLower)) {
+              skippedDuplicates.push(`"${nazwa}" - duplikat w pliku CSV`);
+              continue;
+            }
+
             if (finalSku && nazwa) {
+              importedNames.add(nazwaLower);
               items.push({ sku: finalSku, nazwa, ean: validEan, stan, cena, czas_produkcji, jednostka });
             } else if (activeTab === 'wykroje' && nazwa) {
               // Dla wykrojow wystarczy sama nazwa
+              importedNames.add(nazwaLower);
               items.push({ sku: `WYK-${Date.now()}-${i}`, nazwa, ean: validEan, stan, cena, czas_produkcji, jednostka });
             }
           }
@@ -716,6 +746,16 @@ export default function MagazynyPage() {
             await fetchInventory();
             let message = `Zaimportowano ${data.imported} z ${data.total} pozycji`;
 
+            // Pokazuj pominiete duplikaty
+            if (skippedDuplicates.length > 0) {
+              const maxToShow = 10;
+              const toShow = skippedDuplicates.slice(0, maxToShow);
+              message += `\n\nPominieto duplikaty (${skippedDuplicates.length}):\n` + toShow.join('\n');
+              if (skippedDuplicates.length > maxToShow) {
+                message += `\n... i ${skippedDuplicates.length - maxToShow} wiecej`;
+              }
+            }
+
             // Pokazuj bledy jesli sa
             if (data.errors && data.errors.length > 0) {
               const maxErrorsToShow = 10;
@@ -731,6 +771,15 @@ export default function MagazynyPage() {
             alert('Blad: ' + data.error);
           }
           setSaving(false);
+        } else if (skippedDuplicates.length > 0) {
+          // Wszystkie pozycje byly duplikatami
+          const maxToShow = 10;
+          const toShow = skippedDuplicates.slice(0, maxToShow);
+          let message = `Wszystkie pozycje zostaly pominiete jako duplikaty (${skippedDuplicates.length}):\n` + toShow.join('\n');
+          if (skippedDuplicates.length > maxToShow) {
+            message += `\n... i ${skippedDuplicates.length - maxToShow} wiecej`;
+          }
+          alert(message);
         } else {
           alert('Nie znaleziono poprawnych danych w pliku');
         }
