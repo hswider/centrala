@@ -36,6 +36,14 @@ export function getAuthorizationUrl() {
 export async function exchangeCodeForTokens(code) {
   const { clientId, clientSecret, redirectUri } = getCredentials();
 
+  console.log('Token exchange - clientId:', clientId);
+  console.log('Token exchange - clientSecret length:', clientSecret?.length);
+  console.log('Token exchange - redirectUri:', redirectUri);
+
+  if (!clientId || !clientSecret) {
+    throw new Error(`Missing credentials: clientId=${!!clientId}, clientSecret=${!!clientSecret}`);
+  }
+
   const credentials = Buffer.from(`${clientId}:${clientSecret}`).toString('base64');
 
   const response = await fetch(ALLEGRO_TOKEN_URL, {
