@@ -95,6 +95,75 @@ export async function initDatabase() {
     )
   `;
 
+  // Allegro OAuth tokens
+  await sql`
+    CREATE TABLE IF NOT EXISTS allegro_tokens (
+      id SERIAL PRIMARY KEY,
+      access_token TEXT,
+      refresh_token TEXT,
+      expires_at BIGINT,
+      user_id VARCHAR(100),
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )
+  `;
+
+  // Allegro message threads
+  await sql`
+    CREATE TABLE IF NOT EXISTS allegro_threads (
+      id VARCHAR(100) PRIMARY KEY,
+      interlocutor_id VARCHAR(100),
+      interlocutor_login VARCHAR(255),
+      interlocutor_name VARCHAR(255),
+      interlocutor_avatar TEXT,
+      interlocutor_company BOOLEAN DEFAULT false,
+      last_message_at TIMESTAMP,
+      read BOOLEAN DEFAULT false,
+      offer_id VARCHAR(100),
+      offer_title TEXT,
+      order_id VARCHAR(100),
+      messages_count INTEGER DEFAULT 0,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )
+  `;
+
+  // Allegro messages
+  await sql`
+    CREATE TABLE IF NOT EXISTS allegro_messages (
+      id VARCHAR(100) PRIMARY KEY,
+      thread_id VARCHAR(100) REFERENCES allegro_threads(id) ON DELETE CASCADE,
+      sender_id VARCHAR(100),
+      sender_login VARCHAR(255),
+      sender_is_interlocutor BOOLEAN DEFAULT false,
+      text TEXT,
+      sent_at TIMESTAMP,
+      has_attachments BOOLEAN DEFAULT false,
+      attachments JSONB,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )
+  `;
+
+  // Allegro sync status
+  await sql`
+    CREATE TABLE IF NOT EXISTS allegro_sync_status (
+      id SERIAL PRIMARY KEY,
+      last_sync_at TIMESTAMP,
+      last_thread_sync_at TIMESTAMP,
+      sync_in_progress BOOLEAN DEFAULT false
+    )
+  `;
+
+  // Insert default Allegro token row if not exists
+  const { rows: allegroTokenRows } = await sql`SELECT COUNT(*) as count FROM allegro_tokens`;
+  if (allegroTokenRows[0].count === '0') {
+    await sql`INSERT INTO allegro_tokens (id) VALUES (1)`;
+  }
+
+  // Insert default Allegro sync status if not exists
+  const { rows: allegroSyncRows } = await sql`SELECT COUNT(*) as count FROM allegro_sync_status`;
+  if (allegroSyncRows[0].count === '0') {
+    await sql`INSERT INTO allegro_sync_status (id) VALUES (1)`;
+  }
+
   // Insert default token row if not exists
   const { rows: tokenRows } = await sql`SELECT COUNT(*) as count FROM tokens`;
   if (tokenRows[0].count === '0') {
@@ -841,4 +910,168 @@ export async function changeUserPassword(id, newPassword) {
   await sql`
     UPDATE users SET password_hash = ${passwordHash} WHERE id = ${id}
   `;
+}
+
+// ========== ALLEGRO FUNCTIONS ==========
+
+// Get Allegro tokens
+export async function getAllegroTokens() {
+  const { rows } = await sql`SELECT * FROM allegro_tokens WHERE id = 1`;
+  return rows[0] || null;
+}
+
+// Save Allegro tokens
+export async function saveAllegroTokens(accessToken, refreshToken, expiresAt, userId = null) {
+  await sql`
+    UPDATE allegro_tokens
+    SET access_token = ${accessToken},
+        refresh_token = ${refreshToken},
+        expires_at = ${expiresAt},
+        user_id = ${userId},
+        updated_at = CURRENT_TIMESTAMP
+    WHERE id = 1
+  `;
+}
+
+// Get Allegro sync status
+export async function getAllegroSyncStatus() {
+  const { rows } = await sql`SELECT * FROM allegro_sync_status WHERE id = 1`;
+  return rows[0] || null;
+}
+
+// Update Allegro sync status
+export async function updateAllegroSyncStatus(field = 'last_sync_at') {
+  if (field === 'last_thread_sync_at') {
+    await sql`UPDATE allegro_sync_status SET last_thread_sync_at = CURRENT_TIMESTAMP WHERE id = 1`;
+  } else {
+    await sql`UPDATE allegro_sync_status SET last_sync_at = CURRENT_TIMESTAMP WHERE id = 1`;
+  }
+}
+
+// Set Allegro sync in progress
+export async function setAllegroSyncInProgress(inProgress) {
+  await sql`UPDATE allegro_sync_status SET sync_in_progress = ${inProgress} WHERE id = 1`;
+}
+
+// Save or update Allegro thread
+export async function saveAllegroThread(thread) {
+  await sql`
+    INSERT INTO allegro_threads (
+      id, interlocutor_id, interlocutor_login, interlocutor_name,
+      interlocutor_avatar, interlocutor_company, last_message_at,
+      read, offer_id, offer_title, order_id, messages_count, updated_at
+    ) VALUES (
+      ${thread.id},
+      ${thread.interlocutor?.id || null},
+      ${thread.interlocutor?.login || null},
+      ${thread.interlocutor?.name || null},
+      ${thread.interlocutor?.avatarUrl || null},
+      ${thread.interlocutor?.isCompany || false},
+      ${thread.lastMessageDateTime ? new Date(thread.lastMessageDateTime) : null},
+      ${thread.read || false},
+      ${thread.offer?.id || null},
+      ${thread.offer?.name || null},
+      ${thread.order?.id || null},
+      ${thread.messagesCount || 0},
+      CURRENT_TIMESTAMP
+    )
+    ON CONFLICT (id) DO UPDATE SET
+      interlocutor_id = EXCLUDED.interlocutor_id,
+      interlocutor_login = EXCLUDED.interlocutor_login,
+      interlocutor_name = EXCLUDED.interlocutor_name,
+      interlocutor_avatar = EXCLUDED.interlocutor_avatar,
+      interlocutor_company = EXCLUDED.interlocutor_company,
+      last_message_at = EXCLUDED.last_message_at,
+      read = EXCLUDED.read,
+      offer_id = EXCLUDED.offer_id,
+      offer_title = EXCLUDED.offer_title,
+      order_id = EXCLUDED.order_id,
+      messages_count = EXCLUDED.messages_count,
+      updated_at = CURRENT_TIMESTAMP
+  `;
+}
+
+// Save Allegro message
+export async function saveAllegroMessage(message, threadId) {
+  await sql`
+    INSERT INTO allegro_messages (
+      id, thread_id, sender_id, sender_login, sender_is_interlocutor,
+      text, sent_at, has_attachments, attachments, created_at
+    ) VALUES (
+      ${message.id},
+      ${threadId},
+      ${message.author?.id || null},
+      ${message.author?.login || null},
+      ${message.author?.isInterlocutor || false},
+      ${message.text || ''},
+      ${message.createdAt ? new Date(message.createdAt) : null},
+      ${message.hasAdditionalAttachments || false},
+      ${JSON.stringify(message.attachments || [])},
+      CURRENT_TIMESTAMP
+    )
+    ON CONFLICT (id) DO UPDATE SET
+      text = EXCLUDED.text,
+      has_attachments = EXCLUDED.has_attachments,
+      attachments = EXCLUDED.attachments
+  `;
+}
+
+// Get Allegro threads with pagination
+export async function getAllegroThreads(page = 1, perPage = 20, unreadOnly = false) {
+  const offset = (page - 1) * perPage;
+
+  let result, countResult;
+
+  if (unreadOnly) {
+    result = await sql`
+      SELECT * FROM allegro_threads
+      WHERE read = false
+      ORDER BY last_message_at DESC NULLS LAST
+      LIMIT ${perPage} OFFSET ${offset}
+    `;
+    countResult = await sql`SELECT COUNT(*) as total FROM allegro_threads WHERE read = false`;
+  } else {
+    result = await sql`
+      SELECT * FROM allegro_threads
+      ORDER BY last_message_at DESC NULLS LAST
+      LIMIT ${perPage} OFFSET ${offset}
+    `;
+    countResult = await sql`SELECT COUNT(*) as total FROM allegro_threads`;
+  }
+
+  return {
+    threads: result.rows,
+    total: parseInt(countResult.rows[0].total),
+    page,
+    perPage,
+    totalPages: Math.ceil(parseInt(countResult.rows[0].total) / perPage)
+  };
+}
+
+// Get single Allegro thread with messages
+export async function getAllegroThread(threadId) {
+  const threadResult = await sql`SELECT * FROM allegro_threads WHERE id = ${threadId}`;
+  if (threadResult.rows.length === 0) return null;
+
+  const messagesResult = await sql`
+    SELECT * FROM allegro_messages
+    WHERE thread_id = ${threadId}
+    ORDER BY sent_at ASC
+  `;
+
+  return {
+    thread: threadResult.rows[0],
+    messages: messagesResult.rows
+  };
+}
+
+// Mark thread as read
+export async function markAllegroThreadAsRead(threadId) {
+  await sql`UPDATE allegro_threads SET read = true, updated_at = CURRENT_TIMESTAMP WHERE id = ${threadId}`;
+}
+
+// Get unread threads count
+export async function getUnreadAllegroThreadsCount() {
+  const { rows } = await sql`SELECT COUNT(*) as count FROM allegro_threads WHERE read = false`;
+  return parseInt(rows[0].count);
 }
