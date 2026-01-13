@@ -1736,8 +1736,8 @@ export default function MagazynyPage() {
                 </button>
               </div>
 
-              {/* Kalkulator kosztow wytworzenia */}
-              {(() => {
+              {/* Kalkulator kosztow wytworzenia - tylko dla gotowych produktow */}
+              {activeTab === 'gotowe' && (() => {
                 const MINUTE_RATE = 0.358; // 3606 PLN netto / 168h / 60min
                 const ingredientsCost = recipeIngredients.reduce((sum, ing) => sum + (ing.ingredientCena || 0) * ing.quantity, 0);
                 const productionTime = recipeItem.czas_produkcji || 0;
