@@ -603,11 +603,12 @@ export default function MagazynyPage() {
       // surowce - bez EAN, z jednostka
       headers = ['SKU', 'Nazwa', 'Stan', 'Jednostka', 'Wartosc netto PLN'];
       exampleRows = [
-        'SUR-PIANKA-T25;Pianka T25 arkusz;200;szt;18.50',
-        'SUR-DREWNO-BUK;Drewno bukowe 2m;150;mb;45.00',
-        'SUR-TKANINA-01;Tkanina obiciowa welur;80;m2;35.00',
-        'SUR-WATA-POLIE;Wata poliestrowa;25;kg;28.00',
-        'SUR-SRUBY-M6;Sruby M6 opak. 100szt;500;szt;12.00'
+        'SUR-PIANKA-T25;Pianka T25 arkusz;200;szt;18,50',
+        'SUR-DREWNO-BUK;Drewno bukowe;12,30;m;45,00',
+        'SUR-TKANINA-01;Tkanina obiciowa welur;8,5;m2;35,00',
+        'SUR-WATA-POLIE;Wata poliestrowa;25,75;kg;28,00',
+        'SUR-LINA-JUTA;Lina jutowa;150,5;mb;6,50',
+        'SUR-SRUBY-M6;Sruby M6 opak. 100szt;500;szt;12,00'
       ];
     }
 
@@ -1473,13 +1474,13 @@ export default function MagazynyPage() {
 
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
                 <h4 className="font-medium text-blue-800 mb-2">Format pliku CSV:</h4>
-                <p className="text-sm text-blue-700 mb-2">Kolumny rozdzielone srednikiem (;) lub przecinkiem (,):</p>
+                <p className="text-sm text-blue-700 mb-2">Kolumny rozdzielone srednikiem (;). Liczby dziesietne moga uzywac przecinka lub kropki (np. 12,30 lub 12.30):</p>
                 {activeTab === 'gotowe' ? (
                   <ol className="text-sm text-blue-700 space-y-1 list-decimal list-inside">
                     <li><strong>SKU</strong> - kod produktu</li>
                     <li><strong>Nazwa</strong> - nazwa produktu</li>
                     <li><strong>EAN-13</strong> - opcjonalne, 13 cyfr</li>
-                    <li><strong>Stan</strong> - ilosc w magazynie</li>
+                    <li><strong>Stan</strong> - ilosc w magazynie (np. 25 lub 12,5)</li>
                     <li><strong>Cena PLN</strong> - cena sprzedazy</li>
                     <li><strong>Czas produkcji</strong> - w minutach</li>
                   </ol>
@@ -1487,7 +1488,7 @@ export default function MagazynyPage() {
                   <ol className="text-sm text-blue-700 space-y-1 list-decimal list-inside">
                     <li><strong>SKU</strong> - kod produktu</li>
                     <li><strong>Nazwa</strong> - nazwa produktu</li>
-                    <li><strong>Stan</strong> - ilosc w magazynie</li>
+                    <li><strong>Stan</strong> - ilosc w magazynie (np. 25 lub 12,30)</li>
                     <li><strong>Jednostka</strong> - szt, m, mb, m2 lub kg</li>
                     <li><strong>Wartosc netto PLN</strong> - wartosc jednostkowa</li>
                   </ol>
@@ -1495,7 +1496,7 @@ export default function MagazynyPage() {
                   <ol className="text-sm text-blue-700 space-y-1 list-decimal list-inside">
                     <li><strong>SKU</strong> - kod produktu</li>
                     <li><strong>Nazwa</strong> - nazwa produktu</li>
-                    <li><strong>Stan</strong> - ilosc w magazynie</li>
+                    <li><strong>Stan</strong> - ilosc w magazynie (np. 25 lub 12,5)</li>
                     <li><strong>Wartosc netto PLN</strong> - wartosc jednostkowa</li>
                   </ol>
                 )}
