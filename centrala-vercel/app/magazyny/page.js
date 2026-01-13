@@ -835,8 +835,8 @@ export default function MagazynyPage() {
     { value: 'stan-asc', label: 'Stan (najnizszy)' },
     { value: 'cena-desc', label: 'Cena/Wartosc (najwyzsza)' },
     { value: 'cena-asc', label: 'Cena/Wartosc (najnizsza)' },
-    { value: 'wartosc-desc', label: 'Wart. suma (najwyzsza)' },
-    { value: 'wartosc-asc', label: 'Wart. suma (najnizsza)' },
+    { value: 'wartosc-desc', label: 'Wart. Suma Netto (najwyzsza)' },
+    { value: 'wartosc-asc', label: 'Wart. Suma Netto (najnizsza)' },
   ];
 
   const handleSortChange = (value) => {
@@ -1066,10 +1066,10 @@ export default function MagazynyPage() {
                     )}
                     <th className="px-2 py-3 text-center text-xs font-medium text-gray-500 uppercase w-32">Stan</th>
                     <th className="px-2 py-3 text-center text-xs font-medium text-gray-500 uppercase w-24">
-                      {activeTab === 'gotowe' ? 'Cena' : 'Wart. netto'}
+                      {activeTab === 'gotowe' ? 'Cena' : 'Wart. Jedn. Netto'}
                     </th>
                     {activeTab !== 'gotowe' && (
-                      <th className="px-2 py-3 text-center text-xs font-medium text-gray-500 uppercase w-28">Wart. suma</th>
+                      <th className="px-2 py-3 text-center text-xs font-medium text-gray-500 uppercase w-28">Wart. Suma Netto</th>
                     )}
                     {activeTab === 'gotowe' && (
                       <>
