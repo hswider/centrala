@@ -146,7 +146,7 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-gray-100">
-      <main className="max-w-3xl mx-auto px-3 py-4 sm:px-6 sm:py-6">
+      <main className="max-w-7xl mx-auto px-3 py-4 sm:px-6 sm:py-6 lg:px-8">
         {/* Welcome Banner */}
         {user && (
           <div className="bg-gradient-to-r from-blue-600 to-blue-800 rounded-lg shadow-lg p-4 sm:p-6 mb-6 text-white">
