@@ -70,7 +70,15 @@ export default function MagazynyPage() {
 
   // Dodaj nowa pozycje
   const handleAddItem = async () => {
-    if (!newItem.sku || !newItem.nazwa) return;
+    // Dla wykrojow SKU jest opcjonalne
+    if (activeTab === 'wykroje') {
+      if (!newItem.nazwa) return;
+    } else {
+      if (!newItem.sku || !newItem.nazwa) return;
+    }
+
+    // Generuj SKU automatycznie dla wykrojow jesli puste
+    const finalSku = newItem.sku || (activeTab === 'wykroje' ? `WYK-${Date.now()}` : '');
 
     setSaving(true);
     try {
@@ -78,7 +86,7 @@ export default function MagazynyPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          sku: newItem.sku,
+          sku: finalSku,
           nazwa: newItem.nazwa,
           ean: newItem.ean || null,
           stan: parseFloat(String(newItem.stan).replace(',', '.')) || 0,
@@ -592,12 +600,12 @@ export default function MagazynyPage() {
         'PP-SIEDZISKO-L;Siedzisko lawki;20;120.00'
       ];
     } else if (activeTab === 'wykroje') {
-      // wykroje - bez EAN
-      headers = ['SKU', 'Nazwa', 'Stan', 'Wartosc netto PLN'];
+      // wykroje - SKU opcjonalne
+      headers = ['SKU (opcjonalne)', 'Nazwa', 'Stan', 'Wartosc netto PLN'];
       exampleRows = [
         'WYK-VELVET-ROSA;Wykroj velvet rosa 1m2;100;35.00',
-        'WYK-VELVET-BLUE;Wykroj velvet blue 1m2;80;35.00',
-        'WYK-SKORA-CZAR;Wykroj skora czarna 1m2;40;95.00'
+        ';Wykroj velvet blue 1m2;80;35.00',
+        ';Wykroj skora czarna 1m2;40;95.00'
       ];
     } else {
       // surowce - bez EAN, z jednostka
@@ -679,8 +687,14 @@ export default function MagazynyPage() {
             // Walidacja EAN - jesli podany, musi miec 13 cyfr
             const validEan = ean && /^\d{13}$/.test(ean) ? ean : null;
 
-            if (sku && nazwa) {
-              items.push({ sku, nazwa, ean: validEan, stan, cena, czas_produkcji, jednostka });
+            // Dla wykrojow SKU jest opcjonalne - generuj automatycznie jesli puste
+            const finalSku = sku || (activeTab === 'wykroje' ? `WYK-${Date.now()}-${i}` : null);
+
+            if (finalSku && nazwa) {
+              items.push({ sku: finalSku, nazwa, ean: validEan, stan, cena, czas_produkcji, jednostka });
+            } else if (activeTab === 'wykroje' && nazwa) {
+              // Dla wykrojow wystarczy sama nazwa
+              items.push({ sku: `WYK-${Date.now()}-${i}`, nazwa, ean: validEan, stan, cena, czas_produkcji, jednostka });
             }
           }
         }
@@ -1240,13 +1254,15 @@ export default function MagazynyPage() {
 
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">SKU</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    SKU {activeTab === 'wykroje' && <span className="text-gray-400 font-normal">(opcjonalne)</span>}
+                  </label>
                   <input
                     type="text"
                     value={newItem.sku}
                     onChange={(e) => setNewItem({ ...newItem, sku: e.target.value })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="np. MIKI-001"
+                    placeholder={activeTab === 'wykroje' ? 'np. WYK-001 (generowane automatycznie)' : 'np. MIKI-001'}
                   />
                 </div>
                 <div>
@@ -1508,6 +1524,13 @@ export default function MagazynyPage() {
                     <li><strong>Nazwa</strong> - nazwa produktu</li>
                     <li><strong>Stan</strong> - ilosc w magazynie (np. 25 lub 12,30)</li>
                     <li><strong>Jednostka</strong> - szt, m, mb, m2 lub kg</li>
+                    <li><strong>Wartosc netto PLN</strong> - wartosc jednostkowa</li>
+                  </ol>
+                ) : activeTab === 'wykroje' ? (
+                  <ol className="text-sm text-blue-700 space-y-1 list-decimal list-inside">
+                    <li><strong>SKU</strong> - opcjonalne (generowane automatycznie)</li>
+                    <li><strong>Nazwa</strong> - nazwa wykroju</li>
+                    <li><strong>Stan</strong> - ilosc w magazynie (np. 25 lub 12,5)</li>
                     <li><strong>Wartosc netto PLN</strong> - wartosc jednostkowa</li>
                   </ol>
                 ) : (
