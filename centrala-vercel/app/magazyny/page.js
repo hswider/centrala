@@ -659,7 +659,7 @@ export default function MagazynyPage() {
               ean = '';
               stan = parseInt(cols[2]?.trim()) || 0;
               const jednostkaVal = cols[3]?.trim()?.toLowerCase() || 'szt';
-              jednostka = ['mb', 'm2', 'kg'].includes(jednostkaVal) ? jednostkaVal : 'szt';
+              jednostka = ['m', 'mb', 'm2', 'kg'].includes(jednostkaVal) ? jednostkaVal : 'szt';
               cena = parseFloat(cols[4]?.trim()) || 0;
               czas_produkcji = 0;
             } else {
@@ -1286,6 +1286,7 @@ export default function MagazynyPage() {
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                       >
                         <option value="szt">szt (sztuki)</option>
+                        <option value="m">m (metr)</option>
                         <option value="mb">mb (metr biezacy)</option>
                         <option value="m2">m2 (metr kwadratowy)</option>
                         <option value="kg">kg (kilogram)</option>
@@ -1405,6 +1406,7 @@ export default function MagazynyPage() {
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                       >
                         <option value="szt">szt (sztuki)</option>
+                        <option value="m">m (metr)</option>
                         <option value="mb">mb (metr biezacy)</option>
                         <option value="m2">m2 (metr kwadratowy)</option>
                         <option value="kg">kg (kilogram)</option>
@@ -1483,7 +1485,7 @@ export default function MagazynyPage() {
                     <li><strong>SKU</strong> - kod produktu</li>
                     <li><strong>Nazwa</strong> - nazwa produktu</li>
                     <li><strong>Stan</strong> - ilosc w magazynie</li>
-                    <li><strong>Jednostka</strong> - szt, mb, m2 lub kg</li>
+                    <li><strong>Jednostka</strong> - szt, m, mb, m2 lub kg</li>
                     <li><strong>Wartosc netto PLN</strong> - wartosc jednostkowa</li>
                   </ol>
                 ) : (
