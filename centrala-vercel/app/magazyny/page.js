@@ -24,6 +24,8 @@ export default function MagazynyPage() {
   const [perPage, setPerPage] = useState(50);
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedIds, setSelectedIds] = useState(new Set());
+  const [sortBy, setSortBy] = useState('nazwa');
+  const [sortDirection, setSortDirection] = useState('asc');
   const fileInputRef = useRef(null);
   const stanInputRef = useRef(null);
   const cenaInputRef = useRef(null);
@@ -727,12 +729,54 @@ export default function MagazynyPage() {
     return tabs.find(t => t.key === key)?.label || key;
   };
 
-  // Filtrowanie po wyszukiwaniu
-  const filteredItems = (magazyny[activeTab] || []).filter(item => {
-    if (!searchQuery) return true;
-    const q = searchQuery.toLowerCase();
-    return item.sku.toLowerCase().includes(q) || item.nazwa.toLowerCase().includes(q);
-  });
+  // Opcje sortowania
+  const sortOptions = [
+    { value: 'nazwa-asc', label: 'Nazwa A-Z' },
+    { value: 'nazwa-desc', label: 'Nazwa Z-A' },
+    { value: 'sku-asc', label: 'SKU A-Z' },
+    { value: 'sku-desc', label: 'SKU Z-A' },
+    { value: 'stan-desc', label: 'Stan (najwyzszy)' },
+    { value: 'stan-asc', label: 'Stan (najnizszy)' },
+    { value: 'cena-desc', label: 'Cena/Wartosc (najwyzsza)' },
+    { value: 'cena-asc', label: 'Cena/Wartosc (najnizsza)' },
+  ];
+
+  const handleSortChange = (value) => {
+    const [field, direction] = value.split('-');
+    setSortBy(field);
+    setSortDirection(direction);
+    setCurrentPage(1);
+  };
+
+  // Filtrowanie i sortowanie
+  const filteredItems = (magazyny[activeTab] || [])
+    .filter(item => {
+      if (!searchQuery) return true;
+      const q = searchQuery.toLowerCase();
+      return item.sku.toLowerCase().includes(q) || item.nazwa.toLowerCase().includes(q);
+    })
+    .sort((a, b) => {
+      let comparison = 0;
+
+      switch (sortBy) {
+        case 'nazwa':
+          comparison = (a.nazwa || '').localeCompare(b.nazwa || '', 'pl');
+          break;
+        case 'sku':
+          comparison = (a.sku || '').localeCompare(b.sku || '', 'pl');
+          break;
+        case 'stan':
+          comparison = (a.stan || 0) - (b.stan || 0);
+          break;
+        case 'cena':
+          comparison = (a.cena || 0) - (b.cena || 0);
+          break;
+        default:
+          comparison = 0;
+      }
+
+      return sortDirection === 'asc' ? comparison : -comparison;
+    });
 
   // Paginacja
   const totalPages = Math.ceil(filteredItems.length / perPage);
@@ -813,18 +857,32 @@ export default function MagazynyPage() {
 
         {/* Content */}
         <div className="bg-white rounded-lg shadow">
-          <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
+          <div className="px-4 py-3 border-b border-gray-100 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
             <div>
               <h2 className="font-semibold text-gray-900">{getTabLabel(activeTab)}</h2>
               <p className="text-xs text-gray-500">Laczny stan: {totalItems} szt.</p>
             </div>
-            <input
-              type="text"
-              placeholder="Szukaj SKU lub nazwy..."
-              value={searchQuery}
-              onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1); }}
-              className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="flex items-center gap-1.5">
+                <label className="text-xs text-gray-500 whitespace-nowrap">Sortuj:</label>
+                <select
+                  value={`${sortBy}-${sortDirection}`}
+                  onChange={(e) => handleSortChange(e.target.value)}
+                  className="px-2 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                >
+                  {sortOptions.map(opt => (
+                    <option key={opt.value} value={opt.value}>{opt.label}</option>
+                  ))}
+                </select>
+              </div>
+              <input
+                type="text"
+                placeholder="Szukaj SKU lub nazwy..."
+                value={searchQuery}
+                onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1); }}
+                className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
           </div>
 
           {/* Wskaznik przewijania na mobile */}
