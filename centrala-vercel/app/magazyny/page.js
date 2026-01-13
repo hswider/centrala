@@ -70,8 +70,8 @@ export default function MagazynyPage() {
 
   // Dodaj nowa pozycje
   const handleAddItem = async () => {
-    // Dla wykrojow SKU jest opcjonalne
-    if (activeTab === 'wykroje') {
+    // Dla wykrojow i surowcow SKU jest opcjonalne
+    if (activeTab === 'wykroje' || activeTab === 'surowce') {
       if (!newItem.nazwa) return;
     } else {
       if (!newItem.sku || !newItem.nazwa) return;
@@ -86,8 +86,13 @@ export default function MagazynyPage() {
       return;
     }
 
-    // Generuj SKU automatycznie dla wykrojow jesli puste
-    const finalSku = newItem.sku || (activeTab === 'wykroje' ? `WYK-${Date.now()}` : '');
+    // Generuj SKU automatycznie dla wykrojow i surowcow jesli puste
+    let finalSku = newItem.sku;
+    if (!finalSku) {
+      if (activeTab === 'wykroje') finalSku = `WYK-${Date.now()}`;
+      else if (activeTab === 'surowce') finalSku = `SUR-${Date.now()}`;
+      else finalSku = '';
+    }
 
     setSaving(true);
     try {
@@ -619,15 +624,15 @@ export default function MagazynyPage() {
         ';Wykroj skora czarna 1m2;;40;95.00'
       ];
     } else {
-      // surowce - bez EAN, z jednostka
-      headers = ['SKU', 'Nazwa', 'Stan', 'Jednostka', 'Wartosc netto PLN'];
+      // surowce - SKU opcjonalne, z jednostka
+      headers = ['SKU (opcjonalne)', 'Nazwa', 'Stan', 'Jednostka', 'Wartosc netto PLN'];
       exampleRows = [
         'SUR-PIANKA-T25;Pianka T25 arkusz;200;szt;18,50',
-        'SUR-DREWNO-BUK;Drewno bukowe;12,30;m;45,00',
-        'SUR-TKANINA-01;Tkanina obiciowa welur;8,5;m2;35,00',
+        ';Drewno bukowe;12,30;m;45,00',
+        ';Tkanina obiciowa welur;8,5;m2;35,00',
         'SUR-WATA-POLIE;Wata poliestrowa;25,75;kg;28,00',
-        'SUR-LINA-JUTA;Lina jutowa;150,5;mb;6,50',
-        'SUR-SRUBY-M6;Sruby M6 opak. 100szt;500;szt;12,00'
+        ';Lina jutowa;150,5;mb;6,50',
+        ';Sruby M6 opak. 100szt;500;szt;12,00'
       ];
     }
 
@@ -717,8 +722,13 @@ export default function MagazynyPage() {
             // Walidacja EAN - jesli podany, musi miec 13 cyfr
             const validEan = ean && /^\d{13}$/.test(ean) ? ean : null;
 
-            // Dla wykrojow SKU jest opcjonalne - generuj automatycznie jesli puste
-            const finalSku = sku || (activeTab === 'wykroje' ? `WYK-${Date.now()}-${i}` : null);
+            // Dla wykrojow i surowcow SKU jest opcjonalne - generuj automatycznie jesli puste
+            let finalSku = sku;
+            if (!finalSku) {
+              if (activeTab === 'wykroje') finalSku = `WYK-${Date.now()}-${i}`;
+              else if (activeTab === 'surowce') finalSku = `SUR-${Date.now()}-${i}`;
+              else finalSku = null;
+            }
 
             // Sprawdz duplikaty nazw
             const nazwaLower = nazwa?.toLowerCase().trim();
@@ -738,6 +748,10 @@ export default function MagazynyPage() {
               // Dla wykrojow wystarczy sama nazwa
               importedNames.add(nazwaLower);
               items.push({ sku: `WYK-${Date.now()}-${i}`, nazwa, ean: validEan, stan, cena, czas_produkcji, jednostka, tkanina: tkanina || null });
+            } else if (activeTab === 'surowce' && nazwa) {
+              // Dla surowcow wystarczy sama nazwa
+              importedNames.add(nazwaLower);
+              items.push({ sku: `SUR-${Date.now()}-${i}`, nazwa, ean: validEan, stan, cena, czas_produkcji, jednostka, tkanina: null });
             }
           }
         }
@@ -1323,14 +1337,14 @@ export default function MagazynyPage() {
               <div className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    SKU {activeTab === 'wykroje' && <span className="text-gray-400 font-normal">(opcjonalne)</span>}
+                    SKU {(activeTab === 'wykroje' || activeTab === 'surowce') && <span className="text-gray-400 font-normal">(opcjonalne)</span>}
                   </label>
                   <input
                     type="text"
                     value={newItem.sku}
                     onChange={(e) => setNewItem({ ...newItem, sku: e.target.value })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder={activeTab === 'wykroje' ? 'np. WYK-001 (generowane automatycznie)' : 'np. MIKI-001'}
+                    placeholder={activeTab === 'wykroje' ? 'np. WYK-001 (generowane automatycznie)' : activeTab === 'surowce' ? 'np. SUR-001 (generowane automatycznie)' : 'np. MIKI-001'}
                   />
                 </div>
                 <div>
@@ -1616,7 +1630,7 @@ export default function MagazynyPage() {
                   </ol>
                 ) : activeTab === 'surowce' ? (
                   <ol className="text-sm text-blue-700 space-y-1 list-decimal list-inside">
-                    <li><strong>SKU</strong> - kod produktu</li>
+                    <li><strong>SKU</strong> - opcjonalne (generowane automatycznie)</li>
                     <li><strong>Nazwa</strong> - nazwa produktu</li>
                     <li><strong>Stan</strong> - ilosc w magazynie (np. 25 lub 12,30)</li>
                     <li><strong>Jednostka</strong> - szt, m, mb, m2 lub kg</li>
