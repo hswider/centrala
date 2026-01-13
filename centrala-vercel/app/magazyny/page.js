@@ -45,7 +45,7 @@ export default function MagazynyPage() {
     surowce: [],
   });
 
-  const [newItem, setNewItem] = useState({ sku: '', nazwa: '', ean: '', stan: '', cena: '', czas_produkcji: '', jednostka: 'szt' });
+  const [newItem, setNewItem] = useState({ sku: '', nazwa: '', ean: '', stan: '', cena: '', czas_produkcji: '', jednostka: 'szt', tkanina: '' });
 
   // Pobierz dane z API
   const fetchInventory = useCallback(async () => {
@@ -102,6 +102,7 @@ export default function MagazynyPage() {
           cena: parseFloat(newItem.cena) || 0,
           czas_produkcji: parseInt(newItem.czas_produkcji) || 0,
           jednostka: activeTab === 'surowce' ? newItem.jednostka : 'szt',
+          tkanina: activeTab === 'wykroje' ? (newItem.tkanina || null) : null,
           kategoria: activeTab
         })
       });
@@ -110,7 +111,7 @@ export default function MagazynyPage() {
 
       if (data.success) {
         await fetchInventory();
-        setNewItem({ sku: '', nazwa: '', ean: '', stan: '', cena: '', czas_produkcji: '', jednostka: 'szt' });
+        setNewItem({ sku: '', nazwa: '', ean: '', stan: '', cena: '', czas_produkcji: '', jednostka: 'szt', tkanina: '' });
         setShowAddModal(false);
       } else {
         alert('Blad: ' + data.error);
@@ -237,7 +238,8 @@ export default function MagazynyPage() {
           stan: parseFloat(String(editingItem.stan).replace(',', '.')) || 0,
           cena: parseFloat(editingItem.cena) || 0,
           czas_produkcji: parseInt(editingItem.czas_produkcji) || 0,
-          jednostka: editingItem.jednostka || 'szt'
+          jednostka: editingItem.jednostka || 'szt',
+          tkanina: editingItem.tkanina || null
         })
       });
 
@@ -609,12 +611,12 @@ export default function MagazynyPage() {
         'PP-SIEDZISKO-L;Siedzisko lawki;20;120.00'
       ];
     } else if (activeTab === 'wykroje') {
-      // wykroje - SKU opcjonalne
-      headers = ['SKU (opcjonalne)', 'Nazwa', 'Stan', 'Wartosc netto PLN'];
+      // wykroje - SKU i Tkanina opcjonalne
+      headers = ['SKU (opcjonalne)', 'Nazwa', 'Tkanina (opcjonalne)', 'Stan', 'Wartosc netto PLN'];
       exampleRows = [
-        'WYK-VELVET-ROSA;Wykroj velvet rosa 1m2;100;35.00',
-        ';Wykroj velvet blue 1m2;80;35.00',
-        ';Wykroj skora czarna 1m2;40;95.00'
+        'WYK-VELVET-ROSA;Wykroj velvet rosa 1m2;Velvet Rosa;100;35.00',
+        ';Wykroj velvet blue 1m2;Velvet Blue;80;35.00',
+        ';Wykroj skora czarna 1m2;;40;95.00'
       ];
     } else {
       // surowce - bez EAN, z jednostka
@@ -675,7 +677,7 @@ export default function MagazynyPage() {
             const sku = cols[0]?.trim();
             const nazwa = cols[1]?.trim();
 
-            let ean, stan, cena, czas_produkcji, jednostka;
+            let ean, stan, cena, czas_produkcji, jednostka, tkanina;
 
             if (activeTab === 'gotowe') {
               // gotowe: SKU, Nazwa, EAN, Stan, Cena, Czas produkcji
@@ -684,6 +686,7 @@ export default function MagazynyPage() {
               cena = parseFloat(cols[4]?.trim()?.replace(',', '.')) || 0;
               czas_produkcji = parseInt(cols[5]?.trim()) || 0;
               jednostka = 'szt';
+              tkanina = '';
             } else if (activeTab === 'surowce') {
               // surowce: SKU, Nazwa, Stan, Jednostka, Wartosc netto (bez EAN)
               ean = '';
@@ -692,13 +695,23 @@ export default function MagazynyPage() {
               jednostka = ['m', 'mb', 'm2', 'kg'].includes(jednostkaVal) ? jednostkaVal : 'szt';
               cena = parseFloat(cols[4]?.trim()?.replace(',', '.')) || 0;
               czas_produkcji = 0;
+              tkanina = '';
+            } else if (activeTab === 'wykroje') {
+              // wykroje: SKU (opcjonalne), Nazwa, Tkanina (opcjonalne), Stan, Wartosc netto
+              ean = '';
+              tkanina = cols[2]?.trim() || '';
+              stan = parseFloat(cols[3]?.trim()?.replace(',', '.')) || 0;
+              cena = parseFloat(cols[4]?.trim()?.replace(',', '.')) || 0;
+              czas_produkcji = 0;
+              jednostka = 'szt';
             } else {
-              // polprodukty, wykroje: SKU, Nazwa, Stan, Wartosc netto (bez EAN)
+              // polprodukty: SKU, Nazwa, Stan, Wartosc netto (bez EAN)
               ean = '';
               stan = parseFloat(cols[2]?.trim()?.replace(',', '.')) || 0;
               cena = parseFloat(cols[3]?.trim()?.replace(',', '.')) || 0;
               czas_produkcji = 0;
               jednostka = 'szt';
+              tkanina = '';
             }
 
             // Walidacja EAN - jesli podany, musi miec 13 cyfr
@@ -720,11 +733,11 @@ export default function MagazynyPage() {
 
             if (finalSku && nazwa) {
               importedNames.add(nazwaLower);
-              items.push({ sku: finalSku, nazwa, ean: validEan, stan, cena, czas_produkcji, jednostka });
+              items.push({ sku: finalSku, nazwa, ean: validEan, stan, cena, czas_produkcji, jednostka, tkanina: tkanina || null });
             } else if (activeTab === 'wykroje' && nazwa) {
               // Dla wykrojow wystarczy sama nazwa
               importedNames.add(nazwaLower);
-              items.push({ sku: `WYK-${Date.now()}-${i}`, nazwa, ean: validEan, stan, cena, czas_produkcji, jednostka });
+              items.push({ sku: `WYK-${Date.now()}-${i}`, nazwa, ean: validEan, stan, cena, czas_produkcji, jednostka, tkanina: tkanina || null });
             }
           }
         }
@@ -1023,6 +1036,9 @@ export default function MagazynyPage() {
                     </th>
                     <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase w-40">SKU</th>
                     <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nazwa produktu</th>
+                    {activeTab === 'wykroje' && (
+                      <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase w-40">Tkanina</th>
+                    )}
                     {activeTab === 'gotowe' && (
                       <th className="px-2 py-3 text-center text-xs font-medium text-gray-500 uppercase w-32">EAN-13</th>
                     )}
@@ -1046,7 +1062,7 @@ export default function MagazynyPage() {
                 <tbody className="divide-y divide-gray-100">
                   {currentItems.length === 0 ? (
                     <tr>
-                      <td colSpan={activeTab === 'gotowe' ? 10 : 7} className="px-4 py-8 text-center text-gray-500">
+                      <td colSpan={activeTab === 'gotowe' ? 10 : activeTab === 'wykroje' ? 8 : 7} className="px-4 py-8 text-center text-gray-500">
                         {searchQuery
                           ? 'Brak wynikow dla wyszukiwania'
                           : 'Brak pozycji w magazynie. Dodaj recznie lub zaimportuj z CSV.'}
@@ -1067,6 +1083,9 @@ export default function MagazynyPage() {
                           <span className="font-mono text-xs text-gray-900 whitespace-nowrap">{item.sku}</span>
                         </td>
                         <td className="px-3 py-2 text-sm text-gray-700">{item.nazwa}</td>
+                        {activeTab === 'wykroje' && (
+                          <td className="px-3 py-2 text-sm text-gray-600">{item.tkanina || '-'}</td>
+                        )}
                         {activeTab === 'gotowe' && (
                           <td className="px-2 py-2 text-center">
                             <span className="font-mono text-xs text-gray-500">{item.ean || '-'}</span>
@@ -1324,6 +1343,20 @@ export default function MagazynyPage() {
                     placeholder="np. Pufa Miki Rosa"
                   />
                 </div>
+                {activeTab === 'wykroje' && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Tkanina <span className="text-gray-400 font-normal">(opcjonalne)</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={newItem.tkanina}
+                      onChange={(e) => setNewItem({ ...newItem, tkanina: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder="np. Velvet Rosa"
+                    />
+                  </div>
+                )}
                 {activeTab === 'gotowe' && (
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -1449,6 +1482,20 @@ export default function MagazynyPage() {
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
+                {activeTab === 'wykroje' && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Tkanina <span className="text-gray-400 font-normal">(opcjonalne)</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={editingItem.tkanina || ''}
+                      onChange={(e) => setEditingItem({ ...editingItem, tkanina: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder="np. Velvet Rosa"
+                    />
+                  </div>
+                )}
                 {activeTab === 'gotowe' && (
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -1579,6 +1626,7 @@ export default function MagazynyPage() {
                   <ol className="text-sm text-blue-700 space-y-1 list-decimal list-inside">
                     <li><strong>SKU</strong> - opcjonalne (generowane automatycznie)</li>
                     <li><strong>Nazwa</strong> - nazwa wykroju</li>
+                    <li><strong>Tkanina</strong> - opcjonalne (np. Velvet Rosa)</li>
                     <li><strong>Stan</strong> - ilosc w magazynie (np. 25 lub 12,5)</li>
                     <li><strong>Wartosc netto PLN</strong> - wartosc jednostkowa</li>
                   </ol>

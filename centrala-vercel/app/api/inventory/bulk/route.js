@@ -32,8 +32,8 @@ export async function POST(request) {
         }
 
         await sql`
-          INSERT INTO inventory (sku, nazwa, ean, stan, cena, czas_produkcji, jednostka, kategoria)
-          VALUES (${item.sku}, ${item.nazwa}, ${item.ean || null}, ${item.stan || 0}, ${item.cena || 0}, ${item.czas_produkcji || 0}, ${item.jednostka || 'szt'}, ${kategoria})
+          INSERT INTO inventory (sku, nazwa, ean, stan, cena, czas_produkcji, jednostka, kategoria, tkanina)
+          VALUES (${item.sku}, ${item.nazwa}, ${item.ean || null}, ${item.stan || 0}, ${item.cena || 0}, ${item.czas_produkcji || 0}, ${item.jednostka || 'szt'}, ${kategoria}, ${item.tkanina || null})
           ON CONFLICT (sku, kategoria) DO UPDATE SET
             nazwa = EXCLUDED.nazwa,
             ean = EXCLUDED.ean,
@@ -41,6 +41,7 @@ export async function POST(request) {
             cena = EXCLUDED.cena,
             czas_produkcji = EXCLUDED.czas_produkcji,
             jednostka = EXCLUDED.jednostka,
+            tkanina = EXCLUDED.tkanina,
             updated_at = CURRENT_TIMESTAMP
         `;
         imported++;

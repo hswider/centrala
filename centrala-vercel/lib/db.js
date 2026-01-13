@@ -67,6 +67,13 @@ export async function initDatabase() {
     // Columns might already exist
   }
 
+  // Inventory table migrations
+  try {
+    await sql`ALTER TABLE inventory ADD COLUMN IF NOT EXISTS tkanina VARCHAR(255)`;
+  } catch (e) {
+    // Column might already exist
+  }
+
   await sql`
     CREATE TABLE IF NOT EXISTS sync_status (
       id SERIAL PRIMARY KEY,
