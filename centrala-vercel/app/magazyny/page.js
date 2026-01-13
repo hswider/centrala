@@ -81,7 +81,7 @@ export default function MagazynyPage() {
           sku: newItem.sku,
           nazwa: newItem.nazwa,
           ean: newItem.ean || null,
-          stan: parseInt(newItem.stan) || 0,
+          stan: parseFloat(newItem.stan) || 0,
           cena: parseFloat(newItem.cena) || 0,
           czas_produkcji: parseInt(newItem.czas_produkcji) || 0,
           jednostka: activeTab === 'surowce' ? newItem.jednostka : 'szt',
@@ -217,7 +217,7 @@ export default function MagazynyPage() {
           sku: editingItem.sku,
           nazwa: editingItem.nazwa,
           ean: editingItem.ean || null,
-          stan: parseInt(editingItem.stan) || 0,
+          stan: parseFloat(editingItem.stan) || 0,
           cena: parseFloat(editingItem.cena) || 0,
           czas_produkcji: parseInt(editingItem.czas_produkcji) || 0,
           jednostka: editingItem.jednostka || 'szt'
@@ -292,7 +292,7 @@ export default function MagazynyPage() {
 
   // Zapisz inline edycje stanu
   const handleStanSubmit = (item) => {
-    const newStan = Math.max(0, parseInt(editingStanValue) || 0);
+    const newStan = Math.max(0, parseFloat(editingStanValue) || 0);
     const oldStan = item.stan;
 
     setEditingStanId(null);
@@ -650,23 +650,23 @@ export default function MagazynyPage() {
             if (activeTab === 'gotowe') {
               // gotowe: SKU, Nazwa, EAN, Stan, Cena, Czas produkcji
               ean = cols[2]?.trim() || '';
-              stan = parseInt(cols[3]?.trim()) || 0;
-              cena = parseFloat(cols[4]?.trim()) || 0;
+              stan = parseFloat(cols[3]?.trim()?.replace(',', '.')) || 0;
+              cena = parseFloat(cols[4]?.trim()?.replace(',', '.')) || 0;
               czas_produkcji = parseInt(cols[5]?.trim()) || 0;
               jednostka = 'szt';
             } else if (activeTab === 'surowce') {
               // surowce: SKU, Nazwa, Stan, Jednostka, Wartosc netto (bez EAN)
               ean = '';
-              stan = parseInt(cols[2]?.trim()) || 0;
+              stan = parseFloat(cols[2]?.trim()?.replace(',', '.')) || 0;
               const jednostkaVal = cols[3]?.trim()?.toLowerCase() || 'szt';
               jednostka = ['m', 'mb', 'm2', 'kg'].includes(jednostkaVal) ? jednostkaVal : 'szt';
-              cena = parseFloat(cols[4]?.trim()) || 0;
+              cena = parseFloat(cols[4]?.trim()?.replace(',', '.')) || 0;
               czas_produkcji = 0;
             } else {
               // polprodukty, wykroje: SKU, Nazwa, Stan, Wartosc netto (bez EAN)
               ean = '';
-              stan = parseInt(cols[2]?.trim()) || 0;
-              cena = parseFloat(cols[3]?.trim()) || 0;
+              stan = parseFloat(cols[2]?.trim()?.replace(',', '.')) || 0;
+              cena = parseFloat(cols[3]?.trim()?.replace(',', '.')) || 0;
               czas_produkcji = 0;
               jednostka = 'szt';
             }
@@ -1012,6 +1012,7 @@ export default function MagazynyPage() {
                               <input
                                 ref={stanInputRef}
                                 type="number"
+                                step="0.01"
                                 value={editingStanValue}
                                 onChange={(e) => setEditingStanValue(e.target.value)}
                                 onBlur={() => handleStanSubmit(item)}
@@ -1019,7 +1020,7 @@ export default function MagazynyPage() {
                                   if (e.key === 'Enter') handleStanSubmit(item);
                                   if (e.key === 'Escape') setEditingStanId(null);
                                 }}
-                                className="w-16 px-2 py-1 text-center text-sm font-bold border-2 border-blue-500 rounded focus:outline-none"
+                                className="w-20 px-2 py-1 text-center text-sm font-bold border-2 border-blue-500 rounded focus:outline-none"
                                 min="0"
                               />
                             ) : (
@@ -1271,10 +1272,11 @@ export default function MagazynyPage() {
                     <label className="block text-sm font-medium text-gray-700 mb-1">Stan</label>
                     <input
                       type="number"
+                      step="0.01"
                       value={newItem.stan}
                       onChange={(e) => setNewItem({ ...newItem, stan: e.target.value })}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      placeholder="np. 25"
+                      placeholder="np. 25 lub 12.5"
                     />
                   </div>
                   {activeTab === 'surowce' && (
@@ -1392,6 +1394,7 @@ export default function MagazynyPage() {
                     <label className="block text-sm font-medium text-gray-700 mb-1">Stan</label>
                     <input
                       type="number"
+                      step="0.01"
                       value={editingItem.stan}
                       onChange={(e) => setEditingItem({ ...editingItem, stan: e.target.value })}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"

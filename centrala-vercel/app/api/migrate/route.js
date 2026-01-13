@@ -36,6 +36,16 @@ export async function GET() {
       results.push('Kolumna jednostka juz istnieje lub blad: ' + e.message);
     }
 
+    // Zmien typ kolumny stan z INTEGER na DECIMAL (dla wartosci ulamkowych np. 12.5 m)
+    try {
+      await sql`
+        ALTER TABLE inventory ALTER COLUMN stan TYPE DECIMAL(10,2) USING stan::DECIMAL(10,2)
+      `;
+      results.push('Zmieniono typ kolumny stan na DECIMAL');
+    } catch (e) {
+      results.push('Kolumna stan juz jest DECIMAL lub blad: ' + e.message);
+    }
+
     return NextResponse.json({
       success: true,
       message: 'Migracja zakonczona',
