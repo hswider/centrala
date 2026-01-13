@@ -24,8 +24,8 @@ export default function MagazynyPage() {
   const [perPage, setPerPage] = useState(50);
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedIds, setSelectedIds] = useState(new Set());
-  const [sortBy, setSortBy] = useState('nazwa');
-  const [sortDirection, setSortDirection] = useState('asc');
+  const [sortBy, setSortBy] = useState('stan');
+  const [sortDirection, setSortDirection] = useState('desc');
   const fileInputRef = useRef(null);
   const stanInputRef = useRef(null);
   const cenaInputRef = useRef(null);
