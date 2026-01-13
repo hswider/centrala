@@ -744,6 +744,8 @@ export default function MagazynyPage() {
     { value: 'stan-asc', label: 'Stan (najnizszy)' },
     { value: 'cena-desc', label: 'Cena/Wartosc (najwyzsza)' },
     { value: 'cena-asc', label: 'Cena/Wartosc (najnizsza)' },
+    { value: 'wartosc-desc', label: 'Wart. suma (najwyzsza)' },
+    { value: 'wartosc-asc', label: 'Wart. suma (najnizsza)' },
   ];
 
   const handleSortChange = (value) => {
@@ -775,6 +777,9 @@ export default function MagazynyPage() {
           break;
         case 'cena':
           comparison = (a.cena || 0) - (b.cena || 0);
+          break;
+        case 'wartosc':
+          comparison = ((a.cena || 0) * (a.stan || 0)) - ((b.cena || 0) * (b.stan || 0));
           break;
         default:
           comparison = 0;
