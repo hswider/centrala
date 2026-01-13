@@ -5,7 +5,8 @@ const publicRoutes = [
   '/login',
   '/api/auth',
   '/api/sync',           // Cron job
-  '/api/sync-historical' // Historical sync
+  '/api/sync-historical', // Historical sync
+  '/api/init-users'      // User initialization
 ];
 
 export function middleware(request) {
