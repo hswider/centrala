@@ -72,7 +72,7 @@ export async function GET(request) {
           sku: row.sku,
           nazwa: row.nazwa,
           ean: row.ean || '',
-          stan: row.stan,
+          stan: parseFloat(row.stan) || 0,
           cena: parseFloat(row.cena) || 0,
           czas_produkcji: parseInt(row.czas_produkcji) || 0,
           jednostka: row.jednostka || 'szt',

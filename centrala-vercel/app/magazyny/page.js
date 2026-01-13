@@ -242,8 +242,8 @@ export default function MagazynyPage() {
 
   // Szybka edycja stanu (+/-) - optimistic update
   const handleQuickStanChange = (item, delta) => {
-    const oldStan = item.stan;
-    const newStan = Math.max(0, oldStan + delta);
+    const oldStan = Number(parseFloat(item.stan)) || 0;
+    const newStan = Math.round(Math.max(0, oldStan + delta) * 100) / 100;
 
     // Natychmiastowa aktualizacja UI (optimistic)
     setMagazyny(prev => ({
