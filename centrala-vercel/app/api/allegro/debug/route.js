@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { sql } from '@vercel/postgres';
 import { getAuthorizationUrl } from '../../../../lib/allegro';
 import { getAllegroTokens } from '../../../../lib/db';
 
@@ -12,6 +13,22 @@ export async function GET() {
     const authUrl = getAuthorizationUrl();
     const tokens = await getAllegroTokens();
 
+    // Check order IDs in both tables
+    const threadsWithOrders = await sql`
+      SELECT id, order_id, interlocutor_login, offer_title
+      FROM allegro_threads
+      WHERE order_id IS NOT NULL
+      LIMIT 5
+    `;
+
+    const allegroOrders = await sql`
+      SELECT id, external_id, channel_platform, channel_label
+      FROM orders
+      WHERE channel_platform ILIKE '%allegro%' OR channel_label ILIKE '%allegro%'
+      ORDER BY ordered_at DESC
+      LIMIT 5
+    `;
+
     return NextResponse.json({
       config: {
         clientId: clientId ? `${clientId.substring(0, 8)}...` : 'NOT SET',
@@ -20,7 +37,6 @@ export async function GET() {
         clientSecretSet: !!clientSecret,
         clientSecretLength: clientSecret?.length || 0,
         redirectUri,
-        // Check for common issues
         clientIdHasSpaces: clientId?.includes(' ') || false,
         clientIdHasNewline: clientId?.includes('\n') || clientId?.includes('\r') || false,
         clientSecretHasSpaces: clientSecret?.includes(' ') || false,
@@ -28,7 +44,11 @@ export async function GET() {
       },
       authUrl,
       tokensExist: !!(tokens?.access_token),
-      tokensExpireAt: tokens?.expires_at ? new Date(parseInt(tokens.expires_at)).toISOString() : null
+      tokensExpireAt: tokens?.expires_at ? new Date(parseInt(tokens.expires_at)).toISOString() : null,
+      orderMapping: {
+        threadsWithOrderId: threadsWithOrders.rows,
+        allegroOrdersInDb: allegroOrders.rows
+      }
     });
   } catch (error) {
     return NextResponse.json(

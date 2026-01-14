@@ -7,7 +7,8 @@ const publicRoutes = [
   '/api/sync',           // Cron job
   '/api/sync-historical', // Historical sync
   '/api/init-users',     // User initialization
-  '/api/allegro/sync'    // Allegro messages cron
+  '/api/allegro/sync',   // Allegro messages cron
+  '/api/allegro/debug'   // Allegro debug
 ];
 
 export function middleware(request) {
