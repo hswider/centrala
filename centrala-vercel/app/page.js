@@ -163,7 +163,7 @@ export default function Home() {
               <p className="text-blue-200 mb-2">Dostęp do zakładek:</p>
               <div className="flex flex-wrap gap-2">
                 {allPermissions.map(permission => {
-                  const hasAccess = user.permissions?.includes(permission);
+                  const hasAccess = user.role === 'admin' || user.permissions?.includes(permission);
                   const config = permissionLabels[permission];
                   return (
                     <span
