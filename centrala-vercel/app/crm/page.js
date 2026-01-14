@@ -21,7 +21,7 @@ function CRMContent() {
   const [unreadCount, setUnreadCount] = useState(0);
 
   const tabs = [
-    { key: 'wiadomosci', label: 'Wiadomosci Allegro', icon: '💬', badge: unreadCount },
+    { key: 'wiadomosci', label: 'Allegro Dobrelegowiska', icon: '💬', badge: unreadCount },
     { key: 'klienci', label: 'Klienci', icon: '👥' },
     { key: 'kontakty', label: 'Kontakty', icon: '📞' },
     { key: 'notatki', label: 'Notatki', icon: '📝' },
