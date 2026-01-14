@@ -195,88 +195,6 @@ export default function Home() {
           </div>
         )}
 
-        {/* Weather Module */}
-        {weather.length > 0 && (
-          <div className="bg-white rounded-lg shadow mb-6">
-            <div className="px-4 py-3 border-b border-gray-100">
-              <h2 className="font-semibold text-gray-900">🌡️ Pogoda w Europie dzisiaj</h2>
-            </div>
-            <div className="grid grid-cols-4 sm:grid-cols-8 gap-1 p-2">
-              {weather.map((w) => (
-                <div key={w.country_code} className="flex flex-col items-center p-2 rounded hover:bg-gray-50">
-                  <img
-                    src={`/flags/${w.country_code}.png`}
-                    alt={w.country_code}
-                    className="w-6 h-4 sm:w-8 sm:h-5 object-cover rounded-sm shadow-sm"
-                  />
-                  <span className="text-[10px] sm:text-xs text-gray-500 mt-0.5">{w.city}</span>
-                  <span className={`text-sm sm:text-base font-bold ${parseFloat(w.temperature) < 0 ? 'text-blue-600' : parseFloat(w.temperature) > 25 ? 'text-red-600' : 'text-gray-900'}`}>
-                    {Math.round(parseFloat(w.temperature))}°C
-                  </span>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Weather Forecast */}
-        {forecast.length > 0 && (() => {
-          // Transform forecast data for chart
-          const dates = [...new Set(forecast.map(f => f.forecast_date))].slice(0, 14);
-          const chartData = dates.map(date => {
-            const d = new Date(date);
-            const row = { date: d.toLocaleDateString('pl-PL', { day: '2-digit', month: '2-digit' }) };
-            forecast.filter(f => f.forecast_date === date).forEach(f => {
-              row[f.country_code] = Math.round((parseFloat(f.temp_max) + parseFloat(f.temp_min)) / 2);
-            });
-            return row;
-          });
-
-          const countryColors = {
-            PL: '#DC2626', // red
-            DE: '#000000', // black
-            FR: '#2563EB', // blue
-            IT: '#16A34A', // green
-            ES: '#F59E0B', // amber
-            BE: '#FBBF24', // yellow
-            NL: '#F97316', // orange
-            SE: '#0EA5E9', // sky
-          };
-
-          return (
-            <div className="bg-white rounded-lg shadow mb-6">
-              <div className="px-4 py-3 border-b border-gray-100">
-                <h2 className="font-semibold text-gray-900">📅 Prognoza pogody 14 dni</h2>
-              </div>
-              <div className="p-2 sm:p-4">
-                {/* Legend */}
-                <div className="flex flex-wrap gap-2 mb-3 justify-center">
-                  {weather.map((w) => (
-                    <div key={w.country_code} className="flex items-center gap-1">
-                      <div className="w-3 h-3 rounded" style={{ backgroundColor: countryColors[w.country_code] }}></div>
-                      <span className="text-[9px] sm:text-xs text-gray-600">{w.city}</span>
-                    </div>
-                  ))}
-                </div>
-                {/* Chart */}
-                <div className="h-48 sm:h-64">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={chartData} margin={{ top: 5, right: 5, left: -20, bottom: 5 }}>
-                      <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                      <XAxis dataKey="date" tick={{ fontSize: 9 }} tickLine={false} axisLine={false} interval={0} angle={-45} textAnchor="end" height={40} />
-                      <YAxis tick={{ fontSize: 10 }} tickLine={false} axisLine={false} tickFormatter={(v) => `${v}°`} width={35} />
-                      <Tooltip formatter={(value, name) => [`${value}°C`, weather.find(w => w.country_code === name)?.city || name]} contentStyle={{ fontSize: '11px' }} />
-                      {weather.map((w) => (
-                        <Bar key={w.country_code} dataKey={w.country_code} fill={countryColors[w.country_code]} radius={[2, 2, 0, 0]} />
-                      ))}
-                    </BarChart>
-                  </ResponsiveContainer>
-                </div>
-              </div>
-            </div>
-          );
-        })()}
-
         {/* Header */}
         <div className="flex justify-between items-center mb-6">
           <div>
@@ -526,6 +444,88 @@ export default function Home() {
                 </span>
               </div>
             </div>
+
+            {/* Weather Module */}
+            {weather.length > 0 && (
+              <div className="bg-white rounded-lg shadow">
+                <div className="px-4 py-3 border-b border-gray-100">
+                  <h2 className="font-semibold text-gray-900">🌡️ Pogoda w Europie dzisiaj</h2>
+                </div>
+                <div className="grid grid-cols-4 sm:grid-cols-8 gap-1 p-2">
+                  {weather.map((w) => (
+                    <div key={w.country_code} className="flex flex-col items-center p-2 rounded hover:bg-gray-50">
+                      <img
+                        src={`/flags/${w.country_code}.png`}
+                        alt={w.country_code}
+                        className="w-6 h-4 sm:w-8 sm:h-5 object-cover rounded-sm shadow-sm"
+                      />
+                      <span className="text-[10px] sm:text-xs text-gray-500 mt-0.5">{w.city}</span>
+                      <span className={`text-sm sm:text-base font-bold ${parseFloat(w.temperature) < 0 ? 'text-blue-600' : parseFloat(w.temperature) > 25 ? 'text-red-600' : 'text-gray-900'}`}>
+                        {Math.round(parseFloat(w.temperature))}°C
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Weather Forecast */}
+            {forecast.length > 0 && (() => {
+              // Transform forecast data for chart
+              const dates = [...new Set(forecast.map(f => f.forecast_date))].slice(0, 14);
+              const chartData = dates.map(date => {
+                const d = new Date(date);
+                const row = { date: d.toLocaleDateString('pl-PL', { day: '2-digit', month: '2-digit' }) };
+                forecast.filter(f => f.forecast_date === date).forEach(f => {
+                  row[f.country_code] = Math.round((parseFloat(f.temp_max) + parseFloat(f.temp_min)) / 2);
+                });
+                return row;
+              });
+
+              const countryColors = {
+                PL: '#DC2626', // red
+                DE: '#000000', // black
+                FR: '#2563EB', // blue
+                IT: '#16A34A', // green
+                ES: '#F59E0B', // amber
+                BE: '#FBBF24', // yellow
+                NL: '#F97316', // orange
+                SE: '#0EA5E9', // sky
+              };
+
+              return (
+                <div className="bg-white rounded-lg shadow">
+                  <div className="px-4 py-3 border-b border-gray-100">
+                    <h2 className="font-semibold text-gray-900">📅 Prognoza pogody 14 dni</h2>
+                  </div>
+                  <div className="p-2 sm:p-4">
+                    {/* Legend */}
+                    <div className="flex flex-wrap gap-2 mb-3 justify-center">
+                      {weather.map((w) => (
+                        <div key={w.country_code} className="flex items-center gap-1">
+                          <div className="w-3 h-3 rounded" style={{ backgroundColor: countryColors[w.country_code] }}></div>
+                          <span className="text-[9px] sm:text-xs text-gray-600">{w.city}</span>
+                        </div>
+                      ))}
+                    </div>
+                    {/* Chart */}
+                    <div className="h-48 sm:h-64">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <BarChart data={chartData} margin={{ top: 5, right: 5, left: -20, bottom: 5 }}>
+                          <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                          <XAxis dataKey="date" tick={{ fontSize: 9 }} tickLine={false} axisLine={false} interval={0} angle={-45} textAnchor="end" height={40} />
+                          <YAxis tick={{ fontSize: 10 }} tickLine={false} axisLine={false} tickFormatter={(v) => `${v}°`} width={35} />
+                          <Tooltip formatter={(value, name) => [`${value}°C`, weather.find(w => w.country_code === name)?.city || name]} contentStyle={{ fontSize: '11px' }} />
+                          {weather.map((w) => (
+                            <Bar key={w.country_code} dataKey={w.country_code} fill={countryColors[w.country_code]} radius={[2, 2, 0, 0]} />
+                          ))}
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
 
             {/* Quick Link */}
             <Link
