@@ -202,16 +202,11 @@ export default function Home() {
             <div className="grid grid-cols-4 sm:grid-cols-8 gap-1 p-2">
               {weather.map((w) => (
                 <div key={w.country_code} className="flex flex-col items-center p-2 rounded hover:bg-gray-50">
-                  <span className="text-lg sm:text-xl">
-                    {w.country_code === 'PL' ? '🇵🇱' :
-                     w.country_code === 'DE' ? '🇩🇪' :
-                     w.country_code === 'FR' ? '🇫🇷' :
-                     w.country_code === 'IT' ? '🇮🇹' :
-                     w.country_code === 'ES' ? '🇪🇸' :
-                     w.country_code === 'BE' ? '🇧🇪' :
-                     w.country_code === 'NL' ? '🇳🇱' :
-                     w.country_code === 'SE' ? '🇸🇪' : '🏳️'}
-                  </span>
+                  <img
+                    src={`/flags/${w.country_code}.png`}
+                    alt={w.country_code}
+                    className="w-6 h-4 sm:w-8 sm:h-5 object-cover rounded-sm shadow-sm"
+                  />
                   <span className="text-[10px] sm:text-xs text-gray-500 mt-0.5">{w.city}</span>
                   <span className={`text-sm sm:text-base font-bold ${parseFloat(w.temperature) < 0 ? 'text-blue-600' : parseFloat(w.temperature) > 25 ? 'text-red-600' : 'text-gray-900'}`}>
                     {Math.round(parseFloat(w.temperature))}°C
