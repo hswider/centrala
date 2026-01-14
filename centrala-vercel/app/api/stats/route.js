@@ -115,6 +115,7 @@ export async function GET() {
       SELECT
         item->>'name' as name,
         item->>'sku' as sku,
+        item->>'image' as image,
         SUM((item->>'quantity')::int) as total_quantity,
         SUM((item->>'totalGross')::numeric) as total_revenue,
         o.currency
@@ -122,9 +123,9 @@ export async function GET() {
         jsonb_array_elements(o.items) as item
       WHERE o.ordered_at >= (CURRENT_DATE AT TIME ZONE 'Europe/Warsaw') - INTERVAL '30 days'
         AND (item->>'isShipping')::boolean = false
-      GROUP BY item->>'name', item->>'sku', o.currency
+      GROUP BY item->>'name', item->>'sku', item->>'image', o.currency
       ORDER BY total_quantity DESC
-      LIMIT 30
+      LIMIT 50
     `;
 
     // Aggregate top products by name/sku and convert revenue to PLN
@@ -135,12 +136,17 @@ export async function GET() {
         productMap[key] = {
           name: p.name,
           sku: p.sku,
+          image: p.image,
           quantity: 0,
           revenue: 0
         };
       }
       productMap[key].quantity += parseInt(p.total_quantity);
       productMap[key].revenue += convertToPln(p.total_revenue, p.currency);
+      // Keep first non-null image
+      if (!productMap[key].image && p.image) {
+        productMap[key].image = p.image;
+      }
     });
 
     // Sort by quantity and take top 10

@@ -271,34 +271,28 @@ export default function Home() {
                 <div className="px-4 py-3 border-b border-gray-100">
                   <h2 className="font-semibold text-gray-900">TOP 10 produktów (ostatnie 30 dni)</h2>
                 </div>
-                <div className="overflow-x-auto">
-                  <table className="w-full">
-                    <thead className="bg-gray-50">
-                      <tr>
-                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">#</th>
-                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Produkt</th>
-                        <th className="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase">Ilość</th>
-                        <th className="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase">Przychód</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-100">
-                      {stats.topProducts.map((product, idx) => (
-                        <tr key={idx} className="hover:bg-gray-50">
-                          <td className="px-4 py-2 text-sm text-gray-500 font-medium">{idx + 1}</td>
-                          <td className="px-4 py-2">
-                            <div className="text-sm font-medium text-gray-900 truncate max-w-[200px] sm:max-w-none" title={product.name}>
-                              {product.name}
-                            </div>
-                            {product.sku && (
-                              <div className="text-xs text-gray-500 font-mono">{product.sku}</div>
-                            )}
-                          </td>
-                          <td className="px-4 py-2 text-sm text-right font-semibold text-gray-900">{product.quantity} szt.</td>
-                          <td className="px-4 py-2 text-sm text-right font-semibold text-green-600">{product.revenue.toLocaleString('pl-PL')} zł</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                <div className="divide-y divide-gray-100">
+                  {stats.topProducts.map((product, idx) => (
+                    <div key={idx} className="px-3 py-2 flex items-center gap-2 hover:bg-gray-50">
+                      <span className="text-[10px] sm:text-xs text-gray-400 font-medium w-4 shrink-0">{idx + 1}</span>
+                      <div className="w-8 h-8 sm:w-10 sm:h-10 shrink-0 bg-gray-100 rounded overflow-hidden">
+                        {product.image ? (
+                          <img src={product.image} alt="" className="w-full h-full object-cover" />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center text-gray-400 text-[10px]">brak</div>
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="text-[10px] sm:text-xs font-medium text-gray-900 line-clamp-2" title={product.name}>
+                          {product.name}
+                        </div>
+                      </div>
+                      <div className="text-right shrink-0">
+                        <div className="text-[11px] sm:text-sm font-semibold text-gray-900">{product.quantity} szt.</div>
+                        <div className="text-[10px] sm:text-xs font-medium text-green-600">{product.revenue.toLocaleString('pl-PL')} zł</div>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
             )}
