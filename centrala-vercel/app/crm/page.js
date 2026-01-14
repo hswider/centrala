@@ -35,7 +35,7 @@ function CRMContent() {
 
   const tabs = [
     { key: 'wiadomosci', label: 'Allegro Dobrelegowiska', icon: '💬', badge: unreadCount },
-    { key: 'meblebox', label: 'Allegro Meblebox', icon: '🛋️', badge: mebleboxUnreadCount },
+    { key: 'meblebox', label: 'Allegro Meblebox', icon: '💬', badge: mebleboxUnreadCount },
     { key: 'kontakty', label: 'Kontakty', icon: '📞' },
     { key: 'notatki', label: 'Notatki', icon: '📝' },
   ];
@@ -503,7 +503,7 @@ function CRMContent() {
                   </div>
 
                   {/* Message view */}
-                  <div className={`lg:w-2/3 flex flex-col ${!selectedThread ? 'hidden lg:flex' : ''}`}
+                  <div className={`lg:w-2/3 flex flex-col ${!selectedThread ? 'hidden lg:flex' : ''}`}>
                     {!selectedThread ? (
                       <div className="flex-1 flex items-center justify-center text-gray-400">
                         <div className="text-center">
@@ -816,7 +816,7 @@ function CRMContent() {
                   </div>
 
                   {/* Message view */}
-                  <div className={`lg:w-2/3 flex flex-col ${!mebleboxSelectedThread ? 'hidden lg:flex' : ''}`>
+                  <div className={`lg:w-2/3 flex flex-col ${!mebleboxSelectedThread ? 'hidden lg:flex' : ''}`}>
                     {!mebleboxSelectedThread ? (
                       <div className="flex-1 flex items-center justify-center text-gray-400">
                         <div className="text-center">
