@@ -110,6 +110,48 @@ export async function GET() {
       revenue30DaysPln += convertToPln(r.total, r.currency);
     });
 
+    // Top 10 products by quantity sold in last 30 days
+    const topProducts = await sql`
+      SELECT
+        item->>'name' as name,
+        item->>'sku' as sku,
+        SUM((item->>'quantity')::int) as total_quantity,
+        SUM((item->>'totalGross')::numeric) as total_revenue,
+        o.currency
+      FROM orders o,
+        jsonb_array_elements(o.items) as item
+      WHERE o.ordered_at >= (CURRENT_DATE AT TIME ZONE 'Europe/Warsaw') - INTERVAL '30 days'
+        AND (item->>'isShipping')::boolean = false
+      GROUP BY item->>'name', item->>'sku', o.currency
+      ORDER BY total_quantity DESC
+      LIMIT 30
+    `;
+
+    // Aggregate top products by name/sku and convert revenue to PLN
+    const productMap = {};
+    topProducts.rows.forEach(p => {
+      const key = p.sku || p.name;
+      if (!productMap[key]) {
+        productMap[key] = {
+          name: p.name,
+          sku: p.sku,
+          quantity: 0,
+          revenue: 0
+        };
+      }
+      productMap[key].quantity += parseInt(p.total_quantity);
+      productMap[key].revenue += convertToPln(p.total_revenue, p.currency);
+    });
+
+    // Sort by quantity and take top 10
+    const top10Products = Object.values(productMap)
+      .sort((a, b) => b.quantity - a.quantity)
+      .slice(0, 10)
+      .map(p => ({
+        ...p,
+        revenue: Math.round(p.revenue)
+      }));
+
     // Build daily revenue chart data
     const dailyRevenueMap = {};
     revenueLast30Days.rows.forEach(r => {
@@ -154,7 +196,8 @@ export async function GET() {
         todayPln: Math.round(revenueTodayPln),
         last30DaysPln: Math.round(revenue30DaysPln),
         last30Days: last30DaysRevenue
-      }
+      },
+      topProducts: top10Products
     });
   } catch (error) {
     console.error('[API] Error fetching stats:', error);

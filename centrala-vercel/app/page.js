@@ -265,6 +265,44 @@ export default function Home() {
               </div>
             </div>
 
+            {/* Top 10 Products */}
+            {stats?.topProducts?.length > 0 && (
+              <div className="bg-white rounded-lg shadow">
+                <div className="px-4 py-3 border-b border-gray-100">
+                  <h2 className="font-semibold text-gray-900">TOP 10 produktów (ostatnie 30 dni)</h2>
+                </div>
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">#</th>
+                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Produkt</th>
+                        <th className="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase">Ilość</th>
+                        <th className="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase">Przychód</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-100">
+                      {stats.topProducts.map((product, idx) => (
+                        <tr key={idx} className="hover:bg-gray-50">
+                          <td className="px-4 py-2 text-sm text-gray-500 font-medium">{idx + 1}</td>
+                          <td className="px-4 py-2">
+                            <div className="text-sm font-medium text-gray-900 truncate max-w-[200px] sm:max-w-none" title={product.name}>
+                              {product.name}
+                            </div>
+                            {product.sku && (
+                              <div className="text-xs text-gray-500 font-mono">{product.sku}</div>
+                            )}
+                          </td>
+                          <td className="px-4 py-2 text-sm text-right font-semibold text-gray-900">{product.quantity} szt.</td>
+                          <td className="px-4 py-2 text-sm text-right font-semibold text-green-600">{product.revenue.toLocaleString('pl-PL')} zł</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+
             {/* Orders Today by Platform */}
             <div className="bg-white rounded-lg shadow">
               <div className="px-4 py-3 border-b border-gray-100">
