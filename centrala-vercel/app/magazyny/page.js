@@ -1044,10 +1044,10 @@ export default function MagazynyPage() {
               <div className="lg:hidden absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-white to-transparent pointer-events-none z-10" />
 
               <div className="overflow-x-auto">
-                <table className="w-full min-w-[1000px]">
+                <table className="w-full min-w-[1000px] text-xs sm:text-sm">
                 <thead className="bg-gray-50">
                   <tr>
-                    <th className="px-2 py-3 text-center w-10">
+                    <th className="px-2 py-3 text-center w-10 sticky left-0 bg-gray-50 z-20">
                       <input
                         type="checkbox"
                         checked={currentItems.length > 0 && currentItems.every(item => selectedIds.has(item.id))}
@@ -1056,8 +1056,8 @@ export default function MagazynyPage() {
                         title="Zaznacz strone"
                       />
                     </th>
-                    <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase w-40">SKU</th>
-                    <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nazwa produktu</th>
+                    <th className="px-2 py-3 text-left text-[10px] sm:text-xs font-medium text-gray-500 uppercase w-32 sm:w-40 sticky left-10 bg-gray-50 z-20">SKU</th>
+                    <th className="px-2 py-3 text-left text-[10px] sm:text-xs font-medium text-gray-500 uppercase min-w-[150px] sticky left-[168px] sm:left-[200px] bg-gray-50 z-20 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]">Nazwa produktu</th>
                     {(activeTab === 'wykroje' || activeTab === 'polprodukty') && (
                       <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase w-40">Tkanina</th>
                     )}
@@ -1093,7 +1093,7 @@ export default function MagazynyPage() {
                   ) : (
                     currentItems.map((item) => (
                       <tr key={item.id} className={`hover:bg-gray-50 ${selectedIds.has(item.id) ? 'bg-blue-50' : ''}`}>
-                        <td className="px-2 py-2 text-center">
+                        <td className={`px-2 py-2 text-center sticky left-0 z-10 ${selectedIds.has(item.id) ? 'bg-blue-50' : 'bg-white'}`}>
                           <input
                             type="checkbox"
                             checked={selectedIds.has(item.id)}
@@ -1101,10 +1101,10 @@ export default function MagazynyPage() {
                             className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
                           />
                         </td>
-                        <td className="px-3 py-2 w-40 min-w-[160px]">
-                          <span className="font-mono text-xs text-gray-900 whitespace-nowrap">{item.sku}</span>
+                        <td className={`px-2 py-2 w-32 sm:w-40 min-w-[128px] sm:min-w-[160px] sticky left-10 z-10 ${selectedIds.has(item.id) ? 'bg-blue-50' : 'bg-white'}`}>
+                          <span className="font-mono text-[10px] sm:text-xs text-gray-900 whitespace-nowrap">{item.sku}</span>
                         </td>
-                        <td className="px-3 py-2 text-sm text-gray-700">{item.nazwa}</td>
+                        <td className={`px-2 py-2 text-xs sm:text-sm text-gray-700 min-w-[150px] sticky left-[168px] sm:left-[200px] z-10 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] ${selectedIds.has(item.id) ? 'bg-blue-50' : 'bg-white'}`}>{item.nazwa}</td>
                         {(activeTab === 'wykroje' || activeTab === 'polprodukty') && (
                           <td className="px-3 py-2 text-sm text-gray-600">{item.tkanina || '-'}</td>
                         )}
