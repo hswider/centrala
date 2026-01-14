@@ -67,7 +67,7 @@ export default function Navigation() {
         <span className="text-lg sm:text-base">{item.icon}</span>
         <span className="truncate">{item.label}</span>
         {item.badge > 0 && (
-          <span className="absolute top-1 right-1 sm:static sm:ml-1 px-1.5 py-0.5 bg-red-500 text-white text-xs rounded-full min-w-[18px] text-center">
+          <span className="absolute top-1 right-1 sm:static sm:ml-1 w-5 h-5 flex items-center justify-center bg-red-500 text-white text-[10px] font-medium rounded-full leading-none">
             {item.badge > 99 ? '99+' : item.badge}
           </span>
         )}
