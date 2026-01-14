@@ -209,6 +209,13 @@ export async function getOrder(orderId) {
   return allegroFetch(`/order/checkout-forms/${orderId}`);
 }
 
+// ========== OFFERS API ==========
+
+// Get offer details by offer ID
+export async function getOffer(offerId) {
+  return allegroFetch(`/sale/offers/${offerId}`);
+}
+
 // ========== USER API ==========
 
 // Get current user info

@@ -477,11 +477,23 @@ function CRMContent() {
                                 {thread.offer_title && (
                                   <p className="text-xs text-gray-500 truncate">{thread.offer_title}</p>
                                 )}
-                                {!thread.read && (
-                                  <span className="inline-block mt-1 px-2 py-0.5 bg-orange-500 text-white text-xs rounded">
-                                    Nowa
-                                  </span>
-                                )}
+                                <div className="flex items-center gap-1 mt-1">
+                                  {!thread.read && (
+                                    <span className="px-2 py-0.5 bg-orange-500 text-white text-xs rounded">
+                                      Nowa
+                                    </span>
+                                  )}
+                                  {thread.apilo_order_id && (
+                                    <span className="px-2 py-0.5 bg-green-100 text-green-700 text-xs rounded">
+                                      Zamowienie
+                                    </span>
+                                  )}
+                                  {!thread.apilo_order_id && thread.offer_id && (
+                                    <span className="px-2 py-0.5 bg-orange-100 text-orange-700 text-xs rounded">
+                                      Pytanie o oferte
+                                    </span>
+                                  )}
+                                </div>
                               </div>
                             </div>
                           </button>
@@ -491,7 +503,7 @@ function CRMContent() {
                   </div>
 
                   {/* Message view */}
-                  <div className={`lg:w-2/3 flex flex-col ${!selectedThread ? 'hidden lg:flex' : ''}`}>
+                  <div className={`lg:w-2/3 flex flex-col ${!selectedThread ? 'hidden lg:flex' : ''}`}
                     {!selectedThread ? (
                       <div className="flex-1 flex items-center justify-center text-gray-400">
                         <div className="text-center">
@@ -528,15 +540,48 @@ function CRMContent() {
                               <p className="text-xs text-gray-500 truncate">{selectedThread.offer_title}</p>
                             )}
                           </div>
-                          {selectedThread.apilo_order_id && (
+                          {selectedThread.apilo_order_id ? (
                             <a
                               href={`/zamowienia/${selectedThread.apilo_order_id}`}
                               className="px-3 py-1 text-sm bg-green-100 text-green-700 rounded hover:bg-green-200"
                             >
                               Zamowienie #{selectedThread.apilo_order_id}
                             </a>
+                          ) : selectedThread.offer_id && (
+                            <a
+                              href={`https://allegro.pl/oferta/${selectedThread.offer_id}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="px-3 py-1 text-sm bg-orange-100 text-orange-700 rounded hover:bg-orange-200"
+                            >
+                              Zobacz oferte
+                            </a>
                           )}
                         </div>
+
+                        {/* Offer info panel - when no order but has offer */}
+                        {!selectedThread.apilo_order_id && selectedThread.offer_id && (
+                          <div className="px-4 py-3 bg-orange-50 border-b border-orange-100">
+                            <div className="flex items-center justify-between flex-wrap gap-2">
+                              <div className="flex items-center gap-4">
+                                <div>
+                                  <span className="text-xs text-orange-600 font-medium">Pytanie o oferte</span>
+                                  <p className="text-sm font-semibold text-gray-900">
+                                    {selectedThread.offer_title || `ID: ${selectedThread.offer_id}`}
+                                  </p>
+                                </div>
+                              </div>
+                              <a
+                                href={`https://allegro.pl/oferta/${selectedThread.offer_id}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-sm text-orange-600 hover:text-orange-800 underline"
+                              >
+                                Zobacz na Allegro
+                              </a>
+                            </div>
+                          </div>
+                        )}
 
                         {/* Order info panel */}
                         {selectedThread.apilo_order_id && (
@@ -745,11 +790,23 @@ function CRMContent() {
                                 {thread.offer_title && (
                                   <p className="text-xs text-gray-500 truncate">{thread.offer_title}</p>
                                 )}
-                                {!thread.read && (
-                                  <span className="inline-block mt-1 px-2 py-0.5 bg-orange-500 text-white text-xs rounded">
-                                    Nowa
-                                  </span>
-                                )}
+                                <div className="flex items-center gap-1 mt-1">
+                                  {!thread.read && (
+                                    <span className="px-2 py-0.5 bg-orange-500 text-white text-xs rounded">
+                                      Nowa
+                                    </span>
+                                  )}
+                                  {thread.apilo_order_id && (
+                                    <span className="px-2 py-0.5 bg-green-100 text-green-700 text-xs rounded">
+                                      Zamowienie
+                                    </span>
+                                  )}
+                                  {!thread.apilo_order_id && thread.offer_id && (
+                                    <span className="px-2 py-0.5 bg-orange-100 text-orange-700 text-xs rounded">
+                                      Pytanie o oferte
+                                    </span>
+                                  )}
+                                </div>
                               </div>
                             </div>
                           </button>
@@ -759,7 +816,7 @@ function CRMContent() {
                   </div>
 
                   {/* Message view */}
-                  <div className={`lg:w-2/3 flex flex-col ${!mebleboxSelectedThread ? 'hidden lg:flex' : ''}`}>
+                  <div className={`lg:w-2/3 flex flex-col ${!mebleboxSelectedThread ? 'hidden lg:flex' : ''}`>
                     {!mebleboxSelectedThread ? (
                       <div className="flex-1 flex items-center justify-center text-gray-400">
                         <div className="text-center">
@@ -796,15 +853,48 @@ function CRMContent() {
                               <p className="text-xs text-gray-500 truncate">{mebleboxSelectedThread.offer_title}</p>
                             )}
                           </div>
-                          {mebleboxSelectedThread.apilo_order_id && (
+                          {mebleboxSelectedThread.apilo_order_id ? (
                             <a
                               href={`/zamowienia/${mebleboxSelectedThread.apilo_order_id}`}
                               className="px-3 py-1 text-sm bg-green-100 text-green-700 rounded hover:bg-green-200"
                             >
                               Zamowienie #{mebleboxSelectedThread.apilo_order_id}
                             </a>
+                          ) : mebleboxSelectedThread.offer_id && (
+                            <a
+                              href={`https://allegro.pl/oferta/${mebleboxSelectedThread.offer_id}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="px-3 py-1 text-sm bg-orange-100 text-orange-700 rounded hover:bg-orange-200"
+                            >
+                              Zobacz oferte
+                            </a>
                           )}
                         </div>
+
+                        {/* Offer info panel - when no order but has offer */}
+                        {!mebleboxSelectedThread.apilo_order_id && mebleboxSelectedThread.offer_id && (
+                          <div className="px-4 py-3 bg-orange-50 border-b border-orange-100">
+                            <div className="flex items-center justify-between flex-wrap gap-2">
+                              <div className="flex items-center gap-4">
+                                <div>
+                                  <span className="text-xs text-orange-600 font-medium">Pytanie o oferte</span>
+                                  <p className="text-sm font-semibold text-gray-900">
+                                    {mebleboxSelectedThread.offer_title || `ID: ${mebleboxSelectedThread.offer_id}`}
+                                  </p>
+                                </div>
+                              </div>
+                              <a
+                                href={`https://allegro.pl/oferta/${mebleboxSelectedThread.offer_id}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-sm text-orange-600 hover:text-orange-800 underline"
+                              >
+                                Zobacz na Allegro
+                              </a>
+                            </div>
+                          </div>
+                        )}
 
                         {/* Order info panel */}
                         {mebleboxSelectedThread.apilo_order_id && (
