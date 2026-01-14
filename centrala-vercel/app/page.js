@@ -12,14 +12,17 @@ export default function Home() {
 
   // Permission labels mapping
   const permissionLabels = {
-    dashboard: 'Dashboard',
-    oms: 'OMS (Zamowienia)',
-    wms: 'WMS (Magazyny)',
-    mes: 'MES (Produkcja)',
-    crm: 'CRM (Klienci)',
-    agent: 'Asystent AI',
-    admin: 'Administracja'
+    dashboard: { label: 'Dashboard', icon: '📊' },
+    oms: { label: 'OMS (Zamówienia)', icon: '📦' },
+    wms: { label: 'WMS (Magazyny)', icon: '🏭' },
+    mes: { label: 'MES (Produkcja)', icon: '⚙️' },
+    crm: { label: 'CRM (Klienci)', icon: '👥' },
+    rank: { label: 'RANK', icon: '📈' },
+    agent: { label: 'Asystent AI', icon: '🤖' },
+    admin: { label: 'Administracja', icon: '🔐' }
   };
+
+  const allPermissions = ['dashboard', 'oms', 'wms', 'mes', 'crm', 'rank', 'agent'];
 
   const fetchUser = async () => {
     try {
@@ -157,16 +160,20 @@ export default function Home() {
               Rola: <span className="font-medium text-white">{user.role === 'admin' ? 'Administrator' : 'Uzytkownik'}</span>
             </p>
             <div className="text-sm">
-              <p className="text-blue-200 mb-2">Aktualnie masz dostep do zakladek:</p>
+              <p className="text-blue-200 mb-2">Dostęp do zakładek:</p>
               <div className="flex flex-wrap gap-2">
-                {user.permissions?.filter(p => p !== 'admin').map(permission => (
-                  <span
-                    key={permission}
-                    className="px-2 py-1 bg-white/20 rounded text-xs font-medium"
-                  >
-                    {permissionLabels[permission] || permission}
-                  </span>
-                ))}
+                {allPermissions.map(permission => {
+                  const hasAccess = user.permissions?.includes(permission);
+                  const config = permissionLabels[permission];
+                  return (
+                    <span
+                      key={permission}
+                      className={`px-2 py-1 rounded text-xs font-medium ${hasAccess ? 'bg-green-500 text-white' : 'bg-red-500/80 text-white/80'}`}
+                    >
+                      {config?.icon} {config?.label || permission}
+                    </span>
+                  );
+                })}
               </div>
             </div>
           </div>
