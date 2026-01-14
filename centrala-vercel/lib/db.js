@@ -1024,16 +1024,36 @@ export async function getAllegroThreads(page = 1, perPage = 20, unreadOnly = fal
 
   if (unreadOnly) {
     result = await sql`
-      SELECT * FROM allegro_threads
-      WHERE read = false
-      ORDER BY last_message_at DESC NULLS LAST
+      SELECT
+        t.*,
+        o.id as apilo_order_id,
+        o.total_gross as order_total,
+        o.currency as order_currency,
+        o.ordered_at as order_date,
+        o.payment_status as order_payment_status,
+        o.items as order_items,
+        o.customer as order_customer
+      FROM allegro_threads t
+      LEFT JOIN orders o ON o.external_id = t.order_id
+      WHERE t.read = false
+      ORDER BY t.last_message_at DESC NULLS LAST
       LIMIT ${perPage} OFFSET ${offset}
     `;
     countResult = await sql`SELECT COUNT(*) as total FROM allegro_threads WHERE read = false`;
   } else {
     result = await sql`
-      SELECT * FROM allegro_threads
-      ORDER BY last_message_at DESC NULLS LAST
+      SELECT
+        t.*,
+        o.id as apilo_order_id,
+        o.total_gross as order_total,
+        o.currency as order_currency,
+        o.ordered_at as order_date,
+        o.payment_status as order_payment_status,
+        o.items as order_items,
+        o.customer as order_customer
+      FROM allegro_threads t
+      LEFT JOIN orders o ON o.external_id = t.order_id
+      ORDER BY t.last_message_at DESC NULLS LAST
       LIMIT ${perPage} OFFSET ${offset}
     `;
     countResult = await sql`SELECT COUNT(*) as total FROM allegro_threads`;
@@ -1050,7 +1070,20 @@ export async function getAllegroThreads(page = 1, perPage = 20, unreadOnly = fal
 
 // Get single Allegro thread with messages
 export async function getAllegroThread(threadId) {
-  const threadResult = await sql`SELECT * FROM allegro_threads WHERE id = ${threadId}`;
+  const threadResult = await sql`
+    SELECT
+      t.*,
+      o.id as apilo_order_id,
+      o.total_gross as order_total,
+      o.currency as order_currency,
+      o.ordered_at as order_date,
+      o.payment_status as order_payment_status,
+      o.items as order_items,
+      o.customer as order_customer
+    FROM allegro_threads t
+    LEFT JOIN orders o ON o.external_id = t.order_id
+    WHERE t.id = ${threadId}
+  `;
   if (threadResult.rows.length === 0) return null;
 
   const messagesResult = await sql`

@@ -125,11 +125,15 @@ function CRMContent() {
     setThreadMessages([]);
 
     try {
-      // Fetch messages
+      // Fetch messages and thread data (includes order info)
       const res = await fetch(`/api/allegro/messages/${thread.id}?refresh=true`);
       const data = await res.json();
       if (data.success) {
         setThreadMessages(data.messages || []);
+        // Update selected thread with order data from API
+        if (data.thread) {
+          setSelectedThread(data.thread);
+        }
       }
 
       // Mark as read
@@ -370,15 +374,79 @@ function CRMContent() {
                               <p className="text-xs text-gray-500 truncate">{selectedThread.offer_title}</p>
                             )}
                           </div>
-                          {selectedThread.order_id && (
+                          {selectedThread.apilo_order_id && (
                             <a
-                              href={`/zamowienia/${selectedThread.order_id}`}
-                              className="px-3 py-1 text-sm bg-gray-100 text-gray-700 rounded hover:bg-gray-200"
+                              href={`/zamowienia/${selectedThread.apilo_order_id}`}
+                              className="px-3 py-1 text-sm bg-green-100 text-green-700 rounded hover:bg-green-200"
                             >
-                              Zamowienie
+                              Zamowienie #{selectedThread.apilo_order_id}
                             </a>
                           )}
                         </div>
+
+                        {/* Order info panel */}
+                        {selectedThread.apilo_order_id && (
+                          <div className="px-4 py-3 bg-blue-50 border-b border-blue-100">
+                            <div className="flex items-center justify-between flex-wrap gap-2">
+                              <div className="flex items-center gap-4">
+                                <div>
+                                  <span className="text-xs text-blue-600 font-medium">Zamowienie</span>
+                                  <p className="text-sm font-semibold text-gray-900">#{selectedThread.apilo_order_id}</p>
+                                </div>
+                                {selectedThread.order_total && (
+                                  <div>
+                                    <span className="text-xs text-blue-600 font-medium">Wartosc</span>
+                                    <p className="text-sm font-semibold text-gray-900">
+                                      {parseFloat(selectedThread.order_total).toFixed(2)} {selectedThread.order_currency || 'PLN'}
+                                    </p>
+                                  </div>
+                                )}
+                                {selectedThread.order_date && (
+                                  <div>
+                                    <span className="text-xs text-blue-600 font-medium">Data</span>
+                                    <p className="text-sm text-gray-900">
+                                      {new Date(selectedThread.order_date).toLocaleDateString('pl-PL')}
+                                    </p>
+                                  </div>
+                                )}
+                                {selectedThread.order_payment_status && (
+                                  <div>
+                                    <span className={`px-2 py-0.5 text-xs rounded ${
+                                      selectedThread.order_payment_status === 'PAID'
+                                        ? 'bg-green-100 text-green-700'
+                                        : 'bg-yellow-100 text-yellow-700'
+                                    }`}>
+                                      {selectedThread.order_payment_status === 'PAID' ? 'Oplacone' : 'Nieoplacone'}
+                                    </span>
+                                  </div>
+                                )}
+                              </div>
+                              {selectedThread.order_customer && (
+                                <div className="text-right">
+                                  <span className="text-xs text-blue-600 font-medium">Klient</span>
+                                  <p className="text-sm text-gray-900">{selectedThread.order_customer.name || '-'}</p>
+                                </div>
+                              )}
+                            </div>
+                            {selectedThread.order_items && selectedThread.order_items.length > 0 && (
+                              <div className="mt-2 pt-2 border-t border-blue-200">
+                                <span className="text-xs text-blue-600 font-medium">Produkty:</span>
+                                <div className="flex flex-wrap gap-1 mt-1">
+                                  {selectedThread.order_items.slice(0, 3).map((item, idx) => (
+                                    <span key={idx} className="px-2 py-0.5 bg-white text-xs text-gray-700 rounded border">
+                                      {item.name?.substring(0, 30)}{item.name?.length > 30 ? '...' : ''} x{item.quantity}
+                                    </span>
+                                  ))}
+                                  {selectedThread.order_items.length > 3 && (
+                                    <span className="px-2 py-0.5 bg-white text-xs text-gray-500 rounded border">
+                                      +{selectedThread.order_items.length - 3} wiecej
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        )}
 
                         {/* Messages */}
                         <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-gray-50">
