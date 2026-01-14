@@ -125,7 +125,7 @@ export async function GET() {
         AND (item->>'isShipping')::boolean = false
       GROUP BY item->>'name', item->>'sku', item->>'image', o.currency
       ORDER BY total_quantity DESC
-      LIMIT 50
+      LIMIT 500
     `;
 
     // Aggregate top products by name/sku and convert revenue to PLN
@@ -149,10 +149,10 @@ export async function GET() {
       }
     });
 
-    // Sort by quantity and take top 10
-    const top10Products = Object.values(productMap)
+    // Sort by quantity and take top 100
+    const topProductsList = Object.values(productMap)
       .sort((a, b) => b.quantity - a.quantity)
-      .slice(0, 10)
+      .slice(0, 100)
       .map(p => ({
         ...p,
         revenue: Math.round(p.revenue)
@@ -203,7 +203,7 @@ export async function GET() {
         last30DaysPln: Math.round(revenue30DaysPln),
         last30Days: last30DaysRevenue
       },
-      topProducts: top10Products
+      topProducts: topProductsList
     });
   } catch (error) {
     console.error('[API] Error fetching stats:', error);

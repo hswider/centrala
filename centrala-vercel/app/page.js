@@ -272,7 +272,7 @@ export default function Home() {
                   <h2 className="font-semibold text-gray-900">TOP 10 produktów (ostatnie 30 dni)</h2>
                 </div>
                 <div className="divide-y divide-gray-100">
-                  {stats.topProducts.map((product, idx) => (
+                  {stats.topProducts.slice(0, 10).map((product, idx) => (
                     <div key={idx} className="px-3 py-2 flex items-center gap-2 hover:bg-gray-50">
                       <span className="text-sm sm:text-base w-5 shrink-0 text-center">
                         {idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : <span className="text-[10px] sm:text-xs text-gray-400 font-medium">{idx + 1}</span>}
