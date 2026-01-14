@@ -299,6 +299,40 @@ export default function Home() {
               </div>
             )}
 
+            {/* Top 5 Marketplaces */}
+            {stats?.last30DaysByPlatform?.length > 0 && (
+              <div className="bg-white rounded-lg shadow">
+                <div className="px-4 py-3 border-b border-gray-100">
+                  <h2 className="font-semibold text-gray-900">TOP 5 Marketplace'ów (ostatnie 30 dni)</h2>
+                </div>
+                <div className="divide-y divide-gray-100">
+                  {stats.last30DaysByPlatform.slice(0, 5).map((item, idx) => (
+                    <div key={idx} className="px-3 py-2 flex items-center gap-3 hover:bg-gray-50">
+                      <span className="text-sm sm:text-base w-5 shrink-0 text-center">
+                        {idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : <span className="text-[10px] sm:text-xs text-gray-400 font-medium">{idx + 1}</span>}
+                      </span>
+                      <div className="w-8 h-8 sm:w-10 sm:h-10 shrink-0 rounded overflow-hidden bg-gray-100 flex items-center justify-center">
+                        {platformConfig[item.platform]?.icon ? (
+                          <img src={platformConfig[item.platform].icon} alt={item.platform} className="w-6 h-6 sm:w-8 sm:h-8 object-contain" />
+                        ) : (
+                          <span className="text-xs font-bold text-gray-500">{item.platform?.charAt(0)}</span>
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="text-xs sm:text-sm font-medium text-gray-900">
+                          {getPlatformLabel(item.platform)}
+                        </div>
+                      </div>
+                      <div className="text-right shrink-0">
+                        <div className="text-sm sm:text-base font-bold text-blue-600">{item.count}</div>
+                        <div className="text-[10px] sm:text-xs text-gray-500">zamówień</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {/* Orders Today by Platform */}
             <div className="bg-white rounded-lg shadow">
               <div className="px-4 py-3 border-b border-gray-100">
