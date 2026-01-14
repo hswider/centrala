@@ -55,8 +55,8 @@ async function handleSync(request) {
     await setAllegroSyncInProgress(true);
 
     try {
-      // Fetch threads from Allegro
-      const threadsResponse = await getMessageThreads(50, 0);
+      // Fetch threads from Allegro (max 20 per Allegro API limit)
+      const threadsResponse = await getMessageThreads(20, 0);
       const threads = threadsResponse.threads || [];
 
       let syncedThreads = 0;
