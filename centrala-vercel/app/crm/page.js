@@ -264,7 +264,7 @@ function CRMContent() {
                   </a>
                 </div>
               ) : (
-                <div className="flex flex-col lg:flex-row h-[600px]">
+                <div className="flex flex-col lg:flex-row h-[800px]">
                   {/* Thread list */}
                   <div className={`lg:w-1/3 border-r border-gray-200 flex flex-col ${selectedThread ? 'hidden lg:flex' : ''}`}>
                     <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
