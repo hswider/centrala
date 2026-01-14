@@ -1014,6 +1014,21 @@ export async function saveAllegroMessage(message, threadId) {
       has_attachments = EXCLUDED.has_attachments,
       attachments = EXCLUDED.attachments
   `;
+
+  // If message has related order, update thread with order_id
+  const orderId = message.relatesTo?.order?.id;
+  const offerId = message.relatesTo?.offer?.id;
+
+  if (orderId || offerId) {
+    await sql`
+      UPDATE allegro_threads
+      SET
+        order_id = COALESCE(${orderId}, order_id),
+        offer_id = COALESCE(${offerId}, offer_id),
+        updated_at = CURRENT_TIMESTAMP
+      WHERE id = ${threadId}
+    `;
+  }
 }
 
 // Get Allegro threads with pagination
