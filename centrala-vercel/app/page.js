@@ -9,6 +9,7 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
   const [user, setUser] = useState(null);
+  const [weather, setWeather] = useState([]);
 
   // Permission labels mapping
   const permissionLabels = {
@@ -48,6 +49,18 @@ export default function Home() {
     }
   };
 
+  const fetchWeather = async () => {
+    try {
+      const res = await fetch('/api/weather');
+      const data = await res.json();
+      if (data.success) {
+        setWeather(data.weather);
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
   const triggerSync = async () => {
     setSyncing(true);
     try {
@@ -66,6 +79,7 @@ export default function Home() {
   useEffect(() => {
     fetchUser();
     fetchStats();
+    fetchWeather();
   }, []);
 
   const platformConfig = {
@@ -175,6 +189,35 @@ export default function Home() {
                   );
                 })}
               </div>
+            </div>
+          </div>
+        )}
+
+        {/* Weather Module */}
+        {weather.length > 0 && (
+          <div className="bg-white rounded-lg shadow mb-6">
+            <div className="px-4 py-3 border-b border-gray-100">
+              <h2 className="font-semibold text-gray-900">🌡️ Pogoda w Europie</h2>
+            </div>
+            <div className="grid grid-cols-4 sm:grid-cols-8 gap-1 p-2">
+              {weather.map((w) => (
+                <div key={w.country_code} className="flex flex-col items-center p-2 rounded hover:bg-gray-50">
+                  <span className="text-lg sm:text-xl">
+                    {w.country_code === 'PL' ? '🇵🇱' :
+                     w.country_code === 'DE' ? '🇩🇪' :
+                     w.country_code === 'FR' ? '🇫🇷' :
+                     w.country_code === 'IT' ? '🇮🇹' :
+                     w.country_code === 'ES' ? '🇪🇸' :
+                     w.country_code === 'BE' ? '🇧🇪' :
+                     w.country_code === 'NL' ? '🇳🇱' :
+                     w.country_code === 'SE' ? '🇸🇪' : '🏳️'}
+                  </span>
+                  <span className="text-[10px] sm:text-xs text-gray-500 mt-0.5">{w.country_name}</span>
+                  <span className={`text-sm sm:text-base font-bold ${parseFloat(w.temperature) < 0 ? 'text-blue-600' : parseFloat(w.temperature) > 25 ? 'text-red-600' : 'text-gray-900'}`}>
+                    {Math.round(parseFloat(w.temperature))}°C
+                  </span>
+                </div>
+              ))}
             </div>
           </div>
         )}

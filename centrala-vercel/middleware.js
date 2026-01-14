@@ -12,7 +12,8 @@ const publicRoutes = [
   '/api/allegro-meblebox/sync',   // Allegro Meblebox messages cron
   '/api/allegro-meblebox/callback', // Allegro Meblebox OAuth callback
   '/api/gmail/sync',     // Gmail (Shopify) messages cron
-  '/api/gmail/callback'  // Gmail OAuth callback
+  '/api/gmail/callback', // Gmail OAuth callback
+  '/api/weather/sync'    // Weather sync cron
 ];
 
 export function middleware(request) {

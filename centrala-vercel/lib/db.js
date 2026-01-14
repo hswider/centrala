@@ -293,6 +293,20 @@ export async function initDatabase() {
     await sql`INSERT INTO gmail_sync_status (id) VALUES (1)`;
   }
 
+  // Weather data table
+  await sql`
+    CREATE TABLE IF NOT EXISTS weather (
+      id SERIAL PRIMARY KEY,
+      country_code VARCHAR(2) NOT NULL,
+      country_name VARCHAR(50) NOT NULL,
+      city VARCHAR(100) NOT NULL,
+      temperature DECIMAL(4,1),
+      weather_code INTEGER,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      UNIQUE(country_code)
+    )
+  `;
+
   // Insert default Allegro Meblebox token row if not exists
   const { rows: allegroMebleboxTokenRows } = await sql`SELECT COUNT(*) as count FROM allegro_meblebox_tokens`;
   if (allegroMebleboxTokenRows[0].count === '0') {
@@ -1637,4 +1651,21 @@ export async function markGmailThreadAsRead(threadId) {
 export async function getUnreadGmailThreadsCount() {
   const { rows } = await sql`SELECT COUNT(*) as count FROM gmail_threads WHERE unread = true`;
   return parseInt(rows[0].count);
+}
+
+// Weather operations
+export async function saveWeather(countryCode, countryName, city, temperature, weatherCode) {
+  await sql`
+    INSERT INTO weather (country_code, country_name, city, temperature, weather_code, updated_at)
+    VALUES (${countryCode}, ${countryName}, ${city}, ${temperature}, ${weatherCode}, CURRENT_TIMESTAMP)
+    ON CONFLICT (country_code) DO UPDATE SET
+      temperature = ${temperature},
+      weather_code = ${weatherCode},
+      updated_at = CURRENT_TIMESTAMP
+  `;
+}
+
+export async function getWeather() {
+  const { rows } = await sql`SELECT * FROM weather ORDER BY country_name`;
+  return rows;
 }
