@@ -7,8 +7,10 @@ const publicRoutes = [
   '/api/sync',           // Cron job
   '/api/sync-historical', // Historical sync
   '/api/init-users',     // User initialization
-  '/api/allegro/sync',   // Allegro messages cron
-  '/api/allegro/debug'   // Allegro debug
+  '/api/allegro/sync',   // Allegro Dobrelegowiska messages cron
+  '/api/allegro/debug',  // Allegro debug
+  '/api/allegro-meblebox/sync',   // Allegro Meblebox messages cron
+  '/api/allegro-meblebox/callback' // Allegro Meblebox OAuth callback
 ];
 
 export function middleware(request) {
