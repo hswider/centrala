@@ -199,7 +199,7 @@ export default function Home() {
         {weather.length > 0 && (
           <div className="bg-white rounded-lg shadow mb-6">
             <div className="px-4 py-3 border-b border-gray-100">
-              <h2 className="font-semibold text-gray-900">🌡️ Pogoda w Europie</h2>
+              <h2 className="font-semibold text-gray-900">🌡️ Pogoda w Europie dzisiaj</h2>
             </div>
             <div className="grid grid-cols-4 sm:grid-cols-8 gap-1 p-2">
               {weather.map((w) => (
@@ -246,7 +246,7 @@ export default function Home() {
           return (
             <div className="bg-white rounded-lg shadow mb-6">
               <div className="px-4 py-3 border-b border-gray-100">
-                <h2 className="font-semibold text-gray-900">📅 Prognoza 14 dni</h2>
+                <h2 className="font-semibold text-gray-900">📅 Prognoza pogody 14 dni</h2>
               </div>
               <div className="p-2 sm:p-4">
                 {/* Legend */}
