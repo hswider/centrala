@@ -1056,7 +1056,7 @@ export default function MagazynyPage() {
                         title="Zaznacz strone"
                       />
                     </th>
-                    <th className={`px-2 py-3 text-left text-[10px] sm:text-xs font-medium text-gray-500 uppercase ${activeTab === 'surowce' ? 'w-[50px]' : 'w-[80px]'} sm:w-auto sm:min-w-[150px] sticky left-10 bg-gray-50 z-20 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]`}>Nazwa produktu</th>
+                    <th className="px-2 py-3 text-left text-[10px] sm:text-xs font-medium text-gray-500 uppercase w-[80px] sm:w-auto sm:min-w-[150px] sticky left-[40px] bg-gray-50 z-20 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]">Nazwa produktu</th>
                     <th className="px-2 py-3 text-left text-[10px] sm:text-xs font-medium text-gray-500 uppercase w-32 sm:w-40">SKU</th>
                     {(activeTab === 'wykroje' || activeTab === 'polprodukty') && (
                       <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase w-40">Tkanina</th>
@@ -1093,7 +1093,7 @@ export default function MagazynyPage() {
                   ) : (
                     currentItems.map((item) => (
                       <tr key={item.id} className={`hover:bg-gray-50 ${selectedIds.has(item.id) ? 'bg-blue-50' : ''}`}>
-                        <td className={`px-2 py-2 text-center sticky left-0 z-10 ${selectedIds.has(item.id) ? 'bg-blue-50' : 'bg-white'}`}>
+                        <td className={`px-2 py-2 text-center w-10 sticky left-0 z-10 ${selectedIds.has(item.id) ? 'bg-blue-50' : 'bg-white'}`}>
                           <input
                             type="checkbox"
                             checked={selectedIds.has(item.id)}
@@ -1101,7 +1101,7 @@ export default function MagazynyPage() {
                             className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
                           />
                         </td>
-                        <td className={`px-2 py-2 ${activeTab === 'surowce' ? 'text-xs w-[50px] max-w-[50px]' : 'text-[7px] w-[80px] max-w-[80px]'} sm:text-sm sm:w-auto sm:min-w-[150px] sm:max-w-none text-gray-700 break-words sticky left-10 z-10 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] ${selectedIds.has(item.id) ? 'bg-blue-50' : 'bg-white'}`} title={item.nazwa}>{item.nazwa}</td>
+                        <td className={`px-2 py-2 text-[7px] sm:text-sm text-gray-700 w-[80px] max-w-[80px] sm:w-auto sm:min-w-[150px] sm:max-w-none break-words sticky left-[40px] z-10 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] ${selectedIds.has(item.id) ? 'bg-blue-50' : 'bg-white'}`} title={item.nazwa}>{item.nazwa}</td>
                         <td className="px-2 py-2 w-32 sm:w-40 min-w-[128px] sm:min-w-[160px]">
                           <span className="font-mono text-[10px] sm:text-xs text-gray-900 whitespace-nowrap">{item.sku}</span>
                         </td>
