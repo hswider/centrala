@@ -15,14 +15,22 @@ export async function GET() {
 
     // Check order IDs in both tables
     const threadsWithOrders = await sql`
-      SELECT id, order_id, interlocutor_login, offer_title
+      SELECT id, order_id, interlocutor_login, interlocutor_name, offer_title
       FROM allegro_threads
       WHERE order_id IS NOT NULL
       LIMIT 5
     `;
 
+    // All threads (to see what data we have)
+    const allThreads = await sql`
+      SELECT id, order_id, interlocutor_login, interlocutor_name, offer_title
+      FROM allegro_threads
+      ORDER BY last_message_at DESC
+      LIMIT 5
+    `;
+
     const allegroOrders = await sql`
-      SELECT id, external_id, channel_platform, channel_label
+      SELECT id, external_id, channel_platform, channel_label, customer
       FROM orders
       WHERE channel_platform ILIKE '%allegro%' OR channel_label ILIKE '%allegro%'
       ORDER BY ordered_at DESC
@@ -47,6 +55,7 @@ export async function GET() {
       tokensExpireAt: tokens?.expires_at ? new Date(parseInt(tokens.expires_at)).toISOString() : null,
       orderMapping: {
         threadsWithOrderId: threadsWithOrders.rows,
+        allThreads: allThreads.rows,
         allegroOrdersInDb: allegroOrders.rows
       }
     });
