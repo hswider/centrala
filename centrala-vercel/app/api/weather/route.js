@@ -1,15 +1,17 @@
 import { NextResponse } from 'next/server';
-import { initDatabase, getWeather } from '../../../lib/db';
+import { initDatabase, getWeather, getWeatherForecast } from '../../../lib/db';
 
 export async function GET() {
   try {
     await initDatabase();
 
     const weather = await getWeather();
+    const forecast = await getWeatherForecast();
 
     return NextResponse.json({
       success: true,
-      weather
+      weather,
+      forecast
     });
   } catch (error) {
     console.error('Get weather error:', error);

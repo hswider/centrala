@@ -307,6 +307,20 @@ export async function initDatabase() {
     )
   `;
 
+  // Weather forecast table
+  await sql`
+    CREATE TABLE IF NOT EXISTS weather_forecast (
+      id SERIAL PRIMARY KEY,
+      country_code VARCHAR(2) NOT NULL,
+      forecast_date DATE NOT NULL,
+      temp_max DECIMAL(4,1),
+      temp_min DECIMAL(4,1),
+      weather_code INTEGER,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      UNIQUE(country_code, forecast_date)
+    )
+  `;
+
   // Insert default Allegro Meblebox token row if not exists
   const { rows: allegroMebleboxTokenRows } = await sql`SELECT COUNT(*) as count FROM allegro_meblebox_tokens`;
   if (allegroMebleboxTokenRows[0].count === '0') {
@@ -1667,5 +1681,27 @@ export async function saveWeather(countryCode, countryName, city, temperature, w
 
 export async function getWeather() {
   const { rows } = await sql`SELECT * FROM weather ORDER BY country_name`;
+  return rows;
+}
+
+// Weather forecast operations
+export async function saveWeatherForecast(countryCode, forecastDate, tempMax, tempMin, weatherCode) {
+  await sql`
+    INSERT INTO weather_forecast (country_code, forecast_date, temp_max, temp_min, weather_code, updated_at)
+    VALUES (${countryCode}, ${forecastDate}, ${tempMax}, ${tempMin}, ${weatherCode}, CURRENT_TIMESTAMP)
+    ON CONFLICT (country_code, forecast_date) DO UPDATE SET
+      temp_max = ${tempMax},
+      temp_min = ${tempMin},
+      weather_code = ${weatherCode},
+      updated_at = CURRENT_TIMESTAMP
+  `;
+}
+
+export async function getWeatherForecast() {
+  const { rows } = await sql`
+    SELECT * FROM weather_forecast
+    WHERE forecast_date >= CURRENT_DATE
+    ORDER BY forecast_date, country_code
+  `;
   return rows;
 }

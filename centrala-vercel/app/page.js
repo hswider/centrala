@@ -10,6 +10,7 @@ export default function Home() {
   const [syncing, setSyncing] = useState(false);
   const [user, setUser] = useState(null);
   const [weather, setWeather] = useState([]);
+  const [forecast, setForecast] = useState([]);
 
   // Permission labels mapping
   const permissionLabels = {
@@ -55,6 +56,7 @@ export default function Home() {
       const data = await res.json();
       if (data.success) {
         setWeather(data.weather);
+        setForecast(data.forecast || []);
       }
     } catch (err) {
       console.error(err);
@@ -213,6 +215,57 @@ export default function Home() {
                   </span>
                 </div>
               ))}
+            </div>
+          </div>
+        )}
+
+        {/* Weather Forecast */}
+        {forecast.length > 0 && (
+          <div className="bg-white rounded-lg shadow mb-6">
+            <div className="px-4 py-3 border-b border-gray-100">
+              <h2 className="font-semibold text-gray-900">📅 Prognoza 14 dni</h2>
+            </div>
+            <div className="p-4 overflow-x-auto">
+              <div className="min-w-[600px]">
+                {/* Header with dates */}
+                <div className="flex gap-1 mb-2">
+                  <div className="w-16 shrink-0"></div>
+                  {[...new Set(forecast.map(f => f.forecast_date))].slice(0, 14).map((date) => {
+                    const d = new Date(date);
+                    return (
+                      <div key={date} className="flex-1 text-center text-[8px] sm:text-[10px] text-gray-500">
+                        {d.toLocaleDateString('pl-PL', { day: '2-digit', month: '2-digit' })}
+                      </div>
+                    );
+                  })}
+                </div>
+                {/* Rows for each country */}
+                {weather.map((w) => {
+                  const countryForecast = forecast.filter(f => f.country_code === w.country_code).slice(0, 14);
+                  return (
+                    <div key={w.country_code} className="flex gap-1 mb-1 items-center">
+                      <div className="w-16 shrink-0 flex items-center gap-1">
+                        <img src={`/flags/${w.country_code}.png`} alt={w.country_code} className="w-4 h-3 object-cover rounded-sm" />
+                        <span className="text-[9px] sm:text-[10px] text-gray-600 truncate">{w.city}</span>
+                      </div>
+                      {countryForecast.map((f, idx) => {
+                        const avgTemp = (parseFloat(f.temp_max) + parseFloat(f.temp_min)) / 2;
+                        const barHeight = Math.max(8, Math.min(40, (avgTemp + 10) * 1.2));
+                        return (
+                          <div key={idx} className="flex-1 flex flex-col items-center justify-end h-12">
+                            <div
+                              className={`w-full max-w-[20px] rounded-t ${avgTemp < 0 ? 'bg-blue-400' : avgTemp > 20 ? 'bg-orange-400' : 'bg-green-400'}`}
+                              style={{ height: `${barHeight}px` }}
+                              title={`${Math.round(avgTemp)}°C`}
+                            ></div>
+                            <span className="text-[7px] sm:text-[8px] text-gray-500 mt-0.5">{Math.round(avgTemp)}°</span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           </div>
         )}

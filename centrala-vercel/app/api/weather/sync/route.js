@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { initDatabase, saveWeather } from '../../../../lib/db';
+import { initDatabase, saveWeather, saveWeatherForecast } from '../../../../lib/db';
 
 // Countries with their capitals and coordinates
 const COUNTRIES = [
@@ -34,16 +34,19 @@ async function handleSync(request) {
     }
 
     const results = [];
+    const forecastResults = [];
     const errors = [];
 
     for (const country of COUNTRIES) {
       try {
         // Use Open-Meteo API (free, no API key required)
-        const url = `https://api.open-meteo.com/v1/forecast?latitude=${country.lat}&longitude=${country.lon}&current=temperature_2m,weather_code&timezone=Europe%2FWarsaw`;
+        // Fetch current weather and 14-day forecast
+        const url = `https://api.open-meteo.com/v1/forecast?latitude=${country.lat}&longitude=${country.lon}&current=temperature_2m,weather_code&daily=temperature_2m_max,temperature_2m_min,weather_code&timezone=Europe%2FWarsaw&forecast_days=14`;
 
         const response = await fetch(url);
         const data = await response.json();
 
+        // Save current weather
         if (data.current) {
           const temperature = data.current.temperature_2m;
           const weatherCode = data.current.weather_code;
@@ -63,6 +66,23 @@ async function handleSync(request) {
             weatherCode
           });
         }
+
+        // Save 14-day forecast
+        if (data.daily && data.daily.time) {
+          for (let i = 0; i < data.daily.time.length; i++) {
+            await saveWeatherForecast(
+              country.code,
+              data.daily.time[i],
+              data.daily.temperature_2m_max[i],
+              data.daily.temperature_2m_min[i],
+              data.daily.weather_code[i]
+            );
+          }
+          forecastResults.push({
+            country: country.name,
+            days: data.daily.time.length
+          });
+        }
       } catch (err) {
         errors.push(`${country.name}: ${err.message}`);
       }
@@ -72,6 +92,7 @@ async function handleSync(request) {
       success: true,
       synced: results.length,
       results,
+      forecast: forecastResults,
       errors: errors.length > 0 ? errors : undefined
     });
   } catch (error) {
