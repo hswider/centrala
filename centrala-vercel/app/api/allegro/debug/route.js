@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { sql } from '@vercel/postgres';
-import { getAuthorizationUrl, getThread, isAuthenticated } from '../../../../lib/allegro';
+import { getAuthorizationUrl, getThread, getThreadMessages, getMessageThreads, isAuthenticated } from '../../../../lib/allegro';
 import { getAllegroTokens } from '../../../../lib/db';
 
 // GET - Debug Allegro configuration
@@ -57,11 +57,25 @@ export async function GET() {
         threadsWithOrderId: threadsWithOrders.rows,
         allThreads: allThreads.rows,
         allegroOrdersInDb: allegroOrders.rows,
-        // Fetch raw thread data from Allegro API for first thread
+        // Fetch raw thread data from Allegro API
         rawThreadFromApi: await (async () => {
           try {
-            if (allThreads.rows.length > 0 && await isAuthenticated()) {
-              return await getThread(allThreads.rows[0].id);
+            if (await isAuthenticated()) {
+              // Get threads list from API
+              const threadsResponse = await getMessageThreads(5, 0);
+              const threads = threadsResponse.threads || [];
+
+              // Get messages for first thread
+              let firstThreadMessages = null;
+              if (threads.length > 0) {
+                const messagesResponse = await getThreadMessages(threads[0].id, 3);
+                firstThreadMessages = messagesResponse.messages || [];
+              }
+
+              return {
+                threadsFromApi: threads,
+                firstThreadMessages
+              };
             }
             return null;
           } catch (e) {
