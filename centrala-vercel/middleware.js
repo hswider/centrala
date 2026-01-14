@@ -10,7 +10,9 @@ const publicRoutes = [
   '/api/allegro/sync',   // Allegro Dobrelegowiska messages cron
   '/api/allegro/debug',  // Allegro debug
   '/api/allegro-meblebox/sync',   // Allegro Meblebox messages cron
-  '/api/allegro-meblebox/callback' // Allegro Meblebox OAuth callback
+  '/api/allegro-meblebox/callback', // Allegro Meblebox OAuth callback
+  '/api/gmail/sync',     // Gmail (Shopify) messages cron
+  '/api/gmail/callback'  // Gmail OAuth callback
 ];
 
 export function middleware(request) {

@@ -33,10 +33,23 @@ function CRMContent() {
   const [mebleboxSyncStatus, setMebleboxSyncStatus] = useState(null);
   const [mebleboxUnreadCount, setMebleboxUnreadCount] = useState(0);
 
+  // Gmail (Shopify Dobrelegowiska) state
+  const [gmailAuth, setGmailAuth] = useState({ authenticated: false, user: null, loading: true });
+  const [gmailThreads, setGmailThreads] = useState([]);
+  const [gmailThreadsLoading, setGmailThreadsLoading] = useState(false);
+  const [gmailSelectedThread, setGmailSelectedThread] = useState(null);
+  const [gmailThreadMessages, setGmailThreadMessages] = useState([]);
+  const [gmailMessagesLoading, setGmailMessagesLoading] = useState(false);
+  const [gmailReplyText, setGmailReplyText] = useState('');
+  const [gmailSending, setGmailSending] = useState(false);
+  const [gmailSyncing, setGmailSyncing] = useState(false);
+  const [gmailSyncStatus, setGmailSyncStatus] = useState(null);
+  const [gmailUnreadCount, setGmailUnreadCount] = useState(0);
+
   const tabs = [
     { key: 'wiadomosci', label: 'Allegro Dobrelegowiska', icon: '💬', badge: unreadCount },
     { key: 'meblebox', label: 'Allegro Meblebox', icon: '💬', badge: mebleboxUnreadCount },
-    { key: 'kontakty', label: 'Kontakty', icon: '📞' },
+    { key: 'shopify', label: 'Shopify Dobrelegowiska', icon: '📧', badge: gmailUnreadCount },
     { key: 'notatki', label: 'Notatki', icon: '📝' },
   ];
 
@@ -46,6 +59,8 @@ function CRMContent() {
     const error = searchParams.get('allegro_error');
     const mebleboxSuccess = searchParams.get('meblebox_success');
     const mebleboxError = searchParams.get('meblebox_error');
+    const gmailSuccess = searchParams.get('gmail_success');
+    const gmailError = searchParams.get('gmail_error');
 
     if (success) {
       alert('Pomyslnie polaczono z Allegro Dobrelegowiska!');
@@ -63,6 +78,15 @@ function CRMContent() {
     }
     if (mebleboxError) {
       alert(`Blad Allegro Meblebox: ${mebleboxError}`);
+      window.history.replaceState({}, '', '/crm');
+    }
+    if (gmailSuccess) {
+      alert('Pomyslnie polaczono z Gmail!');
+      window.history.replaceState({}, '', '/crm');
+      checkGmailAuth();
+    }
+    if (gmailError) {
+      alert(`Blad Gmail: ${gmailError}`);
       window.history.replaceState({}, '', '/crm');
     }
   }, [searchParams]);
@@ -339,6 +363,144 @@ function CRMContent() {
     }
   };
 
+  // ========== GMAIL (Shopify Dobrelegowiska) FUNCTIONS ==========
+
+  // Check Gmail authentication status
+  const checkGmailAuth = useCallback(async () => {
+    try {
+      const res = await fetch('/api/gmail/auth');
+      const data = await res.json();
+      setGmailAuth({
+        authenticated: data.authenticated,
+        user: data.user,
+        loading: false
+      });
+
+      if (data.authenticated) {
+        fetchGmailSyncStatus();
+        fetchGmailThreads();
+      }
+    } catch (err) {
+      console.error('Gmail auth check error:', err);
+      setGmailAuth({ authenticated: false, user: null, loading: false });
+    }
+  }, []);
+
+  useEffect(() => {
+    checkGmailAuth();
+  }, [checkGmailAuth]);
+
+  // Fetch Gmail sync status
+  const fetchGmailSyncStatus = async () => {
+    try {
+      const res = await fetch('/api/gmail/messages?action=status');
+      const data = await res.json();
+      if (data.success) {
+        setGmailSyncStatus(data.status);
+        setGmailUnreadCount(data.status.unreadCount || 0);
+      }
+    } catch (err) {
+      console.error('Gmail sync status error:', err);
+    }
+  };
+
+  // Fetch Gmail threads
+  const fetchGmailThreads = async () => {
+    setGmailThreadsLoading(true);
+    try {
+      const res = await fetch('/api/gmail/messages');
+      const data = await res.json();
+      if (data.success) {
+        setGmailThreads(data.threads || []);
+      }
+    } catch (err) {
+      console.error('Gmail threads error:', err);
+    } finally {
+      setGmailThreadsLoading(false);
+    }
+  };
+
+  // Sync Gmail
+  const handleGmailSync = async () => {
+    setGmailSyncing(true);
+    try {
+      const res = await fetch('/api/gmail/sync', { method: 'POST' });
+      const data = await res.json();
+      if (data.success) {
+        fetchGmailThreads();
+        fetchGmailSyncStatus();
+      } else {
+        alert('Blad synchronizacji: ' + data.error);
+      }
+    } catch (err) {
+      alert('Blad: ' + err.message);
+    } finally {
+      setGmailSyncing(false);
+    }
+  };
+
+  // Open Gmail thread
+  const openGmailThread = async (thread) => {
+    setGmailSelectedThread(thread);
+    setGmailMessagesLoading(true);
+    setGmailThreadMessages([]);
+
+    try {
+      const res = await fetch(`/api/gmail/messages/${thread.id}?refresh=true`);
+      const data = await res.json();
+
+      if (data.success) {
+        setGmailSelectedThread(data.thread);
+        setGmailThreadMessages(data.messages || []);
+
+        // Mark as read
+        if (thread.unread) {
+          fetch(`/api/gmail/messages/${thread.id}`, { method: 'PUT' });
+          fetchGmailSyncStatus();
+          fetchGmailThreads();
+        }
+      }
+    } catch (err) {
+      console.error('Gmail open thread error:', err);
+    } finally {
+      setGmailMessagesLoading(false);
+    }
+  };
+
+  // Send Gmail reply
+  const handleGmailSendReply = async () => {
+    if (!gmailReplyText.trim() || !gmailSelectedThread) return;
+
+    setGmailSending(true);
+    try {
+      const res = await fetch(`/api/gmail/messages/${gmailSelectedThread.id}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          text: gmailReplyText.trim(),
+          to: gmailSelectedThread.from_email,
+          subject: gmailSelectedThread.subject
+        })
+      });
+      const data = await res.json();
+
+      if (data.success) {
+        setGmailReplyText('');
+        const msgRes = await fetch(`/api/gmail/messages/${gmailSelectedThread.id}?refresh=true`);
+        const msgData = await msgRes.json();
+        if (msgData.success) {
+          setGmailThreadMessages(msgData.messages || []);
+        }
+      } else {
+        alert('Blad wysylania: ' + data.error);
+      }
+    } catch (err) {
+      alert('Blad: ' + err.message);
+    } finally {
+      setGmailSending(false);
+    }
+  };
+
   // Format date
   const formatDate = (dateStr) => {
     if (!dateStr) return '-';
@@ -354,10 +516,6 @@ function CRMContent() {
   };
 
   // Przykładowe dane
-  const [kontakty] = useState([
-    { id: 1, klient: 'Jan Kowalski', typ: 'Telefon', data: '2025-01-10', notatka: 'Pytanie o status zamówienia' },
-  ]);
-
   const [notatki] = useState([
     { id: 1, klient: 'Jan Kowalski', data: '2025-01-10', tresc: 'Stały klient, preferuje płatność przy odbiorze' },
   ]);
@@ -1024,32 +1182,190 @@ function CRMContent() {
             </div>
           )}
 
-          {/* Kontakty */}
-          {activeTab === 'kontakty' && (
+          {/* Shopify Dobrelegowiska (Gmail) */}
+          {activeTab === 'shopify' && (
             <div>
-              <div className="px-4 py-3 border-b border-gray-100">
-                <h2 className="font-semibold text-gray-900">Historia kontaktow</h2>
-              </div>
-              <div className="divide-y divide-gray-100">
-                {kontakty.map((kontakt) => (
-                  <div key={kontakt.id} className="px-4 py-3 hover:bg-gray-50">
-                    <div className="flex items-start justify-between">
+              {gmailAuth.loading ? (
+                <div className="p-8 text-center text-gray-500">Ladowanie...</div>
+              ) : !gmailAuth.authenticated ? (
+                <div className="p-8 text-center">
+                  <div className="mb-4">
+                    <span className="text-6xl">📧</span>
+                  </div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">Polacz z Gmail</h3>
+                  <p className="text-gray-500 mb-4">Aby zobaczyc wiadomosci, musisz polaczyc konto Gmail</p>
+                  <a
+                    href="/api/gmail/auth?action=login"
+                    className="inline-block px-6 py-3 bg-red-500 text-white rounded-lg hover:bg-red-600 font-medium"
+                  >
+                    Zaloguj przez Google
+                  </a>
+                </div>
+              ) : (
+                <div className="flex flex-col lg:flex-row h-[800px]">
+                  {/* Thread list */}
+                  <div className={`lg:w-1/3 border-r border-gray-200 flex flex-col ${gmailSelectedThread ? 'hidden lg:flex' : ''}`}>
+                    <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
                       <div>
-                        <div className="flex items-center gap-2">
-                          <span className={`px-2 py-0.5 rounded text-xs font-medium ${
-                            kontakt.typ === 'Telefon' ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'
-                          }`}>
-                            {kontakt.typ}
-                          </span>
-                          <span className="font-medium text-gray-900">{kontakt.klient}</span>
-                        </div>
-                        <p className="mt-1 text-sm text-gray-600">{kontakt.notatka}</p>
+                        <h2 className="font-semibold text-gray-900">Wiadomosci Email</h2>
+                        <p className="text-xs text-gray-500">
+                          {gmailSyncStatus?.lastSyncAt ? `Sync: ${formatDate(gmailSyncStatus.lastSyncAt)}` : 'Nie zsynchronizowano'}
+                        </p>
                       </div>
-                      <span className="text-xs text-gray-500">{kontakt.data}</span>
+                      <button
+                        onClick={handleGmailSync}
+                        disabled={gmailSyncing}
+                        className="px-3 py-1.5 text-sm bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50"
+                      >
+                        {gmailSyncing ? 'Sync...' : 'Synchronizuj'}
+                      </button>
+                    </div>
+
+                    <div className="flex-1 overflow-y-auto">
+                      {gmailThreadsLoading ? (
+                        <div className="p-4 text-center text-gray-500">Ladowanie...</div>
+                      ) : gmailThreads.length === 0 ? (
+                        <div className="p-4 text-center text-gray-500">
+                          Brak wiadomosci. Kliknij "Synchronizuj".
+                        </div>
+                      ) : (
+                        gmailThreads.map((thread) => (
+                          <button
+                            key={thread.id}
+                            onClick={() => openGmailThread(thread)}
+                            className={`w-full text-left px-4 py-3 border-b border-gray-100 hover:bg-gray-50 ${
+                              gmailSelectedThread?.id === thread.id ? 'bg-blue-50' : ''
+                            } ${thread.unread ? 'bg-red-50' : ''}`}
+                          >
+                            <div className="flex items-start gap-3">
+                              <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center text-red-600 font-medium">
+                                {(thread.from_name || thread.from_email || '?')[0].toUpperCase()}
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center justify-between">
+                                  <span className={`font-medium truncate ${thread.unread ? 'text-gray-900' : 'text-gray-700'}`}>
+                                    {thread.from_name || thread.from_email || 'Nieznany'}
+                                  </span>
+                                  <span className="text-xs text-gray-400 ml-2 whitespace-nowrap">
+                                    {formatDate(thread.last_message_at)}
+                                  </span>
+                                </div>
+                                <p className={`text-sm truncate ${thread.unread ? 'font-medium text-gray-800' : 'text-gray-600'}`}>
+                                  {thread.subject || '(Brak tematu)'}
+                                </p>
+                                <p className="text-xs text-gray-500 truncate">{thread.snippet}</p>
+                                {thread.unread && (
+                                  <span className="inline-block mt-1 px-2 py-0.5 bg-red-500 text-white text-xs rounded">
+                                    Nowa
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          </button>
+                        ))
+                      )}
                     </div>
                   </div>
-                ))}
-              </div>
+
+                  {/* Message view */}
+                  <div className={`lg:w-2/3 flex flex-col ${!gmailSelectedThread ? 'hidden lg:flex' : ''}`}>
+                    {!gmailSelectedThread ? (
+                      <div className="flex-1 flex items-center justify-center text-gray-400">
+                        <div className="text-center">
+                          <span className="text-6xl">📧</span>
+                          <p className="mt-2">Wybierz watek z listy</p>
+                        </div>
+                      </div>
+                    ) : (
+                      <>
+                        {/* Thread header */}
+                        <div className="px-4 py-3 border-b border-gray-100">
+                          <button
+                            onClick={() => setGmailSelectedThread(null)}
+                            className="lg:hidden text-gray-500 hover:text-gray-700 mb-2"
+                          >
+                            ← Wstecz
+                          </button>
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center text-red-600 font-medium">
+                              {(gmailSelectedThread.from_name || gmailSelectedThread.from_email || '?')[0].toUpperCase()}
+                            </div>
+                            <div className="flex-1">
+                              <h3 className="font-semibold text-gray-900">
+                                {gmailSelectedThread.from_name || gmailSelectedThread.from_email || 'Nieznany'}
+                              </h3>
+                              <p className="text-sm text-gray-600">{gmailSelectedThread.from_email}</p>
+                            </div>
+                          </div>
+                          <h4 className="mt-2 font-medium text-gray-800">
+                            {gmailSelectedThread.subject || '(Brak tematu)'}
+                          </h4>
+                        </div>
+
+                        {/* Messages */}
+                        <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50">
+                          {gmailMessagesLoading ? (
+                            <div className="text-center text-gray-500">Ladowanie wiadomosci...</div>
+                          ) : gmailThreadMessages.length === 0 ? (
+                            <div className="text-center text-gray-500">Brak wiadomosci</div>
+                          ) : (
+                            gmailThreadMessages.map((msg) => (
+                              <div
+                                key={msg.id}
+                                className={`flex ${msg.is_outgoing ? 'justify-end' : 'justify-start'}`}
+                              >
+                                <div
+                                  className={`max-w-[85%] px-4 py-3 rounded-lg ${
+                                    msg.is_outgoing
+                                      ? 'bg-red-600 text-white'
+                                      : 'bg-white border border-gray-200 text-gray-900'
+                                  }`}
+                                >
+                                  <div className={`text-xs mb-1 ${msg.is_outgoing ? 'text-red-200' : 'text-gray-500'}`}>
+                                    {msg.from_name || msg.from_email}
+                                  </div>
+                                  <div className="whitespace-pre-wrap break-words text-sm">
+                                    {msg.body_text || '(Brak tresci tekstowej)'}
+                                  </div>
+                                  <p className={`text-xs mt-2 ${msg.is_outgoing ? 'text-red-200' : 'text-gray-400'}`}>
+                                    {formatDate(msg.sent_at)}
+                                  </p>
+                                </div>
+                              </div>
+                            ))
+                          )}
+                        </div>
+
+                        {/* Reply input */}
+                        <div className="px-4 py-3 border-t border-gray-200 bg-white">
+                          <div className="flex gap-2">
+                            <textarea
+                              value={gmailReplyText}
+                              onChange={(e) => setGmailReplyText(e.target.value)}
+                              placeholder="Napisz odpowiedz..."
+                              rows={3}
+                              className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 resize-none"
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter' && !e.shiftKey) {
+                                  e.preventDefault();
+                                  handleGmailSendReply();
+                                }
+                              }}
+                            />
+                            <button
+                              onClick={handleGmailSendReply}
+                              disabled={gmailSending || !gmailReplyText.trim()}
+                              className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50"
+                            >
+                              {gmailSending ? '...' : 'Wyslij'}
+                            </button>
+                          </div>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
           )}
 

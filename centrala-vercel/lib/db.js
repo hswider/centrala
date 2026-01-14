@@ -223,6 +223,76 @@ export async function initDatabase() {
     )
   `;
 
+  // ========== GMAIL (Shopify Dobrelegowiska) ==========
+
+  // Gmail OAuth tokens
+  await sql`
+    CREATE TABLE IF NOT EXISTS gmail_tokens (
+      id SERIAL PRIMARY KEY,
+      access_token TEXT,
+      refresh_token TEXT,
+      expires_at BIGINT,
+      email VARCHAR(255),
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )
+  `;
+
+  // Gmail threads
+  await sql`
+    CREATE TABLE IF NOT EXISTS gmail_threads (
+      id VARCHAR(100) PRIMARY KEY,
+      subject TEXT,
+      snippet TEXT,
+      from_email VARCHAR(255),
+      from_name VARCHAR(255),
+      last_message_at TIMESTAMP,
+      unread BOOLEAN DEFAULT true,
+      messages_count INTEGER DEFAULT 0,
+      labels JSONB,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )
+  `;
+
+  // Gmail messages
+  await sql`
+    CREATE TABLE IF NOT EXISTS gmail_messages (
+      id VARCHAR(100) PRIMARY KEY,
+      thread_id VARCHAR(100) REFERENCES gmail_threads(id) ON DELETE CASCADE,
+      from_email VARCHAR(255),
+      from_name VARCHAR(255),
+      to_email VARCHAR(255),
+      subject TEXT,
+      body_text TEXT,
+      body_html TEXT,
+      sent_at TIMESTAMP,
+      is_outgoing BOOLEAN DEFAULT false,
+      has_attachments BOOLEAN DEFAULT false,
+      attachments JSONB,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )
+  `;
+
+  // Gmail sync status
+  await sql`
+    CREATE TABLE IF NOT EXISTS gmail_sync_status (
+      id SERIAL PRIMARY KEY,
+      last_sync_at TIMESTAMP,
+      sync_in_progress BOOLEAN DEFAULT false
+    )
+  `;
+
+  // Insert default Gmail token row if not exists
+  const { rows: gmailTokenRows } = await sql`SELECT COUNT(*) as count FROM gmail_tokens`;
+  if (gmailTokenRows[0].count === '0') {
+    await sql`INSERT INTO gmail_tokens (id) VALUES (1)`;
+  }
+
+  // Insert default Gmail sync status if not exists
+  const { rows: gmailSyncRows } = await sql`SELECT COUNT(*) as count FROM gmail_sync_status`;
+  if (gmailSyncRows[0].count === '0') {
+    await sql`INSERT INTO gmail_sync_status (id) VALUES (1)`;
+  }
+
   // Insert default Allegro Meblebox token row if not exists
   const { rows: allegroMebleboxTokenRows } = await sql`SELECT COUNT(*) as count FROM allegro_meblebox_tokens`;
   if (allegroMebleboxTokenRows[0].count === '0') {
@@ -1404,5 +1474,167 @@ export async function markAllegroMebleboxThreadAsRead(threadId) {
 // Get unread Meblebox threads count
 export async function getUnreadAllegroMebleboxThreadsCount() {
   const { rows } = await sql`SELECT COUNT(*) as count FROM allegro_meblebox_threads WHERE read = false`;
+  return parseInt(rows[0].count);
+}
+
+// ========== GMAIL (Shopify Dobrelegowiska) FUNCTIONS ==========
+
+// Get Gmail tokens
+export async function getGmailTokens() {
+  const { rows } = await sql`SELECT * FROM gmail_tokens WHERE id = 1`;
+  return rows[0] || null;
+}
+
+// Save Gmail tokens
+export async function saveGmailTokens(accessToken, refreshToken, expiresAt, email = null) {
+  await sql`
+    UPDATE gmail_tokens
+    SET access_token = ${accessToken},
+        refresh_token = ${refreshToken},
+        expires_at = ${expiresAt},
+        email = COALESCE(${email}, email),
+        updated_at = CURRENT_TIMESTAMP
+    WHERE id = 1
+  `;
+}
+
+// Get Gmail sync status
+export async function getGmailSyncStatus() {
+  const { rows } = await sql`SELECT * FROM gmail_sync_status WHERE id = 1`;
+  return rows[0] || null;
+}
+
+// Update Gmail sync status
+export async function updateGmailSyncStatus() {
+  await sql`UPDATE gmail_sync_status SET last_sync_at = CURRENT_TIMESTAMP WHERE id = 1`;
+}
+
+// Set Gmail sync in progress
+export async function setGmailSyncInProgress(inProgress) {
+  await sql`UPDATE gmail_sync_status SET sync_in_progress = ${inProgress} WHERE id = 1`;
+}
+
+// Save Gmail thread
+export async function saveGmailThread(thread) {
+  await sql`
+    INSERT INTO gmail_threads (
+      id, subject, snippet, from_email, from_name,
+      last_message_at, unread, messages_count, labels, updated_at
+    ) VALUES (
+      ${thread.id},
+      ${thread.subject || ''},
+      ${thread.snippet || ''},
+      ${thread.fromEmail || ''},
+      ${thread.fromName || ''},
+      ${thread.lastMessageAt ? new Date(parseInt(thread.lastMessageAt)) : null},
+      ${thread.unread ?? true},
+      ${thread.messagesCount || 0},
+      ${JSON.stringify(thread.labels || [])},
+      CURRENT_TIMESTAMP
+    )
+    ON CONFLICT (id) DO UPDATE SET
+      subject = EXCLUDED.subject,
+      snippet = EXCLUDED.snippet,
+      from_email = EXCLUDED.from_email,
+      from_name = EXCLUDED.from_name,
+      last_message_at = EXCLUDED.last_message_at,
+      unread = EXCLUDED.unread,
+      messages_count = EXCLUDED.messages_count,
+      labels = EXCLUDED.labels,
+      updated_at = CURRENT_TIMESTAMP
+  `;
+}
+
+// Save Gmail message
+export async function saveGmailMessage(message, threadId) {
+  await sql`
+    INSERT INTO gmail_messages (
+      id, thread_id, from_email, from_name, to_email,
+      subject, body_text, body_html, sent_at, is_outgoing,
+      has_attachments, attachments, created_at
+    ) VALUES (
+      ${message.id},
+      ${threadId},
+      ${message.fromEmail || ''},
+      ${message.fromName || ''},
+      ${message.to || ''},
+      ${message.subject || ''},
+      ${message.bodyText || ''},
+      ${message.bodyHtml || ''},
+      ${message.sentAt ? new Date(parseInt(message.sentAt)) : null},
+      ${message.isOutgoing || false},
+      ${message.hasAttachments || false},
+      ${JSON.stringify(message.attachments || [])},
+      CURRENT_TIMESTAMP
+    )
+    ON CONFLICT (id) DO UPDATE SET
+      body_text = EXCLUDED.body_text,
+      body_html = EXCLUDED.body_html,
+      is_outgoing = EXCLUDED.is_outgoing
+  `;
+}
+
+// Get Gmail threads with pagination
+export async function getGmailThreads(page = 1, perPage = 20, unreadOnly = false) {
+  const offset = (page - 1) * perPage;
+
+  let result, countResult;
+
+  if (unreadOnly) {
+    result = await sql`
+      SELECT * FROM gmail_threads
+      WHERE unread = true
+      ORDER BY last_message_at DESC NULLS LAST
+      LIMIT ${perPage} OFFSET ${offset}
+    `;
+    countResult = await sql`SELECT COUNT(*) as total FROM gmail_threads WHERE unread = true`;
+  } else {
+    result = await sql`
+      SELECT * FROM gmail_threads
+      ORDER BY last_message_at DESC NULLS LAST
+      LIMIT ${perPage} OFFSET ${offset}
+    `;
+    countResult = await sql`SELECT COUNT(*) as total FROM gmail_threads`;
+  }
+
+  return {
+    threads: result.rows,
+    total: parseInt(countResult.rows[0].total),
+    page,
+    perPage,
+    totalPages: Math.ceil(parseInt(countResult.rows[0].total) / perPage)
+  };
+}
+
+// Get single Gmail thread with messages
+export async function getGmailThread(threadId) {
+  const threadResult = await sql`
+    SELECT * FROM gmail_threads WHERE id = ${threadId}
+  `;
+
+  if (threadResult.rows.length === 0) {
+    return null;
+  }
+
+  const messagesResult = await sql`
+    SELECT * FROM gmail_messages
+    WHERE thread_id = ${threadId}
+    ORDER BY sent_at ASC
+  `;
+
+  return {
+    thread: threadResult.rows[0],
+    messages: messagesResult.rows
+  };
+}
+
+// Mark Gmail thread as read
+export async function markGmailThreadAsRead(threadId) {
+  await sql`UPDATE gmail_threads SET unread = false, updated_at = CURRENT_TIMESTAMP WHERE id = ${threadId}`;
+}
+
+// Get unread Gmail threads count
+export async function getUnreadGmailThreadsCount() {
+  const { rows } = await sql`SELECT COUNT(*) as count FROM gmail_threads WHERE unread = true`;
   return parseInt(rows[0].count);
 }
