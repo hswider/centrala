@@ -2,10 +2,32 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
+import { useState, useEffect } from 'react';
 
 export default function Navigation() {
   const pathname = usePathname();
   const router = useRouter();
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  // Fetch unread messages count
+  useEffect(() => {
+    const fetchUnreadCount = async () => {
+      try {
+        const res = await fetch('/api/allegro/messages?action=status');
+        const data = await res.json();
+        if (data.success && data.status?.unreadCount) {
+          setUnreadCount(data.status.unreadCount);
+        }
+      } catch (err) {
+        // Silently ignore errors
+      }
+    };
+
+    fetchUnreadCount();
+    // Refresh every 60 seconds
+    const interval = setInterval(fetchUnreadCount, 60000);
+    return () => clearInterval(interval);
+  }, []);
 
   const handleLogout = async () => {
     await fetch('/api/auth/logout', { method: 'POST' });
@@ -18,7 +40,7 @@ export default function Navigation() {
     { href: '/zamowienia', label: 'OMS', icon: '📦' },
     { href: '/magazyny', label: 'WMS', icon: '🏭' },
     { href: '/mes', label: 'MES', icon: '⚙️' },
-    { href: '/crm', label: 'CRM', icon: '👥' },
+    { href: '/crm', label: 'CRM', icon: '👥', badge: unreadCount },
     { href: '/agent', label: 'Asystent AI', icon: '🤖' },
   ];
 
@@ -36,7 +58,7 @@ export default function Navigation() {
       <Link
         key={item.href}
         href={item.href}
-        className={`flex-1 flex flex-col sm:flex-row items-center justify-center gap-0.5 sm:gap-1.5 py-2 sm:py-3 text-xs sm:text-sm font-medium transition-colors ${
+        className={`relative flex-1 flex flex-col sm:flex-row items-center justify-center gap-0.5 sm:gap-1.5 py-2 sm:py-3 text-xs sm:text-sm font-medium transition-colors ${
           isActive
             ? 'text-blue-600 border-b-2 border-blue-600 bg-blue-50'
             : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
@@ -44,6 +66,11 @@ export default function Navigation() {
       >
         <span className="text-lg sm:text-base">{item.icon}</span>
         <span className="truncate">{item.label}</span>
+        {item.badge > 0 && (
+          <span className="absolute top-1 right-1 sm:static sm:ml-1 px-1.5 py-0.5 bg-red-500 text-white text-xs rounded-full min-w-[18px] text-center">
+            {item.badge > 99 ? '99+' : item.badge}
+          </span>
+        )}
       </Link>
     );
   };
