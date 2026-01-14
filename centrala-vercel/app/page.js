@@ -212,7 +212,7 @@ export default function Home() {
                      w.country_code === 'NL' ? '🇳🇱' :
                      w.country_code === 'SE' ? '🇸🇪' : '🏳️'}
                   </span>
-                  <span className="text-[10px] sm:text-xs text-gray-500 mt-0.5">{w.country_name}</span>
+                  <span className="text-[10px] sm:text-xs text-gray-500 mt-0.5">{w.city}</span>
                   <span className={`text-sm sm:text-base font-bold ${parseFloat(w.temperature) < 0 ? 'text-blue-600' : parseFloat(w.temperature) > 25 ? 'text-red-600' : 'text-gray-900'}`}>
                     {Math.round(parseFloat(w.temperature))}°C
                   </span>
