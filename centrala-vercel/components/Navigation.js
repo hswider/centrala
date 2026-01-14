@@ -40,7 +40,7 @@ export default function Navigation() {
     { href: '/zamowienia', label: 'OMS', icon: '📦' },
     { href: '/magazyny', label: 'WMS', icon: '🏭' },
     { href: '/mes', label: 'MES', icon: '⚙️' },
-    { href: '/crm', label: 'CRM', icon: '👥', badge: unreadCount },
+    { href: '/crm', label: 'CRM 🇵🇱', icon: '👥', badge: unreadCount },
     { href: '/agent', label: 'Asystent AI', icon: '🤖' },
   ];
 
