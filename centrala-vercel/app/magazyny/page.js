@@ -1101,7 +1101,7 @@ export default function MagazynyPage() {
                             className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
                           />
                         </td>
-                        <td className={`px-2 py-2 ${activeTab === 'surowce' ? 'text-xs w-[50px] max-w-[50px]' : 'text-[7px] w-[80px] max-w-[80px]'} sm:text-sm sm:w-auto sm:min-w-[150px] sm:max-w-none text-gray-700 truncate sticky left-10 z-10 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] ${selectedIds.has(item.id) ? 'bg-blue-50' : 'bg-white'}`} title={item.nazwa}>{item.nazwa}</td>
+                        <td className={`px-2 py-2 ${activeTab === 'surowce' ? 'text-xs w-[50px] max-w-[50px]' : 'text-[7px] w-[80px] max-w-[80px]'} sm:text-sm sm:w-auto sm:min-w-[150px] sm:max-w-none text-gray-700 break-words sticky left-10 z-10 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] ${selectedIds.has(item.id) ? 'bg-blue-50' : 'bg-white'}`} title={item.nazwa}>{item.nazwa}</td>
                         <td className="px-2 py-2 w-32 sm:w-40 min-w-[128px] sm:min-w-[160px]">
                           <span className="font-mono text-[10px] sm:text-xs text-gray-900 whitespace-nowrap">{item.sku}</span>
                         </td>
