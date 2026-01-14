@@ -288,12 +288,6 @@ export default function Home() {
                         <div className="text-[10px] sm:text-xs font-medium text-gray-900 line-clamp-2" title={product.name}>
                           {product.name}
                         </div>
-                        <Link
-                          href={`/zamowienia?search=${encodeURIComponent(product.sku || product.name)}`}
-                          className="text-[9px] sm:text-[10px] text-blue-600 hover:text-blue-800 hover:underline"
-                        >
-                          Zobacz zamówienia
-                        </Link>
                       </div>
                       <div className="text-right shrink-0">
                         <div className="text-[11px] sm:text-sm font-semibold text-gray-900">{product.quantity} szt.</div>
