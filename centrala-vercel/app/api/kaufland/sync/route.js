@@ -48,8 +48,8 @@ export async function POST(request) {
 
     try {
       const { searchParams } = new URL(request.url);
-      const status = searchParams.get('status') || 'open'; // 'open' or 'closed'
-      const limit = parseInt(searchParams.get('limit') || '100');
+      const status = searchParams.get('status') || 'opened'; // 'opened', 'buyer_closed', etc.
+      const limit = parseInt(searchParams.get('limit') || '30'); // max 30
 
       // Get tickets from Kaufland API (all storefronts)
       const ticketsResponse = await getTickets(status, null, limit, 0);
@@ -146,7 +146,7 @@ export async function GET(request) {
       let syncedMessages = 0;
 
       try {
-        const ticketsResponse = await getTickets('open', null, 100, 0);
+        const ticketsResponse = await getTickets('opened', null, 30, 0);
         const tickets = ticketsResponse.data || [];
 
         for (const ticketData of tickets) {

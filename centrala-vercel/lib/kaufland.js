@@ -92,9 +92,9 @@ export async function isAuthenticated() {
 }
 
 // Get tickets list
-// status: 'open' or 'closed'
+// status: 'opened', 'buyer_closed', 'seller_closed', 'both_closed', 'customer_service_closed_final'
 // storefronts: array of storefront IDs or null for all
-export async function getTickets(status = 'open', storefronts = null, limit = 100, offset = 0) {
+export async function getTickets(status = 'opened', storefronts = null, limit = 30, offset = 0) {
   let endpoint = `/tickets?status=${status}&limit=${limit}&offset=${offset}`;
 
   if (storefronts && storefronts.length > 0) {
