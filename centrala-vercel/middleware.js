@@ -16,6 +16,7 @@ const publicRoutes = [
   '/api/gmail-amazon-de/sync',    // Gmail Amazon DE messages cron
   '/api/gmail-amazon-de/callback', // Gmail Amazon DE OAuth callback
   '/api/kaufland/sync',  // Kaufland tickets cron
+  '/api/kaufland/debug', // Kaufland debug
   '/api/weather/sync'    // Weather sync cron
 ];
 
