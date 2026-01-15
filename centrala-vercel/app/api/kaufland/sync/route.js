@@ -48,12 +48,24 @@ export async function POST(request) {
 
     try {
       const { searchParams } = new URL(request.url);
-      const status = searchParams.get('status') || 'opened'; // 'opened', 'buyer_closed', etc.
       const limit = parseInt(searchParams.get('limit') || '30'); // max 30
 
-      // Get tickets from Kaufland API (all storefronts)
-      const ticketsResponse = await getTickets(status, null, limit, 0);
-      const tickets = ticketsResponse.data || [];
+      // All possible ticket statuses
+      const allStatuses = ['opened', 'buyer_closed', 'seller_closed', 'both_closed', 'customer_service_closed_final'];
+
+      // Collect tickets from all statuses
+      let allTickets = [];
+      for (const status of allStatuses) {
+        try {
+          const ticketsResponse = await getTickets(status, null, limit, 0);
+          const tickets = ticketsResponse.data || [];
+          allTickets = allTickets.concat(tickets);
+        } catch (e) {
+          console.log(`No tickets with status ${status}`);
+        }
+      }
+
+      const tickets = allTickets;
 
       for (const ticketData of tickets) {
         try {
@@ -88,8 +100,7 @@ export async function POST(request) {
       return NextResponse.json({
         success: true,
         syncedTickets,
-        syncedMessages,
-        status
+        syncedMessages
       });
     } finally {
       // Always clear sync in progress flag
@@ -146,10 +157,22 @@ export async function GET(request) {
       let syncedMessages = 0;
 
       try {
-        const ticketsResponse = await getTickets('opened', null, 30, 0);
-        const tickets = ticketsResponse.data || [];
+        // All possible ticket statuses
+        const allStatuses = ['opened', 'buyer_closed', 'seller_closed', 'both_closed', 'customer_service_closed_final'];
 
-        for (const ticketData of tickets) {
+        // Collect tickets from all statuses
+        let allTickets = [];
+        for (const status of allStatuses) {
+          try {
+            const ticketsResponse = await getTickets(status, null, 30, 0);
+            const statusTickets = ticketsResponse.data || [];
+            allTickets = allTickets.concat(statusTickets);
+          } catch (e) {
+            console.log(`No tickets with status ${status}`);
+          }
+        }
+
+        for (const ticketData of allTickets) {
           try {
             const ticket = parseTicket(ticketData);
             await saveKauflandTicket(ticket);
