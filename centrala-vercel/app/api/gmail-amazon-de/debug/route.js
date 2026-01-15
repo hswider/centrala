@@ -60,6 +60,50 @@ export async function GET(request) {
       });
     }
 
+    if (test === 'sync-test') {
+      // Test full sync process for one thread
+      const threadsResponse = await getThreadsList(5);
+      const threads = threadsResponse.threads || [];
+      const results = [];
+
+      for (const threadSummary of threads.slice(0, 2)) {
+        try {
+          const fullThread = await getThread(threadSummary.id);
+
+          if (!fullThread.messages || fullThread.messages.length === 0) {
+            results.push({ id: threadSummary.id, status: 'no messages' });
+            continue;
+          }
+
+          const firstMessage = parseMessage(fullThread.messages[0]);
+          results.push({
+            id: threadSummary.id,
+            status: 'parsed',
+            fromEmail: firstMessage.fromEmail,
+            subject: firstMessage.subject,
+            orderId: firstMessage.orderId,
+            messagesCount: fullThread.messages.length
+          });
+        } catch (e) {
+          results.push({ id: threadSummary.id, status: 'error', error: e.message });
+        }
+      }
+
+      return NextResponse.json({ success: true, results });
+    }
+
+    if (test === 'db') {
+      // Check what's in database
+      const { sql } = await import('@vercel/postgres');
+      const threads = await sql`SELECT id, buyer_name, subject, marketplace, unread FROM gmail_amazon_de_threads ORDER BY last_message_at DESC LIMIT 10`;
+      const messages = await sql`SELECT id, thread_id, sender, subject FROM gmail_amazon_de_messages ORDER BY sent_at DESC LIMIT 10`;
+      return NextResponse.json({
+        success: true,
+        threads: threads.rows,
+        messages: messages.rows
+      });
+    }
+
     // Default: show last sync status and basic info
     const threadsResponse = await getThreadsList(5);
     return NextResponse.json({
