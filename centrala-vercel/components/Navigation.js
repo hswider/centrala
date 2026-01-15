@@ -40,8 +40,8 @@ export default function Navigation() {
     { href: '/zamowienia', label: 'OMS', icon: '📦' },
     { href: '/magazyny', label: 'WMS', icon: '🏭' },
     { href: '/mes', label: 'MES', icon: '⚙️' },
-    { href: '/crm', label: 'CRM PL', icon: '🇵🇱', badge: unreadCount },
-    { href: '/crm-eu', label: 'CRM EU', icon: '🇪🇺' },
+    { href: '/crm', label: 'CRM 🇵🇱', icon: '👥', badge: unreadCount },
+    { href: '/crm-eu', label: 'CRM 🇪🇺', icon: '👥' },
     { href: '/rank', label: 'RANK', icon: '📈' },
     { href: '/agent', label: 'Asystent AI', icon: '🤖' },
   ];
