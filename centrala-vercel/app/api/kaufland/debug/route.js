@@ -44,25 +44,27 @@ export async function GET(request) {
     const ticketId = searchParams.get('ticketId');
     const test = searchParams.get('test');
 
-    // Test different endpoints
-    if (test === 'endpoints') {
-      const results = {};
-
-      // Try different endpoints to find messages
-      const endpoints = [
-        `/tickets?status=both_closed&limit=1&embedded=messages`,
-        `/tickets?status=both_closed&limit=1&embedded=ticket_messages`,
-        `/ticket-messages?id_ticket=${ticketId || '00123707719'}`,
-        `/ticket-messages?limit=10`,
-        `/tickets/${ticketId || '00123707719'}`,
-        `/tickets/${ticketId || '00123707719'}/messages`,
-      ];
-
-      for (const ep of endpoints) {
-        results[ep] = await rawKauflandRequest(ep);
+    // Test specific endpoint
+    if (test) {
+      let endpoint;
+      switch(test) {
+        case 'messages':
+          endpoint = `/ticket-messages?id_ticket=${ticketId || '00123707719'}`;
+          break;
+        case 'messages2':
+          endpoint = `/ticket-messages?limit=10`;
+          break;
+        case 'ticket':
+          endpoint = `/tickets/${ticketId || '00123707719'}`;
+          break;
+        case 'ticket-msg':
+          endpoint = `/tickets/${ticketId || '00123707719'}/messages`;
+          break;
+        default:
+          endpoint = test;
       }
-
-      return NextResponse.json({ success: true, results });
+      const result = await rawKauflandRequest(endpoint);
+      return NextResponse.json({ success: true, endpoint, result });
     }
 
     // Default: get tickets with embedded parameter
