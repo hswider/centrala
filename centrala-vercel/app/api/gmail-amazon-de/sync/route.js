@@ -14,6 +14,29 @@ import {
   parseMessage
 } from '../../../../lib/gmail-amazon-de';
 
+// Detect marketplace from email address
+function detectMarketplace(email) {
+  if (!email) return null;
+  const emailLower = email.toLowerCase();
+
+  // Check for marketplace domain patterns
+  if (emailLower.includes('@marketplace.amazon.de') || emailLower.includes('.amazon.de')) return 'DE';
+  if (emailLower.includes('@marketplace.amazon.fr') || emailLower.includes('.amazon.fr')) return 'FR';
+  if (emailLower.includes('@marketplace.amazon.it') || emailLower.includes('.amazon.it')) return 'IT';
+  if (emailLower.includes('@marketplace.amazon.es') || emailLower.includes('.amazon.es')) return 'ES';
+  if (emailLower.includes('@marketplace.amazon.pl') || emailLower.includes('.amazon.pl')) return 'PL';
+  if (emailLower.includes('@marketplace.amazon.nl') || emailLower.includes('.amazon.nl')) return 'NL';
+  if (emailLower.includes('@marketplace.amazon.se') || emailLower.includes('.amazon.se')) return 'SE';
+  if (emailLower.includes('@marketplace.amazon.com.be') || emailLower.includes('.amazon.com.be')) return 'BE';
+  if (emailLower.includes('@marketplace.amazon.co.uk') || emailLower.includes('.amazon.co.uk')) return 'UK';
+  if (emailLower.includes('@marketplace.amazon.com') || emailLower.includes('.amazon.com')) return 'US';
+
+  // Fallback - check if it's any Amazon marketplace
+  if (emailLower.includes('@marketplace.amazon')) return 'EU';
+
+  return null;
+}
+
 // POST - Sync messages from Gmail
 export async function POST(request) {
   try {
@@ -70,6 +93,9 @@ export async function POST(request) {
             m.labelIds && m.labelIds.includes('UNREAD')
           );
 
+          // Detect marketplace from sender email
+          const marketplace = detectMarketplace(firstMessage.fromEmail);
+
           // Save thread
           await saveGmailAmazonDeThread({
             id: fullThread.id,
@@ -78,6 +104,7 @@ export async function POST(request) {
             buyerName: firstMessage.fromName,
             subject: firstMessage.subject,
             snippet: lastMessage.snippet || fullThread.snippet,
+            marketplace: marketplace,
             lastMessageAt: lastMessage.internalDate,
             unread: hasUnread
           });

@@ -451,6 +451,7 @@ export async function initDatabase() {
       from_email VARCHAR(255),
       from_name VARCHAR(255),
       order_id VARCHAR(50),
+      marketplace VARCHAR(10),
       last_message_at TIMESTAMP,
       unread BOOLEAN DEFAULT true,
       messages_count INTEGER DEFAULT 0,
@@ -2490,23 +2491,25 @@ export async function setGmailAmazonDeSyncInProgress(inProgress) {
 // Save Gmail Amazon DE thread
 export async function saveGmailAmazonDeThread(thread) {
   await sql`
-    INSERT INTO gmail_amazon_de_threads (id, order_id, buyer_email, buyer_name, subject, snippet, last_message_at, unread)
+    INSERT INTO gmail_amazon_de_threads (id, order_id, from_email, from_name, subject, snippet, marketplace, last_message_at, unread)
     VALUES (
       ${thread.id},
       ${thread.orderId || null},
-      ${thread.buyerEmail || null},
-      ${thread.buyerName || null},
+      ${thread.buyerEmail || thread.fromEmail || null},
+      ${thread.buyerName || thread.fromName || null},
       ${thread.subject || null},
       ${thread.snippet || null},
+      ${thread.marketplace || null},
       ${thread.lastMessageAt || new Date().toISOString()},
       ${thread.unread !== false}
     )
     ON CONFLICT (id) DO UPDATE SET
       order_id = COALESCE(EXCLUDED.order_id, gmail_amazon_de_threads.order_id),
-      buyer_email = COALESCE(EXCLUDED.buyer_email, gmail_amazon_de_threads.buyer_email),
-      buyer_name = COALESCE(EXCLUDED.buyer_name, gmail_amazon_de_threads.buyer_name),
+      from_email = COALESCE(EXCLUDED.from_email, gmail_amazon_de_threads.from_email),
+      from_name = COALESCE(EXCLUDED.from_name, gmail_amazon_de_threads.from_name),
       subject = COALESCE(EXCLUDED.subject, gmail_amazon_de_threads.subject),
       snippet = COALESCE(EXCLUDED.snippet, gmail_amazon_de_threads.snippet),
+      marketplace = COALESCE(EXCLUDED.marketplace, gmail_amazon_de_threads.marketplace),
       last_message_at = EXCLUDED.last_message_at,
       unread = EXCLUDED.unread,
       updated_at = CURRENT_TIMESTAMP

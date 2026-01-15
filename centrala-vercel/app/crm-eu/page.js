@@ -156,7 +156,7 @@ export default function CRMEUPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           text: replyText.trim(),
-          to: selectedThread.buyer_email,
+          to: selectedThread.from_email,
           subject: selectedThread.subject
         })
       });
@@ -323,14 +323,29 @@ export default function CRMEUPage() {
                             } ${thread.unread ? 'bg-orange-50/50' : ''}`}
                           >
                             <div className="flex items-start gap-3">
-                              <div className="w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center text-orange-600 font-medium text-sm">
-                                {(thread.buyer_name || thread.buyer_email || 'A')[0].toUpperCase()}
+                              <div className="w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center overflow-hidden">
+                                {thread.marketplace ? (
+                                  <img
+                                    src={`/flags/${thread.marketplace}.png`}
+                                    alt={thread.marketplace}
+                                    className="w-6 h-6 object-contain"
+                                  />
+                                ) : (
+                                  <span className="text-orange-600 font-medium text-sm">
+                                    {(thread.from_name || thread.from_email || 'A')[0].toUpperCase()}
+                                  </span>
+                                )}
                               </div>
                               <div className="flex-1 min-w-0">
                                 <div className="flex items-center justify-between">
-                                  <span className={`font-medium truncate ${thread.unread ? 'text-gray-900' : 'text-gray-700'}`}>
-                                    {thread.order_id || thread.buyer_name || 'Wiadomosc'}
-                                  </span>
+                                  <div className="flex items-center gap-2">
+                                    {thread.marketplace && (
+                                      <span className="text-xs font-medium text-gray-500">{thread.marketplace}</span>
+                                    )}
+                                    <span className={`font-medium truncate ${thread.unread ? 'text-gray-900' : 'text-gray-700'}`}>
+                                      {thread.order_id || thread.from_name || 'Wiadomosc'}
+                                    </span>
+                                  </div>
                                   <span className="text-xs text-gray-400 ml-2 whitespace-nowrap">
                                     {formatDate(thread.last_message_at)}
                                   </span>
@@ -380,20 +395,37 @@ export default function CRMEUPage() {
                           >
                             ← Wstecz
                           </button>
-                          <div className="w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center text-orange-600 font-medium">
-                            {(selectedThread.buyer_name || selectedThread.buyer_email || 'A')[0].toUpperCase()}
+                          <div className="w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center overflow-hidden">
+                            {selectedThread.marketplace ? (
+                              <img
+                                src={`/flags/${selectedThread.marketplace}.png`}
+                                alt={selectedThread.marketplace}
+                                className="w-6 h-6 object-contain"
+                              />
+                            ) : (
+                              <span className="text-orange-600 font-medium">
+                                {(selectedThread.from_name || selectedThread.from_email || 'A')[0].toUpperCase()}
+                              </span>
+                            )}
                           </div>
                           <div className="flex-1">
-                            <h3 className="font-semibold text-gray-900">
-                              {selectedThread.buyer_name || selectedThread.buyer_email || 'Klient Amazon'}
-                            </h3>
+                            <div className="flex items-center gap-2">
+                              {selectedThread.marketplace && (
+                                <span className="px-1.5 py-0.5 bg-gray-100 text-gray-600 text-xs rounded font-medium">
+                                  {selectedThread.marketplace}
+                                </span>
+                              )}
+                              <h3 className="font-semibold text-gray-900">
+                                {selectedThread.from_name || selectedThread.from_email || 'Klient Amazon'}
+                              </h3>
+                            </div>
                             <p className="text-xs text-gray-500">
-                              {selectedThread.buyer_email}
+                              {selectedThread.from_email}
                             </p>
                           </div>
                           {selectedThread.order_id && (
                             <a
-                              href={`https://sellercentral.amazon.de/orders-v3/order/${selectedThread.order_id}`}
+                              href={`https://sellercentral.amazon.${selectedThread.marketplace?.toLowerCase() || 'de'}/orders-v3/order/${selectedThread.order_id}`}
                               target="_blank"
                               rel="noopener noreferrer"
                               className="px-3 py-1 text-sm bg-orange-100 text-orange-700 rounded hover:bg-orange-200"
@@ -467,7 +499,7 @@ export default function CRMEUPage() {
                         <div className="px-4 py-3 border-t border-gray-200 bg-white">
                           <div className="mb-2 text-xs text-gray-500">
                             Odpowiedz wyslana stad pojawi sie rowniez w Amazon Seller Central.
-                            Klient odpowie na adres {selectedThread.buyer_email || 'marketplace.amazon.de'}.
+                            Klient odpowie na adres {selectedThread.from_email || 'marketplace.amazon'}.
                           </div>
                           <div className="flex gap-2">
                             <textarea
