@@ -79,8 +79,29 @@ export async function GET(request) {
           return NextResponse.json({ success: true, dbMessages: dbMessages.rows });
         case 'db-tickets':
           const { sql: sql2 } = await import('@vercel/postgres');
-          const dbTickets = await sql2`SELECT * FROM kaufland_tickets ORDER BY updated_at DESC LIMIT 5`;
+          const dbTickets = await sql2`SELECT id, status, marketplace FROM kaufland_tickets ORDER BY updated_at DESC LIMIT 10`;
           return NextResponse.json({ success: true, dbTickets: dbTickets.rows });
+        case 'test-save':
+          // Test saving a message
+          const { getAllMessages, parseTicketMessage } = await import('../../../../lib/kaufland');
+          const { saveKauflandMessage } = await import('../../../../lib/db');
+          try {
+            const msgResp = await getAllMessages(5, 0);
+            const msgs = msgResp.data || [];
+            const results = [];
+            for (const m of msgs) {
+              const parsed = parseTicketMessage(m);
+              try {
+                await saveKauflandMessage(parsed, parsed.ticketId);
+                results.push({ id: parsed.id, ticketId: parsed.ticketId, status: 'saved' });
+              } catch (e) {
+                results.push({ id: parsed.id, ticketId: parsed.ticketId, status: 'error', error: e.message });
+              }
+            }
+            return NextResponse.json({ success: true, results, rawMsgs: msgs.slice(0, 2) });
+          } catch (e) {
+            return NextResponse.json({ success: false, error: e.message });
+          }
         default:
           endpoint = test;
       }
