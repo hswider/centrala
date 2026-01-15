@@ -60,6 +60,12 @@ export async function GET(request) {
         case 'ticket-msg':
           endpoint = `/tickets/${ticketId || '00123707719'}/messages`;
           break;
+        case 'claims':
+          endpoint = `/claims?limit=10`;
+          break;
+        case 'claim-messages':
+          endpoint = `/claim-messages?id_claim=${ticketId || '00123707719'}`;
+          break;
         default:
           endpoint = test;
       }
