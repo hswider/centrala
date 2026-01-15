@@ -49,17 +49,17 @@ export async function GET(request) {
     // 3. Get buyer info (requires restricted data)
     results.buyerInfo = await apiCall(`/orders/v0/orders/${orderId}/buyerInfo`, 'buyerInfo');
 
-    // 4. Get messaging actions for order (what messaging options are available)
-    const marketplaceId = 'A13V1IB3VIYBER'; // Amazon.fr - French marketplace
-    results.messagingActions = await apiCall(
-      `/messaging/v1/orders/${orderId}?marketplaceIds=${marketplaceId}`,
-      'messagingActions'
+    // 4. Get messaging actions for order - try DE marketplace
+    const marketplaceIdDE = 'A1PA6795UKMFR9'; // Amazon.de
+    results.messagingActionsDE = await apiCall(
+      `/messaging/v1/orders/${orderId}?marketplaceIds=${marketplaceIdDE}`,
+      'messagingActionsDE'
     );
 
-    // 5. Get attributes (buyer preferences)
-    results.attributes = await apiCall(
-      `/messaging/v1/orders/${orderId}/attributes?marketplaceIds=${marketplaceId}`,
-      'attributes'
+    // 5. Get attributes (buyer preferences) - DE
+    results.attributesDE = await apiCall(
+      `/messaging/v1/orders/${orderId}/attributes?marketplaceIds=${marketplaceIdDE}`,
+      'attributesDE'
     );
 
     // 6. Try to get order address (shipping info)
@@ -68,26 +68,25 @@ export async function GET(request) {
     // 7. Check if there's any regulated info
     results.regulatedInfo = await apiCall(`/orders/v0/orders/${orderId}/regulatedInfo`, 'regulatedInfo');
 
-    // 8. Try German marketplace as well
-    const marketplaceIdDE = 'A1PA6795UKMFR9'; // Amazon.de
-    results.messagingActionsDE = await apiCall(
-      `/messaging/v1/orders/${orderId}?marketplaceIds=${marketplaceIdDE}`,
-      'messagingActionsDE'
-    );
-
-    // 9. Let's try to list orders with buyer-seller messaging filter
+    // 8. Let's try to list orders with buyer-seller messaging filter
     // This might show orders that have messages
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
     results.ordersWithMessages = await apiCall(
-      `/orders/v0/orders?MarketplaceIds=${marketplaceId}&CreatedAfter=${thirtyDaysAgo.toISOString()}&MaxResultsPerPage=10`,
+      `/orders/v0/orders?MarketplaceIds=${marketplaceIdDE}&CreatedAfter=${thirtyDaysAgo.toISOString()}&MaxResultsPerPage=10`,
       'ordersWithMessages'
     );
 
-    // 10. Check Solicitations API (for requesting reviews, might have message info)
+    // 9. Check Solicitations API (for requesting reviews, might have message info)
     results.solicitations = await apiCall(
-      `/solicitations/v1/orders/${orderId}?marketplaceIds=${marketplaceId}`,
+      `/solicitations/v1/orders/${orderId}?marketplaceIds=${marketplaceIdDE}`,
       'solicitations'
+    );
+
+    // 10. Try to get communication/case info if available
+    results.communications = await apiCall(
+      `/messaging/v1/orders/${orderId}/messages?marketplaceIds=${marketplaceIdDE}`,
+      'communications'
     );
 
     return NextResponse.json({
