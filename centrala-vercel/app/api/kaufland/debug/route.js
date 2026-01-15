@@ -66,6 +66,12 @@ export async function GET(request) {
         case 'claim-messages':
           endpoint = `/claim-messages?id_claim=${ticketId || '00123707719'}`;
           break;
+        case 'all-messages':
+          endpoint = `/tickets/messages?limit=10`;
+          break;
+        case 'ticket-messages-filter':
+          endpoint = `/tickets/messages?id_ticket=${ticketId || '00123707719'}`;
+          break;
         default:
           endpoint = test;
       }
