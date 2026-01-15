@@ -164,11 +164,111 @@ export async function POST(request) {
   }
 }
 
-// GET - Get sync status
-export async function GET() {
+// GET - Get sync status or trigger sync (for Vercel Cron)
+export async function GET(request) {
   try {
     await initDatabase();
 
+    // Check if this is a cron request (Vercel adds this header)
+    const isCron = request.headers.get('x-vercel-cron') === '1';
+
+    // Also check for manual trigger via query param
+    const { searchParams } = new URL(request.url);
+    const triggerSync = searchParams.get('sync') === 'true';
+
+    if (isCron || triggerSync) {
+      // Trigger sync
+      const authenticated = await isAuthenticated();
+      if (!authenticated) {
+        return NextResponse.json({
+          success: false,
+          error: 'Gmail Amazon not authenticated'
+        }, { status: 401 });
+      }
+
+      const syncStatus = await getGmailAmazonDeSyncStatus();
+      if (syncStatus?.sync_in_progress) {
+        return NextResponse.json({
+          success: false,
+          error: 'Sync already in progress'
+        });
+      }
+
+      await setGmailAmazonDeSyncInProgress(true);
+
+      let syncedThreads = 0;
+      let syncedMessages = 0;
+
+      try {
+        const threadsResponse = await getThreadsList(30);
+        const threads = threadsResponse.threads || [];
+
+        for (const threadSummary of threads) {
+          try {
+            const fullThread = await getThread(threadSummary.id);
+
+            if (!fullThread.messages || fullThread.messages.length === 0) {
+              continue;
+            }
+
+            const firstMessage = parseMessage(fullThread.messages[0]);
+            const lastMessage = parseMessage(fullThread.messages[fullThread.messages.length - 1]);
+
+            const hasUnread = fullThread.messages.some(m =>
+              m.labelIds && m.labelIds.includes('UNREAD')
+            );
+
+            const marketplace = detectMarketplace(firstMessage.fromEmail);
+
+            await saveGmailAmazonDeThread({
+              id: fullThread.id,
+              orderId: firstMessage.orderId,
+              buyerEmail: firstMessage.fromEmail,
+              buyerName: firstMessage.fromName,
+              subject: firstMessage.subject,
+              snippet: lastMessage.snippet || fullThread.snippet,
+              marketplace: marketplace,
+              lastMessageAt: lastMessage.internalDate,
+              unread: hasUnread
+            });
+
+            syncedThreads++;
+
+            for (const message of fullThread.messages) {
+              const parsed = parseMessage(message);
+              const isOutgoing = parsed.labelIds && parsed.labelIds.includes('SENT');
+
+              await saveGmailAmazonDeMessage({
+                id: parsed.id,
+                sender: isOutgoing ? 'seller' : parsed.fromEmail,
+                subject: parsed.subject,
+                bodyText: parsed.bodyText,
+                bodyHtml: parsed.bodyHtml,
+                sentAt: parsed.internalDate,
+                isOutgoing
+              }, fullThread.id);
+
+              syncedMessages++;
+            }
+          } catch (threadError) {
+            console.error(`Error syncing thread ${threadSummary.id}:`, threadError.message);
+          }
+        }
+
+        await updateGmailAmazonDeSyncStatus();
+
+        return NextResponse.json({
+          success: true,
+          syncedThreads,
+          syncedMessages,
+          triggeredBy: isCron ? 'cron' : 'manual'
+        });
+      } finally {
+        await setGmailAmazonDeSyncInProgress(false);
+      }
+    }
+
+    // Default: just return status
     const syncStatus = await getGmailAmazonDeSyncStatus();
 
     return NextResponse.json({
@@ -178,6 +278,11 @@ export async function GET() {
     });
   } catch (error) {
     console.error('Get sync status error:', error);
+
+    try {
+      await setGmailAmazonDeSyncInProgress(false);
+    } catch (e) {}
+
     return NextResponse.json(
       { success: false, error: error.message },
       { status: 500 }

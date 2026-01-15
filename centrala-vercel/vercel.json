@@ -1,2 +1,8 @@
 {
+  "crons": [
+    {
+      "path": "/api/gmail-amazon-de/sync",
+      "schedule": "*/5 * * * *"
+    }
+  ]
 }
