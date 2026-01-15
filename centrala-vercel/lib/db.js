@@ -428,6 +428,77 @@ export async function initDatabase() {
     await sql`INSERT INTO amazon_de_sync_status (id) VALUES (1)`;
   }
 
+  // ========== GMAIL AMAZON DE ==========
+
+  // Gmail Amazon DE OAuth tokens
+  await sql`
+    CREATE TABLE IF NOT EXISTS gmail_amazon_de_tokens (
+      id SERIAL PRIMARY KEY,
+      access_token TEXT,
+      refresh_token TEXT,
+      expires_at BIGINT,
+      email VARCHAR(255),
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )
+  `;
+
+  // Gmail Amazon DE threads
+  await sql`
+    CREATE TABLE IF NOT EXISTS gmail_amazon_de_threads (
+      id VARCHAR(100) PRIMARY KEY,
+      subject TEXT,
+      snippet TEXT,
+      from_email VARCHAR(255),
+      from_name VARCHAR(255),
+      order_id VARCHAR(50),
+      last_message_at TIMESTAMP,
+      unread BOOLEAN DEFAULT true,
+      messages_count INTEGER DEFAULT 0,
+      labels TEXT,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )
+  `;
+
+  // Gmail Amazon DE messages
+  await sql`
+    CREATE TABLE IF NOT EXISTS gmail_amazon_de_messages (
+      id VARCHAR(100) PRIMARY KEY,
+      thread_id VARCHAR(100) REFERENCES gmail_amazon_de_threads(id) ON DELETE CASCADE,
+      from_email VARCHAR(255),
+      from_name VARCHAR(255),
+      to_email VARCHAR(255),
+      subject TEXT,
+      body_text TEXT,
+      body_html TEXT,
+      sent_at TIMESTAMP,
+      is_outgoing BOOLEAN DEFAULT false,
+      has_attachments BOOLEAN DEFAULT false,
+      attachments JSONB,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )
+  `;
+
+  // Gmail Amazon DE sync status
+  await sql`
+    CREATE TABLE IF NOT EXISTS gmail_amazon_de_sync_status (
+      id SERIAL PRIMARY KEY,
+      last_sync_at TIMESTAMP,
+      sync_in_progress BOOLEAN DEFAULT false
+    )
+  `;
+
+  // Insert default Gmail Amazon DE token row if not exists
+  const { rows: gmailAmazonDeTokenRows } = await sql`SELECT COUNT(*) as count FROM gmail_amazon_de_tokens`;
+  if (gmailAmazonDeTokenRows[0].count === '0') {
+    await sql`INSERT INTO gmail_amazon_de_tokens (id) VALUES (1)`;
+  }
+
+  // Insert default Gmail Amazon DE sync status if not exists
+  const { rows: gmailAmazonDeSyncRows } = await sql`SELECT COUNT(*) as count FROM gmail_amazon_de_sync_status`;
+  if (gmailAmazonDeSyncRows[0].count === '0') {
+    await sql`INSERT INTO gmail_amazon_de_sync_status (id) VALUES (1)`;
+  }
+
   // Weather data table
   await sql`
     CREATE TABLE IF NOT EXISTS weather (
@@ -2338,5 +2409,169 @@ export async function markAmazonDeThreadAsRead(threadId) {
 // Get unread Amazon DE threads count
 export async function getUnreadAmazonDeThreadsCount() {
   const { rows } = await sql`SELECT COUNT(*) as count FROM amazon_de_threads WHERE unread = true`;
+  return parseInt(rows[0].count);
+}
+
+// ============================================
+// Gmail Amazon DE Functions
+// ============================================
+
+// Get Gmail Amazon DE OAuth tokens
+export async function getGmailAmazonDeTokens() {
+  const { rows } = await sql`SELECT * FROM gmail_amazon_de_tokens ORDER BY id DESC LIMIT 1`;
+  return rows[0] || null;
+}
+
+// Save Gmail Amazon DE OAuth tokens
+export async function saveGmailAmazonDeTokens(accessToken, refreshToken, expiresAt, email = null) {
+  const existing = await getGmailAmazonDeTokens();
+
+  if (existing) {
+    await sql`
+      UPDATE gmail_amazon_de_tokens
+      SET access_token = ${accessToken},
+          refresh_token = ${refreshToken},
+          expires_at = ${expiresAt},
+          email = COALESCE(${email}, email),
+          updated_at = CURRENT_TIMESTAMP
+      WHERE id = ${existing.id}
+    `;
+  } else {
+    await sql`
+      INSERT INTO gmail_amazon_de_tokens (access_token, refresh_token, expires_at, email)
+      VALUES (${accessToken}, ${refreshToken}, ${expiresAt}, ${email})
+    `;
+  }
+}
+
+// Get Gmail Amazon DE sync status
+export async function getGmailAmazonDeSyncStatus() {
+  const { rows } = await sql`SELECT * FROM gmail_amazon_de_sync_status ORDER BY id DESC LIMIT 1`;
+  return rows[0] || null;
+}
+
+// Update Gmail Amazon DE sync status
+export async function updateGmailAmazonDeSyncStatus() {
+  const existing = await getGmailAmazonDeSyncStatus();
+
+  if (existing) {
+    await sql`
+      UPDATE gmail_amazon_de_sync_status
+      SET last_sync_at = CURRENT_TIMESTAMP,
+          sync_in_progress = false
+      WHERE id = ${existing.id}
+    `;
+  } else {
+    await sql`
+      INSERT INTO gmail_amazon_de_sync_status (last_sync_at, sync_in_progress)
+      VALUES (CURRENT_TIMESTAMP, false)
+    `;
+  }
+}
+
+// Set Gmail Amazon DE sync in progress
+export async function setGmailAmazonDeSyncInProgress(inProgress) {
+  const existing = await getGmailAmazonDeSyncStatus();
+
+  if (existing) {
+    await sql`
+      UPDATE gmail_amazon_de_sync_status
+      SET sync_in_progress = ${inProgress}
+      WHERE id = ${existing.id}
+    `;
+  } else {
+    await sql`
+      INSERT INTO gmail_amazon_de_sync_status (sync_in_progress)
+      VALUES (${inProgress})
+    `;
+  }
+}
+
+// Save Gmail Amazon DE thread
+export async function saveGmailAmazonDeThread(thread) {
+  await sql`
+    INSERT INTO gmail_amazon_de_threads (id, order_id, buyer_email, buyer_name, subject, snippet, last_message_at, unread)
+    VALUES (
+      ${thread.id},
+      ${thread.orderId || null},
+      ${thread.buyerEmail || null},
+      ${thread.buyerName || null},
+      ${thread.subject || null},
+      ${thread.snippet || null},
+      ${thread.lastMessageAt || new Date().toISOString()},
+      ${thread.unread !== false}
+    )
+    ON CONFLICT (id) DO UPDATE SET
+      order_id = COALESCE(EXCLUDED.order_id, gmail_amazon_de_threads.order_id),
+      buyer_email = COALESCE(EXCLUDED.buyer_email, gmail_amazon_de_threads.buyer_email),
+      buyer_name = COALESCE(EXCLUDED.buyer_name, gmail_amazon_de_threads.buyer_name),
+      subject = COALESCE(EXCLUDED.subject, gmail_amazon_de_threads.subject),
+      snippet = COALESCE(EXCLUDED.snippet, gmail_amazon_de_threads.snippet),
+      last_message_at = EXCLUDED.last_message_at,
+      unread = EXCLUDED.unread,
+      updated_at = CURRENT_TIMESTAMP
+  `;
+}
+
+// Save Gmail Amazon DE message
+export async function saveGmailAmazonDeMessage(message, threadId) {
+  await sql`
+    INSERT INTO gmail_amazon_de_messages (id, thread_id, sender, subject, body_text, body_html, sent_at, is_outgoing)
+    VALUES (
+      ${message.id},
+      ${threadId},
+      ${message.sender || message.fromEmail || null},
+      ${message.subject || null},
+      ${message.bodyText || null},
+      ${message.bodyHtml || null},
+      ${message.sentAt || message.internalDate || new Date().toISOString()},
+      ${message.isOutgoing || false}
+    )
+    ON CONFLICT (id) DO NOTHING
+  `;
+}
+
+// Get Gmail Amazon DE threads list
+export async function getGmailAmazonDeThreads(limit = 50, offset = 0) {
+  const { rows } = await sql`
+    SELECT t.*,
+           (SELECT COUNT(*) FROM gmail_amazon_de_messages WHERE thread_id = t.id) as message_count
+    FROM gmail_amazon_de_threads t
+    ORDER BY t.last_message_at DESC
+    LIMIT ${limit} OFFSET ${offset}
+  `;
+  return rows;
+}
+
+// Get single Gmail Amazon DE thread with messages
+export async function getGmailAmazonDeThread(threadId) {
+  const threadResult = await sql`
+    SELECT * FROM gmail_amazon_de_threads WHERE id = ${threadId}
+  `;
+
+  if (threadResult.rows.length === 0) {
+    return null;
+  }
+
+  const messagesResult = await sql`
+    SELECT * FROM gmail_amazon_de_messages
+    WHERE thread_id = ${threadId}
+    ORDER BY sent_at ASC
+  `;
+
+  return {
+    thread: threadResult.rows[0],
+    messages: messagesResult.rows
+  };
+}
+
+// Mark Gmail Amazon DE thread as read
+export async function markGmailAmazonDeThreadAsRead(threadId) {
+  await sql`UPDATE gmail_amazon_de_threads SET unread = false, updated_at = CURRENT_TIMESTAMP WHERE id = ${threadId}`;
+}
+
+// Get unread Gmail Amazon DE threads count
+export async function getUnreadGmailAmazonDeThreadsCount() {
+  const { rows } = await sql`SELECT COUNT(*) as count FROM gmail_amazon_de_threads WHERE unread = true`;
   return parseInt(rows[0].count);
 }
