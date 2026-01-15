@@ -72,6 +72,15 @@ export async function GET(request) {
         case 'ticket-messages-filter':
           endpoint = `/tickets/messages?id_ticket=${ticketId || '00123707719'}`;
           break;
+        case 'db-messages':
+          // Check messages in database
+          const { sql } = await import('@vercel/postgres');
+          const dbMessages = await sql`SELECT * FROM kaufland_messages ORDER BY created_at DESC LIMIT 10`;
+          return NextResponse.json({ success: true, dbMessages: dbMessages.rows });
+        case 'db-tickets':
+          const { sql: sql2 } = await import('@vercel/postgres');
+          const dbTickets = await sql2`SELECT * FROM kaufland_tickets ORDER BY updated_at DESC LIMIT 5`;
+          return NextResponse.json({ success: true, dbTickets: dbTickets.rows });
         default:
           endpoint = test;
       }
