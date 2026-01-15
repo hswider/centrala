@@ -40,7 +40,8 @@ export default function Navigation() {
     { href: '/zamowienia', label: 'OMS', icon: '📦' },
     { href: '/magazyny', label: 'WMS', icon: '🏭' },
     { href: '/mes', label: 'MES', icon: '⚙️' },
-    { href: '/crm', label: 'CRM 🇵🇱', icon: '👥', badge: unreadCount },
+    { href: '/crm', label: 'CRM PL', icon: '🇵🇱', badge: unreadCount },
+    { href: '/crm-eu', label: 'CRM EU', icon: '🇪🇺' },
     { href: '/rank', label: 'RANK', icon: '📈' },
     { href: '/agent', label: 'Asystent AI', icon: '🤖' },
   ];
@@ -54,6 +55,8 @@ export default function Navigation() {
       (item.href === '/zamowienia' && pathname.startsWith('/zamowienia')) ||
       (item.href === '/magazyny' && pathname.startsWith('/magazyny')) ||
       (item.href === '/mes' && pathname.startsWith('/mes')) ||
+      (item.href === '/crm' && pathname === '/crm') ||
+      (item.href === '/crm-eu' && pathname.startsWith('/crm-eu')) ||
       (item.href === '/rank' && pathname.startsWith('/rank')) ||
       (item.href === '/agent' && pathname.startsWith('/agent'));
     return (
