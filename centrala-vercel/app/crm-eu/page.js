@@ -19,7 +19,7 @@ export default function CRMEUPage() {
   const [unreadCount, setUnreadCount] = useState(0);
 
   const tabs = [
-    { key: 'gmail-amazon-de', label: 'Amazon DE (gutekissen)', icon: '📧', badge: unreadCount, color: 'orange' },
+    { key: 'gmail-amazon-de', label: 'Amazon (Gutekissen)', icon: '📧', badge: unreadCount, color: 'orange' },
     // Tu beda dodane kolejne kanaly EU
   ];
 
@@ -287,7 +287,7 @@ export default function CRMEUPage() {
                   <div className={`lg:w-1/3 border-r border-gray-200 flex flex-col ${selectedThread ? 'hidden lg:flex' : ''}`}>
                     <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
                       <div>
-                        <h2 className="font-semibold text-gray-900">Wiadomosci Amazon DE</h2>
+                        <h2 className="font-semibold text-gray-900">Wiadomosci Amazon</h2>
                         <p className="text-xs text-gray-500">
                           {gmailAuth.email && <span className="text-orange-600">{gmailAuth.email}</span>}
                           {syncStatus?.lastSyncAt && ` • Sync: ${formatDate(syncStatus.lastSyncAt)}`}
