@@ -1,9 +1,26 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 export default function WMSPage() {
   const [activeTab, setActiveTab] = useState('stan');
+  const [showHistoryModal, setShowHistoryModal] = useState(false);
+  const [historyData, setHistoryData] = useState([]);
+  const [historyUsers, setHistoryUsers] = useState([]);
+  const [historyActionTypes, setHistoryActionTypes] = useState([]);
+  const [historyLoading, setHistoryLoading] = useState(false);
+  const [historyFilters, setHistoryFilters] = useState({
+    username: '',
+    actionType: '',
+    sku: '',
+    page: 1
+  });
+  const [historyPagination, setHistoryPagination] = useState({
+    page: 1,
+    perPage: 50,
+    total: 0,
+    totalPages: 0
+  });
 
   const tabs = [
     { key: 'stan', label: 'Stan magazynu', icon: '📦' },
@@ -11,6 +28,91 @@ export default function WMSPage() {
     { key: 'przyjecia', label: 'Przyjęcia', icon: '📥' },
     { key: 'wydania', label: 'Wydania', icon: '📤' },
   ];
+
+  // Fetch history data
+  const fetchHistory = async () => {
+    setHistoryLoading(true);
+    try {
+      const params = new URLSearchParams({
+        page: historyFilters.page.toString(),
+        perPage: '50'
+      });
+      if (historyFilters.username) params.append('username', historyFilters.username);
+      if (historyFilters.actionType) params.append('actionType', historyFilters.actionType);
+      if (historyFilters.sku) params.append('sku', historyFilters.sku);
+
+      const res = await fetch(`/api/inventory/history?${params}`);
+      const data = await res.json();
+
+      if (data.success) {
+        setHistoryData(data.history || []);
+        setHistoryUsers(data.users || []);
+        setHistoryActionTypes(data.actionTypes || []);
+        setHistoryPagination(data.pagination || { page: 1, perPage: 50, total: 0, totalPages: 0 });
+      }
+    } catch (error) {
+      console.error('Error fetching history:', error);
+    } finally {
+      setHistoryLoading(false);
+    }
+  };
+
+  // Load history when modal opens or filters change
+  useEffect(() => {
+    if (showHistoryModal) {
+      fetchHistory();
+    }
+  }, [showHistoryModal, historyFilters]);
+
+  // Export CSV function
+  const exportCSV = () => {
+    // For now, export the static data - in real app this would export from API
+    const csvContent = 'SKU,Nazwa,Lokalizacja,Stan,Min,Max\n' +
+      produkty.map(p => `${p.sku},${p.nazwa},${p.lokalizacja},${p.stan},${p.min},${p.max}`).join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = `stan_magazynu_${new Date().toISOString().split('T')[0]}.csv`;
+    link.click();
+  };
+
+  // Get action type label
+  const getActionTypeLabel = (actionType) => {
+    const types = {
+      'STAN_CHANGE': 'Zmiana stanu',
+      'PRICE_CHANGE': 'Zmiana ceny',
+      'PRODUCT_ADD': 'Dodanie produktu',
+      'PRODUCT_MODIFY': 'Modyfikacja produktu',
+      'PRODUCT_DELETE': 'Usuniecie produktu'
+    };
+    return types[actionType] || actionType;
+  };
+
+  // Get action type color
+  const getActionTypeColor = (actionType) => {
+    const colors = {
+      'STAN_CHANGE': 'bg-blue-100 text-blue-800',
+      'PRICE_CHANGE': 'bg-yellow-100 text-yellow-800',
+      'PRODUCT_ADD': 'bg-green-100 text-green-800',
+      'PRODUCT_MODIFY': 'bg-purple-100 text-purple-800',
+      'PRODUCT_DELETE': 'bg-red-100 text-red-800'
+    };
+    return colors[actionType] || 'bg-gray-100 text-gray-800';
+  };
+
+  // Format date
+  const formatDate = (dateStr) => {
+    if (!dateStr) return '-';
+    const date = new Date(dateStr);
+    return date.toLocaleString('pl-PL', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
 
   // Przykładowe dane - stan magazynu
   const [produkty] = useState([
@@ -81,11 +183,31 @@ export default function WMSPage() {
         <div className="flex justify-between items-center mb-6">
           <div>
             <h1 className="text-xl sm:text-2xl font-bold text-gray-900">WMS</h1>
-            <p className="text-xs sm:text-sm text-gray-500">Zarządzanie magazynem</p>
+            <p className="text-xs sm:text-sm text-gray-500">Zarzadzanie magazynem</p>
           </div>
-          <button className="px-3 py-1.5 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700">
-            + Nowa operacja
-          </button>
+          <div className="flex gap-2">
+            <button
+              onClick={exportCSV}
+              className="px-3 py-1.5 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 flex items-center gap-1"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+              Eksport CSV
+            </button>
+            <button
+              onClick={() => setShowHistoryModal(true)}
+              className="px-3 py-1.5 text-sm bg-purple-100 text-purple-700 rounded-lg hover:bg-purple-200 flex items-center gap-1"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              Historia zmian
+            </button>
+            <button className="px-3 py-1.5 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+              + Nowa operacja
+            </button>
+          </div>
         </div>
 
         {/* Stats */}
@@ -289,6 +411,160 @@ export default function WMSPage() {
           )}
         </div>
       </main>
+
+      {/* History Modal */}
+      {showHistoryModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-6xl max-h-[90vh] flex flex-col">
+            {/* Modal Header */}
+            <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+              <h2 className="text-lg font-semibold text-gray-900">Historia zmian magazynowych</h2>
+              <button
+                onClick={() => setShowHistoryModal(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            {/* Filters */}
+            <div className="px-6 py-3 border-b border-gray-100 bg-gray-50">
+              <div className="flex flex-wrap gap-3 items-center">
+                <div>
+                  <label className="block text-xs text-gray-500 mb-1">Uzytkownik</label>
+                  <select
+                    value={historyFilters.username}
+                    onChange={(e) => setHistoryFilters(prev => ({ ...prev, username: e.target.value, page: 1 }))}
+                    className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  >
+                    <option value="">Wszyscy</option>
+                    {historyUsers.map(user => (
+                      <option key={user} value={user}>{user}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs text-gray-500 mb-1">Typ zmiany</label>
+                  <select
+                    value={historyFilters.actionType}
+                    onChange={(e) => setHistoryFilters(prev => ({ ...prev, actionType: e.target.value, page: 1 }))}
+                    className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  >
+                    <option value="">Wszystkie</option>
+                    {historyActionTypes.map(type => (
+                      <option key={type.value} value={type.value}>{type.label}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs text-gray-500 mb-1">SKU</label>
+                  <input
+                    type="text"
+                    value={historyFilters.sku}
+                    onChange={(e) => setHistoryFilters(prev => ({ ...prev, sku: e.target.value, page: 1 }))}
+                    placeholder="Szukaj SKU..."
+                    className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  />
+                </div>
+                <div className="ml-auto text-sm text-gray-500">
+                  Znaleziono: {historyPagination.total} zmian
+                </div>
+              </div>
+            </div>
+
+            {/* Table */}
+            <div className="flex-1 overflow-auto">
+              {historyLoading ? (
+                <div className="flex items-center justify-center h-64">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600"></div>
+                </div>
+              ) : historyData.length === 0 ? (
+                <div className="flex items-center justify-center h-64 text-gray-500">
+                  Brak historii zmian
+                </div>
+              ) : (
+                <table className="w-full">
+                  <thead className="bg-gray-50 sticky top-0">
+                    <tr>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Data</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Uzytkownik</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Typ</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">SKU</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nazwa</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Kategoria</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Pole</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Stara wartosc</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nowa wartosc</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100">
+                    {historyData.map((item) => (
+                      <tr key={item.id} className="hover:bg-gray-50">
+                        <td className="px-4 py-3 text-sm text-gray-700 whitespace-nowrap">
+                          {formatDate(item.created_at)}
+                        </td>
+                        <td className="px-4 py-3 text-sm text-gray-700">
+                          {item.username || '-'}
+                        </td>
+                        <td className="px-4 py-3">
+                          <span className={`px-2 py-1 rounded text-xs font-medium ${getActionTypeColor(item.action_type)}`}>
+                            {getActionTypeLabel(item.action_type)}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3">
+                          <span className="font-mono text-sm text-gray-900">{item.sku}</span>
+                        </td>
+                        <td className="px-4 py-3 text-sm text-gray-700 max-w-xs truncate" title={item.nazwa}>
+                          {item.nazwa}
+                        </td>
+                        <td className="px-4 py-3 text-sm text-gray-500">
+                          {item.kategoria}
+                        </td>
+                        <td className="px-4 py-3 text-sm text-gray-500">
+                          {item.field_changed || '-'}
+                        </td>
+                        <td className="px-4 py-3 text-sm text-red-600 max-w-xs truncate" title={item.old_value}>
+                          {item.old_value || '-'}
+                        </td>
+                        <td className="px-4 py-3 text-sm text-green-600 max-w-xs truncate" title={item.new_value}>
+                          {item.new_value || '-'}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </div>
+
+            {/* Pagination */}
+            {historyPagination.totalPages > 1 && (
+              <div className="px-6 py-3 border-t border-gray-200 flex items-center justify-between">
+                <div className="text-sm text-gray-500">
+                  Strona {historyPagination.page} z {historyPagination.totalPages}
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setHistoryFilters(prev => ({ ...prev, page: Math.max(1, prev.page - 1) }))}
+                    disabled={historyPagination.page <= 1}
+                    className="px-3 py-1.5 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Poprzednia
+                  </button>
+                  <button
+                    onClick={() => setHistoryFilters(prev => ({ ...prev, page: Math.min(historyPagination.totalPages, prev.page + 1) }))}
+                    disabled={historyPagination.page >= historyPagination.totalPages}
+                    className="px-3 py-1.5 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Nastepna
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

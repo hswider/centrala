@@ -1,6 +1,22 @@
 import { sql } from '@vercel/postgres';
 import { NextResponse } from 'next/server';
-import { initDatabase } from '../../../lib/db';
+import { cookies } from 'next/headers';
+import { initDatabase, logInventoryChange } from '../../../lib/db';
+
+// Helper to get current user from cookies
+async function getCurrentUser() {
+  try {
+    const cookieStore = await cookies();
+    const userCookie = cookieStore.get('poom_user');
+    if (userCookie) {
+      const user = JSON.parse(userCookie.value);
+      return { userId: user.id, username: user.username };
+    }
+  } catch (e) {
+    console.error('Error getting user from cookie:', e);
+  }
+  return { userId: null, username: null };
+}
 
 // Stala stawki minutowej (najnizsza krajowa 3606 PLN / 168h / 60min)
 const MINUTE_RATE = 0.358;
@@ -132,6 +148,12 @@ export async function POST(request) {
       );
     }
 
+    // Check if product already exists (for logging purposes)
+    const existing = await sql`
+      SELECT * FROM inventory WHERE sku = ${sku} AND kategoria = ${kategoria}
+    `;
+    const isUpdate = existing.rows.length > 0;
+
     const result = await sql`
       INSERT INTO inventory (sku, nazwa, stan, cena, kategoria, czas_produkcji, ean, jednostka, tkanina)
       VALUES (${sku}, ${nazwa}, ${stan || 0}, ${cena || 0}, ${kategoria}, ${czas_produkcji || 0}, ${ean || null}, ${jednostka || 'szt'}, ${tkanina || null})
@@ -146,6 +168,71 @@ export async function POST(request) {
         updated_at = CURRENT_TIMESTAMP
       RETURNING *
     `;
+
+    // Log the change
+    const { userId, username } = await getCurrentUser();
+    const newItem = result.rows[0];
+
+    if (isUpdate) {
+      const oldItem = existing.rows[0];
+      // Log each changed field
+      if (oldItem.stan !== newItem.stan) {
+        await logInventoryChange({
+          inventoryId: newItem.id,
+          sku: newItem.sku,
+          nazwa: newItem.nazwa,
+          kategoria: newItem.kategoria,
+          actionType: 'STAN_CHANGE',
+          fieldChanged: 'stan',
+          oldValue: String(oldItem.stan),
+          newValue: String(newItem.stan),
+          userId,
+          username
+        });
+      }
+      if (parseFloat(oldItem.cena) !== parseFloat(newItem.cena)) {
+        await logInventoryChange({
+          inventoryId: newItem.id,
+          sku: newItem.sku,
+          nazwa: newItem.nazwa,
+          kategoria: newItem.kategoria,
+          actionType: 'PRICE_CHANGE',
+          fieldChanged: 'cena',
+          oldValue: String(oldItem.cena),
+          newValue: String(newItem.cena),
+          userId,
+          username
+        });
+      }
+      if (oldItem.nazwa !== newItem.nazwa || oldItem.ean !== newItem.ean || oldItem.tkanina !== newItem.tkanina) {
+        await logInventoryChange({
+          inventoryId: newItem.id,
+          sku: newItem.sku,
+          nazwa: newItem.nazwa,
+          kategoria: newItem.kategoria,
+          actionType: 'PRODUCT_MODIFY',
+          fieldChanged: 'dane',
+          oldValue: JSON.stringify({ nazwa: oldItem.nazwa, ean: oldItem.ean, tkanina: oldItem.tkanina }),
+          newValue: JSON.stringify({ nazwa: newItem.nazwa, ean: newItem.ean, tkanina: newItem.tkanina }),
+          userId,
+          username
+        });
+      }
+    } else {
+      // New product
+      await logInventoryChange({
+        inventoryId: newItem.id,
+        sku: newItem.sku,
+        nazwa: newItem.nazwa,
+        kategoria: newItem.kategoria,
+        actionType: 'PRODUCT_ADD',
+        fieldChanged: null,
+        oldValue: null,
+        newValue: JSON.stringify({ stan: newItem.stan, cena: newItem.cena }),
+        userId,
+        username
+      });
+    }
 
     return NextResponse.json({
       success: true,
@@ -178,6 +265,17 @@ export async function PUT(request) {
       return NextResponse.json(
         { success: false, error: 'EAN musi skladac sie z dokladnie 13 cyfr' },
         { status: 400 }
+      );
+    }
+
+    // Get old values for logging
+    const oldResult = await sql`SELECT * FROM inventory WHERE id = ${id}`;
+    const oldItem = oldResult.rows[0];
+
+    if (!oldItem) {
+      return NextResponse.json(
+        { success: false, error: 'Nie znaleziono pozycji' },
+        { status: 404 }
       );
     }
 
@@ -263,6 +361,64 @@ export async function PUT(request) {
       );
     }
 
+    // Log the changes
+    const { userId, username } = await getCurrentUser();
+    const newItem = result.rows[0];
+
+    // Log stock change
+    if (stan !== undefined && parseFloat(oldItem.stan) !== parseFloat(newItem.stan)) {
+      await logInventoryChange({
+        inventoryId: newItem.id,
+        sku: newItem.sku,
+        nazwa: newItem.nazwa,
+        kategoria: newItem.kategoria,
+        actionType: 'STAN_CHANGE',
+        fieldChanged: 'stan',
+        oldValue: String(oldItem.stan),
+        newValue: String(newItem.stan),
+        userId,
+        username
+      });
+    }
+
+    // Log price change
+    if (cena !== undefined && parseFloat(oldItem.cena) !== parseFloat(newItem.cena)) {
+      await logInventoryChange({
+        inventoryId: newItem.id,
+        sku: newItem.sku,
+        nazwa: newItem.nazwa,
+        kategoria: newItem.kategoria,
+        actionType: 'PRICE_CHANGE',
+        fieldChanged: 'cena',
+        oldValue: String(oldItem.cena),
+        newValue: String(newItem.cena),
+        userId,
+        username
+      });
+    }
+
+    // Log other changes (nazwa, ean, tkanina, etc.)
+    const hasOtherChanges =
+      (nazwa !== undefined && oldItem.nazwa !== newItem.nazwa) ||
+      (ean !== undefined && oldItem.ean !== newItem.ean) ||
+      (tkanina !== undefined && oldItem.tkanina !== newItem.tkanina) ||
+      (sku !== undefined && oldItem.sku !== newItem.sku);
+
+    if (hasOtherChanges) {
+      await logInventoryChange({
+        inventoryId: newItem.id,
+        sku: newItem.sku,
+        nazwa: newItem.nazwa,
+        kategoria: newItem.kategoria,
+        actionType: 'PRODUCT_MODIFY',
+        fieldChanged: 'dane',
+        oldValue: JSON.stringify({ sku: oldItem.sku, nazwa: oldItem.nazwa, ean: oldItem.ean, tkanina: oldItem.tkanina }),
+        newValue: JSON.stringify({ sku: newItem.sku, nazwa: newItem.nazwa, ean: newItem.ean, tkanina: newItem.tkanina }),
+        userId,
+        username
+      });
+    }
+
     return NextResponse.json({
       success: true,
       data: result.rows[0]
@@ -300,6 +456,23 @@ export async function DELETE(request) {
         { status: 404 }
       );
     }
+
+    // Log the deletion
+    const { userId, username } = await getCurrentUser();
+    const deletedItem = result.rows[0];
+
+    await logInventoryChange({
+      inventoryId: deletedItem.id,
+      sku: deletedItem.sku,
+      nazwa: deletedItem.nazwa,
+      kategoria: deletedItem.kategoria,
+      actionType: 'PRODUCT_DELETE',
+      fieldChanged: null,
+      oldValue: JSON.stringify({ stan: deletedItem.stan, cena: deletedItem.cena }),
+      newValue: null,
+      userId,
+      username
+    });
 
     return NextResponse.json({
       success: true,

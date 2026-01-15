@@ -321,6 +321,24 @@ export async function initDatabase() {
     )
   `;
 
+  // Inventory history/changelog table
+  await sql`
+    CREATE TABLE IF NOT EXISTS inventory_history (
+      id SERIAL PRIMARY KEY,
+      inventory_id INTEGER,
+      sku VARCHAR(100),
+      nazwa VARCHAR(255),
+      kategoria VARCHAR(50),
+      action_type VARCHAR(20) NOT NULL,
+      field_changed VARCHAR(50),
+      old_value TEXT,
+      new_value TEXT,
+      user_id INTEGER,
+      username VARCHAR(100),
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )
+  `;
+
   // Insert default Allegro Meblebox token row if not exists
   const { rows: allegroMebleboxTokenRows } = await sql`SELECT COUNT(*) as count FROM allegro_meblebox_tokens`;
   if (allegroMebleboxTokenRows[0].count === '0') {
@@ -1702,6 +1720,170 @@ export async function getWeatherForecast() {
     SELECT * FROM weather_forecast
     WHERE forecast_date >= CURRENT_DATE
     ORDER BY forecast_date, country_code
+  `;
+  return rows;
+}
+
+// ========== INVENTORY HISTORY FUNCTIONS ==========
+
+// Log inventory change
+export async function logInventoryChange({
+  inventoryId,
+  sku,
+  nazwa,
+  kategoria,
+  actionType,
+  fieldChanged = null,
+  oldValue = null,
+  newValue = null,
+  userId = null,
+  username = null
+}) {
+  await sql`
+    INSERT INTO inventory_history (
+      inventory_id, sku, nazwa, kategoria, action_type,
+      field_changed, old_value, new_value, user_id, username, created_at
+    ) VALUES (
+      ${inventoryId}, ${sku}, ${nazwa}, ${kategoria}, ${actionType},
+      ${fieldChanged}, ${oldValue}, ${newValue}, ${userId}, ${username}, CURRENT_TIMESTAMP
+    )
+  `;
+}
+
+// Get inventory history with pagination and filters
+export async function getInventoryHistory(page = 1, perPage = 50, filters = {}) {
+  const offset = (page - 1) * perPage;
+  const { username, actionType, sku, dateFrom, dateTo } = filters;
+
+  let whereConditions = [];
+  let params = [];
+
+  // Build WHERE conditions based on filters
+  let query = `SELECT * FROM inventory_history WHERE 1=1`;
+  let countQuery = `SELECT COUNT(*) as total FROM inventory_history WHERE 1=1`;
+
+  if (username) {
+    query += ` AND username = $${params.length + 1}`;
+    countQuery += ` AND username = $${params.length + 1}`;
+    params.push(username);
+  }
+
+  if (actionType) {
+    query += ` AND action_type = $${params.length + 1}`;
+    countQuery += ` AND action_type = $${params.length + 1}`;
+    params.push(actionType);
+  }
+
+  if (sku) {
+    query += ` AND sku ILIKE $${params.length + 1}`;
+    countQuery += ` AND sku ILIKE $${params.length + 1}`;
+    params.push(`%${sku}%`);
+  }
+
+  if (dateFrom) {
+    query += ` AND created_at >= $${params.length + 1}`;
+    countQuery += ` AND created_at >= $${params.length + 1}`;
+    params.push(dateFrom);
+  }
+
+  if (dateTo) {
+    query += ` AND created_at <= $${params.length + 1}`;
+    countQuery += ` AND created_at <= $${params.length + 1}`;
+    params.push(dateTo);
+  }
+
+  query += ` ORDER BY created_at DESC LIMIT ${perPage} OFFSET ${offset}`;
+
+  // Use raw query with parameters
+  let result, countResult;
+
+  if (params.length === 0) {
+    result = await sql`
+      SELECT * FROM inventory_history
+      ORDER BY created_at DESC
+      LIMIT ${perPage} OFFSET ${offset}
+    `;
+    countResult = await sql`SELECT COUNT(*) as total FROM inventory_history`;
+  } else if (username && !actionType && !sku && !dateFrom && !dateTo) {
+    result = await sql`
+      SELECT * FROM inventory_history
+      WHERE username = ${username}
+      ORDER BY created_at DESC
+      LIMIT ${perPage} OFFSET ${offset}
+    `;
+    countResult = await sql`SELECT COUNT(*) as total FROM inventory_history WHERE username = ${username}`;
+  } else if (actionType && !username && !sku && !dateFrom && !dateTo) {
+    result = await sql`
+      SELECT * FROM inventory_history
+      WHERE action_type = ${actionType}
+      ORDER BY created_at DESC
+      LIMIT ${perPage} OFFSET ${offset}
+    `;
+    countResult = await sql`SELECT COUNT(*) as total FROM inventory_history WHERE action_type = ${actionType}`;
+  } else if (sku && !username && !actionType && !dateFrom && !dateTo) {
+    const skuPattern = `%${sku}%`;
+    result = await sql`
+      SELECT * FROM inventory_history
+      WHERE sku ILIKE ${skuPattern}
+      ORDER BY created_at DESC
+      LIMIT ${perPage} OFFSET ${offset}
+    `;
+    countResult = await sql`SELECT COUNT(*) as total FROM inventory_history WHERE sku ILIKE ${skuPattern}`;
+  } else {
+    // For complex queries with multiple filters
+    result = await sql`
+      SELECT * FROM inventory_history
+      WHERE (${username}::text IS NULL OR username = ${username})
+        AND (${actionType}::text IS NULL OR action_type = ${actionType})
+        AND (${sku}::text IS NULL OR sku ILIKE ${'%' + (sku || '') + '%'})
+        AND (${dateFrom}::timestamp IS NULL OR created_at >= ${dateFrom})
+        AND (${dateTo}::timestamp IS NULL OR created_at <= ${dateTo})
+      ORDER BY created_at DESC
+      LIMIT ${perPage} OFFSET ${offset}
+    `;
+    countResult = await sql`
+      SELECT COUNT(*) as total FROM inventory_history
+      WHERE (${username}::text IS NULL OR username = ${username})
+        AND (${actionType}::text IS NULL OR action_type = ${actionType})
+        AND (${sku}::text IS NULL OR sku ILIKE ${'%' + (sku || '') + '%'})
+        AND (${dateFrom}::timestamp IS NULL OR created_at >= ${dateFrom})
+        AND (${dateTo}::timestamp IS NULL OR created_at <= ${dateTo})
+    `;
+  }
+
+  const total = parseInt(countResult.rows[0].total);
+
+  return {
+    history: result.rows,
+    pagination: {
+      page,
+      perPage,
+      total,
+      totalPages: Math.ceil(total / perPage)
+    }
+  };
+}
+
+// Get unique users who made changes
+export async function getInventoryHistoryUsers() {
+  const { rows } = await sql`
+    SELECT DISTINCT username
+    FROM inventory_history
+    WHERE username IS NOT NULL
+    ORDER BY username
+  `;
+  return rows.map(r => r.username);
+}
+
+// Get inventory history statistics
+export async function getInventoryHistoryStats() {
+  const { rows } = await sql`
+    SELECT
+      action_type,
+      COUNT(*) as count
+    FROM inventory_history
+    GROUP BY action_type
+    ORDER BY count DESC
   `;
   return rows;
 }
