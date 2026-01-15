@@ -39,13 +39,15 @@ export async function GET(request) {
 
     // Get raw response from Kaufland API
     const response = await getTickets(status, null, 30, 0);
+    const firstTicket = response?.data?.[0] || null;
 
     return NextResponse.json({
       success: true,
       status,
-      rawResponse: response,
-      dataLength: response?.data?.length || 0,
-      keys: Object.keys(response || {})
+      totalTickets: response?.data?.length || 0,
+      firstTicket: firstTicket,
+      firstTicketKeys: firstTicket ? Object.keys(firstTicket) : [],
+      pagination: response?.pagination
     });
   } catch (error) {
     return NextResponse.json({
