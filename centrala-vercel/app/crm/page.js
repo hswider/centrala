@@ -46,11 +46,24 @@ function CRMContent() {
   const [gmailSyncStatus, setGmailSyncStatus] = useState(null);
   const [gmailUnreadCount, setGmailUnreadCount] = useState(0);
 
+  // Gmail POOMKIDS (Shopify POOMKIDS) state
+  const [poomkidsAuth, setPoomkidsAuth] = useState({ authenticated: false, user: null, loading: true });
+  const [poomkidsThreads, setPoomkidsThreads] = useState([]);
+  const [poomkidsThreadsLoading, setPoomkidsThreadsLoading] = useState(false);
+  const [poomkidsSelectedThread, setPoomkidsSelectedThread] = useState(null);
+  const [poomkidsThreadMessages, setPoomkidsThreadMessages] = useState([]);
+  const [poomkidsMessagesLoading, setPoomkidsMessagesLoading] = useState(false);
+  const [poomkidsReplyText, setPoomkidsReplyText] = useState('');
+  const [poomkidsSending, setPoomkidsSending] = useState(false);
+  const [poomkidsSyncing, setPoomkidsSyncing] = useState(false);
+  const [poomkidsSyncStatus, setPoomkidsSyncStatus] = useState(null);
+  const [poomkidsUnreadCount, setPoomkidsUnreadCount] = useState(0);
+
   const tabs = [
     { key: 'wiadomosci', label: 'Allegro Dobrelegowiska', icon: '💬', badge: unreadCount },
     { key: 'meblebox', label: 'Allegro Meblebox', icon: '💬', badge: mebleboxUnreadCount },
     { key: 'shopify', label: 'Shopify Dobrelegowiska', icon: '📧', badge: gmailUnreadCount },
-    { key: 'notatki', label: 'Notatki', icon: '📝' },
+    { key: 'poomkids', label: 'Shopify POOMKIDS', icon: '📧', badge: poomkidsUnreadCount },
   ];
 
   // Check for success/error from OAuth callback
@@ -87,6 +100,19 @@ function CRMContent() {
     }
     if (gmailError) {
       alert(`Blad Gmail: ${gmailError}`);
+      window.history.replaceState({}, '', '/crm');
+    }
+
+    // POOMKIDS Gmail callback
+    const poomkidsGmailSuccess = searchParams.get('poomkids_gmail_success');
+    const poomkidsGmailError = searchParams.get('poomkids_gmail_error');
+    if (poomkidsGmailSuccess) {
+      alert('Pomyslnie polaczono z Gmail POOMKIDS!');
+      window.history.replaceState({}, '', '/crm');
+      checkPoomkidsAuth();
+    }
+    if (poomkidsGmailError) {
+      alert(`Blad Gmail POOMKIDS: ${poomkidsGmailError}`);
       window.history.replaceState({}, '', '/crm');
     }
   }, [searchParams]);
@@ -501,6 +527,144 @@ function CRMContent() {
     }
   };
 
+  // ========== POOMKIDS GMAIL (Shopify POOMKIDS) FUNCTIONS ==========
+
+  // Check POOMKIDS authentication status
+  const checkPoomkidsAuth = useCallback(async () => {
+    try {
+      const res = await fetch('/api/gmail-poomkids/auth');
+      const data = await res.json();
+      setPoomkidsAuth({
+        authenticated: data.authenticated,
+        user: data.user,
+        loading: false
+      });
+
+      if (data.authenticated) {
+        fetchPoomkidsSyncStatus();
+        fetchPoomkidsThreads();
+      }
+    } catch (err) {
+      console.error('POOMKIDS auth check error:', err);
+      setPoomkidsAuth({ authenticated: false, user: null, loading: false });
+    }
+  }, []);
+
+  useEffect(() => {
+    checkPoomkidsAuth();
+  }, [checkPoomkidsAuth]);
+
+  // Fetch POOMKIDS sync status
+  const fetchPoomkidsSyncStatus = async () => {
+    try {
+      const res = await fetch('/api/gmail-poomkids/messages?action=status');
+      const data = await res.json();
+      if (data.success) {
+        setPoomkidsSyncStatus(data.status);
+        setPoomkidsUnreadCount(data.status.unreadCount || 0);
+      }
+    } catch (err) {
+      console.error('POOMKIDS sync status error:', err);
+    }
+  };
+
+  // Fetch POOMKIDS threads
+  const fetchPoomkidsThreads = async () => {
+    setPoomkidsThreadsLoading(true);
+    try {
+      const res = await fetch('/api/gmail-poomkids/messages');
+      const data = await res.json();
+      if (data.success) {
+        setPoomkidsThreads(data.threads || []);
+      }
+    } catch (err) {
+      console.error('POOMKIDS threads error:', err);
+    } finally {
+      setPoomkidsThreadsLoading(false);
+    }
+  };
+
+  // Sync POOMKIDS
+  const handlePoomkidsSync = async () => {
+    setPoomkidsSyncing(true);
+    try {
+      const res = await fetch('/api/gmail-poomkids/sync', { method: 'POST' });
+      const data = await res.json();
+      if (data.success) {
+        fetchPoomkidsThreads();
+        fetchPoomkidsSyncStatus();
+      } else {
+        alert('Blad synchronizacji: ' + data.error);
+      }
+    } catch (err) {
+      alert('Blad: ' + err.message);
+    } finally {
+      setPoomkidsSyncing(false);
+    }
+  };
+
+  // Open POOMKIDS thread
+  const openPoomkidsThread = async (thread) => {
+    setPoomkidsSelectedThread(thread);
+    setPoomkidsMessagesLoading(true);
+    setPoomkidsThreadMessages([]);
+
+    try {
+      const res = await fetch(`/api/gmail-poomkids/messages/${thread.id}?refresh=true`);
+      const data = await res.json();
+
+      if (data.success) {
+        setPoomkidsSelectedThread(data.thread);
+        setPoomkidsThreadMessages(data.messages || []);
+
+        // Mark as read
+        if (thread.unread) {
+          fetch(`/api/gmail-poomkids/messages/${thread.id}`, { method: 'PUT' });
+          fetchPoomkidsSyncStatus();
+          fetchPoomkidsThreads();
+        }
+      }
+    } catch (err) {
+      console.error('POOMKIDS open thread error:', err);
+    } finally {
+      setPoomkidsMessagesLoading(false);
+    }
+  };
+
+  // Send POOMKIDS reply
+  const handlePoomkidsSendReply = async () => {
+    if (!poomkidsReplyText.trim() || !poomkidsSelectedThread) return;
+
+    setPoomkidsSending(true);
+    try {
+      const res = await fetch(`/api/gmail-poomkids/messages/${poomkidsSelectedThread.id}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          text: poomkidsReplyText.trim(),
+          to: poomkidsSelectedThread.from_email,
+          subject: poomkidsSelectedThread.subject
+        })
+      });
+      const data = await res.json();
+
+      if (data.success) {
+        setPoomkidsReplyText('');
+        const msgRes = await fetch(`/api/gmail-poomkids/messages/${poomkidsSelectedThread.id}?refresh=true`);
+        const msgData = await msgRes.json();
+        if (msgData.success) {
+          setPoomkidsThreadMessages(msgData.messages || []);
+        }
+      } else {
+        alert('Blad wysylania: ' + data.error);
+      }
+    } catch (err) {
+      alert('Blad: ' + err.message);
+    } finally {
+      setPoomkidsSending(false);
+    }
+  };
+
   // Format date
   const formatDate = (dateStr) => {
     if (!dateStr) return '-';
@@ -514,11 +678,6 @@ function CRMContent() {
 
     return date.toLocaleDateString('pl-PL', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
   };
-
-  // Przykładowe dane
-  const [notatki] = useState([
-    { id: 1, klient: 'Jan Kowalski', data: '2025-01-10', tresc: 'Stały klient, preferuje płatność przy odbiorze' },
-  ]);
 
   return (
     <div className="min-h-screen bg-gray-100">
@@ -1369,25 +1528,190 @@ function CRMContent() {
             </div>
           )}
 
-          {/* Notatki */}
-          {activeTab === 'notatki' && (
+          {/* Shopify POOMKIDS (Gmail) */}
+          {activeTab === 'poomkids' && (
             <div>
-              <div className="px-4 py-3 border-b border-gray-100">
-                <h2 className="font-semibold text-gray-900">Notatki</h2>
-              </div>
-              <div className="divide-y divide-gray-100">
-                {notatki.map((notatka) => (
-                  <div key={notatka.id} className="px-4 py-3 hover:bg-gray-50">
-                    <div className="flex items-start justify-between">
+              {poomkidsAuth.loading ? (
+                <div className="p-8 text-center text-gray-500">Ladowanie...</div>
+              ) : !poomkidsAuth.authenticated ? (
+                <div className="p-8 text-center">
+                  <div className="mb-4">
+                    <span className="text-6xl">📧</span>
+                  </div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">Polacz z Gmail POOMKIDS</h3>
+                  <p className="text-gray-500 mb-4">Aby zobaczyc wiadomosci, musisz polaczyc konto poomkids.kontakt@gmail.com</p>
+                  <a
+                    href="/api/gmail-poomkids/auth?action=login"
+                    className="inline-block px-6 py-3 bg-green-500 text-white rounded-lg hover:bg-green-600 font-medium"
+                  >
+                    Zaloguj przez Google
+                  </a>
+                </div>
+              ) : (
+                <div className="flex flex-col lg:flex-row h-[800px]">
+                  {/* Thread list */}
+                  <div className={`lg:w-1/3 border-r border-gray-200 flex flex-col ${poomkidsSelectedThread ? 'hidden lg:flex' : ''}`}>
+                    <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
                       <div>
-                        <div className="font-medium text-gray-900">{notatka.klient}</div>
-                        <p className="mt-1 text-sm text-gray-600">{notatka.tresc}</p>
+                        <h2 className="font-semibold text-gray-900">Wiadomosci Email</h2>
+                        <p className="text-xs text-gray-500">
+                          {poomkidsSyncStatus?.lastSyncAt ? `Sync: ${formatDate(poomkidsSyncStatus.lastSyncAt)}` : 'Nie zsynchronizowano'}
+                        </p>
                       </div>
-                      <span className="text-xs text-gray-500">{notatka.data}</span>
+                      <button
+                        onClick={handlePoomkidsSync}
+                        disabled={poomkidsSyncing}
+                        className="px-3 py-1.5 text-sm bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50"
+                      >
+                        {poomkidsSyncing ? 'Sync...' : 'Synchronizuj'}
+                      </button>
+                    </div>
+
+                    <div className="flex-1 overflow-y-auto">
+                      {poomkidsThreadsLoading ? (
+                        <div className="p-4 text-center text-gray-500">Ladowanie...</div>
+                      ) : poomkidsThreads.length === 0 ? (
+                        <div className="p-4 text-center text-gray-500">
+                          Brak wiadomosci. Kliknij "Synchronizuj".
+                        </div>
+                      ) : (
+                        poomkidsThreads.map((thread) => (
+                          <button
+                            key={thread.id}
+                            onClick={() => openPoomkidsThread(thread)}
+                            className={`w-full text-left px-4 py-3 border-b border-gray-100 hover:bg-gray-50 ${
+                              poomkidsSelectedThread?.id === thread.id ? 'bg-blue-50' : ''
+                            } ${thread.unread ? 'bg-green-50' : ''}`}
+                          >
+                            <div className="flex items-start gap-3">
+                              <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center text-green-600 font-medium">
+                                {(thread.from_name || thread.from_email || '?')[0].toUpperCase()}
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center justify-between">
+                                  <span className={`font-medium truncate ${thread.unread ? 'text-gray-900' : 'text-gray-700'}`}>
+                                    {thread.from_name || thread.from_email || 'Nieznany'}
+                                  </span>
+                                  <span className="text-xs text-gray-400 ml-2 whitespace-nowrap">
+                                    {formatDate(thread.last_message_at)}
+                                  </span>
+                                </div>
+                                <p className={`text-sm truncate ${thread.unread ? 'font-medium text-gray-800' : 'text-gray-600'}`}>
+                                  {thread.subject || '(Brak tematu)'}
+                                </p>
+                                <p className="text-xs text-gray-500 truncate">{thread.snippet}</p>
+                                {thread.unread && (
+                                  <span className="inline-block mt-1 px-2 py-0.5 bg-green-500 text-white text-xs rounded">
+                                    Nowa
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          </button>
+                        ))
+                      )}
                     </div>
                   </div>
-                ))}
-              </div>
+
+                  {/* Message view */}
+                  <div className={`lg:w-2/3 flex flex-col ${!poomkidsSelectedThread ? 'hidden lg:flex' : ''}`}>
+                    {!poomkidsSelectedThread ? (
+                      <div className="flex-1 flex items-center justify-center text-gray-400">
+                        <div className="text-center">
+                          <span className="text-6xl">📧</span>
+                          <p className="mt-2">Wybierz watek z listy</p>
+                        </div>
+                      </div>
+                    ) : (
+                      <>
+                        {/* Thread header */}
+                        <div className="px-4 py-3 border-b border-gray-100">
+                          <button
+                            onClick={() => setPoomkidsSelectedThread(null)}
+                            className="lg:hidden text-gray-500 hover:text-gray-700 mb-2"
+                          >
+                            ← Wstecz
+                          </button>
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center text-green-600 font-medium">
+                              {(poomkidsSelectedThread.from_name || poomkidsSelectedThread.from_email || '?')[0].toUpperCase()}
+                            </div>
+                            <div className="flex-1">
+                              <h3 className="font-semibold text-gray-900">
+                                {poomkidsSelectedThread.from_name || poomkidsSelectedThread.from_email || 'Nieznany'}
+                              </h3>
+                              <p className="text-sm text-gray-600">{poomkidsSelectedThread.from_email}</p>
+                            </div>
+                          </div>
+                          <h4 className="mt-2 font-medium text-gray-800">
+                            {poomkidsSelectedThread.subject || '(Brak tematu)'}
+                          </h4>
+                        </div>
+
+                        {/* Messages */}
+                        <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50">
+                          {poomkidsMessagesLoading ? (
+                            <div className="text-center text-gray-500">Ladowanie wiadomosci...</div>
+                          ) : poomkidsThreadMessages.length === 0 ? (
+                            <div className="text-center text-gray-500">Brak wiadomosci</div>
+                          ) : (
+                            poomkidsThreadMessages.map((msg) => (
+                              <div
+                                key={msg.id}
+                                className={`flex ${msg.is_outgoing ? 'justify-end' : 'justify-start'}`}
+                              >
+                                <div
+                                  className={`max-w-[85%] px-4 py-3 rounded-lg ${
+                                    msg.is_outgoing
+                                      ? 'bg-green-600 text-white'
+                                      : 'bg-white border border-gray-200 text-gray-900'
+                                  }`}
+                                >
+                                  <div className={`text-xs mb-1 ${msg.is_outgoing ? 'text-green-200' : 'text-gray-500'}`}>
+                                    {msg.from_name || msg.from_email}
+                                  </div>
+                                  <div className="whitespace-pre-wrap break-words text-sm">
+                                    {msg.body_text || '(Brak tresci tekstowej)'}
+                                  </div>
+                                  <p className={`text-xs mt-2 ${msg.is_outgoing ? 'text-green-200' : 'text-gray-400'}`}>
+                                    {formatDate(msg.sent_at)}
+                                  </p>
+                                </div>
+                              </div>
+                            ))
+                          )}
+                        </div>
+
+                        {/* Reply input */}
+                        <div className="px-4 py-3 border-t border-gray-200 bg-white">
+                          <div className="flex gap-2">
+                            <textarea
+                              value={poomkidsReplyText}
+                              onChange={(e) => setPoomkidsReplyText(e.target.value)}
+                              placeholder="Napisz odpowiedz..."
+                              rows={3}
+                              className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 resize-none"
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter' && !e.shiftKey) {
+                                  e.preventDefault();
+                                  handlePoomkidsSendReply();
+                                }
+                              }}
+                            />
+                            <button
+                              onClick={handlePoomkidsSendReply}
+                              disabled={poomkidsSending || !poomkidsReplyText.trim()}
+                              className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50"
+                            >
+                              {poomkidsSending ? '...' : 'Wyslij'}
+                            </button>
+                          </div>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </div>
