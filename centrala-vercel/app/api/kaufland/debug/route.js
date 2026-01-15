@@ -70,7 +70,7 @@ export async function GET(request) {
           endpoint = `/tickets/messages?limit=10`;
           break;
         case 'ticket-messages-filter':
-          endpoint = `/tickets/messages?id_ticket=${ticketId || '00123707719'}`;
+          endpoint = `/tickets/messages?id_ticket=${ticketId || '00123702789'}&limit=50`;
           break;
         case 'db-messages':
           // Check messages in database
