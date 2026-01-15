@@ -111,11 +111,11 @@ export async function getTicket(ticketId) {
 
 // Get ticket messages - use /tickets/messages endpoint with filter
 export async function getTicketMessages(ticketId) {
-  return kauflandRequest('GET', `/tickets/messages?id_ticket=${ticketId}&limit=100`);
+  return kauflandRequest('GET', `/tickets/messages?id_ticket=${ticketId}&limit=30`);
 }
 
 // Get all recent messages (for sync)
-export async function getAllMessages(limit = 100, offset = 0) {
+export async function getAllMessages(limit = 30, offset = 0) {
   return kauflandRequest('GET', `/tickets/messages?limit=${limit}&offset=${offset}`);
 }
 

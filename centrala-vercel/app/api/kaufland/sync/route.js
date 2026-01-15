@@ -79,18 +79,27 @@ export async function POST(request) {
         }
       }
 
-      // Fetch all messages at once (more efficient)
+      // Fetch messages with pagination (max 30 per request)
       try {
-        const messagesResponse = await getAllMessages(500, 0);
-        const allMessages = messagesResponse.data || [];
+        let offset = 0;
+        let hasMore = true;
+        while (hasMore && offset < 300) { // Max 300 messages
+          const messagesResponse = await getAllMessages(30, offset);
+          const messages = messagesResponse.data || [];
 
-        for (const msgData of allMessages) {
-          try {
-            const message = parseTicketMessage(msgData);
-            await saveKauflandMessage(message, message.ticketId);
-            syncedMessages++;
-          } catch (msgError) {
-            console.error(`Error saving message:`, msgError.message);
+          if (messages.length === 0) {
+            hasMore = false;
+          } else {
+            for (const msgData of messages) {
+              try {
+                const message = parseTicketMessage(msgData);
+                await saveKauflandMessage(message, message.ticketId);
+                syncedMessages++;
+              } catch (msgError) {
+                console.error(`Error saving message:`, msgError.message);
+              }
+            }
+            offset += 30;
           }
         }
       } catch (msgError) {
@@ -186,18 +195,27 @@ export async function GET(request) {
           }
         }
 
-        // Fetch all messages at once
+        // Fetch messages with pagination (max 30 per request)
         try {
-          const messagesResponse = await getAllMessages(500, 0);
-          const allMsgs = messagesResponse.data || [];
+          let offset = 0;
+          let hasMore = true;
+          while (hasMore && offset < 300) {
+            const messagesResponse = await getAllMessages(30, offset);
+            const messages = messagesResponse.data || [];
 
-          for (const msgData of allMsgs) {
-            try {
-              const message = parseTicketMessage(msgData);
-              await saveKauflandMessage(message, message.ticketId);
-              syncedMessages++;
-            } catch (msgError) {
-              console.error(`Error saving message:`, msgError.message);
+            if (messages.length === 0) {
+              hasMore = false;
+            } else {
+              for (const msgData of messages) {
+                try {
+                  const message = parseTicketMessage(msgData);
+                  await saveKauflandMessage(message, message.ticketId);
+                  syncedMessages++;
+                } catch (msgError) {
+                  console.error(`Error saving message:`, msgError.message);
+                }
+              }
+              offset += 30;
             }
           }
         } catch (msgError) {
