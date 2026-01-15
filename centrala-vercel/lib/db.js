@@ -500,6 +500,56 @@ export async function initDatabase() {
     await sql`INSERT INTO gmail_amazon_de_sync_status (id) VALUES (1)`;
   }
 
+  // Kaufland tickets table
+  await sql`
+    CREATE TABLE IF NOT EXISTS kaufland_tickets (
+      id VARCHAR(50) PRIMARY KEY,
+      ticket_number VARCHAR(50),
+      status VARCHAR(20),
+      reason VARCHAR(50),
+      marketplace VARCHAR(10),
+      storefront INTEGER,
+      order_id VARCHAR(50),
+      buyer_name VARCHAR(255),
+      buyer_email VARCHAR(255),
+      is_seller_responsible BOOLEAN DEFAULT false,
+      topic TEXT,
+      opened_at TIMESTAMP,
+      updated_at TIMESTAMP,
+      unread BOOLEAN DEFAULT true,
+      synced_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )
+  `;
+
+  // Kaufland ticket messages table
+  await sql`
+    CREATE TABLE IF NOT EXISTS kaufland_messages (
+      id VARCHAR(50) PRIMARY KEY,
+      ticket_id VARCHAR(50) REFERENCES kaufland_tickets(id),
+      sender VARCHAR(20),
+      text TEXT,
+      created_at TIMESTAMP,
+      is_from_seller BOOLEAN DEFAULT false,
+      files JSONB,
+      synced_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )
+  `;
+
+  // Kaufland sync status table
+  await sql`
+    CREATE TABLE IF NOT EXISTS kaufland_sync_status (
+      id SERIAL PRIMARY KEY,
+      last_sync_at TIMESTAMP,
+      sync_in_progress BOOLEAN DEFAULT false
+    )
+  `;
+
+  // Insert default Kaufland sync status if not exists
+  const { rows: kauflandSyncRows } = await sql`SELECT COUNT(*) as count FROM kaufland_sync_status`;
+  if (kauflandSyncRows[0].count === '0') {
+    await sql`INSERT INTO kaufland_sync_status (id) VALUES (1)`;
+  }
+
   // Weather data table
   await sql`
     CREATE TABLE IF NOT EXISTS weather (
@@ -2577,4 +2627,200 @@ export async function markGmailAmazonDeThreadAsRead(threadId) {
 export async function getUnreadGmailAmazonDeThreadsCount() {
   const { rows } = await sql`SELECT COUNT(*) as count FROM gmail_amazon_de_threads WHERE unread = true`;
   return parseInt(rows[0].count);
+}
+
+// ============================================
+// Kaufland Functions
+// ============================================
+
+// Get Kaufland sync status
+export async function getKauflandSyncStatus() {
+  const { rows } = await sql`SELECT * FROM kaufland_sync_status ORDER BY id DESC LIMIT 1`;
+  return rows[0] || null;
+}
+
+// Update Kaufland sync status
+export async function updateKauflandSyncStatus() {
+  const existing = await getKauflandSyncStatus();
+
+  if (existing) {
+    await sql`
+      UPDATE kaufland_sync_status
+      SET last_sync_at = CURRENT_TIMESTAMP,
+          sync_in_progress = false
+      WHERE id = ${existing.id}
+    `;
+  } else {
+    await sql`
+      INSERT INTO kaufland_sync_status (last_sync_at, sync_in_progress)
+      VALUES (CURRENT_TIMESTAMP, false)
+    `;
+  }
+}
+
+// Set Kaufland sync in progress
+export async function setKauflandSyncInProgress(inProgress) {
+  const existing = await getKauflandSyncStatus();
+
+  if (existing) {
+    await sql`
+      UPDATE kaufland_sync_status
+      SET sync_in_progress = ${inProgress}
+      WHERE id = ${existing.id}
+    `;
+  } else {
+    await sql`
+      INSERT INTO kaufland_sync_status (sync_in_progress)
+      VALUES (${inProgress})
+    `;
+  }
+}
+
+// Save Kaufland ticket
+export async function saveKauflandTicket(ticket) {
+  await sql`
+    INSERT INTO kaufland_tickets (
+      id, ticket_number, status, reason, marketplace, storefront,
+      order_id, buyer_name, buyer_email, is_seller_responsible,
+      topic, opened_at, updated_at, unread
+    )
+    VALUES (
+      ${ticket.id},
+      ${ticket.ticketNumber || null},
+      ${ticket.status || null},
+      ${ticket.reason || null},
+      ${ticket.marketplace || null},
+      ${ticket.storefront || null},
+      ${ticket.orderId || null},
+      ${ticket.buyerName || null},
+      ${ticket.buyerEmail || null},
+      ${ticket.isSellerResponsible || false},
+      ${ticket.topic || null},
+      ${ticket.openedAt || null},
+      ${ticket.updatedAt || null},
+      ${ticket.unread !== false}
+    )
+    ON CONFLICT (id) DO UPDATE SET
+      ticket_number = COALESCE(EXCLUDED.ticket_number, kaufland_tickets.ticket_number),
+      status = COALESCE(EXCLUDED.status, kaufland_tickets.status),
+      reason = COALESCE(EXCLUDED.reason, kaufland_tickets.reason),
+      marketplace = COALESCE(EXCLUDED.marketplace, kaufland_tickets.marketplace),
+      storefront = COALESCE(EXCLUDED.storefront, kaufland_tickets.storefront),
+      order_id = COALESCE(EXCLUDED.order_id, kaufland_tickets.order_id),
+      buyer_name = COALESCE(EXCLUDED.buyer_name, kaufland_tickets.buyer_name),
+      buyer_email = COALESCE(EXCLUDED.buyer_email, kaufland_tickets.buyer_email),
+      is_seller_responsible = EXCLUDED.is_seller_responsible,
+      topic = COALESCE(EXCLUDED.topic, kaufland_tickets.topic),
+      updated_at = EXCLUDED.updated_at,
+      unread = CASE WHEN EXCLUDED.is_seller_responsible = true THEN true ELSE kaufland_tickets.unread END,
+      synced_at = CURRENT_TIMESTAMP
+  `;
+}
+
+// Save Kaufland message
+export async function saveKauflandMessage(message, ticketId) {
+  await sql`
+    INSERT INTO kaufland_messages (id, ticket_id, sender, text, created_at, is_from_seller, files)
+    VALUES (
+      ${message.id},
+      ${ticketId},
+      ${message.sender || null},
+      ${message.text || null},
+      ${message.createdAt || null},
+      ${message.isFromSeller || false},
+      ${message.files ? JSON.stringify(message.files) : null}
+    )
+    ON CONFLICT (id) DO NOTHING
+  `;
+}
+
+// Get Kaufland tickets list
+export async function getKauflandTickets(limit = 50, offset = 0, status = null, marketplace = null) {
+  let query;
+
+  if (status && marketplace) {
+    query = sql`
+      SELECT t.*,
+             (SELECT COUNT(*) FROM kaufland_messages WHERE ticket_id = t.id) as message_count
+      FROM kaufland_tickets t
+      WHERE t.status = ${status} AND t.marketplace = ${marketplace}
+      ORDER BY t.updated_at DESC NULLS LAST, t.opened_at DESC
+      LIMIT ${limit} OFFSET ${offset}
+    `;
+  } else if (status) {
+    query = sql`
+      SELECT t.*,
+             (SELECT COUNT(*) FROM kaufland_messages WHERE ticket_id = t.id) as message_count
+      FROM kaufland_tickets t
+      WHERE t.status = ${status}
+      ORDER BY t.updated_at DESC NULLS LAST, t.opened_at DESC
+      LIMIT ${limit} OFFSET ${offset}
+    `;
+  } else if (marketplace) {
+    query = sql`
+      SELECT t.*,
+             (SELECT COUNT(*) FROM kaufland_messages WHERE ticket_id = t.id) as message_count
+      FROM kaufland_tickets t
+      WHERE t.marketplace = ${marketplace}
+      ORDER BY t.updated_at DESC NULLS LAST, t.opened_at DESC
+      LIMIT ${limit} OFFSET ${offset}
+    `;
+  } else {
+    query = sql`
+      SELECT t.*,
+             (SELECT COUNT(*) FROM kaufland_messages WHERE ticket_id = t.id) as message_count
+      FROM kaufland_tickets t
+      ORDER BY t.updated_at DESC NULLS LAST, t.opened_at DESC
+      LIMIT ${limit} OFFSET ${offset}
+    `;
+  }
+
+  const { rows } = await query;
+  return rows;
+}
+
+// Get single Kaufland ticket with messages
+export async function getKauflandTicket(ticketId) {
+  const ticketResult = await sql`
+    SELECT * FROM kaufland_tickets WHERE id = ${ticketId}
+  `;
+
+  if (ticketResult.rows.length === 0) {
+    return null;
+  }
+
+  const messagesResult = await sql`
+    SELECT * FROM kaufland_messages
+    WHERE ticket_id = ${ticketId}
+    ORDER BY created_at ASC
+  `;
+
+  return {
+    ticket: ticketResult.rows[0],
+    messages: messagesResult.rows
+  };
+}
+
+// Mark Kaufland ticket as read
+export async function markKauflandTicketAsRead(ticketId) {
+  await sql`UPDATE kaufland_tickets SET unread = false, synced_at = CURRENT_TIMESTAMP WHERE id = ${ticketId}`;
+}
+
+// Get unread Kaufland tickets count
+export async function getUnreadKauflandTicketsCount() {
+  const { rows } = await sql`SELECT COUNT(*) as count FROM kaufland_tickets WHERE unread = true`;
+  return parseInt(rows[0].count);
+}
+
+// Get Kaufland tickets count by marketplace
+export async function getKauflandTicketsCountByMarketplace() {
+  const { rows } = await sql`
+    SELECT marketplace,
+           COUNT(*) as total,
+           SUM(CASE WHEN unread = true THEN 1 ELSE 0 END) as unread
+    FROM kaufland_tickets
+    GROUP BY marketplace
+    ORDER BY marketplace
+  `;
+  return rows;
 }
