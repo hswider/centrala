@@ -363,6 +363,71 @@ export async function initDatabase() {
     await sql`INSERT INTO gmail_poomkids_sync_status (id) VALUES (1)`;
   }
 
+  // ========== AMAZON DE (SP-API) ==========
+
+  // Amazon DE OAuth tokens
+  await sql`
+    CREATE TABLE IF NOT EXISTS amazon_de_tokens (
+      id SERIAL PRIMARY KEY,
+      access_token TEXT,
+      refresh_token TEXT,
+      expires_at BIGINT,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )
+  `;
+
+  // Amazon DE message threads (grouped by order)
+  await sql`
+    CREATE TABLE IF NOT EXISTS amazon_de_threads (
+      id VARCHAR(100) PRIMARY KEY,
+      order_id VARCHAR(100),
+      buyer_name VARCHAR(255),
+      subject TEXT,
+      snippet TEXT,
+      last_message_at TIMESTAMP,
+      unread BOOLEAN DEFAULT true,
+      messages_count INTEGER DEFAULT 0,
+      order_total DECIMAL(10,2),
+      order_currency VARCHAR(3),
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )
+  `;
+
+  // Amazon DE messages
+  await sql`
+    CREATE TABLE IF NOT EXISTS amazon_de_messages (
+      id VARCHAR(100) PRIMARY KEY,
+      thread_id VARCHAR(100) REFERENCES amazon_de_threads(id) ON DELETE CASCADE,
+      sender VARCHAR(50),
+      subject TEXT,
+      body_text TEXT,
+      sent_at TIMESTAMP,
+      is_outgoing BOOLEAN DEFAULT false,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )
+  `;
+
+  // Amazon DE sync status
+  await sql`
+    CREATE TABLE IF NOT EXISTS amazon_de_sync_status (
+      id SERIAL PRIMARY KEY,
+      last_sync_at TIMESTAMP,
+      sync_in_progress BOOLEAN DEFAULT false
+    )
+  `;
+
+  // Insert default Amazon DE token row if not exists
+  const { rows: amazonDeTokenRows } = await sql`SELECT COUNT(*) as count FROM amazon_de_tokens`;
+  if (amazonDeTokenRows[0].count === '0') {
+    await sql`INSERT INTO amazon_de_tokens (id) VALUES (1)`;
+  }
+
+  // Insert default Amazon DE sync status if not exists
+  const { rows: amazonDeSyncRows } = await sql`SELECT COUNT(*) as count FROM amazon_de_sync_status`;
+  if (amazonDeSyncRows[0].count === '0') {
+    await sql`INSERT INTO amazon_de_sync_status (id) VALUES (1)`;
+  }
+
   // Weather data table
   await sql`
     CREATE TABLE IF NOT EXISTS weather (
@@ -2117,5 +2182,161 @@ export async function markGmailPoomkidsThreadAsRead(threadId) {
 // Get unread Gmail POOMKIDS threads count
 export async function getUnreadGmailPoomkidsThreadsCount() {
   const { rows } = await sql`SELECT COUNT(*) as count FROM gmail_poomkids_threads WHERE unread = true`;
+  return parseInt(rows[0].count);
+}
+
+// ========== AMAZON DE (SP-API) FUNCTIONS ==========
+
+// Get Amazon DE tokens
+export async function getAmazonDeTokens() {
+  const { rows } = await sql`SELECT * FROM amazon_de_tokens WHERE id = 1`;
+  return rows[0] || null;
+}
+
+// Save Amazon DE tokens
+export async function saveAmazonDeTokens(accessToken, expiresAt) {
+  await sql`
+    UPDATE amazon_de_tokens
+    SET access_token = ${accessToken},
+        expires_at = ${expiresAt},
+        updated_at = CURRENT_TIMESTAMP
+    WHERE id = 1
+  `;
+}
+
+// Get Amazon DE sync status
+export async function getAmazonDeSyncStatus() {
+  const { rows } = await sql`SELECT * FROM amazon_de_sync_status WHERE id = 1`;
+  return rows[0] || null;
+}
+
+// Update Amazon DE sync status
+export async function updateAmazonDeSyncStatus() {
+  await sql`UPDATE amazon_de_sync_status SET last_sync_at = CURRENT_TIMESTAMP WHERE id = 1`;
+}
+
+// Set Amazon DE sync in progress
+export async function setAmazonDeSyncInProgress(inProgress) {
+  await sql`UPDATE amazon_de_sync_status SET sync_in_progress = ${inProgress} WHERE id = 1`;
+}
+
+// Save Amazon DE thread
+export async function saveAmazonDeThread(thread) {
+  await sql`
+    INSERT INTO amazon_de_threads (
+      id, order_id, buyer_name, subject, snippet,
+      last_message_at, unread, messages_count,
+      order_total, order_currency, updated_at
+    ) VALUES (
+      ${thread.id},
+      ${thread.orderId || null},
+      ${thread.buyerName || ''},
+      ${thread.subject || ''},
+      ${thread.snippet || ''},
+      ${thread.lastMessageAt ? new Date(thread.lastMessageAt) : null},
+      ${thread.unread ?? true},
+      ${thread.messagesCount || 0},
+      ${thread.orderTotal || null},
+      ${thread.orderCurrency || null},
+      CURRENT_TIMESTAMP
+    )
+    ON CONFLICT (id) DO UPDATE SET
+      order_id = EXCLUDED.order_id,
+      buyer_name = EXCLUDED.buyer_name,
+      subject = EXCLUDED.subject,
+      snippet = EXCLUDED.snippet,
+      last_message_at = EXCLUDED.last_message_at,
+      unread = EXCLUDED.unread,
+      messages_count = EXCLUDED.messages_count,
+      order_total = EXCLUDED.order_total,
+      order_currency = EXCLUDED.order_currency,
+      updated_at = CURRENT_TIMESTAMP
+  `;
+}
+
+// Save Amazon DE message
+export async function saveAmazonDeMessage(message, threadId) {
+  await sql`
+    INSERT INTO amazon_de_messages (
+      id, thread_id, sender, subject, body_text,
+      sent_at, is_outgoing, created_at
+    ) VALUES (
+      ${message.id},
+      ${threadId},
+      ${message.sender || ''},
+      ${message.subject || ''},
+      ${message.bodyText || ''},
+      ${message.sentAt ? new Date(message.sentAt) : null},
+      ${message.isOutgoing || false},
+      CURRENT_TIMESTAMP
+    )
+    ON CONFLICT (id) DO UPDATE SET
+      body_text = EXCLUDED.body_text,
+      is_outgoing = EXCLUDED.is_outgoing
+  `;
+}
+
+// Get Amazon DE threads with pagination
+export async function getAmazonDeThreads(page = 1, perPage = 20, unreadOnly = false) {
+  const offset = (page - 1) * perPage;
+
+  let result, countResult;
+
+  if (unreadOnly) {
+    result = await sql`
+      SELECT * FROM amazon_de_threads
+      WHERE unread = true
+      ORDER BY last_message_at DESC NULLS LAST
+      LIMIT ${perPage} OFFSET ${offset}
+    `;
+    countResult = await sql`SELECT COUNT(*) as total FROM amazon_de_threads WHERE unread = true`;
+  } else {
+    result = await sql`
+      SELECT * FROM amazon_de_threads
+      ORDER BY last_message_at DESC NULLS LAST
+      LIMIT ${perPage} OFFSET ${offset}
+    `;
+    countResult = await sql`SELECT COUNT(*) as total FROM amazon_de_threads`;
+  }
+
+  return {
+    threads: result.rows,
+    total: parseInt(countResult.rows[0].total),
+    page,
+    perPage,
+    totalPages: Math.ceil(parseInt(countResult.rows[0].total) / perPage)
+  };
+}
+
+// Get single Amazon DE thread with messages
+export async function getAmazonDeThread(threadId) {
+  const threadResult = await sql`
+    SELECT * FROM amazon_de_threads WHERE id = ${threadId}
+  `;
+
+  if (threadResult.rows.length === 0) {
+    return null;
+  }
+
+  const messagesResult = await sql`
+    SELECT * FROM amazon_de_messages
+    WHERE thread_id = ${threadId}
+    ORDER BY sent_at ASC
+  `;
+
+  return {
+    thread: threadResult.rows[0],
+    messages: messagesResult.rows
+  };
+}
+
+// Mark Amazon DE thread as read
+export async function markAmazonDeThreadAsRead(threadId) {
+  await sql`UPDATE amazon_de_threads SET unread = false, updated_at = CURRENT_TIMESTAMP WHERE id = ${threadId}`;
+}
+
+// Get unread Amazon DE threads count
+export async function getUnreadAmazonDeThreadsCount() {
+  const { rows } = await sql`SELECT COUNT(*) as count FROM amazon_de_threads WHERE unread = true`;
   return parseInt(rows[0].count);
 }
