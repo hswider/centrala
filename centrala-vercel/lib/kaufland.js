@@ -109,9 +109,14 @@ export async function getTicket(ticketId) {
   return kauflandRequest('GET', `/tickets/${ticketId}`);
 }
 
-// Get ticket messages
+// Get ticket messages - use /tickets/messages endpoint with filter
 export async function getTicketMessages(ticketId) {
-  return kauflandRequest('GET', `/tickets/${ticketId}/messages`);
+  return kauflandRequest('GET', `/tickets/messages?id_ticket=${ticketId}&limit=100`);
+}
+
+// Get all recent messages (for sync)
+export async function getAllMessages(limit = 100, offset = 0) {
+  return kauflandRequest('GET', `/tickets/messages?limit=${limit}&offset=${offset}`);
 }
 
 // Send message to ticket
@@ -190,13 +195,17 @@ export function parseTicket(ticket) {
 
 // Parse ticket message
 export function parseTicketMessage(message) {
+  const author = message.author || {};
+  const role = author.role || message.sender || 'unknown';
+
   return {
     id: message.id_ticket_message,
     ticketId: message.id_ticket,
-    sender: message.sender, // 'seller', 'buyer', 'kaufland'
+    sender: role, // 'seller', 'buyer', 'kaufland'
+    senderName: author.name || null,
     text: message.text,
     createdAt: message.ts_created_iso || message.ts_created,
-    isFromSeller: message.sender === 'seller',
+    isFromSeller: role === 'seller',
     files: message.files || [],
   };
 }
