@@ -514,7 +514,7 @@ export default function CRMEUPage() {
                             amazonMessages.map((msg) => (
                               <div key={msg.id} className={`flex ${msg.is_outgoing ? 'justify-end' : 'justify-start'}`}>
                                 <div className={`max-w-[75%] px-4 py-2 rounded-lg ${msg.is_outgoing ? 'bg-orange-600 text-white' : 'bg-white border border-gray-200 text-gray-900'}`}>
-                                  <p className="text-xs mb-1 opacity-75">{msg.is_outgoing ? 'Ty' : (msg.sender || 'Klient')}</p>
+                                  <p className="text-xs mb-1 opacity-75">{msg.is_outgoing ? 'Ty' : (msg.from_name || msg.from_email || 'Klient')}</p>
                                   <p className="whitespace-pre-wrap break-words">{msg.body_text || msg.body_html || ''}</p>
                                   <p className={`text-xs mt-1 ${msg.is_outgoing ? 'text-orange-200' : 'text-gray-400'}`}>{formatDate(msg.sent_at)}</p>
                                 </div>

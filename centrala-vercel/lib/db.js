@@ -2568,12 +2568,26 @@ export async function saveGmailAmazonDeThread(thread) {
 
 // Save Gmail Amazon DE message
 export async function saveGmailAmazonDeMessage(message, threadId) {
+  // Extract email and name from sender field or use provided fields
+  let fromEmail = message.fromEmail || null;
+  let fromName = message.fromName || null;
+
+  // If sender is 'seller', mark as outgoing
+  if (message.sender === 'seller') {
+    fromEmail = 'seller';
+    fromName = 'Seller';
+  } else if (message.sender && message.sender !== 'seller') {
+    // sender might contain email address
+    fromEmail = message.sender;
+  }
+
   await sql`
-    INSERT INTO gmail_amazon_de_messages (id, thread_id, sender, subject, body_text, body_html, sent_at, is_outgoing)
+    INSERT INTO gmail_amazon_de_messages (id, thread_id, from_email, from_name, subject, body_text, body_html, sent_at, is_outgoing)
     VALUES (
       ${message.id},
       ${threadId},
-      ${message.sender || message.fromEmail || null},
+      ${fromEmail},
+      ${fromName},
       ${message.subject || null},
       ${message.bodyText || null},
       ${message.bodyHtml || null},
