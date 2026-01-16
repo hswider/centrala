@@ -54,7 +54,62 @@ export async function GET(request) {
             fromEmail: parsed.fromEmail,
             subject: parsed.subject,
             date: parsed.date,
-            orderId: parsed.orderId
+            orderId: parsed.orderId,
+            hasAttachments: parsed.hasAttachments,
+            attachments: parsed.attachments
+          };
+        })
+      });
+    }
+
+    if (test === 'attachments') {
+      // Debug attachment extraction
+      const threadId = searchParams.get('threadId');
+      if (!threadId) {
+        return NextResponse.json({ success: false, error: 'threadId required' });
+      }
+      const thread = await getThread(threadId);
+      const messages = thread.messages || [];
+
+      // Show raw payload structure to debug attachment detection
+      return NextResponse.json({
+        success: true,
+        threadId,
+        messagesCount: messages.length,
+        messages: messages.map(m => {
+          const parsed = parseMessage(m);
+
+          // Collect all parts info for debugging
+          const collectParts = (parts, depth = 0) => {
+            if (!parts) return [];
+            return parts.flatMap(p => {
+              const partInfo = {
+                depth,
+                mimeType: p.mimeType,
+                filename: p.filename || null,
+                hasBody: !!p.body,
+                bodySize: p.body?.size || 0,
+                attachmentId: p.body?.attachmentId || null,
+                hasData: !!p.body?.data,
+                partId: p.partId
+              };
+              if (p.parts) {
+                return [partInfo, ...collectParts(p.parts, depth + 1)];
+              }
+              return [partInfo];
+            });
+          };
+
+          return {
+            id: m.id,
+            payloadMimeType: m.payload?.mimeType,
+            payloadFilename: m.payload?.filename,
+            payloadBodyAttachmentId: m.payload?.body?.attachmentId,
+            parts: collectParts(m.payload?.parts),
+            parsed: {
+              hasAttachments: parsed.hasAttachments,
+              attachments: parsed.attachments
+            }
           };
         })
       });
