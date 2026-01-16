@@ -5,7 +5,8 @@ import {
   saveKauflandMessage,
   getKauflandSyncStatus,
   updateKauflandSyncStatus,
-  setKauflandSyncInProgress
+  setKauflandSyncInProgress,
+  getKauflandOpenTicketIds
 } from '../../../../lib/db';
 import {
   isAuthenticated,
@@ -16,12 +17,48 @@ import {
   KAUFLAND_STOREFRONTS
 } from '../../../../lib/kaufland';
 
-// POST - Sync tickets from Kaufland
+// Helper to sync a single ticket with its messages
+async function syncTicketWithMessages(ticketData) {
+  let ticket = parseTicket(ticketData);
+  let messagesCount = 0;
+
+  try {
+    const ticketWithMessages = await getTicketWithMessages(ticket.id);
+    const ticketDetail = ticketWithMessages.data || ticketWithMessages;
+
+    // Update ticket with storefront from detailed response
+    if (ticketDetail.storefront) {
+      ticket = parseTicket({ ...ticketData, storefront: ticketDetail.storefront });
+    }
+
+    // Save ticket
+    await saveKauflandTicket(ticket);
+
+    // Save messages
+    const messages = ticketDetail.messages || [];
+    for (const msgData of messages) {
+      try {
+        const message = parseTicketMessage(msgData);
+        await saveKauflandMessage(message, ticket.id);
+        messagesCount++;
+      } catch (msgError) {
+        console.error(`Error saving message for ticket ${ticket.id}:`, msgError.message);
+      }
+    }
+  } catch (err) {
+    // If fetching details fails, save basic ticket anyway
+    await saveKauflandTicket(ticket);
+    console.error(`Error fetching details for ticket ${ticket.id}:`, err.message);
+  }
+
+  return { ticket, messagesCount };
+}
+
+// POST - Full sync (manual) - syncs all tickets
 export async function POST(request) {
   try {
     await initDatabase();
 
-    // Check authentication
     const authenticated = await isAuthenticated();
     if (!authenticated) {
       return NextResponse.json({
@@ -31,7 +68,6 @@ export async function POST(request) {
       }, { status: 401 });
     }
 
-    // Check if sync is already in progress
     const syncStatus = await getKauflandSyncStatus();
     if (syncStatus?.sync_in_progress) {
       return NextResponse.json({
@@ -40,7 +76,6 @@ export async function POST(request) {
       }, { status: 409 });
     }
 
-    // Set sync in progress
     await setKauflandSyncInProgress(true);
 
     let syncedTickets = 0;
@@ -48,91 +83,107 @@ export async function POST(request) {
 
     try {
       const { searchParams } = new URL(request.url);
-      const limit = parseInt(searchParams.get('limit') || '30'); // max 30
+      const fullSync = searchParams.get('full') === 'true';
 
-      // All possible ticket statuses
-      const allStatuses = ['opened', 'buyer_closed', 'seller_closed', 'both_closed', 'customer_service_closed_final'];
+      if (fullSync) {
+        // Full sync - all statuses, more tickets per status
+        const allStatuses = ['opened', 'buyer_closed', 'seller_closed', 'both_closed'];
 
-      // Collect tickets from all statuses
-      let allTickets = [];
-      for (const status of allStatuses) {
-        try {
-          const ticketsResponse = await getTickets(status, null, limit, 0);
-          const tickets = ticketsResponse.data || [];
-          allTickets = allTickets.concat(tickets);
-        } catch (e) {
-          console.log(`No tickets with status ${status}`);
-        }
-      }
-
-      const tickets = allTickets;
-
-      // Save tickets and fetch messages for each ticket using embedded endpoint
-      // This ensures we get ALL messages including buyer/system messages
-      // AND gets the correct storefront/marketplace from the detailed response
-      for (const ticketData of tickets) {
-        try {
-          // Parse basic ticket first
-          let ticket = parseTicket(ticketData);
-
-          // Fetch detailed ticket with messages (includes storefront)
+        for (const status of allStatuses) {
           try {
-            const ticketWithMessages = await getTicketWithMessages(ticket.id);
-            const ticketDetail = ticketWithMessages.data || ticketWithMessages;
+            const ticketsResponse = await getTickets(status, null, 50, 0);
+            const tickets = ticketsResponse.data || [];
 
-            // Update ticket with storefront from detailed response
-            if (ticketDetail.storefront) {
-              const detailedTicket = parseTicket({ ...ticketData, storefront: ticketDetail.storefront });
-              ticket = detailedTicket;
-            }
-
-            // Save updated ticket with correct marketplace
-            await saveKauflandTicket(ticket);
-            syncedTickets++;
-
-            // Save messages
-            const messages = ticketDetail.messages || [];
-            for (const msgData of messages) {
+            for (const ticketData of tickets) {
               try {
-                const message = parseTicketMessage(msgData);
-                await saveKauflandMessage(message, ticket.id);
-                syncedMessages++;
-              } catch (msgError) {
-                console.error(`Error saving message for ticket ${ticket.id}:`, msgError.message);
+                const result = await syncTicketWithMessages(ticketData);
+                syncedTickets++;
+                syncedMessages += result.messagesCount;
+              } catch (e) {
+                console.error(`Error syncing ticket:`, e.message);
               }
             }
-          } catch (msgError) {
-            // If fetching details fails, save basic ticket anyway
-            await saveKauflandTicket(ticket);
-            syncedTickets++;
-            console.error(`Error fetching messages for ticket ${ticket.id}:`, msgError.message);
+          } catch (e) {
+            console.log(`No tickets with status ${status}`);
           }
-        } catch (ticketError) {
-          console.error(`Error syncing ticket:`, ticketError.message);
+        }
+      } else {
+        // Normal sync - only opened tickets + recently active
+        // This is faster and suitable for frequent syncs
+
+        // 1. Sync all opened tickets (needs response)
+        try {
+          const openedResponse = await getTickets('opened', null, 30, 0);
+          const openedTickets = openedResponse.data || [];
+
+          for (const ticketData of openedTickets) {
+            try {
+              const result = await syncTicketWithMessages(ticketData);
+              syncedTickets++;
+              syncedMessages += result.messagesCount;
+            } catch (e) {
+              console.error(`Error syncing opened ticket:`, e.message);
+            }
+          }
+        } catch (e) {
+          console.log('No opened tickets');
+        }
+
+        // 2. Sync buyer_closed tickets (buyer responded, may need action)
+        try {
+          const buyerClosedResponse = await getTickets('buyer_closed', null, 20, 0);
+          const buyerClosedTickets = buyerClosedResponse.data || [];
+
+          for (const ticketData of buyerClosedTickets) {
+            try {
+              const result = await syncTicketWithMessages(ticketData);
+              syncedTickets++;
+              syncedMessages += result.messagesCount;
+            } catch (e) {
+              console.error(`Error syncing buyer_closed ticket:`, e.message);
+            }
+          }
+        } catch (e) {
+          console.log('No buyer_closed tickets');
+        }
+
+        // 3. Check tickets that are open in our DB but might have been updated
+        try {
+          const dbOpenTicketIds = await getKauflandOpenTicketIds();
+          for (const ticketId of dbOpenTicketIds.slice(0, 20)) {
+            try {
+              const ticketWithMessages = await getTicketWithMessages(ticketId);
+              const ticketDetail = ticketWithMessages.data || ticketWithMessages;
+              const result = await syncTicketWithMessages(ticketDetail);
+              syncedTickets++;
+              syncedMessages += result.messagesCount;
+            } catch (e) {
+              // Ticket might be deleted or API error
+              console.log(`Could not refresh ticket ${ticketId}`);
+            }
+          }
+        } catch (e) {
+          console.log('Error checking DB open tickets:', e.message);
         }
       }
 
-      // Update sync status
       await updateKauflandSyncStatus();
 
       return NextResponse.json({
         success: true,
         syncedTickets,
-        syncedMessages
+        syncedMessages,
+        mode: fullSync ? 'full' : 'incremental'
       });
     } finally {
-      // Always clear sync in progress flag
       await setKauflandSyncInProgress(false);
     }
   } catch (error) {
     console.error('Kaufland sync error:', error);
 
-    // Try to clear sync in progress flag
     try {
       await setKauflandSyncInProgress(false);
-    } catch (e) {
-      console.error('Failed to clear sync flag:', e.message);
-    }
+    } catch (e) {}
 
     return NextResponse.json(
       { success: false, error: error.message },
@@ -141,18 +192,16 @@ export async function POST(request) {
   }
 }
 
-// GET - Get sync status or trigger sync (for cron)
+// GET - Get sync status or trigger incremental sync (for cron)
 export async function GET(request) {
   try {
     await initDatabase();
 
-    // Check if this is a cron request
     const isCron = request.headers.get('x-vercel-cron') === '1';
     const { searchParams } = new URL(request.url);
     const triggerSync = searchParams.get('sync') === 'true';
 
     if (isCron || triggerSync) {
-      // Trigger sync
       const authenticated = await isAuthenticated();
       if (!authenticated) {
         return NextResponse.json({
@@ -175,64 +224,59 @@ export async function GET(request) {
       let syncedMessages = 0;
 
       try {
-        // All possible ticket statuses
-        const allStatuses = ['opened', 'buyer_closed', 'seller_closed', 'both_closed', 'customer_service_closed_final'];
+        // INCREMENTAL SYNC for cron - only active tickets
+        // 1. Opened tickets (needs response)
+        try {
+          const openedResponse = await getTickets('opened', null, 30, 0);
+          const openedTickets = openedResponse.data || [];
 
-        // Collect tickets from all statuses
-        let allTickets = [];
-        for (const status of allStatuses) {
-          try {
-            const ticketsResponse = await getTickets(status, null, 30, 0);
-            const statusTickets = ticketsResponse.data || [];
-            allTickets = allTickets.concat(statusTickets);
-          } catch (e) {
-            console.log(`No tickets with status ${status}`);
+          for (const ticketData of openedTickets) {
+            try {
+              const result = await syncTicketWithMessages(ticketData);
+              syncedTickets++;
+              syncedMessages += result.messagesCount;
+            } catch (e) {
+              console.error(`Error syncing opened ticket:`, e.message);
+            }
           }
+        } catch (e) {
+          console.log('No opened tickets');
         }
 
-        // Save tickets and fetch messages for each ticket using embedded endpoint
-        // This ensures we get ALL messages including buyer/system messages
-        // AND gets the correct storefront/marketplace from the detailed response
-        for (const ticketData of allTickets) {
-          try {
-            // Parse basic ticket first
-            let ticket = parseTicket(ticketData);
+        // 2. Buyer closed (buyer responded)
+        try {
+          const buyerClosedResponse = await getTickets('buyer_closed', null, 15, 0);
+          const buyerClosedTickets = buyerClosedResponse.data || [];
 
-            // Fetch detailed ticket with messages (includes storefront)
+          for (const ticketData of buyerClosedTickets) {
             try {
-              const ticketWithMessages = await getTicketWithMessages(ticket.id);
-              const ticketDetail = ticketWithMessages.data || ticketWithMessages;
-
-              // Update ticket with storefront from detailed response
-              if (ticketDetail.storefront) {
-                const detailedTicket = parseTicket({ ...ticketData, storefront: ticketDetail.storefront });
-                ticket = detailedTicket;
-              }
-
-              // Save updated ticket with correct marketplace
-              await saveKauflandTicket(ticket);
+              const result = await syncTicketWithMessages(ticketData);
               syncedTickets++;
-
-              // Save messages
-              const messages = ticketDetail.messages || [];
-              for (const msgData of messages) {
-                try {
-                  const message = parseTicketMessage(msgData);
-                  await saveKauflandMessage(message, ticket.id);
-                  syncedMessages++;
-                } catch (msgError) {
-                  console.error(`Error saving message for ticket ${ticket.id}:`, msgError.message);
-                }
-              }
-            } catch (msgError) {
-              // If fetching details fails, save basic ticket anyway
-              await saveKauflandTicket(ticket);
-              syncedTickets++;
-              console.error(`Error fetching messages for ticket ${ticket.id}:`, msgError.message);
+              syncedMessages += result.messagesCount;
+            } catch (e) {
+              console.error(`Error syncing buyer_closed ticket:`, e.message);
             }
-          } catch (ticketError) {
-            console.error(`Error syncing ticket:`, ticketError.message);
           }
+        } catch (e) {
+          console.log('No buyer_closed tickets');
+        }
+
+        // 3. Seller closed (we responded, waiting)
+        try {
+          const sellerClosedResponse = await getTickets('seller_closed', null, 10, 0);
+          const sellerClosedTickets = sellerClosedResponse.data || [];
+
+          for (const ticketData of sellerClosedTickets) {
+            try {
+              const result = await syncTicketWithMessages(ticketData);
+              syncedTickets++;
+              syncedMessages += result.messagesCount;
+            } catch (e) {
+              console.error(`Error syncing seller_closed ticket:`, e.message);
+            }
+          }
+        } catch (e) {
+          console.log('No seller_closed tickets');
         }
 
         await updateKauflandSyncStatus();
@@ -241,7 +285,8 @@ export async function GET(request) {
           success: true,
           syncedTickets,
           syncedMessages,
-          triggeredBy: isCron ? 'cron' : 'manual'
+          triggeredBy: isCron ? 'cron' : 'manual',
+          mode: 'incremental'
         });
       } finally {
         await setKauflandSyncInProgress(false);

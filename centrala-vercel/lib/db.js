@@ -2874,6 +2874,17 @@ export async function getKauflandTickets(limit = 50, offset = 0, status = null, 
   return rows;
 }
 
+// Get IDs of tickets that are not closed (for incremental sync)
+export async function getKauflandOpenTicketIds() {
+  const { rows } = await sql`
+    SELECT id FROM kaufland_tickets
+    WHERE status NOT IN ('both_closed', 'customer_service_closed_final')
+    ORDER BY updated_at DESC NULLS LAST
+    LIMIT 50
+  `;
+  return rows.map(r => r.id);
+}
+
 // Get single Kaufland ticket with messages
 export async function getKauflandTicket(ticketId) {
   const ticketResult = await sql`

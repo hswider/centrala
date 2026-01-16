@@ -30,6 +30,7 @@ export default function CRMEUPage() {
   const [kauflandUnreadCount, setKauflandUnreadCount] = useState(0);
   const [kauflandSearch, setKauflandSearch] = useState('');
   const [kauflandAttachments, setKauflandAttachments] = useState([]);
+  const [kauflandFilter, setKauflandFilter] = useState('all'); // all, needs_response, sent, closed
 
   // Shared state
   const [replyText, setReplyText] = useState('');
@@ -500,8 +501,24 @@ export default function CRMEUPage() {
     return { cleanText, attachments };
   };
 
-  // Filter Kaufland tickets by search
+  // Filter Kaufland tickets by status and search
   const filteredKauflandTickets = kauflandTickets.filter(ticket => {
+    // First apply status filter
+    if (kauflandFilter !== 'all') {
+      const status = ticket.status || '';
+      if (kauflandFilter === 'needs_response') {
+        // Opened or buyer responded - needs our action
+        if (status !== 'opened' && status !== 'buyer_closed') return false;
+      } else if (kauflandFilter === 'sent') {
+        // We responded, waiting for buyer
+        if (status !== 'seller_closed') return false;
+      } else if (kauflandFilter === 'closed') {
+        // Fully closed
+        if (status !== 'both_closed' && status !== 'customer_service_closed_final') return false;
+      }
+    }
+
+    // Then apply search filter
     if (!kauflandSearch.trim()) return true;
     const searchLower = kauflandSearch.toLowerCase().trim();
     return (
@@ -984,6 +1001,28 @@ export default function CRMEUPage() {
                           </button>
                         )}
                       </div>
+                    </div>
+
+                    {/* Status Filter */}
+                    <div className="px-3 py-2 border-b border-gray-100 dark:border-gray-700 flex gap-1 flex-wrap">
+                      {[
+                        { key: 'all', label: 'Wszystkie' },
+                        { key: 'needs_response', label: 'Wymaga odp.' },
+                        { key: 'sent', label: 'Wyslane' },
+                        { key: 'closed', label: 'Zamkniete' },
+                      ].map((filter) => (
+                        <button
+                          key={filter.key}
+                          onClick={() => setKauflandFilter(filter.key)}
+                          className={`px-2 py-1 text-xs rounded-full transition-colors ${
+                            kauflandFilter === filter.key
+                              ? 'bg-red-600 text-white'
+                              : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                          }`}
+                        >
+                          {filter.label}
+                        </button>
+                      ))}
                     </div>
 
                     <div className="flex-1 overflow-y-auto">
