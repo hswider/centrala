@@ -496,7 +496,14 @@ export default function CRMEUPage() {
                               {amazonSelectedThread.marketplace && <span className="px-1.5 py-0.5 bg-gray-100 text-gray-600 text-xs rounded font-medium">{amazonSelectedThread.marketplace}</span>}
                               <h3 className="font-semibold text-gray-900">{amazonSelectedThread.from_name || amazonSelectedThread.from_email || 'Klient'}</h3>
                             </div>
-                            <p className="text-xs text-gray-500">{amazonSelectedThread.from_email}</p>
+                            <div className="flex items-center gap-2 text-xs text-gray-500">
+                              {amazonSelectedThread.order_id && <span>#{amazonSelectedThread.order_id}</span>}
+                              {amazonSelectedThread.asin && (
+                                <a href={`https://amazon.${amazonSelectedThread.marketplace?.toLowerCase() || 'de'}/dp/${amazonSelectedThread.asin}`} target="_blank" rel="noopener noreferrer" className="text-orange-600 hover:underline">
+                                  ASIN: {amazonSelectedThread.asin}
+                                </a>
+                              )}
+                            </div>
                           </div>
                           {amazonSelectedThread.order_id && (
                             <a href={`https://sellercentral.amazon.${amazonSelectedThread.marketplace?.toLowerCase() || 'de'}/orders-v3/order/${amazonSelectedThread.order_id}`} target="_blank" rel="noopener noreferrer" className="px-3 py-1 text-sm bg-orange-100 text-orange-700 rounded hover:bg-orange-200">

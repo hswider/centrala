@@ -100,6 +100,7 @@ export async function POST(request) {
           await saveGmailAmazonDeThread({
             id: fullThread.id,
             orderId: firstMessage.orderId,
+            asin: firstMessage.asin,
             buyerEmail: firstMessage.fromEmail,
             buyerName: firstMessage.fromName,
             subject: firstMessage.subject,
@@ -121,6 +122,7 @@ export async function POST(request) {
             await saveGmailAmazonDeMessage({
               id: parsed.id,
               sender: isOutgoing ? 'seller' : parsed.fromEmail,
+              fromName: parsed.fromName,
               subject: parsed.subject,
               bodyText: parsed.bodyText,
               bodyHtml: parsed.bodyHtml,
@@ -223,6 +225,7 @@ export async function GET(request) {
             await saveGmailAmazonDeThread({
               id: fullThread.id,
               orderId: firstMessage.orderId,
+              asin: firstMessage.asin,
               buyerEmail: firstMessage.fromEmail,
               buyerName: firstMessage.fromName,
               subject: firstMessage.subject,
@@ -241,6 +244,7 @@ export async function GET(request) {
               await saveGmailAmazonDeMessage({
                 id: parsed.id,
                 sender: isOutgoing ? 'seller' : parsed.fromEmail,
+                fromName: parsed.fromName,
                 subject: parsed.subject,
                 bodyText: parsed.bodyText,
                 bodyHtml: parsed.bodyHtml,

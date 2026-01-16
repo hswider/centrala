@@ -201,6 +201,89 @@ export async function sendReply(threadId, to, subject, body) {
   });
 }
 
+// Extract clean customer message from Amazon email template
+function extractAmazonMessage(bodyText) {
+  if (!bodyText) return { cleanMessage: '', asin: null, productName: null };
+
+  let cleanMessage = bodyText;
+  let asin = null;
+  let productName = null;
+
+  // Extract ASIN
+  const asinMatch = bodyText.match(/ASIN:\s*([A-Z0-9]{10})/i);
+  if (asinMatch) {
+    asin = asinMatch[1];
+  }
+
+  // Try to extract message between various language markers
+  const messagePatterns = [
+    // German
+    /[-]+\s*Nachricht:\s*[-]+\s*([\s\S]*?)\s*[-]+\s*Ende der Nachricht\s*[-]+/i,
+    // French
+    /[-]+\s*Message\s*:\s*[-]+\s*([\s\S]*?)\s*[-]+\s*Fin du message\s*[-]+/i,
+    // Spanish
+    /[-]+\s*Mensaje:\s*[-]+\s*([\s\S]*?)\s*[-]+\s*Fin del mensaje\s*[-]+/i,
+    // Italian
+    /[-]+\s*Messaggio:\s*[-]+\s*([\s\S]*?)\s*[-]+\s*Fine del messaggio\s*[-]+/i,
+    // English
+    /[-]+\s*Message:\s*[-]+\s*([\s\S]*?)\s*[-]+\s*End of message\s*[-]+/i,
+    // Polish
+    /[-]+\s*Wiadomość:\s*[-]+\s*([\s\S]*?)\s*[-]+\s*Koniec wiadomości\s*[-]+/i,
+  ];
+
+  for (const pattern of messagePatterns) {
+    const match = bodyText.match(pattern);
+    if (match && match[1]) {
+      cleanMessage = match[1].trim();
+      break;
+    }
+  }
+
+  // If no pattern matched, try to remove common Amazon footer
+  if (cleanMessage === bodyText) {
+    // Remove everything after "War diese E-Mail hilfreich?" or similar
+    const footerPatterns = [
+      /War diese E-Mail hilfreich\?[\s\S]*/i,
+      /Cette e-mail vous a-t-il été utile[\s\S]*/i,
+      /¿Le ha resultado útil este correo[\s\S]*/i,
+      /Questa email ti è stata utile[\s\S]*/i,
+      /Was this email helpful[\s\S]*/i,
+      /Fall lösen[\s\S]*/i,
+      /Résoudre le problème[\s\S]*/i,
+      /Resolver caso[\s\S]*/i,
+    ];
+
+    for (const pattern of footerPatterns) {
+      cleanMessage = cleanMessage.replace(pattern, '').trim();
+    }
+
+    // Remove header like "Du hast eine Nachricht erhalten"
+    const headerPatterns = [
+      /^.*Du hast eine Nachricht erhalten\.?\s*/i,
+      /^.*Vous avez reçu un message\.?\s*/i,
+      /^.*Has recibido un mensaje\.?\s*/i,
+      /^.*Hai ricevuto un messaggio\.?\s*/i,
+      /^.*You have received a message\.?\s*/i,
+    ];
+
+    for (const pattern of headerPatterns) {
+      cleanMessage = cleanMessage.replace(pattern, '').trim();
+    }
+
+    // Remove ASIN line from the beginning
+    cleanMessage = cleanMessage.replace(/^ASIN:\s*[A-Z0-9]{10}\s*/i, '').trim();
+
+    // Remove order number line
+    cleanMessage = cleanMessage.replace(/^#?\s*\d{3}-\d{7}-\d{7}:?\s*/m, '').trim();
+    cleanMessage = cleanMessage.replace(/^Bestellnummer\s*\d{3}-\d{7}-\d{7}:?\s*/mi, '').trim();
+  }
+
+  // Clean up excessive whitespace
+  cleanMessage = cleanMessage.replace(/\n{3,}/g, '\n\n').trim();
+
+  return { cleanMessage, asin, productName };
+}
+
 // Parse message to extract useful info
 export function parseMessage(message) {
   const headers = message.payload?.headers || [];
@@ -245,6 +328,9 @@ export function parseMessage(message) {
     extractBody(message.payload.parts);
   }
 
+  // Extract clean message and ASIN from Amazon template
+  const { cleanMessage, asin } = extractAmazonMessage(bodyText);
+
   return {
     id: message.id,
     threadId: message.threadId,
@@ -256,7 +342,9 @@ export function parseMessage(message) {
     date,
     messageId,
     orderId,
-    bodyText,
+    asin,
+    bodyText: cleanMessage || bodyText, // Use cleaned message if available
+    bodyTextOriginal: bodyText, // Keep original for reference
     bodyHtml,
     snippet: message.snippet,
     labelIds: message.labelIds,

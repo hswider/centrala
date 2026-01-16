@@ -466,6 +466,7 @@ export async function initDatabase() {
     await sql`ALTER TABLE gmail_amazon_de_threads ADD COLUMN IF NOT EXISTS from_email VARCHAR(255)`;
     await sql`ALTER TABLE gmail_amazon_de_threads ADD COLUMN IF NOT EXISTS from_name VARCHAR(255)`;
     await sql`ALTER TABLE gmail_amazon_de_threads ADD COLUMN IF NOT EXISTS order_id VARCHAR(50)`;
+    await sql`ALTER TABLE gmail_amazon_de_threads ADD COLUMN IF NOT EXISTS asin VARCHAR(20)`;
   } catch (e) {
     console.log('Migration columns already exist or error:', e.message);
   }
@@ -2560,10 +2561,11 @@ export async function setGmailAmazonDeSyncInProgress(inProgress) {
 // Save Gmail Amazon DE thread
 export async function saveGmailAmazonDeThread(thread) {
   await sql`
-    INSERT INTO gmail_amazon_de_threads (id, order_id, from_email, from_name, subject, snippet, marketplace, last_message_at, unread)
+    INSERT INTO gmail_amazon_de_threads (id, order_id, asin, from_email, from_name, subject, snippet, marketplace, last_message_at, unread)
     VALUES (
       ${thread.id},
       ${thread.orderId || null},
+      ${thread.asin || null},
       ${thread.buyerEmail || thread.fromEmail || null},
       ${thread.buyerName || thread.fromName || null},
       ${thread.subject || null},
@@ -2574,6 +2576,7 @@ export async function saveGmailAmazonDeThread(thread) {
     )
     ON CONFLICT (id) DO UPDATE SET
       order_id = COALESCE(EXCLUDED.order_id, gmail_amazon_de_threads.order_id),
+      asin = COALESCE(EXCLUDED.asin, gmail_amazon_de_threads.asin),
       from_email = COALESCE(EXCLUDED.from_email, gmail_amazon_de_threads.from_email),
       from_name = COALESCE(EXCLUDED.from_name, gmail_amazon_de_threads.from_name),
       subject = COALESCE(EXCLUDED.subject, gmail_amazon_de_threads.subject),
