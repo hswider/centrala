@@ -122,6 +122,7 @@ export default function Navigation() {
     { href: '/zamowienia', label: 'OMS', icon: '📦' },
     { href: '/magazyny', label: 'WMS', icon: '🏭' },
     { href: '/mes', label: 'MES', icon: '⚙️' },
+    { href: '/mts', label: 'MTS', icon: '📋' },
     { href: '/crm', label: 'CRM 🇵🇱', icon: '👥', badge: unreadCount },
     { href: '/crm-eu', label: 'CRM 🇪🇺', icon: '👥', badge: unreadCountEU },
     { href: '/rank', label: 'RANK', icon: '📈' },
@@ -137,6 +138,7 @@ export default function Navigation() {
       (item.href === '/zamowienia' && pathname.startsWith('/zamowienia')) ||
       (item.href === '/magazyny' && pathname.startsWith('/magazyny')) ||
       (item.href === '/mes' && pathname.startsWith('/mes')) ||
+      (item.href === '/mts' && pathname.startsWith('/mts')) ||
       (item.href === '/crm' && pathname === '/crm') ||
       (item.href === '/crm-eu' && pathname.startsWith('/crm-eu')) ||
       (item.href === '/rank' && pathname.startsWith('/rank')) ||
