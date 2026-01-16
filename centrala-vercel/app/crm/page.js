@@ -60,7 +60,7 @@ function CRMContent() {
   const [poomkidsUnreadCount, setPoomkidsUnreadCount] = useState(0);
 
   const tabs = [
-    { key: 'wiadomosci', label: 'Allegro Dobrelegowiska', icon: 'https://a.allegroimg.com/original/12c30c/0d4b068640de9b0daf22af9d97c5', isImage: true, badge: unreadCount, color: 'orange' },
+    { key: 'wiadomosci', label: 'Allegro Dobrelegowiska', icon: 'https://a.allegroimg.com/original/12c30c/0d4b068640de9b0daf22af9d97c5', overlayIcon: '/icons/dobrelegowiska.png', isImage: true, badge: unreadCount, color: 'orange' },
     { key: 'meblebox', label: 'Allegro Meblebox', icon: 'https://a.allegroimg.com/original/12c30c/0d4b068640de9b0daf22af9d97c5', isImage: true, badge: mebleboxUnreadCount, color: 'orange' },
     { key: 'shopify', label: 'Shopify Dobrelegowiska', icon: '/icons/dobrelegowiska.png', isImage: true, badge: gmailUnreadCount, color: 'green' },
     { key: 'poomkids', label: 'Shopify POOMKIDS', icon: '/icons/poomkids.png', isImage: true, badge: poomkidsUnreadCount, color: 'blue' },
@@ -709,7 +709,12 @@ function CRMContent() {
                 } : {}}
               >
                 {tab.isImage ? (
-                  <img src={tab.icon} alt={tab.label} className="w-5 h-5 rounded object-cover" />
+                  <div className="relative">
+                    <img src={tab.icon} alt={tab.label} className="w-5 h-5 rounded object-cover" />
+                    {tab.overlayIcon && (
+                      <img src={tab.overlayIcon} alt="" className="absolute -bottom-1 -right-1 w-3 h-3 rounded-full object-cover border border-white dark:border-gray-800" />
+                    )}
+                  </div>
                 ) : (
                   <span>{tab.icon}</span>
                 )}
