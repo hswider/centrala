@@ -147,6 +147,28 @@ export async function GET(request) {
       return NextResponse.json({ success: true, results });
     }
 
+    if (test === 'api-messages') {
+      // Test what the actual API returns
+      const threadId = searchParams.get('threadId');
+      if (!threadId) {
+        return NextResponse.json({ success: false, error: 'threadId required' });
+      }
+      const { getGmailAmazonDeThread } = await import('../../../../lib/db');
+      const data = await getGmailAmazonDeThread(threadId);
+
+      return NextResponse.json({
+        success: true,
+        thread: data?.thread,
+        messages: data?.messages?.map(m => ({
+          id: m.id,
+          from_name: m.from_name,
+          has_attachments: m.has_attachments,
+          attachments: m.attachments,
+          attachments_type: typeof m.attachments
+        }))
+      });
+    }
+
     if (test === 'db') {
       // Check what's in database
       const { sql } = await import('@vercel/postgres');
