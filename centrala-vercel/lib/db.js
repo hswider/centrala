@@ -460,6 +460,16 @@ export async function initDatabase() {
     )
   `;
 
+  // Migration: Add missing columns to gmail_amazon_de_threads
+  try {
+    await sql`ALTER TABLE gmail_amazon_de_threads ADD COLUMN IF NOT EXISTS marketplace VARCHAR(10)`;
+    await sql`ALTER TABLE gmail_amazon_de_threads ADD COLUMN IF NOT EXISTS from_email VARCHAR(255)`;
+    await sql`ALTER TABLE gmail_amazon_de_threads ADD COLUMN IF NOT EXISTS from_name VARCHAR(255)`;
+    await sql`ALTER TABLE gmail_amazon_de_threads ADD COLUMN IF NOT EXISTS order_id VARCHAR(50)`;
+  } catch (e) {
+    console.log('Migration columns already exist or error:', e.message);
+  }
+
   // Gmail Amazon DE messages
   await sql`
     CREATE TABLE IF NOT EXISTS gmail_amazon_de_messages (
@@ -478,6 +488,15 @@ export async function initDatabase() {
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )
   `;
+
+  // Migration: Add missing columns to gmail_amazon_de_messages
+  try {
+    await sql`ALTER TABLE gmail_amazon_de_messages ADD COLUMN IF NOT EXISTS from_email VARCHAR(255)`;
+    await sql`ALTER TABLE gmail_amazon_de_messages ADD COLUMN IF NOT EXISTS from_name VARCHAR(255)`;
+    await sql`ALTER TABLE gmail_amazon_de_messages ADD COLUMN IF NOT EXISTS is_outgoing BOOLEAN DEFAULT false`;
+  } catch (e) {
+    console.log('Migration messages columns already exist or error:', e.message);
+  }
 
   // Gmail Amazon DE sync status
   await sql`
