@@ -28,6 +28,8 @@ export default function CRMEUPage() {
   const [kauflandSyncing, setKauflandSyncing] = useState(false);
   const [kauflandSyncStatus, setKauflandSyncStatus] = useState(null);
   const [kauflandUnreadCount, setKauflandUnreadCount] = useState(0);
+  const [kauflandSearch, setKauflandSearch] = useState('');
+  const [kauflandAttachments, setKauflandAttachments] = useState([]);
 
   // Shared state
   const [replyText, setReplyText] = useState('');
@@ -273,6 +275,7 @@ export default function CRMEUPage() {
     setKauflandMessagesLoading(true);
     setKauflandMessages([]);
     setReplyText('');
+    setKauflandAttachments([]);
 
     try {
       const res = await fetch(`/api/kaufland/tickets/${ticket.id}`);
@@ -300,15 +303,37 @@ export default function CRMEUPage() {
 
     setSending(true);
     try {
+      // Convert attachments to base64
+      const attachmentPromises = kauflandAttachments.map(file => {
+        return new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => {
+            const base64 = reader.result.split(',')[1];
+            resolve({
+              filename: file.name,
+              mimeType: file.type,
+              data: base64
+            });
+          };
+          reader.onerror = reject;
+          reader.readAsDataURL(file);
+        });
+      });
+      const attachmentData = await Promise.all(attachmentPromises);
+
       const res = await fetch(`/api/kaufland/tickets/${kauflandSelectedTicket.id}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text: replyText.trim() })
+        body: JSON.stringify({
+          text: replyText.trim(),
+          attachments: attachmentData
+        })
       });
       const data = await res.json();
 
       if (data.success) {
         setReplyText('');
+        setKauflandAttachments([]);
         const msgRes = await fetch(`/api/kaufland/tickets/${kauflandSelectedTicket.id}`);
         const msgData = await msgRes.json();
         if (msgData.success) {
@@ -403,15 +428,64 @@ export default function CRMEUPage() {
     return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
   };
 
-  // Get attachment icon based on mime type
-  const getAttachmentIcon = (mimeType) => {
-    if (!mimeType) return '📎';
-    if (mimeType.startsWith('image/')) return '🖼️';
-    if (mimeType.includes('pdf')) return '📄';
-    if (mimeType.includes('word') || mimeType.includes('document')) return '📝';
-    if (mimeType.includes('excel') || mimeType.includes('spreadsheet')) return '📊';
+  // Get attachment icon based on mime type or filename
+  const getAttachmentIcon = (mimeType, filename = '') => {
+    if (!mimeType && !filename) return '📎';
+    const lowerFilename = filename.toLowerCase();
+    if (mimeType?.startsWith('image/') || lowerFilename.endsWith('.jpg') || lowerFilename.endsWith('.png') || lowerFilename.endsWith('.gif')) return '🖼️';
+    if (mimeType?.includes('pdf') || lowerFilename.endsWith('.pdf')) return '📄';
+    if (mimeType?.includes('word') || mimeType?.includes('document') || lowerFilename.endsWith('.doc') || lowerFilename.endsWith('.docx')) return '📝';
+    if (mimeType?.includes('excel') || mimeType?.includes('spreadsheet') || lowerFilename.endsWith('.xls') || lowerFilename.endsWith('.xlsx')) return '📊';
     return '📎';
   };
+
+  // Parse attachments from Kaufland message text (HTML links)
+  const parseKauflandAttachments = (text) => {
+    if (!text) return { cleanText: '', attachments: [] };
+
+    const attachments = [];
+    // Match patterns like: <a href="https://www.kaufland.de/dynamic/files/...">filename.pdf</a>
+    const linkRegex = /<a\s+href="([^"]+)"[^>]*>([^<]+)<\/a>/gi;
+    let match;
+
+    while ((match = linkRegex.exec(text)) !== null) {
+      const url = match[1];
+      const filename = match[2];
+      if (url.includes('kaufland.de') || url.includes('files')) {
+        attachments.push({ url, filename });
+      }
+    }
+
+    // Clean the text - remove HTML tags and decode entities
+    let cleanText = text
+      .replace(/<hr>/gi, '\n---\n')
+      .replace(/&#128206;/g, '📎')
+      .replace(/<br\s*\/?>/gi, '\n')
+      .replace(/<a\s+href="[^"]*"[^>]*>[^<]*<\/a>/gi, '')
+      .replace(/<[^>]+>/g, '')
+      .replace(/&lt;/g, '<')
+      .replace(/&gt;/g, '>')
+      .replace(/&amp;/g, '&')
+      .replace(/&quot;/g, '"')
+      .replace(/\n{3,}/g, '\n\n')
+      .trim();
+
+    return { cleanText, attachments };
+  };
+
+  // Filter Kaufland tickets by search
+  const filteredKauflandTickets = kauflandTickets.filter(ticket => {
+    if (!kauflandSearch.trim()) return true;
+    const searchLower = kauflandSearch.toLowerCase().trim();
+    return (
+      (ticket.id && ticket.id.toLowerCase().includes(searchLower)) ||
+      (ticket.ticket_number && String(ticket.ticket_number).toLowerCase().includes(searchLower)) ||
+      (ticket.order_id && ticket.order_id.toLowerCase().includes(searchLower)) ||
+      (ticket.buyer_name && ticket.buyer_name.toLowerCase().includes(searchLower)) ||
+      (ticket.topic && ticket.topic.toLowerCase().includes(searchLower)) ||
+      (ticket.reason && ticket.reason.toLowerCase().includes(searchLower))
+    );
+  });
 
   // Filter Amazon threads by selected filter
   const filteredAmazonThreads = amazonThreads.filter(thread => {
@@ -858,16 +932,47 @@ export default function CRMEUPage() {
                         {kauflandSyncing ? 'Sync...' : 'Synchronizuj'}
                       </button>
                     </div>
+
+                    {/* Search */}
+                    <div className="px-3 py-2 border-b border-gray-100 dark:border-gray-700">
+                      <div className="relative">
+                        <input
+                          type="text"
+                          value={kauflandSearch}
+                          onChange={(e) => setKauflandSearch(e.target.value)}
+                          placeholder="Szukaj ticketu, zamowienia, klienta..."
+                          className="w-full pl-8 pr-8 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500"
+                        />
+                        <svg className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                        </svg>
+                        {kauflandSearch && (
+                          <button
+                            onClick={() => setKauflandSearch('')}
+                            className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                          >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                          </button>
+                        )}
+                      </div>
+                    </div>
+
                     <div className="flex-1 overflow-y-auto">
                       {kauflandTicketsLoading ? (
                         <div className="p-4 text-center text-gray-500">Ladowanie...</div>
-                      ) : kauflandTickets.length === 0 ? (
+                      ) : filteredKauflandTickets.length === 0 ? (
                         <div className="p-4 text-center text-gray-500">
                           <p>Brak ticketow.</p>
-                          <p className="text-xs mt-2">Kliknij "Synchronizuj" aby pobrac tickety.</p>
+                          <p className="text-xs mt-2">
+                            {kauflandSearch.trim()
+                              ? `Nie znaleziono wynikow dla "${kauflandSearch}".`
+                              : 'Kliknij "Synchronizuj" aby pobrac tickety.'}
+                          </p>
                         </div>
                       ) : (
-                        kauflandTickets.map((ticket) => (
+                        filteredKauflandTickets.map((ticket) => (
                           <button
                             key={ticket.id}
                             onClick={() => openKauflandTicket(ticket)}
@@ -968,22 +1073,83 @@ export default function CRMEUPage() {
                           ) : kauflandMessages.length === 0 ? (
                             <div className="text-center text-gray-500">Brak wiadomosci</div>
                           ) : (
-                            kauflandMessages.map((msg) => (
-                              <div key={msg.id} className={`flex ${msg.is_from_seller ? 'justify-end' : 'justify-start'}`}>
-                                <div className={`max-w-[85%] px-3 py-2 rounded-lg ${msg.is_from_seller ? 'bg-red-600 text-white' : msg.sender === 'kaufland' ? 'bg-blue-100 dark:bg-blue-900/50 border border-blue-200 dark:border-blue-800 text-gray-900 dark:text-white' : 'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white'}`}>
-                                  <p className="text-[10px] mb-1 opacity-75">
-                                    {msg.is_from_seller ? 'Ty' : msg.sender === 'kaufland' ? 'Kaufland Support' : 'Klient'}
-                                  </p>
-                                  <p className="text-sm whitespace-pre-wrap break-words leading-relaxed">{msg.text || ''}</p>
-                                  <p className={`text-[10px] mt-1 ${msg.is_from_seller ? 'text-red-200' : 'text-gray-400 dark:text-gray-500'}`}>{formatDate(msg.created_at)}</p>
+                            kauflandMessages.map((msg) => {
+                              const { cleanText, attachments: msgAttachments } = parseKauflandAttachments(msg.text);
+                              return (
+                                <div key={msg.id} className={`flex ${msg.is_from_seller ? 'justify-end' : 'justify-start'}`}>
+                                  <div className={`max-w-[85%] px-3 py-2 rounded-lg ${msg.is_from_seller ? 'bg-red-600 text-white' : msg.sender === 'kaufland' || msg.sender === 'system' ? 'bg-blue-100 dark:bg-blue-900/50 border border-blue-200 dark:border-blue-800 text-gray-900 dark:text-white' : 'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white'}`}>
+                                    <p className="text-[10px] mb-1 opacity-75">
+                                      {msg.is_from_seller ? 'Ty' : msg.sender === 'kaufland' || msg.sender === 'system' ? 'Kaufland' : (msg.sender_name || 'Klient')}
+                                    </p>
+                                    <p className="text-sm whitespace-pre-wrap break-words leading-relaxed">{cleanText}</p>
+                                    {/* Attachments */}
+                                    {msgAttachments.length > 0 && (
+                                      <div className={`mt-2 pt-2 border-t ${msg.is_from_seller ? 'border-red-500' : 'border-gray-200 dark:border-gray-600'}`}>
+                                        <p className={`text-[10px] mb-1 ${msg.is_from_seller ? 'text-red-200' : 'text-gray-400'}`}>Zalaczniki:</p>
+                                        <div className="space-y-1">
+                                          {msgAttachments.map((att, i) => (
+                                            <a
+                                              key={i}
+                                              href={att.url}
+                                              target="_blank"
+                                              rel="noopener noreferrer"
+                                              className={`flex items-center gap-2 px-2 py-1 rounded text-xs ${
+                                                msg.is_from_seller
+                                                  ? 'bg-red-500 hover:bg-red-400 text-white'
+                                                  : 'bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200'
+                                              }`}
+                                            >
+                                              <span>{getAttachmentIcon(null, att.filename)}</span>
+                                              <span className="truncate max-w-[200px]">{att.filename}</span>
+                                              <svg className="w-3 h-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                                              </svg>
+                                            </a>
+                                          ))}
+                                        </div>
+                                      </div>
+                                    )}
+                                    <p className={`text-[10px] mt-1 ${msg.is_from_seller ? 'text-red-200' : 'text-gray-400 dark:text-gray-500'}`}>{formatDate(msg.created_at)}</p>
+                                  </div>
                                 </div>
-                              </div>
-                            ))
+                              );
+                            })
                           )}
                         </div>
 
                         <div className="px-4 py-3 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
+                          {/* Kaufland Attachment preview */}
+                          {kauflandAttachments.length > 0 && (
+                            <div className="mb-2 flex flex-wrap gap-2">
+                              {kauflandAttachments.map((file, index) => (
+                                <div key={index} className="flex items-center gap-1 px-2 py-1 bg-red-100 dark:bg-red-900/50 text-red-700 dark:text-red-300 rounded text-xs">
+                                  <span>{getAttachmentIcon(file.type, file.name)}</span>
+                                  <span className="truncate max-w-[100px]">{file.name}</span>
+                                  <span className="text-[10px] opacity-75">({formatFileSize(file.size)})</span>
+                                  <button
+                                    onClick={() => setKauflandAttachments(prev => prev.filter((_, i) => i !== index))}
+                                    className="ml-1 text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
+                                  >×</button>
+                                </div>
+                              ))}
+                            </div>
+                          )}
                           <div className="flex gap-2">
+                            <label className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer flex items-center" title="Dodaj zalacznik">
+                              <input
+                                type="file"
+                                multiple
+                                onChange={(e) => {
+                                  const files = Array.from(e.target.files);
+                                  setKauflandAttachments(prev => [...prev, ...files]);
+                                  e.target.value = '';
+                                }}
+                                className="hidden"
+                              />
+                              <svg className="w-5 h-5 text-gray-500 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
+                              </svg>
+                            </label>
                             <textarea
                               value={replyText}
                               onChange={(e) => setReplyText(e.target.value)}

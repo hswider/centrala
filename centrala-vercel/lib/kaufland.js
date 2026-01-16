@@ -129,17 +129,70 @@ export async function getAllMessages(limit = 30, offset = 0) {
   return kauflandRequest('GET', `/tickets/messages?limit=${limit}&offset=${offset}`);
 }
 
-// Send message to ticket
-export async function sendTicketMessage(ticketId, text, interimNotice = false) {
-  const body = {
-    text: text,
-  };
+// Send message to ticket (with optional file attachments)
+export async function sendTicketMessage(ticketId, text, interimNotice = false, attachments = []) {
+  const clientKey = process.env.KAUFLAND_CLIENT_KEY;
+  const secretKey = process.env.KAUFLAND_SECRET_KEY;
 
-  if (interimNotice) {
-    body.interim_notice = true;
+  if (!clientKey || !secretKey) {
+    throw new Error('Kaufland API credentials not configured');
   }
 
-  return kauflandRequest('POST', `/tickets/${ticketId}/messages`, body);
+  // If no attachments, use simple JSON request
+  if (!attachments || attachments.length === 0) {
+    const body = {
+      text: text,
+    };
+    if (interimNotice) {
+      body.interim_notice = true;
+    }
+    return kauflandRequest('POST', `/tickets/${ticketId}/messages`, body);
+  }
+
+  // With attachments, use multipart/form-data
+  const uri = `${KAUFLAND_API_BASE}/tickets/${ticketId}/messages`;
+  const timestamp = Math.floor(Date.now() / 1000);
+
+  // For multipart requests, the body in signature should be empty
+  const signature = generateSignature('POST', uri, '', timestamp, secretKey);
+
+  // Create form data
+  const FormData = (await import('form-data')).default;
+  const formData = new FormData();
+  formData.append('text', text);
+
+  if (interimNotice) {
+    formData.append('interim_notice', 'true');
+  }
+
+  // Add file attachments
+  for (let i = 0; i < attachments.length; i++) {
+    const att = attachments[i];
+    const buffer = Buffer.from(att.data, 'base64');
+    formData.append('files[]', buffer, {
+      filename: att.filename,
+      contentType: att.mimeType,
+    });
+  }
+
+  const response = await fetch(uri, {
+    method: 'POST',
+    headers: {
+      'Accept': 'application/json',
+      'Shop-Client-Key': clientKey,
+      'Shop-Timestamp': timestamp.toString(),
+      'Shop-Signature': signature,
+      ...formData.getHeaders(),
+    },
+    body: formData,
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(`Kaufland API error: ${response.status} - ${errorText}`);
+  }
+
+  return response.json();
 }
 
 // Close ticket

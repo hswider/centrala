@@ -73,7 +73,7 @@ export async function GET(request, { params }) {
   }
 }
 
-// POST - Send message to ticket
+// POST - Send message to ticket (with optional attachments)
 export async function POST(request, { params }) {
   try {
     await initDatabase();
@@ -91,7 +91,7 @@ export async function POST(request, { params }) {
     }
 
     const body = await request.json();
-    const { text, interimNotice = false } = body;
+    const { text, interimNotice = false, attachments = [] } = body;
 
     if (!text || text.trim() === '') {
       return NextResponse.json({
@@ -100,14 +100,21 @@ export async function POST(request, { params }) {
       }, { status: 400 });
     }
 
-    // Send message via Kaufland API
-    const result = await sendTicketMessage(ticketId, text.trim(), interimNotice);
+    // Send message via Kaufland API (with attachments if any)
+    const result = await sendTicketMessage(ticketId, text.trim(), interimNotice, attachments);
+
+    // Build text with attachment info for database
+    let dbText = text.trim();
+    if (attachments.length > 0) {
+      const attachmentNames = attachments.map(a => a.filename).join(', ');
+      dbText += `\n\n📎 Zalaczniki: ${attachmentNames}`;
+    }
 
     // Save the sent message to database
     const sentMessage = {
       id: `${ticketId}-sent-${Date.now()}`,
       sender: 'seller',
-      text: text.trim(),
+      text: dbText,
       createdAt: new Date().toISOString(),
       isFromSeller: true,
     };
@@ -117,7 +124,8 @@ export async function POST(request, { params }) {
     return NextResponse.json({
       success: true,
       message: sentMessage,
-      kauflandResponse: result
+      kauflandResponse: result,
+      attachmentsSent: attachments.length
     });
   } catch (error) {
     console.error('Send Kaufland message error:', error);
