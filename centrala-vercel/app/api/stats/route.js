@@ -99,6 +99,17 @@ export async function GET() {
       ORDER BY date ASC
     `;
 
+    // Orders count last 14 days by day (Polish timezone)
+    const ordersLast14Days = await sql`
+      SELECT
+        DATE(ordered_at AT TIME ZONE 'Europe/Warsaw') as date,
+        COUNT(*) as count
+      FROM orders
+      WHERE ordered_at >= (CURRENT_DATE AT TIME ZONE 'Europe/Warsaw') - INTERVAL '14 days'
+      GROUP BY DATE(ordered_at AT TIME ZONE 'Europe/Warsaw')
+      ORDER BY date ASC
+    `;
+
     // Calculate revenue in PLN
     let revenueTodayPln = 0;
     revenueToday.rows.forEach(r => {
@@ -182,6 +193,27 @@ export async function GET() {
       });
     }
 
+    // Build daily orders map
+    const dailyOrdersMap = {};
+    ordersLast14Days.rows.forEach(r => {
+      const dateStr = new Date(r.date).toISOString().split('T')[0];
+      dailyOrdersMap[dateStr] = parseInt(r.count);
+    });
+
+    // Create array for last 14 days orders
+    const last14DaysOrders = [];
+    for (let i = 13; i >= 0; i--) {
+      const date = new Date();
+      date.setDate(date.getDate() - i);
+      const dateStr = date.toISOString().split('T')[0];
+      const dayLabel = date.toLocaleDateString('pl-PL', { day: '2-digit', month: '2-digit' });
+      last14DaysOrders.push({
+        date: dateStr,
+        day: dayLabel,
+        orders: dailyOrdersMap[dateStr] || 0
+      });
+    }
+
     return NextResponse.json({
       todayByPlatform: todayByPlatform.rows.map(r => ({
         platform: r.platform || 'Inne',
@@ -203,6 +235,7 @@ export async function GET() {
         last30DaysPln: Math.round(revenue30DaysPln),
         last30Days: last30DaysRevenue
       },
+      dailyOrders: last14DaysOrders,
       topProducts: topProductsList
     });
   } catch (error) {

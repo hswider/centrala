@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import OrderList from '@/components/OrderList';
 import Pagination from '@/components/Pagination';
 import SearchBox from '@/components/SearchBox';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
 const statusMap = {
   // Podstawowe
@@ -95,6 +96,7 @@ export default function ZamowieniaPage() {
   const [selectedStatus, setSelectedStatus] = useState(null);
   const [expandedCategories, setExpandedCategories] = useState({});
   const [todayStats, setTodayStats] = useState({ total: 0, byPlatform: [] });
+  const [dailyOrdersChart, setDailyOrdersChart] = useState([]);
 
   // Fetch available channels, statuses and today stats
   useEffect(() => {
@@ -119,6 +121,9 @@ export default function ZamowieniaPage() {
             total: statsData.summary.ordersToday,
             byPlatform: statsData.todayByPlatform
           });
+        }
+        if (statsData.dailyOrders) {
+          setDailyOrdersChart(statsData.dailyOrders);
         }
       } catch (err) {
         console.error('Failed to load filters:', err);
@@ -298,6 +303,42 @@ export default function ZamowieniaPage() {
             {syncing ? 'Sync...' : 'Sync'}
           </button>
         </div>
+
+        {/* Orders Chart */}
+        {dailyOrdersChart.length > 0 && (
+          <div className="mb-4 bg-white dark:bg-gray-800 rounded-lg shadow dark:shadow-gray-900 p-3">
+            <div className="text-xs text-gray-500 dark:text-gray-400 mb-2">Zamowienia (ostatnie 14 dni)</div>
+            <div className="h-32">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={dailyOrdersChart} margin={{ top: 5, right: 5, left: -20, bottom: 5 }}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#374151" />
+                  <XAxis
+                    dataKey="day"
+                    tick={{ fontSize: 9, fill: '#9CA3AF' }}
+                    tickLine={false}
+                    axisLine={false}
+                  />
+                  <YAxis
+                    tick={{ fontSize: 10, fill: '#9CA3AF' }}
+                    tickLine={false}
+                    axisLine={false}
+                    width={30}
+                  />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: '#1F2937',
+                      border: 'none',
+                      borderRadius: '8px',
+                      color: '#fff'
+                    }}
+                    formatter={(value) => [`${value} zam.`, 'Ilosc']}
+                  />
+                  <Bar dataKey="orders" fill="#8B5CF6" radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+        )}
 
         {/* Status Filter */}
         {statuses.length > 0 && (
