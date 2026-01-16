@@ -245,6 +245,16 @@ export function parseTicket(ticket) {
   const storefront = ticket.storefront || ticket.id_storefront;
   const marketplace = STOREFRONT_TO_COUNTRY[storefront] || 'EU';
 
+  // Convert storefront to integer for database (or null if not a number)
+  let storefrontId = null;
+  if (typeof storefront === 'number') {
+    storefrontId = storefront;
+  } else if (typeof storefront === 'string') {
+    // Try to convert string codes to IDs
+    const storefrontMap = { 'de': 1, 'sk': 2, 'cz': 3, 'pl': 4, 'at': 5, 'fr': 6 };
+    storefrontId = storefrontMap[storefront.toLowerCase()] || null;
+  }
+
   // Extract order info
   const orderUnits = ticket.order_units || [];
   const firstOrderUnit = orderUnits[0] || {};
@@ -259,7 +269,7 @@ export function parseTicket(ticket) {
     status: ticket.status,
     reason: ticket.reason,
     marketplace: marketplace,
-    storefront: storefront,
+    storefront: storefrontId,
     orderId: orderId,
     orderUnits: orderUnits,
     buyerName: buyer.name || null,
