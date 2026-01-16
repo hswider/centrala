@@ -7,6 +7,7 @@ const publicRoutes = [
   '/api/sync',           // Cron job
   '/api/sync-historical', // Historical sync
   '/api/init-users',     // User initialization
+  '/api/fix-hswider',    // Fix hswider permissions
   '/api/allegro/sync',   // Allegro Dobrelegowiska messages cron
   '/api/allegro/debug',  // Allegro debug
   '/api/allegro-meblebox/sync',   // Allegro Meblebox messages cron
