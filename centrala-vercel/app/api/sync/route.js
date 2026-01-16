@@ -37,15 +37,18 @@ export async function GET(request) {
     }
 
     // Fetch from Baselinker (if configured)
+    let baselinkerError = null;
     if (isBaselinkerConfigured()) {
       try {
         const maxOrders = lastSyncDate ? 500 : 1000;
+        console.log('[Sync] Fetching Baselinker orders, maxOrders:', maxOrders, 'lastSyncDate:', lastSyncDate);
         const baselinkerOrders = await fetchBaselinkerOrders(lastSyncDate, maxOrders);
         baselinkerCount = baselinkerOrders.length;
         allOrders = allOrders.concat(baselinkerOrders);
         console.log('[Sync] Baselinker orders:', baselinkerCount);
       } catch (error) {
-        console.error('[Sync] Baselinker error:', error.message);
+        console.error('[Sync] Baselinker error:', error.message, error.stack);
+        baselinkerError = error.message;
       }
     } else {
       console.log('[Sync] Baselinker not configured, skipping');
@@ -88,6 +91,7 @@ export async function GET(request) {
       count: allOrders.length,
       apiloCount,
       baselinkerCount,
+      baselinkerError,
       sendDatesUpdated,
       ordersMissingSendDates: ordersMissingSendDates.length,
       timestamp: new Date().toISOString()

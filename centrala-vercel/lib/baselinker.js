@@ -222,11 +222,12 @@ export async function fetchOrders(limit = 100, dateFrom = null) {
   await loadStatuses();
 
   const parameters = {
-    get_unconfirmed_orders: false,
+    get_unconfirmed_orders: true, // Include all orders
   };
 
   if (dateFrom) {
-    parameters.date_confirmed_from = Math.floor(dateFrom.getTime() / 1000);
+    // Use date_from (order creation date) instead of date_confirmed_from
+    parameters.date_from = Math.floor(dateFrom.getTime() / 1000);
   }
 
   const data = await baselinkerRequest('getOrders', parameters);
@@ -245,17 +246,17 @@ export async function fetchAllNewOrders(lastSyncDate = null, maxOrders = 500) {
   let lastOrderId = null;
   let hasMore = true;
 
-  // Calculate date_from - last 7 days if no sync date, or from last sync
+  // Calculate date_from - last 30 days if no sync date, or from last sync
   const dateFrom = lastSyncDate
     ? new Date(lastSyncDate)
-    : new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+    : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
 
   console.log('[Baselinker] Fetching orders from:', dateFrom.toISOString());
 
   while (hasMore && allOrders.length < maxOrders) {
     const parameters = {
-      get_unconfirmed_orders: false,
-      date_confirmed_from: Math.floor(dateFrom.getTime() / 1000),
+      get_unconfirmed_orders: true, // Include all orders
+      date_from: Math.floor(dateFrom.getTime() / 1000), // Use date_from instead of date_confirmed_from
     };
 
     if (lastOrderId) {
@@ -263,11 +264,14 @@ export async function fetchAllNewOrders(lastSyncDate = null, maxOrders = 500) {
     }
 
     try {
+      console.log('[Baselinker] Request params:', JSON.stringify(parameters));
       const data = await baselinkerRequest('getOrders', parameters);
+      console.log('[Baselinker] Response status:', data.status);
       const orders = data.orders || [];
 
       if (orders.length === 0) {
         hasMore = false;
+        console.log('[Baselinker] No more orders found');
       } else {
         const mappedOrders = orders.map(order => mapOrderToDTO(order, statusesCache));
         allOrders = allOrders.concat(mappedOrders);
@@ -286,7 +290,7 @@ export async function fetchAllNewOrders(lastSyncDate = null, maxOrders = 500) {
         await new Promise(resolve => setTimeout(resolve, 600));
       }
     } catch (error) {
-      console.error('[Baselinker] Error fetching orders:', error.message);
+      console.error('[Baselinker] Error fetching orders:', error.message, error.stack);
       hasMore = false;
     }
   }
