@@ -164,7 +164,10 @@ export async function GET(request) {
           from_name: m.from_name,
           has_attachments: m.has_attachments,
           attachments: m.attachments,
-          attachments_type: typeof m.attachments
+          attachments_type: typeof m.attachments,
+          attachments_is_array: Array.isArray(m.attachments),
+          attachments_length: Array.isArray(m.attachments) ? m.attachments.length : (m.attachments?.length ?? 'N/A'),
+          attachments_json: JSON.stringify(m.attachments)
         }))
       });
     }
