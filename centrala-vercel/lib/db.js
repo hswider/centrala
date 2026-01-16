@@ -467,6 +467,10 @@ export async function initDatabase() {
     await sql`ALTER TABLE gmail_amazon_de_threads ADD COLUMN IF NOT EXISTS from_name VARCHAR(255)`;
     await sql`ALTER TABLE gmail_amazon_de_threads ADD COLUMN IF NOT EXISTS order_id VARCHAR(50)`;
     await sql`ALTER TABLE gmail_amazon_de_threads ADD COLUMN IF NOT EXISTS asin VARCHAR(20)`;
+    await sql`ALTER TABLE gmail_amazon_de_threads ADD COLUMN IF NOT EXISTS status VARCHAR(20) DEFAULT 'open'`;
+    await sql`ALTER TABLE gmail_amazon_de_threads ADD COLUMN IF NOT EXISTS needs_response BOOLEAN DEFAULT true`;
+    await sql`ALTER TABLE gmail_amazon_de_threads ADD COLUMN IF NOT EXISTS last_customer_message_at TIMESTAMP`;
+    await sql`ALTER TABLE gmail_amazon_de_threads ADD COLUMN IF NOT EXISTS has_seller_reply BOOLEAN DEFAULT false`;
   } catch (e) {
     console.log('Migration columns already exist or error:', e.message);
   }
@@ -2561,7 +2565,7 @@ export async function setGmailAmazonDeSyncInProgress(inProgress) {
 // Save Gmail Amazon DE thread
 export async function saveGmailAmazonDeThread(thread) {
   await sql`
-    INSERT INTO gmail_amazon_de_threads (id, order_id, asin, from_email, from_name, subject, snippet, marketplace, last_message_at, unread)
+    INSERT INTO gmail_amazon_de_threads (id, order_id, asin, from_email, from_name, subject, snippet, marketplace, last_message_at, unread, needs_response, last_customer_message_at, has_seller_reply, status)
     VALUES (
       ${thread.id},
       ${thread.orderId || null},
@@ -2572,7 +2576,11 @@ export async function saveGmailAmazonDeThread(thread) {
       ${thread.snippet || null},
       ${thread.marketplace || null},
       ${thread.lastMessageAt || new Date().toISOString()},
-      ${thread.unread !== false}
+      ${thread.unread !== false},
+      ${thread.needsResponse !== false},
+      ${thread.lastCustomerMessageAt || thread.lastMessageAt || new Date().toISOString()},
+      ${thread.hasSellerReply || false},
+      ${thread.status || 'open'}
     )
     ON CONFLICT (id) DO UPDATE SET
       order_id = COALESCE(EXCLUDED.order_id, gmail_amazon_de_threads.order_id),
@@ -2584,7 +2592,28 @@ export async function saveGmailAmazonDeThread(thread) {
       marketplace = COALESCE(EXCLUDED.marketplace, gmail_amazon_de_threads.marketplace),
       last_message_at = EXCLUDED.last_message_at,
       unread = EXCLUDED.unread,
+      needs_response = EXCLUDED.needs_response,
+      last_customer_message_at = COALESCE(EXCLUDED.last_customer_message_at, gmail_amazon_de_threads.last_customer_message_at),
+      has_seller_reply = EXCLUDED.has_seller_reply OR gmail_amazon_de_threads.has_seller_reply,
       updated_at = CURRENT_TIMESTAMP
+  `;
+}
+
+// Update Gmail Amazon DE thread status
+export async function updateGmailAmazonDeThreadStatus(threadId, status) {
+  await sql`
+    UPDATE gmail_amazon_de_threads
+    SET status = ${status}, updated_at = CURRENT_TIMESTAMP
+    WHERE id = ${threadId}
+  `;
+}
+
+// Mark thread as responded (seller sent a reply)
+export async function markGmailAmazonDeThreadResponded(threadId) {
+  await sql`
+    UPDATE gmail_amazon_de_threads
+    SET needs_response = false, has_seller_reply = true, updated_at = CURRENT_TIMESTAMP
+    WHERE id = ${threadId}
   `;
 }
 

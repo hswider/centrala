@@ -96,6 +96,26 @@ export async function POST(request) {
           // Detect marketplace from sender email
           const marketplace = detectMarketplace(firstMessage.fromEmail);
 
+          // Analyze messages to determine response status
+          let hasSellerReply = false;
+          let lastCustomerMessageAt = null;
+          let lastMessageIsFromCustomer = true;
+
+          for (const message of fullThread.messages) {
+            const isOutgoing = message.labelIds && message.labelIds.includes('SENT');
+            const msgDate = new Date(parseInt(message.internalDate)).toISOString();
+
+            if (isOutgoing) {
+              hasSellerReply = true;
+            } else {
+              lastCustomerMessageAt = msgDate;
+            }
+          }
+
+          // Check if last message is from customer (needs response)
+          const lastMsgIsOutgoing = fullThread.messages[fullThread.messages.length - 1].labelIds?.includes('SENT');
+          const needsResponse = !lastMsgIsOutgoing;
+
           // Save thread
           await saveGmailAmazonDeThread({
             id: fullThread.id,
@@ -107,7 +127,10 @@ export async function POST(request) {
             snippet: lastMessage.snippet || fullThread.snippet,
             marketplace: marketplace,
             lastMessageAt: lastMessage.internalDate,
-            unread: hasUnread
+            unread: hasUnread,
+            needsResponse,
+            lastCustomerMessageAt,
+            hasSellerReply
           });
 
           syncedThreads++;
@@ -222,6 +245,24 @@ export async function GET(request) {
 
             const marketplace = detectMarketplace(firstMessage.fromEmail);
 
+            // Analyze messages to determine response status
+            let hasSellerReply = false;
+            let lastCustomerMessageAt = null;
+
+            for (const message of fullThread.messages) {
+              const isOutgoing = message.labelIds && message.labelIds.includes('SENT');
+              const msgDate = new Date(parseInt(message.internalDate)).toISOString();
+
+              if (isOutgoing) {
+                hasSellerReply = true;
+              } else {
+                lastCustomerMessageAt = msgDate;
+              }
+            }
+
+            const lastMsgIsOutgoing = fullThread.messages[fullThread.messages.length - 1].labelIds?.includes('SENT');
+            const needsResponse = !lastMsgIsOutgoing;
+
             await saveGmailAmazonDeThread({
               id: fullThread.id,
               orderId: firstMessage.orderId,
@@ -232,7 +273,10 @@ export async function GET(request) {
               snippet: lastMessage.snippet || fullThread.snippet,
               marketplace: marketplace,
               lastMessageAt: lastMessage.internalDate,
-              unread: hasUnread
+              unread: hasUnread,
+              needsResponse,
+              lastCustomerMessageAt,
+              hasSellerReply
             });
 
             syncedThreads++;

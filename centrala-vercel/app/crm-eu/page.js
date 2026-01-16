@@ -15,6 +15,7 @@ export default function CRMEUPage() {
   const [amazonSyncing, setAmazonSyncing] = useState(false);
   const [amazonSyncStatus, setAmazonSyncStatus] = useState(null);
   const [amazonUnreadCount, setAmazonUnreadCount] = useState(0);
+  const [amazonFilter, setAmazonFilter] = useState('all'); // all, needs_response, sent, resolved, unresolved
 
   // Kaufland state
   const [kauflandAuth, setKauflandAuth] = useState({ authenticated: false, loading: true });
@@ -341,6 +342,53 @@ export default function CRMEUPage() {
     return null;
   };
 
+  // Calculate 24h countdown from last customer message
+  const get24hCountdown = (lastCustomerMessageAt) => {
+    if (!lastCustomerMessageAt) return null;
+    const msgTime = new Date(lastCustomerMessageAt).getTime();
+    const deadline = msgTime + (24 * 60 * 60 * 1000); // 24 hours later
+    const now = Date.now();
+    const remaining = deadline - now;
+
+    if (remaining <= 0) return { text: 'Przekroczony!', expired: true, hours: 0 };
+
+    const hours = Math.floor(remaining / (60 * 60 * 1000));
+    const minutes = Math.floor((remaining % (60 * 60 * 1000)) / (60 * 1000));
+
+    if (hours >= 1) {
+      return { text: `${hours} godz.`, expired: false, hours, urgent: hours < 4 };
+    }
+    return { text: `${minutes} min`, expired: false, hours: 0, urgent: true };
+  };
+
+  // Filter Amazon threads by selected filter
+  const filteredAmazonThreads = amazonThreads.filter(thread => {
+    switch (amazonFilter) {
+      case 'needs_response':
+        return thread.needs_response && thread.status !== 'resolved';
+      case 'sent':
+        return thread.has_seller_reply;
+      case 'resolved':
+        return thread.status === 'resolved';
+      case 'unresolved':
+        return thread.status !== 'resolved';
+      default:
+        return true;
+    }
+  });
+
+  // Count threads needing response
+  const amazonNeedsResponseCount = amazonThreads.filter(t => t.needs_response && t.status !== 'resolved').length;
+
+  // Amazon filter tabs
+  const amazonFilterTabs = [
+    { key: 'all', label: 'Wszystkie', count: amazonThreads.length },
+    { key: 'needs_response', label: 'Wymaga odp.', count: amazonNeedsResponseCount },
+    { key: 'sent', label: 'Wyslane', count: amazonThreads.filter(t => t.has_seller_reply).length },
+    { key: 'resolved', label: 'Rozwiazane', count: amazonThreads.filter(t => t.status === 'resolved').length },
+    { key: 'unresolved', label: 'Nierozwiazane', count: amazonThreads.filter(t => t.status !== 'resolved').length },
+  ];
+
   // ==================== RENDER ====================
 
   return (
@@ -423,50 +471,89 @@ export default function CRMEUPage() {
                         {amazonSyncing ? 'Sync...' : 'Synchronizuj'}
                       </button>
                     </div>
+
+                    {/* Filter tabs */}
+                    <div className="px-2 py-2 border-b border-gray-100 flex gap-1 overflow-x-auto bg-gray-50">
+                      {amazonFilterTabs.map((tab) => (
+                        <button
+                          key={tab.key}
+                          onClick={() => setAmazonFilter(tab.key)}
+                          className={`px-2 py-1 text-xs rounded whitespace-nowrap flex items-center gap-1 ${
+                            amazonFilter === tab.key
+                              ? 'bg-orange-600 text-white'
+                              : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'
+                          }`}
+                        >
+                          {tab.label}
+                          <span className={`px-1 rounded text-[10px] ${amazonFilter === tab.key ? 'bg-orange-500' : 'bg-gray-100'}`}>
+                            {tab.count}
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+
                     <div className="flex-1 overflow-y-auto">
                       {amazonThreadsLoading ? (
                         <div className="p-4 text-center text-gray-500">Ladowanie...</div>
-                      ) : amazonThreads.length === 0 ? (
+                      ) : filteredAmazonThreads.length === 0 ? (
                         <div className="p-4 text-center text-gray-500">
                           <p>Brak wiadomosci.</p>
-                          <p className="text-xs mt-2">Kliknij "Synchronizuj" aby pobrac wiadomosci.</p>
+                          <p className="text-xs mt-2">{amazonThreads.length > 0 ? 'Zmien filtr aby zobaczyc wiadomosci.' : 'Kliknij "Synchronizuj" aby pobrac wiadomosci.'}</p>
                         </div>
                       ) : (
-                        amazonThreads.map((thread) => (
-                          <button
-                            key={thread.id}
-                            onClick={() => openAmazonThread(thread)}
-                            className={`w-full text-left px-4 py-3 border-b border-gray-100 hover:bg-gray-50 ${
-                              amazonSelectedThread?.id === thread.id ? 'bg-orange-50' : ''
-                            } ${thread.unread ? 'bg-orange-50/50' : ''}`}
-                          >
-                            <div className="flex items-start gap-3">
-                              <div className="w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center overflow-hidden">
-                                {thread.marketplace && getMarketplaceFlag(thread.marketplace) ? (
-                                  <img src={getMarketplaceFlag(thread.marketplace)} alt={thread.marketplace} className="w-6 h-6 object-contain" />
-                                ) : (
-                                  <span className="text-orange-600 font-medium text-sm">{(thread.from_name || thread.from_email || 'A')[0].toUpperCase()}</span>
-                                )}
-                              </div>
-                              <div className="flex-1 min-w-0">
-                                <div className="flex items-center justify-between">
-                                  <div className="flex items-center gap-2">
-                                    {thread.marketplace && <span className="text-xs font-medium text-gray-500">{thread.marketplace}</span>}
-                                    <span className={`font-medium truncate ${thread.unread ? 'text-gray-900' : 'text-gray-700'}`}>
-                                      {thread.order_id || thread.from_name || 'Wiadomosc'}
-                                    </span>
+                        filteredAmazonThreads.map((thread) => {
+                          const countdown = thread.needs_response ? get24hCountdown(thread.last_customer_message_at) : null;
+                          return (
+                            <button
+                              key={thread.id}
+                              onClick={() => openAmazonThread(thread)}
+                              className={`w-full text-left px-4 py-3 border-b border-gray-100 hover:bg-gray-50 ${
+                                amazonSelectedThread?.id === thread.id ? 'bg-orange-50' : ''
+                              } ${thread.unread ? 'bg-orange-50/50' : ''}`}
+                            >
+                              <div className="flex items-start gap-3">
+                                <div className="w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center overflow-hidden">
+                                  {thread.marketplace && getMarketplaceFlag(thread.marketplace) ? (
+                                    <img src={getMarketplaceFlag(thread.marketplace)} alt={thread.marketplace} className="w-6 h-6 object-contain" />
+                                  ) : (
+                                    <span className="text-orange-600 font-medium text-sm">{(thread.from_name || thread.from_email || 'A')[0].toUpperCase()}</span>
+                                  )}
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-2">
+                                      {thread.marketplace && <span className="text-xs font-medium text-gray-500">{thread.marketplace}</span>}
+                                      <span className={`font-medium truncate ${thread.unread ? 'text-gray-900' : 'text-gray-700'}`}>
+                                        {thread.from_name || 'Klient'}
+                                      </span>
+                                    </div>
+                                    <span className="text-xs text-gray-400 ml-2">{formatDate(thread.last_message_at)}</span>
                                   </div>
-                                  <span className="text-xs text-gray-400 ml-2">{formatDate(thread.last_message_at)}</span>
-                                </div>
-                                <p className="text-sm text-gray-600 truncate">{thread.subject || 'Brak tematu'}</p>
-                                <div className="flex items-center gap-2 mt-1">
-                                  {thread.order_id && <span className="px-2 py-0.5 bg-gray-100 text-gray-600 text-xs rounded">#{thread.order_id}</span>}
-                                  {thread.unread && <span className="px-2 py-0.5 bg-orange-500 text-white text-xs rounded">Nowe</span>}
+                                  <p className="text-sm text-gray-600 truncate">{thread.subject || 'Brak tematu'}</p>
+                                  <div className="flex items-center gap-2 mt-1 flex-wrap">
+                                    {thread.order_id && <span className="px-2 py-0.5 bg-gray-100 text-gray-600 text-xs rounded">#{thread.order_id}</span>}
+                                    {thread.unread && <span className="px-2 py-0.5 bg-orange-500 text-white text-xs rounded">Nowe</span>}
+                                    {countdown && (
+                                      <span className={`px-2 py-0.5 text-xs rounded flex items-center gap-1 ${
+                                        countdown.expired ? 'bg-red-100 text-red-700' :
+                                        countdown.urgent ? 'bg-yellow-100 text-yellow-700' :
+                                        'bg-blue-100 text-blue-700'
+                                      }`}>
+                                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                        </svg>
+                                        {countdown.text}
+                                      </span>
+                                    )}
+                                    {thread.status === 'resolved' && (
+                                      <span className="px-2 py-0.5 bg-green-100 text-green-700 text-xs rounded">Rozwiazane</span>
+                                    )}
+                                  </div>
                                 </div>
                               </div>
-                            </div>
-                          </button>
-                        ))
+                            </button>
+                          );
+                        })
                       )}
                     </div>
                   </div>
@@ -505,11 +592,36 @@ export default function CRMEUPage() {
                               )}
                             </div>
                           </div>
-                          {amazonSelectedThread.order_id && (
-                            <a href={`https://sellercentral.amazon.${amazonSelectedThread.marketplace?.toLowerCase() || 'de'}/orders-v3/order/${amazonSelectedThread.order_id}`} target="_blank" rel="noopener noreferrer" className="px-3 py-1 text-sm bg-orange-100 text-orange-700 rounded hover:bg-orange-200">
-                              Seller Central
-                            </a>
-                          )}
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={async () => {
+                                const newStatus = amazonSelectedThread.status === 'resolved' ? 'open' : 'resolved';
+                                try {
+                                  const res = await fetch(`/api/gmail-amazon-de/messages/${amazonSelectedThread.id}/status`, {
+                                    method: 'PUT',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({ status: newStatus })
+                                  });
+                                  if (res.ok) {
+                                    setAmazonSelectedThread({ ...amazonSelectedThread, status: newStatus });
+                                    fetchAmazonThreads();
+                                  }
+                                } catch (e) { console.error(e); }
+                              }}
+                              className={`px-3 py-1 text-sm rounded ${
+                                amazonSelectedThread.status === 'resolved'
+                                  ? 'bg-green-100 text-green-700 hover:bg-green-200'
+                                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                              }`}
+                            >
+                              {amazonSelectedThread.status === 'resolved' ? '✓ Rozwiazane' : 'Oznacz rozwiazane'}
+                            </button>
+                            {amazonSelectedThread.order_id && (
+                              <a href={`https://sellercentral.amazon.${amazonSelectedThread.marketplace?.toLowerCase() || 'de'}/orders-v3/order/${amazonSelectedThread.order_id}`} target="_blank" rel="noopener noreferrer" className="px-3 py-1 text-sm bg-orange-100 text-orange-700 rounded hover:bg-orange-200">
+                                Seller Central
+                              </a>
+                            )}
+                          </div>
                         </div>
 
                         <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-gray-50">

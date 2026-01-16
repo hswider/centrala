@@ -3,7 +3,8 @@ import {
   initDatabase,
   getGmailAmazonDeThread,
   saveGmailAmazonDeMessage,
-  markGmailAmazonDeThreadAsRead
+  markGmailAmazonDeThreadAsRead,
+  markGmailAmazonDeThreadResponded
 } from '../../../../../lib/db';
 import {
   isAuthenticated,
@@ -115,6 +116,9 @@ export async function POST(request, { params }) {
     };
 
     await saveGmailAmazonDeMessage(sentMessage, threadId);
+
+    // Mark thread as responded
+    await markGmailAmazonDeThreadResponded(threadId);
 
     return NextResponse.json({
       success: true,
