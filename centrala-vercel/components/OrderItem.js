@@ -119,53 +119,47 @@ export default function OrderItem({ order }) {
   };
 
   const renderPlatformIcon = (platform, channelLabel) => {
-    // Check channel label first for specific store icons
     const labelLower = (channelLabel || '').toLowerCase();
 
-    // Shopify stores with custom icons
-    if (labelLower.includes('gutekissen')) {
-      return <img src="/icons/gutekissen.png" alt="Gutekissen" className="w-8 h-8 rounded-full object-cover" />;
+    // Major marketplaces - always use platform icon
+    if (platform === 'Allegro') {
+      return <img src="https://a.allegroimg.com/original/12c30c/0d4b068640de9b0daf22af9d97c5" alt="Allegro" className="w-8 h-8 rounded-full object-cover" />;
     }
-    if (labelLower.includes('poom kids') || labelLower.includes('poomkids')) {
-      return <img src="/icons/poomkids.png" alt="POOM KIDS" className="w-8 h-8 rounded-full object-cover" />;
+    if (platform === 'Amazon') {
+      return <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQoIwGv61BBxMlFDmBHeDvMo8-5HNlM4_8Skw&s" alt="Amazon" className="w-8 h-8 rounded-full object-cover" />;
     }
-    if (labelLower.includes('dobrelegowiska') || labelLower.includes('dobre legowiska')) {
-      return <img src="/icons/dobrelegowiska.png" alt="Dobrelegowiska" className="w-8 h-8 rounded-full object-cover" />;
+    if (platform === 'eBay' || platform === 'Ebay') {
+      return <img src="/icons/ebay.png" alt="eBay" className="w-8 h-8 rounded-full object-cover" />;
     }
-    if (labelLower.includes('allepoduszki')) {
-      return <img src="/icons/allepoduszki.png" alt="Allepoduszki" className="w-8 h-8 rounded-full object-cover" />;
+    if (platform === 'Kaufland') {
+      return <img src="https://logotypy.net/wp-content/uploads/2023/09/logo-kaufland.jpg" alt="Kaufland" className="w-8 h-8 rounded-full object-cover" />;
     }
-    if (labelLower.includes('poom-furniture') || labelLower.includes('poom furniture')) {
-      return <img src="/icons/poom-furniture.png" alt="POOM Furniture" className="w-8 h-8 rounded-full object-cover" />;
-    }
-
-    // OTTO
-    if (platform === 'OTTO' || labelLower.includes('otto')) {
+    if (platform === 'OTTO') {
       return <img src="/icons/otto.png" alt="OTTO" className="w-8 h-8 rounded-full object-cover" />;
     }
 
-    // eBay
-    if (platform === 'eBay' || platform === 'Ebay' || labelLower.includes('ebay')) {
-      return <img src="/icons/ebay.png" alt="eBay" className="w-8 h-8 rounded-full object-cover" />;
+    // Shopify stores with custom icons (only for Shopify platform)
+    if (platform === 'Shopify') {
+      if (labelLower.includes('gutekissen')) {
+        return <img src="/icons/gutekissen.png" alt="Gutekissen" className="w-8 h-8 rounded-full object-cover" />;
+      }
+      if (labelLower.includes('poom kids') || labelLower.includes('poomkids')) {
+        return <img src="/icons/poomkids.png" alt="POOM KIDS" className="w-8 h-8 rounded-full object-cover" />;
+      }
+      if (labelLower.includes('dobrelegowiska') || labelLower.includes('dobre legowiska')) {
+        return <img src="/icons/dobrelegowiska.png" alt="Dobrelegowiska" className="w-8 h-8 rounded-full object-cover" />;
+      }
+      if (labelLower.includes('allepoduszki')) {
+        return <img src="/icons/allepoduszki.png" alt="Allepoduszki" className="w-8 h-8 rounded-full object-cover" />;
+      }
+      if (labelLower.includes('poom-furniture') || labelLower.includes('poom furniture')) {
+        return <img src="/icons/poom-furniture.png" alt="POOM Furniture" className="w-8 h-8 rounded-full object-cover" />;
+      }
+      // Default Shopify icon
+      return <img src="https://images.icon-icons.com/836/PNG/512/Shopify_icon-icons.com_66757.png" alt="Shopify" className="w-8 h-8 rounded-full object-cover" />;
     }
 
-    // Default platform icons
-    const platformIcons = {
-      'Amazon': 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQoIwGv61BBxMlFDmBHeDvMo8-5HNlM4_8Skw&s',
-      'Allegro': 'https://a.allegroimg.com/original/12c30c/0d4b068640de9b0daf22af9d97c5',
-      'Shopify': 'https://images.icon-icons.com/836/PNG/512/Shopify_icon-icons.com_66757.png',
-      'Kaufland': 'https://logotypy.net/wp-content/uploads/2023/09/logo-kaufland.jpg'
-    };
-
-    if (platformIcons[platform]) {
-      return (
-        <img
-          src={platformIcons[platform]}
-          alt={platform}
-          className="w-8 h-8 rounded-full object-cover"
-        />
-      );
-    }
+    // Fallback for unknown platforms
     return (
       <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center text-white font-bold text-xs">
         {getPlatformIcon(platform)}
