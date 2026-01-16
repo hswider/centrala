@@ -150,7 +150,9 @@ export async function POST(request) {
               bodyText: parsed.bodyText,
               bodyHtml: parsed.bodyHtml,
               sentAt: parsed.internalDate,
-              isOutgoing
+              isOutgoing,
+              hasAttachments: parsed.hasAttachments,
+              attachments: parsed.attachments
             }, fullThread.id);
 
             syncedMessages++;
@@ -293,7 +295,9 @@ export async function GET(request) {
                 bodyText: parsed.bodyText,
                 bodyHtml: parsed.bodyHtml,
                 sentAt: parsed.internalDate,
-                isOutgoing
+                isOutgoing,
+                hasAttachments: parsed.hasAttachments,
+                attachments: parsed.attachments
               }, fullThread.id);
 
               syncedMessages++;

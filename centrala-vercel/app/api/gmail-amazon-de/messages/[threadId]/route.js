@@ -10,6 +10,7 @@ import {
   isAuthenticated,
   getThread,
   sendReply,
+  sendReplyWithAttachments,
   parseMessage,
   markThreadAsRead
 } from '../../../../../lib/gmail-amazon-de';
@@ -86,7 +87,7 @@ export async function POST(request, { params }) {
     }
 
     const body = await request.json();
-    const { text, to, subject } = body;
+    const { text, to, subject, attachments } = body;
 
     if (!text || text.trim() === '') {
       return NextResponse.json({
@@ -102,8 +103,19 @@ export async function POST(request, { params }) {
       }, { status: 400 });
     }
 
-    // Send reply via Gmail API
-    const result = await sendReply(threadId, to, subject || 'Re: Your Amazon Order', text.trim());
+    // Send reply via Gmail API (with or without attachments)
+    let result;
+    if (attachments && attachments.length > 0) {
+      result = await sendReplyWithAttachments(
+        threadId,
+        to,
+        subject || 'Re: Your Amazon Order',
+        text.trim(),
+        attachments
+      );
+    } else {
+      result = await sendReply(threadId, to, subject || 'Re: Your Amazon Order', text.trim());
+    }
 
     // Save the sent message to database
     const sentMessage = {
@@ -113,6 +125,12 @@ export async function POST(request, { params }) {
       bodyText: text.trim(),
       sentAt: new Date().toISOString(),
       isOutgoing: true,
+      hasAttachments: attachments && attachments.length > 0,
+      attachments: attachments ? attachments.map(a => ({
+        filename: a.filename,
+        mimeType: a.mimeType,
+        size: a.data ? Math.floor(a.data.length * 0.75) : 0 // Approximate size from base64
+      })) : []
     };
 
     await saveGmailAmazonDeMessage(sentMessage, threadId);

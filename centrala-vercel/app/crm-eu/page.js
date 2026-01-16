@@ -31,6 +31,7 @@ export default function CRMEUPage() {
   // Shared state
   const [replyText, setReplyText] = useState('');
   const [sending, setSending] = useState(false);
+  const [attachments, setAttachments] = useState([]);  // Files to send
 
   const tabs = [
     { key: 'amazon', label: 'Amazon (Gutekissen)', icon: '📧', badge: amazonUnreadCount, color: 'orange' },
@@ -117,6 +118,7 @@ export default function CRMEUPage() {
     setAmazonMessagesLoading(true);
     setAmazonMessages([]);
     setReplyText('');
+    setAttachments([]);
 
     try {
       const res = await fetch(`/api/gmail-amazon-de/messages/${thread.id}`);
@@ -144,19 +146,39 @@ export default function CRMEUPage() {
 
     setSending(true);
     try {
+      // Convert attachments to base64
+      const attachmentPromises = attachments.map(file => {
+        return new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => {
+            const base64 = reader.result.split(',')[1];
+            resolve({
+              filename: file.name,
+              mimeType: file.type,
+              data: base64
+            });
+          };
+          reader.onerror = reject;
+          reader.readAsDataURL(file);
+        });
+      });
+      const attachmentData = await Promise.all(attachmentPromises);
+
       const res = await fetch(`/api/gmail-amazon-de/messages/${amazonSelectedThread.id}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           text: replyText.trim(),
           to: amazonSelectedThread.from_email,
-          subject: amazonSelectedThread.subject
+          subject: amazonSelectedThread.subject,
+          attachments: attachmentData
         })
       });
       const data = await res.json();
 
       if (data.success) {
         setReplyText('');
+        setAttachments([]);
         const msgRes = await fetch(`/api/gmail-amazon-de/messages/${amazonSelectedThread.id}`);
         const msgData = await msgRes.json();
         if (msgData.success) {
@@ -359,6 +381,35 @@ export default function CRMEUPage() {
       return { text: `${hours} godz.`, expired: false, hours, urgent: hours < 4 };
     }
     return { text: `${minutes} min`, expired: false, hours: 0, urgent: true };
+  };
+
+  // Handle file selection for attachments
+  const handleFileSelect = (e) => {
+    const files = Array.from(e.target.files);
+    setAttachments(prev => [...prev, ...files]);
+    e.target.value = ''; // Reset input
+  };
+
+  // Remove attachment
+  const removeAttachment = (index) => {
+    setAttachments(prev => prev.filter((_, i) => i !== index));
+  };
+
+  // Format file size
+  const formatFileSize = (bytes) => {
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  };
+
+  // Get attachment icon based on mime type
+  const getAttachmentIcon = (mimeType) => {
+    if (!mimeType) return '📎';
+    if (mimeType.startsWith('image/')) return '🖼️';
+    if (mimeType.includes('pdf')) return '📄';
+    if (mimeType.includes('word') || mimeType.includes('document')) return '📝';
+    if (mimeType.includes('excel') || mimeType.includes('spreadsheet')) return '📊';
+    return '📎';
   };
 
   // Filter Amazon threads by selected filter
@@ -630,20 +681,75 @@ export default function CRMEUPage() {
                           ) : amazonMessages.length === 0 ? (
                             <div className="text-center text-gray-500">Brak wiadomosci</div>
                           ) : (
-                            amazonMessages.map((msg) => (
-                              <div key={msg.id} className={`flex ${msg.is_outgoing ? 'justify-end' : 'justify-start'}`}>
-                                <div className={`max-w-[85%] px-3 py-2 rounded-lg ${msg.is_outgoing ? 'bg-orange-600 text-white' : 'bg-white border border-gray-200 text-gray-900'}`}>
-                                  <p className="text-[10px] mb-1 opacity-75">{msg.is_outgoing ? 'Ty' : (msg.from_name || msg.from_email || 'Klient')}</p>
-                                  <p className="text-sm whitespace-pre-wrap break-words leading-relaxed">{msg.body_text || msg.body_html || ''}</p>
-                                  <p className={`text-[10px] mt-1 ${msg.is_outgoing ? 'text-orange-200' : 'text-gray-400'}`}>{formatDate(msg.sent_at)}</p>
+                            amazonMessages.map((msg) => {
+                              const msgAttachments = msg.attachments ? (typeof msg.attachments === 'string' ? JSON.parse(msg.attachments) : msg.attachments) : [];
+                              return (
+                                <div key={msg.id} className={`flex ${msg.is_outgoing ? 'justify-end' : 'justify-start'}`}>
+                                  <div className={`max-w-[85%] px-3 py-2 rounded-lg ${msg.is_outgoing ? 'bg-orange-600 text-white' : 'bg-white border border-gray-200 text-gray-900'}`}>
+                                    <p className="text-[10px] mb-1 opacity-75">{msg.is_outgoing ? 'Ty' : (msg.from_name || msg.from_email || 'Klient')}</p>
+                                    <p className="text-sm whitespace-pre-wrap break-words leading-relaxed">{msg.body_text || msg.body_html || ''}</p>
+                                    {/* Attachments */}
+                                    {msgAttachments.length > 0 && (
+                                      <div className={`mt-2 pt-2 border-t ${msg.is_outgoing ? 'border-orange-500' : 'border-gray-200'}`}>
+                                        <p className={`text-[10px] mb-1 ${msg.is_outgoing ? 'text-orange-200' : 'text-gray-400'}`}>Zalaczniki:</p>
+                                        <div className="space-y-1">
+                                          {msgAttachments.map((att, i) => (
+                                            <a
+                                              key={i}
+                                              href={`/api/gmail-amazon-de/attachments/${msg.id}/${att.id}?filename=${encodeURIComponent(att.filename)}&mimeType=${encodeURIComponent(att.mimeType)}`}
+                                              target="_blank"
+                                              rel="noopener noreferrer"
+                                              className={`flex items-center gap-2 px-2 py-1 rounded text-xs ${
+                                                msg.is_outgoing
+                                                  ? 'bg-orange-500 hover:bg-orange-400 text-white'
+                                                  : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
+                                              }`}
+                                            >
+                                              <span>{getAttachmentIcon(att.mimeType)}</span>
+                                              <span className="truncate max-w-[150px]">{att.filename}</span>
+                                              <span className="text-[10px] opacity-75">{formatFileSize(att.size)}</span>
+                                            </a>
+                                          ))}
+                                        </div>
+                                      </div>
+                                    )}
+                                    <p className={`text-[10px] mt-1 ${msg.is_outgoing ? 'text-orange-200' : 'text-gray-400'}`}>{formatDate(msg.sent_at)}</p>
+                                  </div>
                                 </div>
-                              </div>
-                            ))
+                              );
+                            })
                           )}
                         </div>
 
                         <div className="px-4 py-3 border-t border-gray-200 bg-white">
+                          {/* Attachment preview */}
+                          {attachments.length > 0 && (
+                            <div className="mb-2 flex flex-wrap gap-2">
+                              {attachments.map((file, index) => (
+                                <div key={index} className="flex items-center gap-1 px-2 py-1 bg-orange-100 text-orange-700 rounded text-xs">
+                                  <span>{getAttachmentIcon(file.type)}</span>
+                                  <span className="truncate max-w-[100px]">{file.name}</span>
+                                  <span className="text-[10px] opacity-75">({formatFileSize(file.size)})</span>
+                                  <button
+                                    onClick={() => removeAttachment(index)}
+                                    className="ml-1 text-orange-500 hover:text-orange-700"
+                                  >×</button>
+                                </div>
+                              ))}
+                            </div>
+                          )}
                           <div className="flex gap-2">
+                            <label className="px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 cursor-pointer flex items-center">
+                              <input
+                                type="file"
+                                multiple
+                                onChange={handleFileSelect}
+                                className="hidden"
+                              />
+                              <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
+                              </svg>
+                            </label>
                             <textarea
                               value={replyText}
                               onChange={(e) => setReplyText(e.target.value)}

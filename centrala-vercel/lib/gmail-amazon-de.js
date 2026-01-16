@@ -201,6 +201,61 @@ export async function sendReply(threadId, to, subject, body) {
   });
 }
 
+// Get attachment data from Gmail
+export async function getAttachment(messageId, attachmentId) {
+  return gmailRequest(`/users/me/messages/${messageId}/attachments/${attachmentId}`);
+}
+
+// Send reply with attachments
+export async function sendReplyWithAttachments(threadId, to, subject, body, attachments = []) {
+  const tokens = await getGmailAmazonDeTokens();
+  const from = tokens?.email || 'me';
+
+  // Generate boundary for multipart message
+  const boundary = `boundary_${Date.now()}`;
+
+  let emailParts = [
+    `From: ${from}`,
+    `To: ${to}`,
+    `Subject: Re: ${subject}`,
+    `In-Reply-To: ${threadId}`,
+    `References: ${threadId}`,
+    `MIME-Version: 1.0`,
+    `Content-Type: multipart/mixed; boundary="${boundary}"`,
+    '',
+    `--${boundary}`,
+    'Content-Type: text/plain; charset=utf-8',
+    '',
+    body
+  ];
+
+  // Add attachments
+  for (const attachment of attachments) {
+    emailParts.push(`--${boundary}`);
+    emailParts.push(`Content-Type: ${attachment.mimeType}; name="${attachment.filename}"`);
+    emailParts.push(`Content-Disposition: attachment; filename="${attachment.filename}"`);
+    emailParts.push('Content-Transfer-Encoding: base64');
+    emailParts.push('');
+    emailParts.push(attachment.data); // base64 encoded data
+  }
+
+  emailParts.push(`--${boundary}--`);
+
+  const email = emailParts.join('\r\n');
+  const encodedEmail = Buffer.from(email).toString('base64')
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_')
+    .replace(/=+$/, '');
+
+  return gmailRequest('/users/me/messages/send', {
+    method: 'POST',
+    body: JSON.stringify({
+      raw: encodedEmail,
+      threadId: threadId
+    })
+  });
+}
+
 // Extract clean customer message from Amazon email template
 function extractAmazonMessage(bodyText) {
   if (!bodyText) return { cleanMessage: '', asin: null, productName: null };
@@ -305,19 +360,28 @@ export function parseMessage(message) {
     (message.snippet || '').match(/(\d{3}-\d{7}-\d{7})/);
   const orderId = orderIdMatch ? orderIdMatch[1] : null;
 
-  // Get body text
+  // Get body text and attachments
   let bodyText = '';
   let bodyHtml = '';
+  const attachments = [];
 
-  const extractBody = (parts) => {
+  const extractBodyAndAttachments = (parts) => {
     if (!parts) return;
     for (const part of parts) {
       if (part.mimeType === 'text/plain' && part.body?.data) {
         bodyText = Buffer.from(part.body.data, 'base64').toString('utf-8');
       } else if (part.mimeType === 'text/html' && part.body?.data) {
         bodyHtml = Buffer.from(part.body.data, 'base64').toString('utf-8');
+      } else if (part.filename && part.body?.attachmentId) {
+        // This is an attachment
+        attachments.push({
+          id: part.body.attachmentId,
+          filename: part.filename,
+          mimeType: part.mimeType,
+          size: part.body.size || 0
+        });
       } else if (part.parts) {
-        extractBody(part.parts);
+        extractBodyAndAttachments(part.parts);
       }
     }
   };
@@ -325,7 +389,17 @@ export function parseMessage(message) {
   if (message.payload?.body?.data) {
     bodyText = Buffer.from(message.payload.body.data, 'base64').toString('utf-8');
   } else if (message.payload?.parts) {
-    extractBody(message.payload.parts);
+    extractBodyAndAttachments(message.payload.parts);
+  }
+
+  // Also check for inline attachments at the top level
+  if (message.payload?.filename && message.payload?.body?.attachmentId) {
+    attachments.push({
+      id: message.payload.body.attachmentId,
+      filename: message.payload.filename,
+      mimeType: message.payload.mimeType,
+      size: message.payload.body.size || 0
+    });
   }
 
   // Extract clean message and ASIN from Amazon template
@@ -346,6 +420,8 @@ export function parseMessage(message) {
     bodyText: cleanMessage || bodyText, // Use cleaned message if available
     bodyTextOriginal: bodyText, // Keep original for reference
     bodyHtml,
+    attachments,
+    hasAttachments: attachments.length > 0,
     snippet: message.snippet,
     labelIds: message.labelIds,
     internalDate: new Date(parseInt(message.internalDate)).toISOString()

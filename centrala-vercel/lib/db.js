@@ -2632,8 +2632,12 @@ export async function saveGmailAmazonDeMessage(message, threadId) {
     fromEmail = message.sender;
   }
 
+  const attachmentsJson = message.attachments && message.attachments.length > 0
+    ? JSON.stringify(message.attachments)
+    : null;
+
   await sql`
-    INSERT INTO gmail_amazon_de_messages (id, thread_id, from_email, from_name, subject, body_text, body_html, sent_at, is_outgoing)
+    INSERT INTO gmail_amazon_de_messages (id, thread_id, from_email, from_name, subject, body_text, body_html, sent_at, is_outgoing, has_attachments, attachments)
     VALUES (
       ${message.id},
       ${threadId},
@@ -2643,12 +2647,16 @@ export async function saveGmailAmazonDeMessage(message, threadId) {
       ${message.bodyText || null},
       ${message.bodyHtml || null},
       ${message.sentAt || message.internalDate || new Date().toISOString()},
-      ${message.isOutgoing || false}
+      ${message.isOutgoing || false},
+      ${message.hasAttachments || false},
+      ${attachmentsJson}
     )
     ON CONFLICT (id) DO UPDATE SET
       body_text = EXCLUDED.body_text,
       body_html = EXCLUDED.body_html,
-      from_name = COALESCE(EXCLUDED.from_name, gmail_amazon_de_messages.from_name)
+      from_name = COALESCE(EXCLUDED.from_name, gmail_amazon_de_messages.from_name),
+      has_attachments = EXCLUDED.has_attachments,
+      attachments = COALESCE(EXCLUDED.attachments, gmail_amazon_de_messages.attachments)
   `;
 }
 
