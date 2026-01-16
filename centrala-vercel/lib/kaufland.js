@@ -161,6 +161,13 @@ export async function getOrderUnit(orderUnitId) {
   return kauflandRequest('GET', `/order-units/${orderUnitId}`);
 }
 
+// Normalize ticket ID - Kaufland sometimes returns IDs with leading zeros
+function normalizeTicketId(id) {
+  if (!id) return null;
+  // Convert to string and keep as-is (don't strip zeros - they're part of the ID)
+  return String(id);
+}
+
 // Parse ticket to extract useful info
 export function parseTicket(ticket) {
   // Determine marketplace from storefront
@@ -176,7 +183,7 @@ export function parseTicket(ticket) {
   const buyer = ticket.buyer || {};
 
   return {
-    id: ticket.id_ticket,
+    id: normalizeTicketId(ticket.id_ticket),
     ticketNumber: ticket.ts_ticket_number || ticket.id_ticket,
     status: ticket.status,
     reason: ticket.reason,
@@ -199,8 +206,8 @@ export function parseTicketMessage(message) {
   const role = author.role || message.sender || 'unknown';
 
   return {
-    id: message.id_ticket_message,
-    ticketId: message.id_ticket,
+    id: String(message.id_ticket_message),
+    ticketId: normalizeTicketId(message.id_ticket),
     sender: role, // 'seller', 'buyer', 'kaufland'
     senderName: author.name || null,
     text: message.text,

@@ -545,11 +545,11 @@ export async function initDatabase() {
     )
   `;
 
-  // Kaufland ticket messages table
+  // Kaufland ticket messages table (no FK constraint to allow messages for unsynced tickets)
   await sql`
     CREATE TABLE IF NOT EXISTS kaufland_messages (
       id VARCHAR(50) PRIMARY KEY,
-      ticket_id VARCHAR(50) REFERENCES kaufland_tickets(id),
+      ticket_id VARCHAR(50),
       sender VARCHAR(20),
       text TEXT,
       created_at TIMESTAMP,
@@ -558,6 +558,13 @@ export async function initDatabase() {
       synced_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )
   `;
+
+  // Drop FK constraint if exists (for existing databases)
+  try {
+    await sql`ALTER TABLE kaufland_messages DROP CONSTRAINT IF EXISTS kaufland_messages_ticket_id_fkey`;
+  } catch (e) {
+    // Constraint might not exist, ignore
+  }
 
   // Kaufland sync status table
   await sql`
