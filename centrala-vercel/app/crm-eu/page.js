@@ -408,7 +408,7 @@ export default function CRMEUPage() {
                   )}
                 </div>
               ) : (
-                <div className="flex flex-col lg:flex-row h-[700px]">
+                <div className="flex flex-col lg:flex-row h-[calc(100vh-220px)] min-h-[600px]">
                   {/* Thread list */}
                   <div className={`lg:w-1/3 border-r border-gray-200 flex flex-col ${amazonSelectedThread ? 'hidden lg:flex' : ''}`}>
                     <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
@@ -513,10 +513,10 @@ export default function CRMEUPage() {
                           ) : (
                             amazonMessages.map((msg) => (
                               <div key={msg.id} className={`flex ${msg.is_outgoing ? 'justify-end' : 'justify-start'}`}>
-                                <div className={`max-w-[75%] px-4 py-2 rounded-lg ${msg.is_outgoing ? 'bg-orange-600 text-white' : 'bg-white border border-gray-200 text-gray-900'}`}>
-                                  <p className="text-xs mb-1 opacity-75">{msg.is_outgoing ? 'Ty' : (msg.from_name || msg.from_email || 'Klient')}</p>
-                                  <p className="whitespace-pre-wrap break-words">{msg.body_text || msg.body_html || ''}</p>
-                                  <p className={`text-xs mt-1 ${msg.is_outgoing ? 'text-orange-200' : 'text-gray-400'}`}>{formatDate(msg.sent_at)}</p>
+                                <div className={`max-w-[85%] px-3 py-2 rounded-lg ${msg.is_outgoing ? 'bg-orange-600 text-white' : 'bg-white border border-gray-200 text-gray-900'}`}>
+                                  <p className="text-[10px] mb-1 opacity-75">{msg.is_outgoing ? 'Ty' : (msg.from_name || msg.from_email || 'Klient')}</p>
+                                  <p className="text-sm whitespace-pre-wrap break-words leading-relaxed">{msg.body_text || msg.body_html || ''}</p>
+                                  <p className={`text-[10px] mt-1 ${msg.is_outgoing ? 'text-orange-200' : 'text-gray-400'}`}>{formatDate(msg.sent_at)}</p>
                                 </div>
                               </div>
                             ))
@@ -565,7 +565,7 @@ export default function CRMEUPage() {
                   </button>
                 </div>
               ) : (
-                <div className="flex flex-col lg:flex-row h-[700px]">
+                <div className="flex flex-col lg:flex-row h-[calc(100vh-220px)] min-h-[600px]">
                   {/* Ticket list */}
                   <div className={`lg:w-1/3 border-r border-gray-200 flex flex-col ${kauflandSelectedTicket ? 'hidden lg:flex' : ''}`}>
                     <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
@@ -691,12 +691,12 @@ export default function CRMEUPage() {
                           ) : (
                             kauflandMessages.map((msg) => (
                               <div key={msg.id} className={`flex ${msg.is_from_seller ? 'justify-end' : 'justify-start'}`}>
-                                <div className={`max-w-[75%] px-4 py-2 rounded-lg ${msg.is_from_seller ? 'bg-red-600 text-white' : msg.sender === 'kaufland' ? 'bg-blue-100 border border-blue-200 text-gray-900' : 'bg-white border border-gray-200 text-gray-900'}`}>
-                                  <p className="text-xs mb-1 opacity-75">
+                                <div className={`max-w-[85%] px-3 py-2 rounded-lg ${msg.is_from_seller ? 'bg-red-600 text-white' : msg.sender === 'kaufland' ? 'bg-blue-100 border border-blue-200 text-gray-900' : 'bg-white border border-gray-200 text-gray-900'}`}>
+                                  <p className="text-[10px] mb-1 opacity-75">
                                     {msg.is_from_seller ? 'Ty' : msg.sender === 'kaufland' ? 'Kaufland Support' : 'Klient'}
                                   </p>
-                                  <p className="whitespace-pre-wrap break-words">{msg.text || ''}</p>
-                                  <p className={`text-xs mt-1 ${msg.is_from_seller ? 'text-red-200' : 'text-gray-400'}`}>{formatDate(msg.created_at)}</p>
+                                  <p className="text-sm whitespace-pre-wrap break-words leading-relaxed">{msg.text || ''}</p>
+                                  <p className={`text-[10px] mt-1 ${msg.is_from_seller ? 'text-red-200' : 'text-gray-400'}`}>{formatDate(msg.created_at)}</p>
                                 </div>
                               </div>
                             ))
