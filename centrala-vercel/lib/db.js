@@ -675,6 +675,12 @@ export async function getLastSyncDate() {
   return rows[0]?.last_sync_at || null;
 }
 
+// Check if we have any Baselinker orders (to determine if first sync)
+export async function getBaselinkerOrderCount() {
+  const { rows } = await sql`SELECT COUNT(*) as count FROM orders WHERE id LIKE 'BL-%'`;
+  return parseInt(rows[0]?.count || '0');
+}
+
 export async function updateLastSyncDate() {
   await sql`UPDATE sync_status SET last_sync_at = CURRENT_TIMESTAMP WHERE id = 1`;
 }

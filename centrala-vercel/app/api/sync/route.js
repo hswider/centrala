@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { initDatabase, saveOrders, getLastSyncDate, getOrdersMissingSendDates, updateOrderSendDates } from '@/lib/db';
+import { initDatabase, saveOrders, getLastSyncDate, getOrdersMissingSendDates, updateOrderSendDates, getBaselinkerOrderCount } from '@/lib/db';
 import { fetchAllNewOrders as fetchApiloOrders, fetchOrderSendDates } from '@/lib/apilo';
 import { fetchAllNewOrders as fetchBaselinkerOrders, isConfigured as isBaselinkerConfigured } from '@/lib/baselinker';
 
@@ -40,9 +40,16 @@ export async function GET(request) {
     let baselinkerError = null;
     if (isBaselinkerConfigured()) {
       try {
-        const maxOrders = lastSyncDate ? 500 : 1000;
-        console.log('[Sync] Fetching Baselinker orders, maxOrders:', maxOrders, 'lastSyncDate:', lastSyncDate);
-        const baselinkerOrders = await fetchBaselinkerOrders(lastSyncDate, maxOrders);
+        // Check if this is first Baselinker sync (no BL- orders in database)
+        const blOrderCount = await getBaselinkerOrderCount();
+        const isFirstBaselinkerSync = blOrderCount === 0;
+
+        // For first sync, ignore lastSyncDate to get historical orders
+        const blSyncDate = isFirstBaselinkerSync ? null : lastSyncDate;
+        const maxOrders = isFirstBaselinkerSync ? 1000 : 500;
+
+        console.log('[Sync] Baselinker: firstSync=', isFirstBaselinkerSync, 'existingOrders=', blOrderCount, 'syncDate=', blSyncDate);
+        const baselinkerOrders = await fetchBaselinkerOrders(blSyncDate, maxOrders);
         baselinkerCount = baselinkerOrders.length;
         allOrders = allOrders.concat(baselinkerOrders);
         console.log('[Sync] Baselinker orders:', baselinkerCount);
