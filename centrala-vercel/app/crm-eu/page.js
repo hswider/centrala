@@ -728,12 +728,24 @@ export default function CRMEUPage() {
                             <div className="text-center text-gray-500">Brak wiadomosci</div>
                           ) : (
                             amazonMessages.map((msg) => {
-                              const msgAttachments = msg.attachments ? (typeof msg.attachments === 'string' ? JSON.parse(msg.attachments) : msg.attachments) : [];
+                              let msgAttachments = [];
+                              try {
+                                if (msg.attachments) {
+                                  msgAttachments = typeof msg.attachments === 'string' ? JSON.parse(msg.attachments) : msg.attachments;
+                                  if (!Array.isArray(msgAttachments)) msgAttachments = [];
+                                }
+                              } catch (e) {
+                                console.error('Error parsing attachments:', e);
+                              }
                               return (
                                 <div key={msg.id} className={`flex ${msg.is_outgoing ? 'justify-end' : 'justify-start'}`}>
                                   <div className={`max-w-[85%] px-3 py-2 rounded-lg ${msg.is_outgoing ? 'bg-orange-600 text-white' : 'bg-white border border-gray-200 text-gray-900'}`}>
                                     <p className="text-[10px] mb-1 opacity-75">{msg.is_outgoing ? 'Ty' : (msg.from_name || msg.from_email || 'Klient')}</p>
                                     <p className="text-sm whitespace-pre-wrap break-words leading-relaxed">{msg.body_text || msg.body_html || ''}</p>
+                                    {/* Debug: show has_attachments status */}
+                                    {msg.has_attachments && msgAttachments.length === 0 && (
+                                      <p className="text-[10px] text-red-500 mt-1">has_attachments=true but no attachments parsed (type: {typeof msg.attachments})</p>
+                                    )}
                                     {/* Attachments */}
                                     {msgAttachments.length > 0 && (
                                       <div className={`mt-2 pt-2 border-t ${msg.is_outgoing ? 'border-orange-500' : 'border-gray-200'}`}>
