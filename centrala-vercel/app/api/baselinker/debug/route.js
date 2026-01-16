@@ -80,17 +80,20 @@ export async function GET(request) {
         }
 
       case 'order': {
-        // Get specific order by ID
+        // Get specific order by ID using getOrders with order_id filter
         const orderId = searchParams.get('id');
         if (!orderId) {
           return NextResponse.json({ success: false, error: 'Missing id parameter' }, { status: 400 });
         }
         try {
           const apiKey = process.env.BASELINKER_API_KEY;
+
+          // Try fetching with order_id parameter (Baselinker uses this to get specific order)
           const formData = new URLSearchParams();
           formData.append('method', 'getOrders');
           formData.append('parameters', JSON.stringify({
-            order_id: parseInt(orderId)
+            order_id: parseInt(orderId),
+            get_unconfirmed_orders: true
           }));
 
           const response = await fetch('https://api.baselinker.com/connector.php', {
@@ -104,11 +107,32 @@ export async function GET(request) {
 
           const data = await response.json();
           const order = data.orders && data.orders.length > 0 ? data.orders[0] : null;
+
+          // Also get recent orders to show sample product structure
+          const formData2 = new URLSearchParams();
+          formData2.append('method', 'getOrders');
+          formData2.append('parameters', JSON.stringify({
+            get_unconfirmed_orders: true,
+            date_from: Math.floor((Date.now() - 7 * 24 * 60 * 60 * 1000) / 1000)
+          }));
+          const response2 = await fetch('https://api.baselinker.com/connector.php', {
+            method: 'POST',
+            headers: { 'X-BLToken': apiKey, 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: formData2.toString(),
+          });
+          const data2 = await response2.json();
+          const recentOrder = data2.orders && data2.orders.length > 0 ? data2.orders[0] : null;
+
           return NextResponse.json({
             success: true,
+            requestedOrderId: orderId,
             order: order,
             products: order ? order.products : null,
-            productFields: order && order.products && order.products.length > 0 ? Object.keys(order.products[0]) : []
+            productFields: order && order.products && order.products.length > 0 ? Object.keys(order.products[0]) : [],
+            // Show sample from recent orders if requested order not found
+            sampleRecentProduct: recentOrder && recentOrder.products && recentOrder.products.length > 0 ? recentOrder.products[0] : null,
+            sampleProductFields: recentOrder && recentOrder.products && recentOrder.products.length > 0 ? Object.keys(recentOrder.products[0]) : [],
+            apiResponse: data
           });
         } catch (err) {
           return NextResponse.json({ success: false, error: err.message }, { status: 500 });
