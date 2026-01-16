@@ -38,8 +38,8 @@ export default function CRMEUPage() {
   const [attachments, setAttachments] = useState([]);  // Files to send
 
   const tabs = [
-    { key: 'amazon', label: 'Amazon (Gutekissen)', icon: '📧', badge: amazonUnreadCount, color: 'orange' },
-    { key: 'kaufland', label: 'Kaufland', icon: '🛒', badge: kauflandUnreadCount, color: 'red' },
+    { key: 'amazon', label: 'Amazon (Gutekissen)', icon: '/icons/amazon.png', isImage: true, badge: amazonUnreadCount, color: 'orange' },
+    { key: 'kaufland', label: 'Kaufland', icon: '🛒', isImage: false, badge: kauflandUnreadCount, color: 'red' },
   ];
 
   // ==================== AMAZON FUNCTIONS ====================
@@ -603,7 +603,11 @@ export default function CRMEUPage() {
                   backgroundColor: tab.color === 'orange' ? '#fff7ed' : tab.color === 'red' ? '#fef2f2' : undefined
                 } : {}}
               >
-                <span>{tab.icon}</span>
+                {tab.isImage ? (
+                  <img src={tab.icon} alt={tab.label} className="w-5 h-5 rounded object-cover" />
+                ) : (
+                  <span>{tab.icon}</span>
+                )}
                 <span className="hidden sm:inline">{tab.label}</span>
                 {tab.badge > 0 && (
                   <span className="px-1.5 py-0.5 bg-red-500 text-white text-xs rounded-full">{tab.badge}</span>
