@@ -981,13 +981,13 @@ export default function MagazynyPage() {
   const totalItems = Math.round(filteredItems.reduce((sum, item) => sum + item.stan, 0) * 100) / 100;
 
   return (
-    <div className="min-h-screen bg-gray-100">
+    <div className="min-h-screen bg-gray-100 dark:bg-gray-900">
       <main className="max-w-7xl mx-auto px-3 py-4 sm:px-6 sm:py-6 lg:px-8">
         {/* Header */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-6">
           <div>
-            <h1 className="text-xl lg:text-2xl font-bold text-gray-900">WMS - Warehouse Management System</h1>
-            <p className="text-xs sm:text-sm text-gray-500">Zarzadzanie stanami magazynowymi i zapasami</p>
+            <h1 className="text-xl lg:text-2xl font-bold text-gray-900 dark:text-white">WMS - Warehouse Management System</h1>
+            <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">Zarzadzanie stanami magazynowymi i zapasami</p>
           </div>
           <div className="flex flex-wrap gap-2">
             <button
@@ -1018,18 +1018,18 @@ export default function MagazynyPage() {
             const totalStan = Math.round(items.reduce((sum, i) => sum + i.stan, 0) * 100) / 100;
             const totalValue = Math.round(items.reduce((sum, i) => sum + (i.cena || 0) * i.stan, 0) * 100) / 100;
             return (
-              <div key={tab.key} className="bg-white rounded-lg shadow p-3 lg:p-4">
-                <p className="text-xs text-gray-500 truncate">{tab.label}</p>
+              <div key={tab.key} className="bg-white dark:bg-gray-800 rounded-lg shadow dark:shadow-gray-900 p-3 lg:p-4">
+                <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{tab.label}</p>
                 <p className="text-xl lg:text-2xl font-bold text-blue-600">{items.length}</p>
-                <p className="text-[10px] text-gray-400 -mt-1 mb-1">pozycji w magazynie</p>
+                <p className="text-[10px] text-gray-400 dark:text-gray-500 -mt-1 mb-1">pozycji w magazynie</p>
                 <div className="flex flex-col gap-0.5 text-xs">
                   <div className="flex justify-between">
-                    <span className="text-gray-400">{totalStan.toFixed(2)} szt.</span>
-                    <span className="text-[10px] text-gray-400">stan magazynu</span>
+                    <span className="text-gray-400 dark:text-gray-500">{totalStan.toFixed(2)} szt.</span>
+                    <span className="text-[10px] text-gray-400 dark:text-gray-500">stan magazynu</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-green-600 font-medium">{totalValue.toFixed(2)} zl</span>
-                    <span className="text-[10px] text-gray-400">wartosc</span>
+                    <span className="text-[10px] text-gray-400 dark:text-gray-500">wartosc</span>
                   </div>
                 </div>
               </div>
@@ -1038,16 +1038,16 @@ export default function MagazynyPage() {
         </div>
 
         {/* Tabs */}
-        <div className="bg-white rounded-lg shadow mb-4">
-          <div className="flex border-b border-gray-100 overflow-x-auto">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow dark:shadow-gray-900 mb-4">
+          <div className="flex border-b border-gray-100 dark:border-gray-700 overflow-x-auto">
             {tabs.map((tab) => (
               <button
                 key={tab.key}
                 onClick={() => { setActiveTab(tab.key); setCurrentPage(1); setSelectedIds(new Set()); }}
                 className={`flex-1 flex items-center justify-center gap-2 py-3 text-sm font-medium transition-colors whitespace-nowrap px-4 ${
                   activeTab === tab.key
-                    ? 'text-blue-600 border-b-2 border-blue-600 bg-blue-50'
-                    : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
+                    ? 'text-blue-600 dark:text-blue-400 border-b-2 border-blue-600 dark:border-blue-400 bg-blue-50 dark:bg-blue-900/30'
+                    : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
                 }`}
               >
                 <span>{tab.icon}</span>
@@ -1058,19 +1058,19 @@ export default function MagazynyPage() {
         </div>
 
         {/* Content */}
-        <div className="bg-white rounded-lg shadow">
-          <div className="px-4 py-3 border-b border-gray-100 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow dark:shadow-gray-900">
+          <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-700 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
             <div>
-              <h2 className="font-semibold text-gray-900">{getTabLabel(activeTab)}</h2>
-              <p className="text-xs text-gray-500">Laczny stan: {totalItems.toFixed(2)} szt.</p>
+              <h2 className="font-semibold text-gray-900 dark:text-white">{getTabLabel(activeTab)}</h2>
+              <p className="text-xs text-gray-500 dark:text-gray-400">Laczny stan: {totalItems.toFixed(2)} szt.</p>
             </div>
             <div className="flex flex-wrap items-center gap-2">
               <div className="flex items-center gap-1.5">
-                <label className="text-xs text-gray-500 whitespace-nowrap">Sortuj:</label>
+                <label className="text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">Sortuj:</label>
                 <select
                   value={`${sortBy}-${sortDirection}`}
                   onChange={(e) => handleSortChange(e.target.value)}
-                  className="px-2 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                  className="px-2 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                 >
                   {sortOptions.map(opt => (
                     <option key={opt.value} value={opt.value}>{opt.label}</option>
@@ -1082,13 +1082,13 @@ export default function MagazynyPage() {
                 placeholder="Szukaj SKU lub nazwy..."
                 value={searchQuery}
                 onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1); }}
-                className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
           </div>
 
           {/* Wskaznik przewijania na mobile */}
-          <div className="lg:hidden flex items-center justify-end gap-2 px-4 py-2 bg-gray-50 border-b border-gray-100 text-xs text-gray-500">
+          <div className="lg:hidden flex items-center justify-end gap-2 px-4 py-2 bg-gray-50 dark:bg-gray-700/50 border-b border-gray-100 dark:border-gray-700 text-xs text-gray-500 dark:text-gray-400">
             <span>Przesun w prawo</span>
             <svg className="w-4 h-4 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 5l7 7-7 7M5 5l7 7-7 7" />
@@ -1096,16 +1096,16 @@ export default function MagazynyPage() {
           </div>
 
           {loading ? (
-            <div className="px-4 py-12 text-center text-gray-500">
+            <div className="px-4 py-12 text-center text-gray-500 dark:text-gray-400">
               Ladowanie danych...
             </div>
           ) : (
             <div className="relative">
               {/* Bulk action toolbar */}
               {selectedIds.size > 0 && (
-                <div className="bg-blue-50 border-b border-blue-200 px-4 py-3 flex flex-wrap items-center justify-between gap-3">
+                <div className="bg-blue-50 dark:bg-blue-900/30 border-b border-blue-200 dark:border-blue-800 px-4 py-3 flex flex-wrap items-center justify-between gap-3">
                   <div className="flex items-center gap-3">
-                    <span className="text-sm font-medium text-blue-800">
+                    <span className="text-sm font-medium text-blue-800 dark:text-blue-300">
                       Zaznaczono: {selectedIds.size} {selectedIds.size === 1 ? 'pozycje' : selectedIds.size < 5 ? 'pozycje' : 'pozycji'}
                     </span>
                     <button
@@ -1116,7 +1116,7 @@ export default function MagazynyPage() {
                     </button>
                     <button
                       onClick={() => setSelectedIds(new Set())}
-                      className="text-sm text-gray-500 hover:text-gray-700"
+                      className="text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
                     >
                       Wyczysc zaznaczenie
                     </button>
@@ -1139,9 +1139,9 @@ export default function MagazynyPage() {
 
               <div className="overflow-x-auto">
                 <table className="w-full min-w-[1000px] text-xs sm:text-sm">
-                <thead className="bg-gray-50">
+                <thead className="bg-gray-50 dark:bg-gray-700">
                   <tr>
-                    <th className="px-2 py-3 text-center w-[40px] min-w-[40px] max-w-[40px] sticky left-0 bg-gray-50 z-20">
+                    <th className="px-2 py-3 text-center w-[40px] min-w-[40px] max-w-[40px] sticky left-0 bg-gray-50 dark:bg-gray-700 z-20">
                       <input
                         type="checkbox"
                         checked={currentItems.length > 0 && currentItems.every(item => selectedIds.has(item.id))}
@@ -1150,38 +1150,38 @@ export default function MagazynyPage() {
                         title="Zaznacz strone"
                       />
                     </th>
-                    <th className="px-2 py-3 text-left text-[10px] sm:text-xs font-medium text-gray-500 uppercase w-[80px] sm:w-auto sm:min-w-[150px] sticky left-[39px] bg-gray-50 z-20 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]">Nazwa produktu</th>
-                    <th className="px-2 py-3 text-left text-[10px] sm:text-xs font-medium text-gray-500 uppercase w-32 sm:w-40">SKU</th>
+                    <th className="px-2 py-3 text-left text-[10px] sm:text-xs font-medium text-gray-500 dark:text-gray-400 uppercase w-[80px] sm:w-auto sm:min-w-[150px] sticky left-[39px] bg-gray-50 dark:bg-gray-700 z-20 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]">Nazwa produktu</th>
+                    <th className="px-2 py-3 text-left text-[10px] sm:text-xs font-medium text-gray-500 dark:text-gray-400 uppercase w-32 sm:w-40">SKU</th>
                     {(activeTab === 'wykroje' || activeTab === 'polprodukty') && (
-                      <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase w-40">Tkanina</th>
+                      <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase w-40">Tkanina</th>
                     )}
                     {activeTab === 'gotowe' && (
-                      <th className="px-2 py-3 text-center text-xs font-medium text-gray-500 uppercase w-32">EAN-13</th>
+                      <th className="px-2 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase w-32">EAN-13</th>
                     )}
-                    <th className="px-2 py-3 text-center text-xs font-medium text-gray-500 uppercase w-32">Stan</th>
+                    <th className="px-2 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase w-32">Stan</th>
                     {activeTab === 'surowce' && (
                       <>
                         <th className="px-2 py-3 text-center text-xs font-medium text-green-600 uppercase w-24">Przyjęcie</th>
                         <th className="px-2 py-3 text-center text-xs font-medium text-red-600 uppercase w-24">Rozchód</th>
                       </>
                     )}
-                    <th className="px-2 py-3 text-center text-xs font-medium text-gray-500 uppercase w-24">
+                    <th className="px-2 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase w-24">
                       {activeTab === 'gotowe' ? 'Cena' : 'Wart. Jedn. Netto'}
                     </th>
                     {activeTab !== 'gotowe' && (
-                      <th className="px-2 py-3 text-center text-xs font-medium text-gray-500 uppercase w-28">Wart. Suma Netto</th>
+                      <th className="px-2 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase w-28">Wart. Suma Netto</th>
                     )}
                     {activeTab === 'gotowe' && (
                       <>
-                        <th className="px-2 py-3 text-center text-xs font-medium text-gray-500 uppercase w-24">Koszt wytw.</th>
-                        <th className="px-2 py-3 text-center text-xs font-medium text-gray-500 uppercase w-24">Net profit</th>
-                        <th className="px-2 py-3 text-center text-xs font-medium text-gray-500 uppercase w-20">Czas</th>
+                        <th className="px-2 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase w-24">Koszt wytw.</th>
+                        <th className="px-2 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase w-24">Net profit</th>
+                        <th className="px-2 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase w-20">Czas</th>
                       </>
                     )}
-                    <th className="px-2 py-3 text-center text-xs font-medium text-gray-500 uppercase w-32">Akcje</th>
+                    <th className="px-2 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase w-32">Akcje</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-100">
+                <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
                   {currentItems.length === 0 ? (
                     <tr>
                       <td colSpan={activeTab === 'gotowe' ? 10 : (activeTab === 'wykroje' || activeTab === 'polprodukty') ? 8 : activeTab === 'surowce' ? 9 : 7} className="px-4 py-8 text-center text-gray-500">
@@ -1192,8 +1192,8 @@ export default function MagazynyPage() {
                     </tr>
                   ) : (
                     currentItems.map((item) => (
-                      <tr key={item.id} className={`hover:bg-gray-50 ${selectedIds.has(item.id) ? 'bg-blue-50' : ''}`}>
-                        <td className={`px-2 py-2 text-center w-[40px] min-w-[40px] max-w-[40px] sticky left-0 z-10 ${selectedIds.has(item.id) ? 'bg-blue-50' : 'bg-white'}`}>
+                      <tr key={item.id} className={`hover:bg-gray-50 dark:hover:bg-gray-700 ${selectedIds.has(item.id) ? 'bg-blue-50 dark:bg-blue-900/30' : ''}`}>
+                        <td className={`px-2 py-2 text-center w-[40px] min-w-[40px] max-w-[40px] sticky left-0 z-10 ${selectedIds.has(item.id) ? 'bg-blue-50 dark:bg-blue-900/30' : 'bg-white dark:bg-gray-800'}`}>
                           <input
                             type="checkbox"
                             checked={selectedIds.has(item.id)}
@@ -1201,12 +1201,12 @@ export default function MagazynyPage() {
                             className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
                           />
                         </td>
-                        <td className={`px-2 py-2 text-[7px] sm:text-sm text-gray-700 w-[80px] max-w-[80px] sm:w-auto sm:min-w-[150px] sm:max-w-none break-words sticky left-[39px] z-10 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] ${selectedIds.has(item.id) ? 'bg-blue-50' : 'bg-white'}`} title={item.nazwa}>{item.nazwa}</td>
+                        <td className={`px-2 py-2 text-[7px] sm:text-sm text-gray-700 dark:text-gray-300 w-[80px] max-w-[80px] sm:w-auto sm:min-w-[150px] sm:max-w-none break-words sticky left-[39px] z-10 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] ${selectedIds.has(item.id) ? 'bg-blue-50 dark:bg-blue-900/30' : 'bg-white dark:bg-gray-800'}`} title={item.nazwa}>{item.nazwa}</td>
                         <td className="px-2 py-2 w-32 sm:w-40 min-w-[128px] sm:min-w-[160px]">
-                          <span className="font-mono text-[10px] sm:text-xs text-gray-900 whitespace-nowrap">{item.sku}</span>
+                          <span className="font-mono text-[10px] sm:text-xs text-gray-900 dark:text-white whitespace-nowrap">{item.sku}</span>
                         </td>
                         {(activeTab === 'wykroje' || activeTab === 'polprodukty') && (
-                          <td className="px-3 py-2 text-sm text-gray-600">{item.tkanina || '-'}</td>
+                          <td className="px-3 py-2 text-sm text-gray-600 dark:text-gray-400">{item.tkanina || '-'}</td>
                         )}
                         {activeTab === 'gotowe' && (
                           <td className="px-2 py-2 text-center">
@@ -1443,7 +1443,7 @@ export default function MagazynyPage() {
               {/* Pagination */}
               {filteredItems.length > 0 && (
                 <div className="flex flex-col sm:flex-row items-center justify-between gap-3 mt-4 pt-4 border-t border-gray-200">
-                  <div className="flex items-center gap-2 text-sm text-gray-600">
+                  <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
                     <span>Pokazuje {startIndex + 1}-{Math.min(startIndex + perPage, filteredItems.length)} z {filteredItems.length}</span>
                     <span className="text-gray-400">|</span>
                     <span>Na stronie:</span>
@@ -1461,14 +1461,14 @@ export default function MagazynyPage() {
                     <button
                       onClick={() => setCurrentPage(1)}
                       disabled={currentPage === 1}
-                      className="px-2 py-1 text-sm border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       «
                     </button>
                     <button
                       onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
                       disabled={currentPage === 1}
-                      className="px-3 py-1 text-sm border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="px-3 py-1 text-sm border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       Poprzednia
                     </button>
@@ -1478,14 +1478,14 @@ export default function MagazynyPage() {
                     <button
                       onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
                       disabled={currentPage === totalPages}
-                      className="px-3 py-1 text-sm border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="px-3 py-1 text-sm border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       Nastepna
                     </button>
                     <button
                       onClick={() => setCurrentPage(totalPages)}
                       disabled={currentPage === totalPages}
-                      className="px-2 py-1 text-sm border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       »
                     </button>
@@ -1499,49 +1499,49 @@ export default function MagazynyPage() {
         {/* Add Modal */}
         {showAddModal && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
-              <h3 className="text-lg font-semibold mb-4">Dodaj pozycje do: {getTabLabel(activeTab)}</h3>
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl dark:shadow-gray-900 max-w-md w-full p-6">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Dodaj pozycje do: {getTabLabel(activeTab)}</h3>
 
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                     SKU {(activeTab === 'wykroje' || activeTab === 'polprodukty' || activeTab === 'surowce') && <span className="text-gray-400 font-normal">(opcjonalne)</span>}
                   </label>
                   <input
                     type="text"
                     value={newItem.sku}
                     onChange={(e) => setNewItem({ ...newItem, sku: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                     placeholder={activeTab === 'wykroje' ? 'np. WYK-001 (generowane automatycznie)' : activeTab === 'polprodukty' ? 'np. PP-001 (generowane automatycznie)' : activeTab === 'surowce' ? 'np. SUR-001 (generowane automatycznie)' : 'np. MIKI-001'}
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Nazwa produktu</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Nazwa produktu</label>
                   <input
                     type="text"
                     value={newItem.nazwa}
                     onChange={(e) => setNewItem({ ...newItem, nazwa: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                     placeholder="np. Pufa Miki Rosa"
                   />
                 </div>
                 {(activeTab === 'wykroje' || activeTab === 'polprodukty') && (
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                       Tkanina <span className="text-gray-400 font-normal">(opcjonalne)</span>
                     </label>
                     <input
                       type="text"
                       value={newItem.tkanina}
                       onChange={(e) => setNewItem({ ...newItem, tkanina: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                       placeholder="np. Velvet Rosa"
                     />
                   </div>
                 )}
                 {activeTab === 'gotowe' && (
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                       EAN-13 <span className="text-gray-400 font-normal">(opcjonalne)</span>
                     </label>
                     <input
@@ -1551,7 +1551,7 @@ export default function MagazynyPage() {
                         const val = e.target.value.replace(/\D/g, '').slice(0, 13);
                         setNewItem({ ...newItem, ean: val });
                       }}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono"
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono"
                       placeholder="np. 5901234123457"
                       maxLength={13}
                     />
@@ -1562,7 +1562,7 @@ export default function MagazynyPage() {
                 )}
                 <div className={`grid gap-4 ${activeTab === 'surowce' ? 'grid-cols-3' : 'grid-cols-2'}`}>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Stan</label>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Stan</label>
                     <input
                       type="text"
                       inputMode="decimal"
@@ -1571,17 +1571,17 @@ export default function MagazynyPage() {
                         const val = e.target.value.replace(/[^0-9.,]/g, '');
                         setNewItem({ ...newItem, stan: val });
                       }}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                       placeholder="np. 25 lub 12,50"
                     />
                   </div>
                   {activeTab === 'surowce' && (
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Jednostka</label>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Jednostka</label>
                       <select
                         value={newItem.jednostka}
                         onChange={(e) => setNewItem({ ...newItem, jednostka: e.target.value })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                       >
                         <option value="szt">szt (sztuki)</option>
                         <option value="m">m (metr)</option>
@@ -1592,7 +1592,7 @@ export default function MagazynyPage() {
                     </div>
                   )}
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                       {activeTab === 'gotowe' ? 'Cena PLN' : 'Wart. netto PLN'}
                     </label>
                     <input
@@ -1600,19 +1600,19 @@ export default function MagazynyPage() {
                       step="0.01"
                       value={newItem.cena}
                       onChange={(e) => setNewItem({ ...newItem, cena: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                       placeholder="np. 99.99"
                     />
                   </div>
                 </div>
                 {activeTab === 'gotowe' && (
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Czas produkcji (min)</label>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Czas produkcji (min)</label>
                     <input
                       type="number"
                       value={newItem.czas_produkcji}
                       onChange={(e) => setNewItem({ ...newItem, czas_produkcji: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                       placeholder="np. 30"
                     />
                   </div>
@@ -1642,45 +1642,45 @@ export default function MagazynyPage() {
         {/* Edit Modal */}
         {showEditModal && editingItem && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
-              <h3 className="text-lg font-semibold mb-4">Edytuj pozycje</h3>
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl dark:shadow-gray-900 max-w-md w-full p-6">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Edytuj pozycje</h3>
 
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">SKU</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">SKU</label>
                   <input
                     type="text"
                     value={editingItem.sku}
                     onChange={(e) => setEditingItem({ ...editingItem, sku: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Nazwa produktu</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Nazwa produktu</label>
                   <input
                     type="text"
                     value={editingItem.nazwa}
                     onChange={(e) => setEditingItem({ ...editingItem, nazwa: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
                 {(activeTab === 'wykroje' || activeTab === 'polprodukty') && (
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                       Tkanina <span className="text-gray-400 font-normal">(opcjonalne)</span>
                     </label>
                     <input
                       type="text"
                       value={editingItem.tkanina || ''}
                       onChange={(e) => setEditingItem({ ...editingItem, tkanina: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                       placeholder="np. Velvet Rosa"
                     />
                   </div>
                 )}
                 {activeTab === 'gotowe' && (
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                       EAN-13 <span className="text-gray-400 font-normal">(opcjonalne)</span>
                     </label>
                     <input
@@ -1690,7 +1690,7 @@ export default function MagazynyPage() {
                         const val = e.target.value.replace(/\D/g, '').slice(0, 13);
                         setEditingItem({ ...editingItem, ean: val });
                       }}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono"
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono"
                       placeholder="np. 5901234123457"
                       maxLength={13}
                     />
@@ -1701,7 +1701,7 @@ export default function MagazynyPage() {
                 )}
                 <div className={`grid gap-4 ${activeTab === 'surowce' ? 'grid-cols-3' : 'grid-cols-2'}`}>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Stan</label>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Stan</label>
                     <input
                       type="text"
                       inputMode="decimal"
@@ -1710,16 +1710,16 @@ export default function MagazynyPage() {
                         const val = e.target.value.replace(/[^0-9.,]/g, '');
                         setEditingItem({ ...editingItem, stan: val });
                       }}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
                   </div>
                   {activeTab === 'surowce' && (
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Jednostka</label>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Jednostka</label>
                       <select
                         value={editingItem.jednostka || 'szt'}
                         onChange={(e) => setEditingItem({ ...editingItem, jednostka: e.target.value })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                       >
                         <option value="szt">szt (sztuki)</option>
                         <option value="m">m (metr)</option>
@@ -1730,7 +1730,7 @@ export default function MagazynyPage() {
                     </div>
                   )}
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                       {activeTab === 'gotowe' ? 'Cena PLN' : 'Wart. netto PLN'}
                     </label>
                     <input
@@ -1738,18 +1738,18 @@ export default function MagazynyPage() {
                       step="0.01"
                       value={editingItem.cena || ''}
                       onChange={(e) => setEditingItem({ ...editingItem, cena: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
                   </div>
                 </div>
                 {activeTab === 'gotowe' && (
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Czas produkcji (min)</label>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Czas produkcji (min)</label>
                     <input
                       type="number"
                       value={editingItem.czas_produkcji || ''}
                       onChange={(e) => setEditingItem({ ...editingItem, czas_produkcji: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
                   </div>
                 )}
@@ -1781,8 +1781,8 @@ export default function MagazynyPage() {
         {/* Import Modal */}
         {showImportModal && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-lg shadow-xl max-w-lg w-full p-6">
-              <h3 className="text-lg font-semibold mb-4">Import CSV do: {getTabLabel(activeTab)}</h3>
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl dark:shadow-gray-900 max-w-lg w-full p-6">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Import CSV do: {getTabLabel(activeTab)}</h3>
 
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
                 <h4 className="font-medium text-blue-800 mb-2">Format pliku CSV:</h4>
@@ -1882,10 +1882,10 @@ export default function MagazynyPage() {
         {/* Recipe Modal */}
         {showRecipeModal && recipeItem && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full p-6 max-h-[90vh] overflow-y-auto">
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl dark:shadow-gray-900 max-w-2xl w-full p-6 max-h-[90vh] overflow-y-auto">
               <div className="flex justify-between items-start mb-4">
                 <div>
-                  <h3 className="text-lg font-semibold">Szczegoly produktu</h3>
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Szczegoly produktu</h3>
                   <p className="text-sm text-gray-500">{recipeItem.sku} - {recipeItem.nazwa}</p>
                 </div>
                 <button
@@ -1990,7 +1990,7 @@ export default function MagazynyPage() {
                       </p>
                     ) : (
                       <table className="w-full text-sm">
-                        <thead className="bg-gray-50">
+                        <thead className="bg-gray-50 dark:bg-gray-700">
                           <tr>
                             <th className="px-3 py-2 text-left">SKU</th>
                             <th className="px-3 py-2 text-left">Nazwa</th>
