@@ -15,14 +15,22 @@ export const KAUFLAND_STOREFRONTS = {
   FR: 6,   // kaufland.fr
 };
 
-// Reverse mapping for display
+// Reverse mapping for display (supports both numeric IDs and string codes)
 export const STOREFRONT_TO_COUNTRY = {
+  // Numeric storefront IDs
   1: 'DE',
   2: 'SK',
   3: 'CZ',
   4: 'PL',
   5: 'AT',
   6: 'FR',
+  // String storefront codes (API sometimes returns these)
+  'de': 'DE',
+  'sk': 'SK',
+  'cz': 'CZ',
+  'pl': 'PL',
+  'at': 'AT',
+  'fr': 'FR',
 };
 
 // Generate HMAC-SHA256 signature for Kaufland API
