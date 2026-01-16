@@ -12,18 +12,56 @@ export default function Navigation() {
   const [unreadCountEU, setUnreadCountEU] = useState(0);
   const { darkMode, toggleDarkMode } = useTheme();
 
-  // Fetch unread messages count for CRM PL (Allegro)
+  // Fetch unread messages count for CRM PL (Allegro Dobrelegowiska + Meblebox + Shopify)
   useEffect(() => {
     const fetchUnreadCount = async () => {
+      let totalUnread = 0;
+
+      // Allegro Dobrelegowiska
       try {
         const res = await fetch('/api/allegro/messages?action=status');
         const data = await res.json();
         if (data.success && data.status?.unreadCount) {
-          setUnreadCount(data.status.unreadCount);
+          totalUnread += data.status.unreadCount;
         }
       } catch (err) {
-        // Silently ignore errors
+        // Silently ignore
       }
+
+      // Allegro Meblebox
+      try {
+        const res = await fetch('/api/allegro-meblebox/messages?action=status');
+        const data = await res.json();
+        if (data.success && data.status?.unreadCount) {
+          totalUnread += data.status.unreadCount;
+        }
+      } catch (err) {
+        // Silently ignore
+      }
+
+      // Shopify Dobrelegowiska (Gmail)
+      try {
+        const res = await fetch('/api/gmail/messages');
+        const data = await res.json();
+        if (data.success && data.threads) {
+          totalUnread += data.threads.filter(t => t.unread).length;
+        }
+      } catch (err) {
+        // Silently ignore
+      }
+
+      // Shopify POOMKIDS (Gmail)
+      try {
+        const res = await fetch('/api/gmail-poomkids/messages');
+        const data = await res.json();
+        if (data.success && data.threads) {
+          totalUnread += data.threads.filter(t => t.unread).length;
+        }
+      } catch (err) {
+        // Silently ignore
+      }
+
+      setUnreadCount(totalUnread);
     };
 
     fetchUnreadCount();

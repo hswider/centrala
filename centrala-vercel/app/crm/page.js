@@ -60,10 +60,10 @@ function CRMContent() {
   const [poomkidsUnreadCount, setPoomkidsUnreadCount] = useState(0);
 
   const tabs = [
-    { key: 'wiadomosci', label: 'Allegro Dobrelegowiska', icon: '💬', badge: unreadCount },
-    { key: 'meblebox', label: 'Allegro Meblebox', icon: '💬', badge: mebleboxUnreadCount },
-    { key: 'shopify', label: 'Shopify Dobrelegowiska', icon: '📧', badge: gmailUnreadCount },
-    { key: 'poomkids', label: 'Shopify POOMKIDS', icon: '📧', badge: poomkidsUnreadCount },
+    { key: 'wiadomosci', label: 'Allegro Dobrelegowiska', icon: 'https://a.allegroimg.com/original/12c30c/0d4b068640de9b0daf22af9d97c5', isImage: true, badge: unreadCount, color: 'orange' },
+    { key: 'meblebox', label: 'Allegro Meblebox', icon: 'https://a.allegroimg.com/original/12c30c/0d4b068640de9b0daf22af9d97c5', isImage: true, badge: mebleboxUnreadCount, color: 'orange' },
+    { key: 'shopify', label: 'Shopify Dobrelegowiska', icon: '/icons/dobrelegowiska.png', isImage: true, badge: gmailUnreadCount, color: 'green' },
+    { key: 'poomkids', label: 'Shopify POOMKIDS', icon: '/icons/poomkids.png', isImage: true, badge: poomkidsUnreadCount, color: 'blue' },
   ];
 
   // Check for success/error from OAuth callback
@@ -699,11 +699,20 @@ function CRMContent() {
                 onClick={() => setActiveTab(tab.key)}
                 className={`flex-1 flex items-center justify-center gap-2 py-3 text-sm font-medium transition-colors whitespace-nowrap px-4 ${
                   activeTab === tab.key
-                    ? 'text-blue-600 dark:text-blue-400 border-b-2 border-blue-600 dark:border-blue-400 bg-blue-50 dark:bg-blue-900/30'
+                    ? 'border-b-2'
                     : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
                 }`}
+                style={activeTab === tab.key ? {
+                  color: tab.color === 'orange' ? '#ea580c' : tab.color === 'green' ? '#16a34a' : tab.color === 'blue' ? '#2563eb' : undefined,
+                  borderColor: tab.color === 'orange' ? '#ea580c' : tab.color === 'green' ? '#16a34a' : tab.color === 'blue' ? '#2563eb' : undefined,
+                  backgroundColor: tab.color === 'orange' ? '#fff7ed' : tab.color === 'green' ? '#f0fdf4' : tab.color === 'blue' ? '#eff6ff' : undefined
+                } : {}}
               >
-                <span>{tab.icon}</span>
+                {tab.isImage ? (
+                  <img src={tab.icon} alt={tab.label} className="w-5 h-5 rounded object-cover" />
+                ) : (
+                  <span>{tab.icon}</span>
+                )}
                 <span className="hidden sm:inline">{tab.label}</span>
                 {tab.badge > 0 && (
                   <span className="px-1.5 py-0.5 bg-red-500 text-white text-xs rounded-full">{tab.badge}</span>
