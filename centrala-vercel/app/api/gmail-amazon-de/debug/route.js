@@ -95,7 +95,7 @@ export async function GET(request) {
     if (test === 'db') {
       // Check what's in database
       const { sql } = await import('@vercel/postgres');
-      const threads = await sql`SELECT id, from_name, from_email, subject, marketplace, asin, order_id, unread FROM gmail_amazon_de_threads ORDER BY last_message_at DESC LIMIT 10`;
+      const threads = await sql`SELECT id, from_name, from_email, subject, marketplace, asin, order_id, unread, status, needs_response, has_seller_reply, last_customer_message_at FROM gmail_amazon_de_threads ORDER BY last_message_at DESC LIMIT 10`;
       const messages = await sql`SELECT id, thread_id, from_email, from_name, subject, LEFT(body_text, 200) as body_preview FROM gmail_amazon_de_messages ORDER BY sent_at DESC LIMIT 10`;
       return NextResponse.json({
         success: true,
