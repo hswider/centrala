@@ -86,7 +86,7 @@ export default function Home() {
 
   const platformConfig = {
     'Amazon': {
-      icon: 'https://upload.wikimedia.org/wikipedia/commons/thumb/4/4a/Amazon_icon.svg/250px-Amazon_icon.svg.png',
+      icon: '/icons/amazon.png',
       label: 'Amazon'
     },
     'Allegro': {
@@ -94,10 +94,18 @@ export default function Home() {
       label: 'Allegro'
     },
     'Shopify': {
-      icon: 'https://e7.pngegg.com/pngimages/193/871/png-clipart-green-shopping-bag-illustration-shopify-logo-icons-logos-emojis-tech-companies-thumbnail.png',
-      label: 'Shopify'
+      icon: '/icons/gutekissen.png',
+      label: 'Gutekissen'
+    },
+    'shop': {
+      icon: '/icons/gutekissen.png',
+      label: 'Gutekissen'
     },
     'OTTO': {
+      icon: '/icons/otto.png',
+      label: 'OTTO'
+    },
+    'otto': {
       icon: '/icons/otto.png',
       label: 'OTTO'
     },
@@ -106,11 +114,11 @@ export default function Home() {
       label: 'Kaufland'
     },
     'Ebay': {
-      icon: 'https://static.vecteezy.com/system/resources/previews/020/190/417/non_2x/ebay-logo-ebay-icon-free-free-vector.jpg',
+      icon: '/icons/ebay.png',
       label: 'eBay'
     },
     'eBay': {
-      icon: 'https://static.vecteezy.com/system/resources/previews/020/190/417/non_2x/ebay-logo-ebay-icon-free-free-vector.jpg',
+      icon: '/icons/ebay.png',
       label: 'eBay'
     },
     'Cdiscount': {
