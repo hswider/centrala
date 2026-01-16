@@ -69,18 +69,29 @@ export async function POST(request) {
 
       // Save tickets and fetch messages for each ticket using embedded endpoint
       // This ensures we get ALL messages including buyer/system messages
+      // AND gets the correct storefront/marketplace from the detailed response
       for (const ticketData of tickets) {
         try {
-          const ticket = parseTicket(ticketData);
-          await saveKauflandTicket(ticket);
-          syncedTickets++;
+          // Parse basic ticket first
+          let ticket = parseTicket(ticketData);
 
-          // Fetch all messages for this ticket (seller, buyer, and system)
+          // Fetch detailed ticket with messages (includes storefront)
           try {
             const ticketWithMessages = await getTicketWithMessages(ticket.id);
             const ticketDetail = ticketWithMessages.data || ticketWithMessages;
-            const messages = ticketDetail.messages || [];
 
+            // Update ticket with storefront from detailed response
+            if (ticketDetail.storefront) {
+              const detailedTicket = parseTicket({ ...ticketData, storefront: ticketDetail.storefront });
+              ticket = detailedTicket;
+            }
+
+            // Save updated ticket with correct marketplace
+            await saveKauflandTicket(ticket);
+            syncedTickets++;
+
+            // Save messages
+            const messages = ticketDetail.messages || [];
             for (const msgData of messages) {
               try {
                 const message = parseTicketMessage(msgData);
@@ -91,6 +102,9 @@ export async function POST(request) {
               }
             }
           } catch (msgError) {
+            // If fetching details fails, save basic ticket anyway
+            await saveKauflandTicket(ticket);
+            syncedTickets++;
             console.error(`Error fetching messages for ticket ${ticket.id}:`, msgError.message);
           }
         } catch (ticketError) {
@@ -178,18 +192,29 @@ export async function GET(request) {
 
         // Save tickets and fetch messages for each ticket using embedded endpoint
         // This ensures we get ALL messages including buyer/system messages
+        // AND gets the correct storefront/marketplace from the detailed response
         for (const ticketData of allTickets) {
           try {
-            const ticket = parseTicket(ticketData);
-            await saveKauflandTicket(ticket);
-            syncedTickets++;
+            // Parse basic ticket first
+            let ticket = parseTicket(ticketData);
 
-            // Fetch all messages for this ticket (seller, buyer, and system)
+            // Fetch detailed ticket with messages (includes storefront)
             try {
               const ticketWithMessages = await getTicketWithMessages(ticket.id);
               const ticketDetail = ticketWithMessages.data || ticketWithMessages;
-              const messages = ticketDetail.messages || [];
 
+              // Update ticket with storefront from detailed response
+              if (ticketDetail.storefront) {
+                const detailedTicket = parseTicket({ ...ticketData, storefront: ticketDetail.storefront });
+                ticket = detailedTicket;
+              }
+
+              // Save updated ticket with correct marketplace
+              await saveKauflandTicket(ticket);
+              syncedTickets++;
+
+              // Save messages
+              const messages = ticketDetail.messages || [];
               for (const msgData of messages) {
                 try {
                   const message = parseTicketMessage(msgData);
@@ -200,6 +225,9 @@ export async function GET(request) {
                 }
               }
             } catch (msgError) {
+              // If fetching details fails, save basic ticket anyway
+              await saveKauflandTicket(ticket);
+              syncedTickets++;
               console.error(`Error fetching messages for ticket ${ticket.id}:`, msgError.message);
             }
           } catch (ticketError) {
