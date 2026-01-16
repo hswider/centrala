@@ -6,6 +6,9 @@ const BASELINKER_API_URL = 'https://api.baselinker.com/connector.php';
 // Cache for order statuses
 let statusesCache = {};
 
+// Cache for product images (to avoid repeated API calls)
+let productImagesCache = {};
+
 async function baselinkerRequest(method, parameters = {}) {
   const apiKey = process.env.BASELINKER_API_KEY;
 
@@ -63,20 +66,48 @@ export async function getOrderSources() {
   return data.sources || {};
 }
 
+// Fetch product image from inventory
+async function getProductImage(storageId, productId, variantId) {
+  if (!productId && !variantId) return null;
+
+  const cacheKey = `${storageId}-${productId}-${variantId}`;
+  if (productImagesCache[cacheKey] !== undefined) {
+    return productImagesCache[cacheKey];
+  }
+
+  try {
+    // Use getInventoryProductsData to get product details including images
+    const data = await baselinkerRequest('getInventoryProductsData', {
+      inventory_id: storageId,
+      products: [parseInt(productId) || parseInt(variantId)]
+    });
+
+    if (data.products) {
+      const productData = Object.values(data.products)[0];
+      if (productData && productData.images) {
+        // Get the first image URL
+        const imageUrl = Object.values(productData.images)[0];
+        productImagesCache[cacheKey] = imageUrl || null;
+        return imageUrl || null;
+      }
+    }
+  } catch (error) {
+    console.log('[Baselinker] Could not fetch product image:', error.message);
+  }
+
+  productImagesCache[cacheKey] = null;
+  return null;
+}
+
 // Map Baselinker order to common DTO format (same as Apilo)
-function mapOrderToDTO(order, statuses = {}) {
-  // Map products - check for image in various fields
-  const items = (order.products || []).map(product => {
-    // Try to get image from various possible fields
+async function mapOrderToDTO(order, statuses = {}, fetchImages = false) {
+  // Map products - fetch images from inventory if enabled
+  const items = await Promise.all((order.products || []).map(async (product) => {
     let image = null;
-    if (product.image_url) image = product.image_url;
-    else if (product.ean_image) image = product.ean_image;
-    else if (product.auction_image) image = product.auction_image;
-    else if (product.attributes) {
-      // Check if attributes contain image URL
-      const attrs = typeof product.attributes === 'string' ? product.attributes : '';
-      const imgMatch = attrs.match(/https?:\/\/[^\s"']+\.(jpg|jpeg|png|gif|webp)/i);
-      if (imgMatch) image = imgMatch[0];
+
+    // Try to fetch image from inventory if we have product_id
+    if (fetchImages && (product.product_id || product.variant_id) && product.storage_id) {
+      image = await getProductImage(product.storage_id, product.product_id, product.variant_id);
     }
 
     return {
@@ -91,7 +122,7 @@ function mapOrderToDTO(order, statuses = {}) {
       isShipping: false,
       tax: product.tax_rate || null
     };
-  });
+  }));
 
   // Calculate totals
   const totalGross = parseFloat(order.payment_done) || items.reduce((sum, item) => sum + item.totalGross, 0);
@@ -257,7 +288,8 @@ export async function fetchOrders(limit = 100, dateFrom = null) {
 
   console.log('[Baselinker] Fetched', orders.length, 'orders');
 
-  return orders.map(order => mapOrderToDTO(order, statusesCache));
+  // Map orders with images (fetchImages = true)
+  return Promise.all(orders.map(order => mapOrderToDTO(order, statusesCache, true)));
 }
 
 // Fetch all orders with pagination (for sync)
@@ -295,7 +327,8 @@ export async function fetchAllNewOrders(lastSyncDate = null, maxOrders = 500) {
         hasMore = false;
         console.log('[Baselinker] No more orders found');
       } else {
-        const mappedOrders = orders.map(order => mapOrderToDTO(order, statusesCache));
+        // Map orders with images (fetchImages = true)
+        const mappedOrders = await Promise.all(orders.map(order => mapOrderToDTO(order, statusesCache, true)));
         allOrders = allOrders.concat(mappedOrders);
 
         // Get last order ID for pagination
