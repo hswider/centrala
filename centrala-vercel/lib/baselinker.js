@@ -65,19 +65,33 @@ export async function getOrderSources() {
 
 // Map Baselinker order to common DTO format (same as Apilo)
 function mapOrderToDTO(order, statuses = {}) {
-  // Map products
-  const items = (order.products || []).map(product => ({
-    name: product.name || 'Unknown',
-    sku: product.sku || '',
-    ean: product.ean || '',
-    quantity: product.quantity || 1,
-    priceGross: parseFloat(product.price_brutto) || 0,
-    priceNet: parseFloat(product.price_netto) || 0,
-    totalGross: (parseFloat(product.price_brutto) || 0) * (product.quantity || 1),
-    image: product.variant_id ? null : null, // Baselinker doesn't return images in getOrders
-    isShipping: false,
-    tax: product.tax_rate || null
-  }));
+  // Map products - check for image in various fields
+  const items = (order.products || []).map(product => {
+    // Try to get image from various possible fields
+    let image = null;
+    if (product.image_url) image = product.image_url;
+    else if (product.ean_image) image = product.ean_image;
+    else if (product.auction_image) image = product.auction_image;
+    else if (product.attributes) {
+      // Check if attributes contain image URL
+      const attrs = typeof product.attributes === 'string' ? product.attributes : '';
+      const imgMatch = attrs.match(/https?:\/\/[^\s"']+\.(jpg|jpeg|png|gif|webp)/i);
+      if (imgMatch) image = imgMatch[0];
+    }
+
+    return {
+      name: product.name || 'Unknown',
+      sku: product.sku || '',
+      ean: product.ean || '',
+      quantity: product.quantity || 1,
+      priceGross: parseFloat(product.price_brutto) || 0,
+      priceNet: parseFloat(product.price_netto) || 0,
+      totalGross: (parseFloat(product.price_brutto) || 0) * (product.quantity || 1),
+      image: image,
+      isShipping: false,
+      tax: product.tax_rate || null
+    };
+  });
 
   // Calculate totals
   const totalGross = parseFloat(order.payment_done) || items.reduce((sum, item) => sum + item.totalGross, 0);

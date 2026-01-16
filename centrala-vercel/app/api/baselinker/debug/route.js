@@ -68,6 +68,7 @@ export async function GET(request) {
             status: data.status,
             orderCount: data.orders ? data.orders.length : 0,
             sampleOrder: data.orders && data.orders.length > 0 ? data.orders[0] : null,
+            sampleProducts: data.orders && data.orders.length > 0 ? data.orders[0].products : null,
             error_code: data.error_code,
             error_message: data.error_message
           });
