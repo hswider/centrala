@@ -17,6 +17,8 @@ export default function MagazynyPage() {
   const [editingCenaValue, setEditingCenaValue] = useState('');
   const [editingCzasId, setEditingCzasId] = useState(null);
   const [editingCzasValue, setEditingCzasValue] = useState('');
+  const [przyjęcieValues, setPrzyjęcieValues] = useState({});
+  const [rozchódValues, setRozchódValues] = useState({});
   const [showRecipeModal, setShowRecipeModal] = useState(false);
   const [recipeItem, setRecipeItem] = useState(null);
   const [recipeIngredients, setRecipeIngredients] = useState([]);
@@ -301,6 +303,98 @@ export default function MagazynyPage() {
       })
       .catch(() => {
         // Cofnij zmiane przy bledzie sieci
+        setMagazyny(prev => ({
+          ...prev,
+          [activeTab]: prev[activeTab].map(i =>
+            i.id === item.id ? { ...i, stan: oldStan } : i
+          )
+        }));
+      });
+  };
+
+  // Obsluga przyjecia surowcow (dodawanie do stanu)
+  const handlePrzyjęcie = (item, value) => {
+    const delta = parseFloat(String(value).replace(',', '.')) || 0;
+    if (delta <= 0) return;
+
+    const oldStan = Number(parseFloat(item.stan)) || 0;
+    const newStan = Math.round((oldStan + delta) * 100) / 100;
+
+    // Wyczysc input
+    setPrzyjęcieValues(prev => ({ ...prev, [item.id]: '' }));
+
+    // Optimistic update
+    setMagazyny(prev => ({
+      ...prev,
+      [activeTab]: prev[activeTab].map(i =>
+        i.id === item.id ? { ...i, stan: newStan } : i
+      )
+    }));
+
+    // API w tle
+    fetch('/api/inventory', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: item.id, stan: newStan })
+    })
+      .then(res => res.json())
+      .then(data => {
+        if (!data.success) {
+          setMagazyny(prev => ({
+            ...prev,
+            [activeTab]: prev[activeTab].map(i =>
+              i.id === item.id ? { ...i, stan: oldStan } : i
+            )
+          }));
+        }
+      })
+      .catch(() => {
+        setMagazyny(prev => ({
+          ...prev,
+          [activeTab]: prev[activeTab].map(i =>
+            i.id === item.id ? { ...i, stan: oldStan } : i
+          )
+        }));
+      });
+  };
+
+  // Obsluga rozchodu surowcow (odejmowanie ze stanu)
+  const handleRozchód = (item, value) => {
+    const delta = parseFloat(String(value).replace(',', '.')) || 0;
+    if (delta <= 0) return;
+
+    const oldStan = Number(parseFloat(item.stan)) || 0;
+    const newStan = Math.round(Math.max(0, oldStan - delta) * 100) / 100;
+
+    // Wyczysc input
+    setRozchódValues(prev => ({ ...prev, [item.id]: '' }));
+
+    // Optimistic update
+    setMagazyny(prev => ({
+      ...prev,
+      [activeTab]: prev[activeTab].map(i =>
+        i.id === item.id ? { ...i, stan: newStan } : i
+      )
+    }));
+
+    // API w tle
+    fetch('/api/inventory', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: item.id, stan: newStan })
+    })
+      .then(res => res.json())
+      .then(data => {
+        if (!data.success) {
+          setMagazyny(prev => ({
+            ...prev,
+            [activeTab]: prev[activeTab].map(i =>
+              i.id === item.id ? { ...i, stan: oldStan } : i
+            )
+          }));
+        }
+      })
+      .catch(() => {
         setMagazyny(prev => ({
           ...prev,
           [activeTab]: prev[activeTab].map(i =>
@@ -1065,6 +1159,12 @@ export default function MagazynyPage() {
                       <th className="px-2 py-3 text-center text-xs font-medium text-gray-500 uppercase w-32">EAN-13</th>
                     )}
                     <th className="px-2 py-3 text-center text-xs font-medium text-gray-500 uppercase w-32">Stan</th>
+                    {activeTab === 'surowce' && (
+                      <>
+                        <th className="px-2 py-3 text-center text-xs font-medium text-green-600 uppercase w-24">Przyjęcie</th>
+                        <th className="px-2 py-3 text-center text-xs font-medium text-red-600 uppercase w-24">Rozchód</th>
+                      </>
+                    )}
                     <th className="px-2 py-3 text-center text-xs font-medium text-gray-500 uppercase w-24">
                       {activeTab === 'gotowe' ? 'Cena' : 'Wart. Jedn. Netto'}
                     </th>
@@ -1084,7 +1184,7 @@ export default function MagazynyPage() {
                 <tbody className="divide-y divide-gray-100">
                   {currentItems.length === 0 ? (
                     <tr>
-                      <td colSpan={activeTab === 'gotowe' ? 10 : (activeTab === 'wykroje' || activeTab === 'polprodukty') ? 8 : 7} className="px-4 py-8 text-center text-gray-500">
+                      <td colSpan={activeTab === 'gotowe' ? 10 : (activeTab === 'wykroje' || activeTab === 'polprodukty') ? 8 : activeTab === 'surowce' ? 9 : 7} className="px-4 py-8 text-center text-gray-500">
                         {searchQuery
                           ? 'Brak wynikow dla wyszukiwania'
                           : 'Brak pozycji w magazynie. Dodaj recznie lub zaimportuj z CSV.'}
@@ -1162,6 +1262,66 @@ export default function MagazynyPage() {
                             </button>
                           </div>
                         </td>
+                        {activeTab === 'surowce' && (
+                          <>
+                            {/* Przyjęcie - dodawanie do stanu */}
+                            <td className="px-2 py-2 text-center">
+                              <div className="flex items-center justify-center gap-1">
+                                <input
+                                  type="text"
+                                  inputMode="decimal"
+                                  value={przyjęcieValues[item.id] || ''}
+                                  onChange={(e) => {
+                                    const val = e.target.value.replace(/[^0-9.,]/g, '');
+                                    setPrzyjęcieValues(prev => ({ ...prev, [item.id]: val }));
+                                  }}
+                                  onKeyDown={(e) => {
+                                    if (e.key === 'Enter') {
+                                      handlePrzyjęcie(item, przyjęcieValues[item.id]);
+                                    }
+                                  }}
+                                  placeholder="0"
+                                  className="w-16 px-2 py-1 text-center text-sm border border-green-300 rounded focus:outline-none focus:ring-2 focus:ring-green-500 bg-green-50"
+                                />
+                                <button
+                                  onClick={() => handlePrzyjęcie(item, przyjęcieValues[item.id])}
+                                  className="px-2 py-1 bg-green-600 text-white text-xs rounded hover:bg-green-700 font-medium"
+                                  title="Dodaj do stanu"
+                                >
+                                  +
+                                </button>
+                              </div>
+                            </td>
+                            {/* Rozchód - odejmowanie ze stanu */}
+                            <td className="px-2 py-2 text-center">
+                              <div className="flex items-center justify-center gap-1">
+                                <input
+                                  type="text"
+                                  inputMode="decimal"
+                                  value={rozchódValues[item.id] || ''}
+                                  onChange={(e) => {
+                                    const val = e.target.value.replace(/[^0-9.,]/g, '');
+                                    setRozchódValues(prev => ({ ...prev, [item.id]: val }));
+                                  }}
+                                  onKeyDown={(e) => {
+                                    if (e.key === 'Enter') {
+                                      handleRozchód(item, rozchódValues[item.id]);
+                                    }
+                                  }}
+                                  placeholder="0"
+                                  className="w-16 px-2 py-1 text-center text-sm border border-red-300 rounded focus:outline-none focus:ring-2 focus:ring-red-500 bg-red-50"
+                                />
+                                <button
+                                  onClick={() => handleRozchód(item, rozchódValues[item.id])}
+                                  className="px-2 py-1 bg-red-600 text-white text-xs rounded hover:bg-red-700 font-medium"
+                                  title="Odejmij ze stanu"
+                                >
+                                  -
+                                </button>
+                              </div>
+                            </td>
+                          </>
+                        )}
                         <td className="px-2 py-2 text-center">
                           {editingCenaId === item.id ? (
                             <input
