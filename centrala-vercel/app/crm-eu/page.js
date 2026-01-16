@@ -39,7 +39,11 @@ export default function CRMEUPage() {
 
   const tabs = [
     { key: 'amazon', label: 'Amazon (Gutekissen)', icon: '/icons/amazon.png', isImage: true, badge: amazonUnreadCount, color: 'orange' },
-    { key: 'kaufland', label: 'Kaufland', icon: '🛒', isImage: false, badge: kauflandUnreadCount, color: 'red' },
+    { key: 'kaufland', label: 'Kaufland', icon: 'https://upload.wikimedia.org/wikipedia/commons/6/65/Kaufland_Deutschland.png', isImage: true, badge: kauflandUnreadCount, color: 'red' },
+    { key: 'allegro-dobrelegowiska', label: 'Allegro Dobrelegowiska', icon: 'https://a.allegroimg.com/original/12c30c/0d4b068640de9b0daf22af9d97c5', isImage: true, badge: 0, color: 'orange' },
+    { key: 'allegro-meblebox', label: 'Allegro Meblebox', icon: 'https://a.allegroimg.com/original/12c30c/0d4b068640de9b0daf22af9d97c5', isImage: true, badge: 0, color: 'orange' },
+    { key: 'shopify-dobrelegowiska', label: 'Shopify Dobrelegowiska', icon: '/icons/dobrelegowiska.png', isImage: true, badge: 0, color: 'green' },
+    { key: 'shopify-poomkids', label: 'Shopify POOMKIDS', icon: '/icons/poomkids.png', isImage: true, badge: 0, color: 'green' },
   ];
 
   // ==================== AMAZON FUNCTIONS ====================
@@ -1249,6 +1253,58 @@ export default function CRMEUPage() {
                   </div>
                 </div>
               )}
+            </div>
+          )}
+
+          {/* Allegro Dobrelegowiska - Placeholder */}
+          {activeTab === 'allegro-dobrelegowiska' && (
+            <div className="p-8 text-center">
+              <img src="https://a.allegroimg.com/original/12c30c/0d4b068640de9b0daf22af9d97c5" alt="Allegro" className="w-16 h-16 mx-auto mb-4 rounded" />
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Allegro Dobrelegowiska</h3>
+              <p className="text-gray-500 dark:text-gray-400 mb-4">Integracja z Allegro w przygotowaniu.</p>
+              <a href="https://allegro.pl/moje-allegro/sprzedaz/wiadomosci" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>
+                Otworz Allegro
+              </a>
+            </div>
+          )}
+
+          {/* Allegro Meblebox - Placeholder */}
+          {activeTab === 'allegro-meblebox' && (
+            <div className="p-8 text-center">
+              <img src="https://a.allegroimg.com/original/12c30c/0d4b068640de9b0daf22af9d97c5" alt="Allegro" className="w-16 h-16 mx-auto mb-4 rounded" />
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Allegro Meblebox</h3>
+              <p className="text-gray-500 dark:text-gray-400 mb-4">Integracja z Allegro w przygotowaniu.</p>
+              <a href="https://allegro.pl/moje-allegro/sprzedaz/wiadomosci" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>
+                Otworz Allegro
+              </a>
+            </div>
+          )}
+
+          {/* Shopify Dobrelegowiska - Placeholder */}
+          {activeTab === 'shopify-dobrelegowiska' && (
+            <div className="p-8 text-center">
+              <img src="/icons/dobrelegowiska.png" alt="Dobrelegowiska" className="w-16 h-16 mx-auto mb-4 rounded" />
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Shopify Dobrelegowiska</h3>
+              <p className="text-gray-500 dark:text-gray-400 mb-4">Integracja ze Shopify w przygotowaniu.</p>
+              <a href="https://admin.shopify.com/" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>
+                Otworz Shopify
+              </a>
+            </div>
+          )}
+
+          {/* Shopify POOMKIDS - Placeholder */}
+          {activeTab === 'shopify-poomkids' && (
+            <div className="p-8 text-center">
+              <img src="/icons/poomkids.png" alt="POOMKIDS" className="w-16 h-16 mx-auto mb-4 rounded" />
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Shopify POOMKIDS</h3>
+              <p className="text-gray-500 dark:text-gray-400 mb-4">Integracja ze Shopify w przygotowaniu.</p>
+              <a href="https://admin.shopify.com/" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>
+                Otworz Shopify
+              </a>
             </div>
           )}
         </div>
