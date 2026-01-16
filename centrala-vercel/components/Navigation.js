@@ -9,9 +9,10 @@ export default function Navigation() {
   const pathname = usePathname();
   const router = useRouter();
   const [unreadCount, setUnreadCount] = useState(0);
+  const [unreadCountEU, setUnreadCountEU] = useState(0);
   const { darkMode, toggleDarkMode } = useTheme();
 
-  // Fetch unread messages count
+  // Fetch unread messages count for CRM PL (Allegro)
   useEffect(() => {
     const fetchUnreadCount = async () => {
       try {
@@ -31,6 +32,47 @@ export default function Navigation() {
     return () => clearInterval(interval);
   }, []);
 
+  // Fetch unread messages count for CRM EU (Amazon + Kaufland)
+  useEffect(() => {
+    const fetchUnreadCountEU = async () => {
+      let totalUnread = 0;
+
+      // Amazon (Gmail threads)
+      try {
+        const amazonRes = await fetch('/api/gmail-amazon-de/messages');
+        const amazonData = await amazonRes.json();
+        if (amazonData.success && amazonData.threads) {
+          const amazonUnread = amazonData.threads.filter(t => t.unread).length;
+          totalUnread += amazonUnread;
+        }
+      } catch (err) {
+        // Silently ignore
+      }
+
+      // Kaufland tickets
+      try {
+        const kauflandRes = await fetch('/api/kaufland/tickets');
+        const kauflandData = await kauflandRes.json();
+        if (kauflandData.success && kauflandData.tickets) {
+          // Count tickets needing response (not from seller, open status)
+          const kauflandUnread = kauflandData.tickets.filter(t =>
+            t.status === 'opened' && !t.last_message_from_seller
+          ).length;
+          totalUnread += kauflandUnread;
+        }
+      } catch (err) {
+        // Silently ignore
+      }
+
+      setUnreadCountEU(totalUnread);
+    };
+
+    fetchUnreadCountEU();
+    // Refresh every 60 seconds
+    const interval = setInterval(fetchUnreadCountEU, 60000);
+    return () => clearInterval(interval);
+  }, []);
+
   const handleLogout = async () => {
     await fetch('/api/auth/logout', { method: 'POST' });
     router.push('/login');
@@ -43,7 +85,7 @@ export default function Navigation() {
     { href: '/magazyny', label: 'WMS', icon: '🏭' },
     { href: '/mes', label: 'MES', icon: '⚙️' },
     { href: '/crm', label: 'CRM 🇵🇱', icon: '👥', badge: unreadCount },
-    { href: '/crm-eu', label: 'CRM 🇪🇺', icon: '👥' },
+    { href: '/crm-eu', label: 'CRM 🇪🇺', icon: '👥', badge: unreadCountEU },
     { href: '/rank', label: 'RANK', icon: '📈' },
     { href: '/agent', label: 'Asystent AI', icon: '🤖' },
   ];
