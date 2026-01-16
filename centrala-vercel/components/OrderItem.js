@@ -144,6 +144,11 @@ export default function OrderItem({ order }) {
       return <img src="/icons/otto.png" alt="OTTO" className="w-8 h-8 rounded-full object-cover" />;
     }
 
+    // eBay
+    if (platform === 'eBay' || platform === 'Ebay' || labelLower.includes('ebay')) {
+      return <img src="/icons/ebay.png" alt="eBay" className="w-8 h-8 rounded-full object-cover" />;
+    }
+
     // Default platform icons
     const platformIcons = {
       'Amazon': 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQoIwGv61BBxMlFDmBHeDvMo8-5HNlM4_8Skw&s',

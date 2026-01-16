@@ -98,14 +98,16 @@ function mapOrderToDTO(order, statuses = {}) {
     else if (source.includes('erli')) platformName = 'Erli';
     else if (source.includes('empik')) platformName = 'Empik';
     else if (source.includes('otto')) platformName = 'OTTO';
-    else if (source.includes('shopify')) platformName = 'Shopify';
+    else if (source.includes('shopify') || source === 'shop') platformName = 'Shopify';
     else if (source.includes('woocommerce')) platformName = 'WooCommerce';
     else if (source.includes('prestashop')) platformName = 'PrestaShop';
     else platformName = order.order_source;
 
     // Custom channel labels for specific stores
     if (source.includes('otto')) {
-      channelLabel = 'Gutekissen'; // OTTO orders go under Gutekissen brand
+      channelLabel = 'Gutekissen OTTO';
+    } else if (source.includes('shopify') || source === 'shop') {
+      channelLabel = 'Gutekissen';
     } else {
       channelLabel = order.order_source;
     }
