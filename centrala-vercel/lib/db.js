@@ -2519,6 +2519,18 @@ export async function saveGmailAmazonDeTokens(accessToken, refreshToken, expires
   }
 }
 
+// Clear Gmail Amazon DE tokens (for re-authorization)
+export async function clearGmailAmazonDeTokens() {
+  await sql`
+    UPDATE gmail_amazon_de_tokens
+    SET access_token = NULL,
+        refresh_token = NULL,
+        expires_at = NULL,
+        updated_at = CURRENT_TIMESTAMP
+    WHERE id = 1
+  `;
+}
+
 // Get Gmail Amazon DE sync status
 export async function getGmailAmazonDeSyncStatus() {
   const { rows } = await sql`SELECT * FROM gmail_amazon_de_sync_status ORDER BY id DESC LIMIT 1`;
