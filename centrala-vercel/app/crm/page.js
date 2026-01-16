@@ -680,27 +680,27 @@ function CRMContent() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100">
+    <div className="min-h-screen bg-gray-100 dark:bg-gray-900">
       <main className="max-w-7xl mx-auto px-3 py-4 sm:px-6 sm:py-6 lg:px-8">
         {/* Header */}
         <div className="flex justify-between items-center mb-6">
           <div>
-            <h1 className="text-xl sm:text-2xl font-bold text-gray-900">CRM</h1>
-            <p className="text-xs sm:text-sm text-gray-500">Zarzadzanie klientami i wiadomosciami</p>
+            <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">CRM</h1>
+            <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">Zarzadzanie klientami i wiadomosciami</p>
           </div>
         </div>
 
         {/* Tabs */}
-        <div className="bg-white rounded-lg shadow mb-4">
-          <div className="flex border-b border-gray-100 overflow-x-auto">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow dark:shadow-gray-900 mb-4">
+          <div className="flex border-b border-gray-100 dark:border-gray-700 overflow-x-auto">
             {tabs.map((tab) => (
               <button
                 key={tab.key}
                 onClick={() => setActiveTab(tab.key)}
                 className={`flex-1 flex items-center justify-center gap-2 py-3 text-sm font-medium transition-colors whitespace-nowrap px-4 ${
                   activeTab === tab.key
-                    ? 'text-blue-600 border-b-2 border-blue-600 bg-blue-50'
-                    : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
+                    ? 'text-blue-600 dark:text-blue-400 border-b-2 border-blue-600 dark:border-blue-400 bg-blue-50 dark:bg-blue-900/30'
+                    : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
                 }`}
               >
                 <span>{tab.icon}</span>
@@ -714,19 +714,19 @@ function CRMContent() {
         </div>
 
         {/* Content */}
-        <div className="bg-white rounded-lg shadow">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow dark:shadow-gray-900">
           {/* Wiadomości Allegro */}
           {activeTab === 'wiadomosci' && (
             <div>
               {allegroAuth.loading ? (
-                <div className="p-8 text-center text-gray-500">Ladowanie...</div>
+                <div className="p-8 text-center text-gray-500 dark:text-gray-400">Ladowanie...</div>
               ) : !allegroAuth.authenticated ? (
                 <div className="p-8 text-center">
                   <div className="mb-4">
                     <span className="text-6xl">🔗</span>
                   </div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">Polacz z Allegro</h3>
-                  <p className="text-gray-500 mb-4">Aby zobaczyc wiadomosci, musisz polaczyc konto Allegro</p>
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Polacz z Allegro</h3>
+                  <p className="text-gray-500 dark:text-gray-400 mb-4">Aby zobaczyc wiadomosci, musisz polaczyc konto Allegro</p>
                   <a
                     href="/api/allegro/auth?action=login"
                     className="inline-block px-6 py-3 bg-orange-500 text-white rounded-lg hover:bg-orange-600 font-medium"
@@ -737,11 +737,11 @@ function CRMContent() {
               ) : (
                 <div className="flex flex-col lg:flex-row h-[800px]">
                   {/* Thread list */}
-                  <div className={`lg:w-1/3 border-r border-gray-200 flex flex-col ${selectedThread ? 'hidden lg:flex' : ''}`}>
-                    <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
+                  <div className={`lg:w-1/3 border-r border-gray-200 dark:border-gray-700 flex flex-col ${selectedThread ? 'hidden lg:flex' : ''}`}>
+                    <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-700 dark:border-gray-700 flex items-center justify-between">
                       <div>
-                        <h2 className="font-semibold text-gray-900">Wiadomosci</h2>
-                        <p className="text-xs text-gray-500">
+                        <h2 className="font-semibold text-gray-900 dark:text-white">Wiadomosci</h2>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">
                           {syncStatus?.lastSyncAt ? `Sync: ${formatDate(syncStatus.lastSyncAt)}` : 'Nie zsynchronizowano'}
                         </p>
                       </div>
@@ -756,9 +756,9 @@ function CRMContent() {
 
                     <div className="flex-1 overflow-y-auto">
                       {threadsLoading ? (
-                        <div className="p-4 text-center text-gray-500">Ladowanie...</div>
+                        <div className="p-4 text-center text-gray-500 dark:text-gray-400">Ladowanie...</div>
                       ) : threads.length === 0 ? (
-                        <div className="p-4 text-center text-gray-500">
+                        <div className="p-4 text-center text-gray-500 dark:text-gray-400">
                           Brak wiadomosci. Kliknij "Synchronizuj".
                         </div>
                       ) : (
@@ -766,7 +766,7 @@ function CRMContent() {
                           <button
                             key={thread.id}
                             onClick={() => openThread(thread)}
-                            className={`w-full text-left px-4 py-3 border-b border-gray-100 hover:bg-gray-50 ${
+                            className={`w-full text-left px-4 py-3 border-b border-gray-100 dark:border-gray-700 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 ${
                               selectedThread?.id === thread.id ? 'bg-blue-50' : ''
                             } ${!thread.read ? 'bg-orange-50' : ''}`}
                           >
@@ -778,21 +778,21 @@ function CRMContent() {
                                   className="w-10 h-10 rounded-full"
                                 />
                               ) : (
-                                <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center text-gray-500 font-medium">
+                                <div className="w-10 h-10 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center text-gray-500 dark:text-gray-400 font-medium">
                                   {(thread.interlocutor_login || '?')[0].toUpperCase()}
                                 </div>
                               )}
                               <div className="flex-1 min-w-0">
                                 <div className="flex items-center justify-between">
-                                  <span className={`font-medium truncate ${!thread.read ? 'text-gray-900' : 'text-gray-700'}`}>
+                                  <span className={`font-medium truncate ${!thread.read ? 'text-gray-900 dark:text-white' : 'text-gray-700 dark:text-gray-300'}`}>
                                     {thread.interlocutor_login || 'Nieznany'}
                                   </span>
-                                  <span className="text-xs text-gray-400 ml-2 whitespace-nowrap">
+                                  <span className="text-xs text-gray-400 dark:text-gray-500 ml-2 whitespace-nowrap">
                                     {formatDate(thread.last_message_at)}
                                   </span>
                                 </div>
                                 {thread.offer_title && (
-                                  <p className="text-xs text-gray-500 truncate">{thread.offer_title}</p>
+                                  <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{thread.offer_title}</p>
                                 )}
                                 <div className="flex items-center gap-1 mt-1">
                                   {!thread.read && (
@@ -822,7 +822,7 @@ function CRMContent() {
                   {/* Message view */}
                   <div className={`lg:w-2/3 flex flex-col ${!selectedThread ? 'hidden lg:flex' : ''}`}>
                     {!selectedThread ? (
-                      <div className="flex-1 flex items-center justify-center text-gray-400">
+                      <div className="flex-1 flex items-center justify-center text-gray-400 dark:text-gray-500">
                         <div className="text-center">
                           <span className="text-6xl">💬</span>
                           <p className="mt-2">Wybierz watek z listy</p>
@@ -831,10 +831,10 @@ function CRMContent() {
                     ) : (
                       <>
                         {/* Thread header */}
-                        <div className="px-4 py-3 border-b border-gray-100 flex items-center gap-3">
+                        <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-700 dark:border-gray-700 flex items-center gap-3">
                           <button
                             onClick={() => setSelectedThread(null)}
-                            className="lg:hidden text-gray-500 hover:text-gray-700"
+                            className="lg:hidden text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
                           >
                             ← Wstecz
                           </button>
@@ -845,16 +845,16 @@ function CRMContent() {
                               className="w-10 h-10 rounded-full"
                             />
                           ) : (
-                            <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center text-gray-500 font-medium">
+                            <div className="w-10 h-10 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center text-gray-500 dark:text-gray-400 font-medium">
                               {(selectedThread.interlocutor_login || '?')[0].toUpperCase()}
                             </div>
                           )}
                           <div className="flex-1">
-                            <h3 className="font-semibold text-gray-900">
+                            <h3 className="font-semibold text-gray-900 dark:text-white">
                               {selectedThread.interlocutor_login || 'Nieznany'}
                             </h3>
                             {selectedThread.offer_title && (
-                              <p className="text-xs text-gray-500 truncate">{selectedThread.offer_title}</p>
+                              <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{selectedThread.offer_title}</p>
                             )}
                           </div>
                           {selectedThread.apilo_order_id ? (
@@ -965,11 +965,11 @@ function CRMContent() {
                         )}
 
                         {/* Messages */}
-                        <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-gray-50">
+                        <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-gray-50 dark:bg-gray-900">
                           {messagesLoading ? (
-                            <div className="text-center text-gray-500">Ladowanie wiadomosci...</div>
+                            <div className="text-center text-gray-500 dark:text-gray-400">Ladowanie wiadomosci...</div>
                           ) : threadMessages.length === 0 ? (
-                            <div className="text-center text-gray-500">Brak wiadomosci</div>
+                            <div className="text-center text-gray-500 dark:text-gray-400">Brak wiadomosci</div>
                           ) : (
                             threadMessages.map((msg) => (
                               <div
@@ -979,7 +979,7 @@ function CRMContent() {
                                 <div
                                   className={`max-w-[75%] px-4 py-2 rounded-lg ${
                                     msg.sender_is_interlocutor
-                                      ? 'bg-white border border-gray-200 text-gray-900'
+                                      ? 'bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-900 dark:text-white'
                                       : 'bg-blue-600 text-white'
                                   }`}
                                 >
@@ -996,14 +996,14 @@ function CRMContent() {
                         </div>
 
                         {/* Reply input */}
-                        <div className="px-4 py-3 border-t border-gray-200 bg-white">
+                        <div className="px-4 py-3 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
                           <div className="flex gap-2">
                             <textarea
                               value={replyText}
                               onChange={(e) => setReplyText(e.target.value)}
                               placeholder="Napisz wiadomosc..."
                               rows={2}
-                              className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+                              className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
                               onKeyDown={(e) => {
                                 if (e.key === 'Enter' && !e.shiftKey) {
                                   e.preventDefault();
@@ -1032,14 +1032,14 @@ function CRMContent() {
           {activeTab === 'meblebox' && (
             <div>
               {mebleboxAuth.loading ? (
-                <div className="p-8 text-center text-gray-500">Ladowanie...</div>
+                <div className="p-8 text-center text-gray-500 dark:text-gray-400">Ladowanie...</div>
               ) : !mebleboxAuth.authenticated ? (
                 <div className="p-8 text-center">
                   <div className="mb-4">
                     <span className="text-6xl">🛋️</span>
                   </div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">Polacz z Allegro Meblebox</h3>
-                  <p className="text-gray-500 mb-4">Aby zobaczyc wiadomosci, musisz polaczyc konto Allegro Meblebox</p>
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Polacz z Allegro Meblebox</h3>
+                  <p className="text-gray-500 dark:text-gray-400 mb-4">Aby zobaczyc wiadomosci, musisz polaczyc konto Allegro Meblebox</p>
                   <a
                     href="/api/allegro-meblebox/auth?action=login"
                     className="inline-block px-6 py-3 bg-orange-500 text-white rounded-lg hover:bg-orange-600 font-medium"
@@ -1050,10 +1050,10 @@ function CRMContent() {
               ) : (
                 <div className="flex flex-col lg:flex-row h-[800px]">
                   {/* Thread list */}
-                  <div className={`lg:w-1/3 border-r border-gray-200 flex flex-col ${mebleboxSelectedThread ? 'hidden lg:flex' : ''}`}>
-                    <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
+                  <div className={`lg:w-1/3 border-r border-gray-200 dark:border-gray-700 flex flex-col ${mebleboxSelectedThread ? 'hidden lg:flex' : ''}`}>
+                    <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-700 dark:border-gray-700 flex items-center justify-between">
                       <div>
-                        <h2 className="font-semibold text-gray-900">Wiadomosci</h2>
+                        <h2 className="font-semibold text-gray-900 dark:text-white">Wiadomosci</h2>
                         <p className="text-xs text-gray-500">
                           {mebleboxSyncStatus?.lastSyncAt ? `Sync: ${formatDate(mebleboxSyncStatus.lastSyncAt)}` : 'Nie zsynchronizowano'}
                         </p>
@@ -1069,9 +1069,9 @@ function CRMContent() {
 
                     <div className="flex-1 overflow-y-auto">
                       {mebleboxThreadsLoading ? (
-                        <div className="p-4 text-center text-gray-500">Ladowanie...</div>
+                        <div className="p-4 text-center text-gray-500 dark:text-gray-400">Ladowanie...</div>
                       ) : mebleboxThreads.length === 0 ? (
-                        <div className="p-4 text-center text-gray-500">
+                        <div className="p-4 text-center text-gray-500 dark:text-gray-400">
                           Brak wiadomosci. Kliknij "Synchronizuj".
                         </div>
                       ) : (
@@ -1079,7 +1079,7 @@ function CRMContent() {
                           <button
                             key={thread.id}
                             onClick={() => openMebleboxThread(thread)}
-                            className={`w-full text-left px-4 py-3 border-b border-gray-100 hover:bg-gray-50 ${
+                            className={`w-full text-left px-4 py-3 border-b border-gray-100 dark:border-gray-700 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 ${
                               mebleboxSelectedThread?.id === thread.id ? 'bg-blue-50' : ''
                             } ${!thread.read ? 'bg-orange-50' : ''}`}
                           >
@@ -1091,21 +1091,21 @@ function CRMContent() {
                                   className="w-10 h-10 rounded-full"
                                 />
                               ) : (
-                                <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center text-gray-500 font-medium">
+                                <div className="w-10 h-10 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center text-gray-500 dark:text-gray-400 font-medium">
                                   {(thread.interlocutor_login || '?')[0].toUpperCase()}
                                 </div>
                               )}
                               <div className="flex-1 min-w-0">
                                 <div className="flex items-center justify-between">
-                                  <span className={`font-medium truncate ${!thread.read ? 'text-gray-900' : 'text-gray-700'}`}>
+                                  <span className={`font-medium truncate ${!thread.read ? 'text-gray-900 dark:text-white' : 'text-gray-700 dark:text-gray-300'}`}>
                                     {thread.interlocutor_login || 'Nieznany'}
                                   </span>
-                                  <span className="text-xs text-gray-400 ml-2 whitespace-nowrap">
+                                  <span className="text-xs text-gray-400 dark:text-gray-500 ml-2 whitespace-nowrap">
                                     {formatDate(thread.last_message_at)}
                                   </span>
                                 </div>
                                 {thread.offer_title && (
-                                  <p className="text-xs text-gray-500 truncate">{thread.offer_title}</p>
+                                  <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{thread.offer_title}</p>
                                 )}
                                 <div className="flex items-center gap-1 mt-1">
                                   {!thread.read && (
@@ -1135,7 +1135,7 @@ function CRMContent() {
                   {/* Message view */}
                   <div className={`lg:w-2/3 flex flex-col ${!mebleboxSelectedThread ? 'hidden lg:flex' : ''}`}>
                     {!mebleboxSelectedThread ? (
-                      <div className="flex-1 flex items-center justify-center text-gray-400">
+                      <div className="flex-1 flex items-center justify-center text-gray-400 dark:text-gray-500">
                         <div className="text-center">
                           <span className="text-6xl">💬</span>
                           <p className="mt-2">Wybierz watek z listy</p>
@@ -1144,10 +1144,10 @@ function CRMContent() {
                     ) : (
                       <>
                         {/* Thread header */}
-                        <div className="px-4 py-3 border-b border-gray-100 flex items-center gap-3">
+                        <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-700 dark:border-gray-700 flex items-center gap-3">
                           <button
                             onClick={() => setMebleboxSelectedThread(null)}
-                            className="lg:hidden text-gray-500 hover:text-gray-700"
+                            className="lg:hidden text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
                           >
                             ← Wstecz
                           </button>
@@ -1158,16 +1158,16 @@ function CRMContent() {
                               className="w-10 h-10 rounded-full"
                             />
                           ) : (
-                            <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center text-gray-500 font-medium">
+                            <div className="w-10 h-10 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center text-gray-500 dark:text-gray-400 font-medium">
                               {(mebleboxSelectedThread.interlocutor_login || '?')[0].toUpperCase()}
                             </div>
                           )}
                           <div className="flex-1">
-                            <h3 className="font-semibold text-gray-900">
+                            <h3 className="font-semibold text-gray-900 dark:text-white">
                               {mebleboxSelectedThread.interlocutor_login || 'Nieznany'}
                             </h3>
                             {mebleboxSelectedThread.offer_title && (
-                              <p className="text-xs text-gray-500 truncate">{mebleboxSelectedThread.offer_title}</p>
+                              <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{mebleboxSelectedThread.offer_title}</p>
                             )}
                           </div>
                           {mebleboxSelectedThread.apilo_order_id ? (
@@ -1278,11 +1278,11 @@ function CRMContent() {
                         )}
 
                         {/* Messages */}
-                        <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-gray-50">
+                        <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-gray-50 dark:bg-gray-900">
                           {mebleboxMessagesLoading ? (
-                            <div className="text-center text-gray-500">Ladowanie wiadomosci...</div>
+                            <div className="text-center text-gray-500 dark:text-gray-400">Ladowanie wiadomosci...</div>
                           ) : mebleboxThreadMessages.length === 0 ? (
-                            <div className="text-center text-gray-500">Brak wiadomosci</div>
+                            <div className="text-center text-gray-500 dark:text-gray-400">Brak wiadomosci</div>
                           ) : (
                             mebleboxThreadMessages.map((msg) => (
                               <div
@@ -1292,7 +1292,7 @@ function CRMContent() {
                                 <div
                                   className={`max-w-[75%] px-4 py-2 rounded-lg ${
                                     msg.sender_is_interlocutor
-                                      ? 'bg-white border border-gray-200 text-gray-900'
+                                      ? 'bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-900 dark:text-white'
                                       : 'bg-blue-600 text-white'
                                   }`}
                                 >
@@ -1309,14 +1309,14 @@ function CRMContent() {
                         </div>
 
                         {/* Reply input */}
-                        <div className="px-4 py-3 border-t border-gray-200 bg-white">
+                        <div className="px-4 py-3 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
                           <div className="flex gap-2">
                             <textarea
                               value={mebleboxReplyText}
                               onChange={(e) => setMebleboxReplyText(e.target.value)}
                               placeholder="Napisz wiadomosc..."
                               rows={2}
-                              className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+                              className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
                               onKeyDown={(e) => {
                                 if (e.key === 'Enter' && !e.shiftKey) {
                                   e.preventDefault();
@@ -1345,14 +1345,14 @@ function CRMContent() {
           {activeTab === 'shopify' && (
             <div>
               {gmailAuth.loading ? (
-                <div className="p-8 text-center text-gray-500">Ladowanie...</div>
+                <div className="p-8 text-center text-gray-500 dark:text-gray-400">Ladowanie...</div>
               ) : !gmailAuth.authenticated ? (
                 <div className="p-8 text-center">
                   <div className="mb-4">
                     <span className="text-6xl">📧</span>
                   </div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">Polacz z Gmail</h3>
-                  <p className="text-gray-500 mb-4">Aby zobaczyc wiadomosci, musisz polaczyc konto Gmail</p>
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Polacz z Gmail</h3>
+                  <p className="text-gray-500 dark:text-gray-400 mb-4">Aby zobaczyc wiadomosci, musisz polaczyc konto Gmail</p>
                   <a
                     href="/api/gmail/auth?action=login"
                     className="inline-block px-6 py-3 bg-red-500 text-white rounded-lg hover:bg-red-600 font-medium"
@@ -1363,10 +1363,10 @@ function CRMContent() {
               ) : (
                 <div className="flex flex-col lg:flex-row h-[800px]">
                   {/* Thread list */}
-                  <div className={`lg:w-1/3 border-r border-gray-200 flex flex-col ${gmailSelectedThread ? 'hidden lg:flex' : ''}`}>
-                    <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
+                  <div className={`lg:w-1/3 border-r border-gray-200 dark:border-gray-700 flex flex-col ${gmailSelectedThread ? 'hidden lg:flex' : ''}`}>
+                    <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-700 dark:border-gray-700 flex items-center justify-between">
                       <div>
-                        <h2 className="font-semibold text-gray-900">Wiadomosci Email</h2>
+                        <h2 className="font-semibold text-gray-900 dark:text-white">Wiadomosci Email</h2>
                         <p className="text-xs text-gray-500">
                           {gmailSyncStatus?.lastSyncAt ? `Sync: ${formatDate(gmailSyncStatus.lastSyncAt)}` : 'Nie zsynchronizowano'}
                         </p>
@@ -1382,9 +1382,9 @@ function CRMContent() {
 
                     <div className="flex-1 overflow-y-auto">
                       {gmailThreadsLoading ? (
-                        <div className="p-4 text-center text-gray-500">Ladowanie...</div>
+                        <div className="p-4 text-center text-gray-500 dark:text-gray-400">Ladowanie...</div>
                       ) : gmailThreads.length === 0 ? (
-                        <div className="p-4 text-center text-gray-500">
+                        <div className="p-4 text-center text-gray-500 dark:text-gray-400">
                           Brak wiadomosci. Kliknij "Synchronizuj".
                         </div>
                       ) : (
@@ -1392,7 +1392,7 @@ function CRMContent() {
                           <button
                             key={thread.id}
                             onClick={() => openGmailThread(thread)}
-                            className={`w-full text-left px-4 py-3 border-b border-gray-100 hover:bg-gray-50 ${
+                            className={`w-full text-left px-4 py-3 border-b border-gray-100 dark:border-gray-700 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 ${
                               gmailSelectedThread?.id === thread.id ? 'bg-blue-50' : ''
                             } ${thread.unread ? 'bg-red-50' : ''}`}
                           >
@@ -1405,7 +1405,7 @@ function CRMContent() {
                                   <span className={`font-medium truncate ${thread.unread ? 'text-gray-900' : 'text-gray-700'}`}>
                                     {thread.from_name || thread.from_email || 'Nieznany'}
                                   </span>
-                                  <span className="text-xs text-gray-400 ml-2 whitespace-nowrap">
+                                  <span className="text-xs text-gray-400 dark:text-gray-500 ml-2 whitespace-nowrap">
                                     {formatDate(thread.last_message_at)}
                                   </span>
                                 </div>
@@ -1429,7 +1429,7 @@ function CRMContent() {
                   {/* Message view */}
                   <div className={`lg:w-2/3 flex flex-col ${!gmailSelectedThread ? 'hidden lg:flex' : ''}`}>
                     {!gmailSelectedThread ? (
-                      <div className="flex-1 flex items-center justify-center text-gray-400">
+                      <div className="flex-1 flex items-center justify-center text-gray-400 dark:text-gray-500">
                         <div className="text-center">
                           <span className="text-6xl">📧</span>
                           <p className="mt-2">Wybierz watek z listy</p>
@@ -1438,10 +1438,10 @@ function CRMContent() {
                     ) : (
                       <>
                         {/* Thread header */}
-                        <div className="px-4 py-3 border-b border-gray-100">
+                        <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-700">
                           <button
                             onClick={() => setGmailSelectedThread(null)}
-                            className="lg:hidden text-gray-500 hover:text-gray-700 mb-2"
+                            className="lg:hidden text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 mb-2"
                           >
                             ← Wstecz
                           </button>
@@ -1450,23 +1450,23 @@ function CRMContent() {
                               {(gmailSelectedThread.from_name || gmailSelectedThread.from_email || '?')[0].toUpperCase()}
                             </div>
                             <div className="flex-1">
-                              <h3 className="font-semibold text-gray-900">
+                              <h3 className="font-semibold text-gray-900 dark:text-white">
                                 {gmailSelectedThread.from_name || gmailSelectedThread.from_email || 'Nieznany'}
                               </h3>
-                              <p className="text-sm text-gray-600">{gmailSelectedThread.from_email}</p>
+                              <p className="text-sm text-gray-600 dark:text-gray-400">{gmailSelectedThread.from_email}</p>
                             </div>
                           </div>
-                          <h4 className="mt-2 font-medium text-gray-800">
+                          <h4 className="mt-2 font-medium text-gray-800 dark:text-gray-200">
                             {gmailSelectedThread.subject || '(Brak tematu)'}
                           </h4>
                         </div>
 
                         {/* Messages */}
-                        <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50">
+                        <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50 dark:bg-gray-900">
                           {gmailMessagesLoading ? (
-                            <div className="text-center text-gray-500">Ladowanie wiadomosci...</div>
+                            <div className="text-center text-gray-500 dark:text-gray-400">Ladowanie wiadomosci...</div>
                           ) : gmailThreadMessages.length === 0 ? (
-                            <div className="text-center text-gray-500">Brak wiadomosci</div>
+                            <div className="text-center text-gray-500 dark:text-gray-400">Brak wiadomosci</div>
                           ) : (
                             gmailThreadMessages.map((msg) => (
                               <div
@@ -1477,7 +1477,7 @@ function CRMContent() {
                                   className={`max-w-[85%] px-4 py-3 rounded-lg ${
                                     msg.is_outgoing
                                       ? 'bg-red-600 text-white'
-                                      : 'bg-white border border-gray-200 text-gray-900'
+                                      : 'bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-900 dark:text-white'
                                   }`}
                                 >
                                   <div className={`text-xs mb-1 ${msg.is_outgoing ? 'text-red-200' : 'text-gray-500'}`}>
@@ -1496,14 +1496,14 @@ function CRMContent() {
                         </div>
 
                         {/* Reply input */}
-                        <div className="px-4 py-3 border-t border-gray-200 bg-white">
+                        <div className="px-4 py-3 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
                           <div className="flex gap-2">
                             <textarea
                               value={gmailReplyText}
                               onChange={(e) => setGmailReplyText(e.target.value)}
                               placeholder="Napisz odpowiedz..."
                               rows={3}
-                              className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 resize-none"
+                              className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 resize-none"
                               onKeyDown={(e) => {
                                 if (e.key === 'Enter' && !e.shiftKey) {
                                   e.preventDefault();
@@ -1532,14 +1532,14 @@ function CRMContent() {
           {activeTab === 'poomkids' && (
             <div>
               {poomkidsAuth.loading ? (
-                <div className="p-8 text-center text-gray-500">Ladowanie...</div>
+                <div className="p-8 text-center text-gray-500 dark:text-gray-400">Ladowanie...</div>
               ) : !poomkidsAuth.authenticated ? (
                 <div className="p-8 text-center">
                   <div className="mb-4">
                     <span className="text-6xl">📧</span>
                   </div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">Polacz z Gmail POOMKIDS</h3>
-                  <p className="text-gray-500 mb-4">Aby zobaczyc wiadomosci, musisz polaczyc konto poomkids.kontakt@gmail.com</p>
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Polacz z Gmail POOMKIDS</h3>
+                  <p className="text-gray-500 dark:text-gray-400 mb-4">Aby zobaczyc wiadomosci, musisz polaczyc konto poomkids.kontakt@gmail.com</p>
                   <a
                     href="/api/gmail-poomkids/auth?action=login"
                     className="inline-block px-6 py-3 bg-green-500 text-white rounded-lg hover:bg-green-600 font-medium"
@@ -1550,10 +1550,10 @@ function CRMContent() {
               ) : (
                 <div className="flex flex-col lg:flex-row h-[800px]">
                   {/* Thread list */}
-                  <div className={`lg:w-1/3 border-r border-gray-200 flex flex-col ${poomkidsSelectedThread ? 'hidden lg:flex' : ''}`}>
-                    <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
+                  <div className={`lg:w-1/3 border-r border-gray-200 dark:border-gray-700 flex flex-col ${poomkidsSelectedThread ? 'hidden lg:flex' : ''}`}>
+                    <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-700 dark:border-gray-700 flex items-center justify-between">
                       <div>
-                        <h2 className="font-semibold text-gray-900">Wiadomosci Email</h2>
+                        <h2 className="font-semibold text-gray-900 dark:text-white">Wiadomosci Email</h2>
                         <p className="text-xs text-gray-500">
                           {poomkidsSyncStatus?.lastSyncAt ? `Sync: ${formatDate(poomkidsSyncStatus.lastSyncAt)}` : 'Nie zsynchronizowano'}
                         </p>
@@ -1569,9 +1569,9 @@ function CRMContent() {
 
                     <div className="flex-1 overflow-y-auto">
                       {poomkidsThreadsLoading ? (
-                        <div className="p-4 text-center text-gray-500">Ladowanie...</div>
+                        <div className="p-4 text-center text-gray-500 dark:text-gray-400">Ladowanie...</div>
                       ) : poomkidsThreads.length === 0 ? (
-                        <div className="p-4 text-center text-gray-500">
+                        <div className="p-4 text-center text-gray-500 dark:text-gray-400">
                           Brak wiadomosci. Kliknij "Synchronizuj".
                         </div>
                       ) : (
@@ -1579,7 +1579,7 @@ function CRMContent() {
                           <button
                             key={thread.id}
                             onClick={() => openPoomkidsThread(thread)}
-                            className={`w-full text-left px-4 py-3 border-b border-gray-100 hover:bg-gray-50 ${
+                            className={`w-full text-left px-4 py-3 border-b border-gray-100 dark:border-gray-700 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 ${
                               poomkidsSelectedThread?.id === thread.id ? 'bg-blue-50' : ''
                             } ${thread.unread ? 'bg-green-50' : ''}`}
                           >
@@ -1592,7 +1592,7 @@ function CRMContent() {
                                   <span className={`font-medium truncate ${thread.unread ? 'text-gray-900' : 'text-gray-700'}`}>
                                     {thread.from_name || thread.from_email || 'Nieznany'}
                                   </span>
-                                  <span className="text-xs text-gray-400 ml-2 whitespace-nowrap">
+                                  <span className="text-xs text-gray-400 dark:text-gray-500 ml-2 whitespace-nowrap">
                                     {formatDate(thread.last_message_at)}
                                   </span>
                                 </div>
@@ -1616,7 +1616,7 @@ function CRMContent() {
                   {/* Message view */}
                   <div className={`lg:w-2/3 flex flex-col ${!poomkidsSelectedThread ? 'hidden lg:flex' : ''}`}>
                     {!poomkidsSelectedThread ? (
-                      <div className="flex-1 flex items-center justify-center text-gray-400">
+                      <div className="flex-1 flex items-center justify-center text-gray-400 dark:text-gray-500">
                         <div className="text-center">
                           <span className="text-6xl">📧</span>
                           <p className="mt-2">Wybierz watek z listy</p>
@@ -1625,10 +1625,10 @@ function CRMContent() {
                     ) : (
                       <>
                         {/* Thread header */}
-                        <div className="px-4 py-3 border-b border-gray-100">
+                        <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-700">
                           <button
                             onClick={() => setPoomkidsSelectedThread(null)}
-                            className="lg:hidden text-gray-500 hover:text-gray-700 mb-2"
+                            className="lg:hidden text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 mb-2"
                           >
                             ← Wstecz
                           </button>
@@ -1637,23 +1637,23 @@ function CRMContent() {
                               {(poomkidsSelectedThread.from_name || poomkidsSelectedThread.from_email || '?')[0].toUpperCase()}
                             </div>
                             <div className="flex-1">
-                              <h3 className="font-semibold text-gray-900">
+                              <h3 className="font-semibold text-gray-900 dark:text-white">
                                 {poomkidsSelectedThread.from_name || poomkidsSelectedThread.from_email || 'Nieznany'}
                               </h3>
-                              <p className="text-sm text-gray-600">{poomkidsSelectedThread.from_email}</p>
+                              <p className="text-sm text-gray-600 dark:text-gray-400">{poomkidsSelectedThread.from_email}</p>
                             </div>
                           </div>
-                          <h4 className="mt-2 font-medium text-gray-800">
+                          <h4 className="mt-2 font-medium text-gray-800 dark:text-gray-200">
                             {poomkidsSelectedThread.subject || '(Brak tematu)'}
                           </h4>
                         </div>
 
                         {/* Messages */}
-                        <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50">
+                        <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50 dark:bg-gray-900">
                           {poomkidsMessagesLoading ? (
-                            <div className="text-center text-gray-500">Ladowanie wiadomosci...</div>
+                            <div className="text-center text-gray-500 dark:text-gray-400">Ladowanie wiadomosci...</div>
                           ) : poomkidsThreadMessages.length === 0 ? (
-                            <div className="text-center text-gray-500">Brak wiadomosci</div>
+                            <div className="text-center text-gray-500 dark:text-gray-400">Brak wiadomosci</div>
                           ) : (
                             poomkidsThreadMessages.map((msg) => (
                               <div
@@ -1664,7 +1664,7 @@ function CRMContent() {
                                   className={`max-w-[85%] px-4 py-3 rounded-lg ${
                                     msg.is_outgoing
                                       ? 'bg-green-600 text-white'
-                                      : 'bg-white border border-gray-200 text-gray-900'
+                                      : 'bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-900 dark:text-white'
                                   }`}
                                 >
                                   <div className={`text-xs mb-1 ${msg.is_outgoing ? 'text-green-200' : 'text-gray-500'}`}>
@@ -1683,14 +1683,14 @@ function CRMContent() {
                         </div>
 
                         {/* Reply input */}
-                        <div className="px-4 py-3 border-t border-gray-200 bg-white">
+                        <div className="px-4 py-3 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
                           <div className="flex gap-2">
                             <textarea
                               value={poomkidsReplyText}
                               onChange={(e) => setPoomkidsReplyText(e.target.value)}
                               placeholder="Napisz odpowiedz..."
                               rows={3}
-                              className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 resize-none"
+                              className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 resize-none"
                               onKeyDown={(e) => {
                                 if (e.key === 'Enter' && !e.shiftKey) {
                                   e.preventDefault();
@@ -1722,7 +1722,7 @@ function CRMContent() {
 
 export default function CRMPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen bg-gray-100 flex items-center justify-center">Ladowanie...</div>}>
+    <Suspense fallback={<div className="min-h-screen bg-gray-100 dark:bg-gray-900 flex items-center justify-center text-gray-900 dark:text-white">Ladowanie...</div>}>
       <CRMContent />
     </Suspense>
   );

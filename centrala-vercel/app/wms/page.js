@@ -177,18 +177,18 @@ export default function WMSPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100">
+    <div className="min-h-screen bg-gray-100 dark:bg-gray-900">
       <main className="max-w-5xl mx-auto px-3 py-4 sm:px-6 sm:py-6">
         {/* Header */}
         <div className="flex justify-between items-center mb-6">
           <div>
-            <h1 className="text-xl sm:text-2xl font-bold text-gray-900">WMS</h1>
-            <p className="text-xs sm:text-sm text-gray-500">Zarzadzanie magazynem</p>
+            <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">WMS</h1>
+            <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">Zarzadzanie magazynem</p>
           </div>
           <div className="flex gap-2">
             <button
               onClick={exportCSV}
-              className="px-3 py-1.5 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 flex items-center gap-1"
+              className="px-3 py-1.5 text-sm bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 flex items-center gap-1"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
@@ -197,7 +197,7 @@ export default function WMSPage() {
             </button>
             <button
               onClick={() => setShowHistoryModal(true)}
-              className="px-3 py-1.5 text-sm bg-purple-100 text-purple-700 rounded-lg hover:bg-purple-200 flex items-center gap-1"
+              className="px-3 py-1.5 text-sm bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300 rounded-lg hover:bg-purple-200 dark:hover:bg-purple-800 flex items-center gap-1"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -212,35 +212,35 @@ export default function WMSPage() {
 
         {/* Stats */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
-          <div className="bg-white rounded-lg shadow p-4">
-            <p className="text-xs text-gray-500">Produktów</p>
-            <p className="text-2xl font-bold text-blue-600">{produkty.length}</p>
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow dark:shadow-gray-900 p-4">
+            <p className="text-xs text-gray-500 dark:text-gray-400">Produktów</p>
+            <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">{produkty.length}</p>
           </div>
-          <div className="bg-white rounded-lg shadow p-4">
-            <p className="text-xs text-gray-500">Lokalizacji</p>
-            <p className="text-2xl font-bold text-purple-600">{lokalizacje.length}</p>
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow dark:shadow-gray-900 p-4">
+            <p className="text-xs text-gray-500 dark:text-gray-400">Lokalizacji</p>
+            <p className="text-2xl font-bold text-purple-600 dark:text-purple-400">{lokalizacje.length}</p>
           </div>
-          <div className="bg-white rounded-lg shadow p-4">
-            <p className="text-xs text-gray-500">Do przyjęcia</p>
-            <p className="text-2xl font-bold text-green-600">{przyjecia.filter(p => p.status !== 'Zakończone').length}</p>
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow dark:shadow-gray-900 p-4">
+            <p className="text-xs text-gray-500 dark:text-gray-400">Do przyjęcia</p>
+            <p className="text-2xl font-bold text-green-600 dark:text-green-400">{przyjecia.filter(p => p.status !== 'Zakończone').length}</p>
           </div>
-          <div className="bg-white rounded-lg shadow p-4">
-            <p className="text-xs text-gray-500">Do wydania</p>
-            <p className="text-2xl font-bold text-orange-600">{wydania.filter(w => w.status === 'Do pobrania').length}</p>
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow dark:shadow-gray-900 p-4">
+            <p className="text-xs text-gray-500 dark:text-gray-400">Do wydania</p>
+            <p className="text-2xl font-bold text-orange-600 dark:text-orange-400">{wydania.filter(w => w.status === 'Do pobrania').length}</p>
           </div>
         </div>
 
         {/* Tabs */}
-        <div className="bg-white rounded-lg shadow mb-4">
-          <div className="flex border-b border-gray-100 overflow-x-auto">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow dark:shadow-gray-900 mb-4">
+          <div className="flex border-b border-gray-100 dark:border-gray-700 overflow-x-auto">
             {tabs.map((tab) => (
               <button
                 key={tab.key}
                 onClick={() => setActiveTab(tab.key)}
                 className={`flex-1 flex items-center justify-center gap-2 py-3 text-sm font-medium transition-colors whitespace-nowrap px-4 ${
                   activeTab === tab.key
-                    ? 'text-blue-600 border-b-2 border-blue-600 bg-blue-50'
-                    : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
+                    ? 'text-blue-600 dark:text-blue-400 border-b-2 border-blue-600 dark:border-blue-400 bg-blue-50 dark:bg-blue-900/30'
+                    : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
                 }`}
               >
                 <span>{tab.icon}</span>
@@ -251,39 +251,39 @@ export default function WMSPage() {
         </div>
 
         {/* Content */}
-        <div className="bg-white rounded-lg shadow">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow dark:shadow-gray-900">
           {/* Stan magazynu */}
           {activeTab === 'stan' && (
             <div>
-              <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
-                <h2 className="font-semibold text-gray-900">Stan magazynowy</h2>
+              <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between">
+                <h2 className="font-semibold text-gray-900 dark:text-white">Stan magazynowy</h2>
                 <input
                   type="text"
                   placeholder="Szukaj SKU..."
-                  className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
               <div className="overflow-x-auto">
                 <table className="w-full">
-                  <thead className="bg-gray-50">
+                  <thead className="bg-gray-50 dark:bg-gray-700">
                     <tr>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">SKU</th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nazwa</th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Lokalizacja</th>
-                      <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">Stan</th>
-                      <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">Min/Max</th>
-                      <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">Akcje</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">SKU</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Nazwa</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Lokalizacja</th>
+                      <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Stan</th>
+                      <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Min/Max</th>
+                      <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Akcje</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-100">
+                  <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
                     {produkty.map((produkt) => (
-                      <tr key={produkt.id} className="hover:bg-gray-50">
+                      <tr key={produkt.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
                         <td className="px-4 py-3">
-                          <span className="font-mono text-sm text-gray-900">{produkt.sku}</span>
+                          <span className="font-mono text-sm text-gray-900 dark:text-white">{produkt.sku}</span>
                         </td>
-                        <td className="px-4 py-3 text-sm text-gray-700">{produkt.nazwa}</td>
+                        <td className="px-4 py-3 text-sm text-gray-700 dark:text-gray-300">{produkt.nazwa}</td>
                         <td className="px-4 py-3">
-                          <span className="px-2 py-1 bg-purple-100 text-purple-800 rounded text-xs font-medium">
+                          <span className="px-2 py-1 bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-300 rounded text-xs font-medium">
                             {produkt.lokalizacja}
                           </span>
                         </td>
@@ -292,12 +292,12 @@ export default function WMSPage() {
                             {produkt.stan}
                           </span>
                         </td>
-                        <td className="px-4 py-3 text-center text-xs text-gray-500">
+                        <td className="px-4 py-3 text-center text-xs text-gray-500 dark:text-gray-400">
                           {produkt.min} / {produkt.max}
                         </td>
                         <td className="px-4 py-3 text-center">
-                          <button className="text-blue-600 hover:text-blue-800 text-sm mr-2">+</button>
-                          <button className="text-red-600 hover:text-red-800 text-sm">-</button>
+                          <button className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 text-sm mr-2">+</button>
+                          <button className="text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300 text-sm">-</button>
                         </td>
                       </tr>
                     ))}
@@ -310,33 +310,33 @@ export default function WMSPage() {
           {/* Lokalizacje */}
           {activeTab === 'lokalizacje' && (
             <div>
-              <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
-                <h2 className="font-semibold text-gray-900">Lokalizacje magazynowe</h2>
+              <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between">
+                <h2 className="font-semibold text-gray-900 dark:text-white">Lokalizacje magazynowe</h2>
                 <button className="px-3 py-1.5 text-sm bg-purple-600 text-white rounded-lg hover:bg-purple-700">
                   + Dodaj lokalizację
                 </button>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 p-4">
                 {lokalizacje.map((lok) => (
-                  <div key={lok.id} className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+                  <div key={lok.id} className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 hover:shadow-md dark:hover:shadow-gray-900 transition-shadow">
                     <div className="flex items-center justify-between mb-3">
-                      <span className="font-mono font-bold text-lg text-gray-900">{lok.kod}</span>
-                      <span className="px-2 py-1 bg-gray-100 text-gray-700 rounded text-xs">{lok.typ}</span>
+                      <span className="font-mono font-bold text-lg text-gray-900 dark:text-white">{lok.kod}</span>
+                      <span className="px-2 py-1 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded text-xs">{lok.typ}</span>
                     </div>
                     <div className="mb-3">
-                      <div className="flex justify-between text-xs text-gray-500 mb-1">
+                      <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400 mb-1">
                         <span>Zajętość</span>
                         <span>{lok.zajete}/{lok.pojemnosc}</span>
                       </div>
-                      <div className="w-full bg-gray-200 rounded-full h-2">
+                      <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
                         <div
                           className={`h-2 rounded-full ${getZajecieColor(lok.zajete, lok.pojemnosc)}`}
                           style={{ width: `${(lok.zajete / lok.pojemnosc) * 100}%` }}
                         />
                       </div>
                     </div>
-                    <div className="text-xs text-gray-500">
-                      Produktów: <span className="font-medium text-gray-700">{lok.produkty}</span>
+                    <div className="text-xs text-gray-500 dark:text-gray-400">
+                      Produktów: <span className="font-medium text-gray-700 dark:text-gray-300">{lok.produkty}</span>
                     </div>
                   </div>
                 ))}
@@ -347,25 +347,25 @@ export default function WMSPage() {
           {/* Przyjęcia */}
           {activeTab === 'przyjecia' && (
             <div>
-              <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
-                <h2 className="font-semibold text-gray-900">Przyjęcia towaru</h2>
+              <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between">
+                <h2 className="font-semibold text-gray-900 dark:text-white">Przyjęcia towaru</h2>
                 <button className="px-3 py-1.5 text-sm bg-green-600 text-white rounded-lg hover:bg-green-700">
                   + Nowe przyjęcie
                 </button>
               </div>
-              <div className="divide-y divide-gray-100">
+              <div className="divide-y divide-gray-100 dark:divide-gray-700">
                 {przyjecia.map((pz) => (
-                  <div key={pz.id} className="px-4 py-3 hover:bg-gray-50 flex items-center justify-between">
+                  <div key={pz.id} className="px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center justify-between">
                     <div className="flex items-center gap-4">
                       <div>
-                        <div className="font-medium text-gray-900">{pz.numer}</div>
-                        <div className="text-xs text-gray-500">{pz.dostawca}</div>
+                        <div className="font-medium text-gray-900 dark:text-white">{pz.numer}</div>
+                        <div className="text-xs text-gray-500 dark:text-gray-400">{pz.dostawca}</div>
                       </div>
                     </div>
                     <div className="flex items-center gap-4">
                       <div className="text-right">
-                        <div className="text-sm text-gray-700">{pz.pozycje} pozycji</div>
-                        <div className="text-xs text-gray-500">{pz.data}</div>
+                        <div className="text-sm text-gray-700 dark:text-gray-300">{pz.pozycje} pozycji</div>
+                        <div className="text-xs text-gray-500 dark:text-gray-400">{pz.data}</div>
                       </div>
                       <span className={`px-2 py-1 rounded text-xs font-medium ${getStatusColor(pz.status)}`}>
                         {pz.status}
@@ -380,25 +380,25 @@ export default function WMSPage() {
           {/* Wydania */}
           {activeTab === 'wydania' && (
             <div>
-              <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
-                <h2 className="font-semibold text-gray-900">Wydania towaru</h2>
+              <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between">
+                <h2 className="font-semibold text-gray-900 dark:text-white">Wydania towaru</h2>
                 <button className="px-3 py-1.5 text-sm bg-orange-600 text-white rounded-lg hover:bg-orange-700">
                   + Nowe wydanie
                 </button>
               </div>
-              <div className="divide-y divide-gray-100">
+              <div className="divide-y divide-gray-100 dark:divide-gray-700">
                 {wydania.map((wz) => (
-                  <div key={wz.id} className="px-4 py-3 hover:bg-gray-50 flex items-center justify-between">
+                  <div key={wz.id} className="px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center justify-between">
                     <div className="flex items-center gap-4">
                       <div>
-                        <div className="font-medium text-gray-900">{wz.numer}</div>
-                        <div className="text-xs text-gray-500">Zamówienie: {wz.zamowienie}</div>
+                        <div className="font-medium text-gray-900 dark:text-white">{wz.numer}</div>
+                        <div className="text-xs text-gray-500 dark:text-gray-400">Zamówienie: {wz.zamowienie}</div>
                       </div>
                     </div>
                     <div className="flex items-center gap-4">
                       <div className="text-right">
-                        <div className="text-sm text-gray-700">{wz.pozycje} pozycji</div>
-                        <div className="text-xs text-gray-500">{wz.data}</div>
+                        <div className="text-sm text-gray-700 dark:text-gray-300">{wz.pozycje} pozycji</div>
+                        <div className="text-xs text-gray-500 dark:text-gray-400">{wz.data}</div>
                       </div>
                       <span className={`px-2 py-1 rounded text-xs font-medium ${getStatusColor(wz.status)}`}>
                         {wz.status}
@@ -415,13 +415,13 @@ export default function WMSPage() {
       {/* History Modal */}
       {showHistoryModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-xl w-full max-w-6xl max-h-[90vh] flex flex-col">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl dark:shadow-gray-900 w-full max-w-6xl max-h-[90vh] flex flex-col">
             {/* Modal Header */}
-            <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-gray-900">Historia zmian magazynowych</h2>
+            <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Historia zmian magazynowych</h2>
               <button
                 onClick={() => setShowHistoryModal(false)}
-                className="text-gray-400 hover:text-gray-600"
+                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
               >
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -430,14 +430,14 @@ export default function WMSPage() {
             </div>
 
             {/* Filters */}
-            <div className="px-6 py-3 border-b border-gray-100 bg-gray-50">
+            <div className="px-6 py-3 border-b border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-700/50">
               <div className="flex flex-wrap gap-3 items-center">
                 <div>
-                  <label className="block text-xs text-gray-500 mb-1">Uzytkownik</label>
+                  <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Uzytkownik</label>
                   <select
                     value={historyFilters.username}
                     onChange={(e) => setHistoryFilters(prev => ({ ...prev, username: e.target.value, page: 1 }))}
-                    className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    className="px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
                   >
                     <option value="">Wszyscy</option>
                     {historyUsers.map(user => (
@@ -446,11 +446,11 @@ export default function WMSPage() {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-xs text-gray-500 mb-1">Typ zmiany</label>
+                  <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Typ zmiany</label>
                   <select
                     value={historyFilters.actionType}
                     onChange={(e) => setHistoryFilters(prev => ({ ...prev, actionType: e.target.value, page: 1 }))}
-                    className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    className="px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
                   >
                     <option value="">Wszystkie</option>
                     {historyActionTypes.map(type => (
@@ -459,16 +459,16 @@ export default function WMSPage() {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-xs text-gray-500 mb-1">SKU</label>
+                  <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">SKU</label>
                   <input
                     type="text"
                     value={historyFilters.sku}
                     onChange={(e) => setHistoryFilters(prev => ({ ...prev, sku: e.target.value, page: 1 }))}
                     placeholder="Szukaj SKU..."
-                    className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    className="px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
                   />
                 </div>
-                <div className="ml-auto text-sm text-gray-500">
+                <div className="ml-auto text-sm text-gray-500 dark:text-gray-400">
                   Znaleziono: {historyPagination.total} zmian
                 </div>
               </div>
@@ -481,31 +481,31 @@ export default function WMSPage() {
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600"></div>
                 </div>
               ) : historyData.length === 0 ? (
-                <div className="flex items-center justify-center h-64 text-gray-500">
+                <div className="flex items-center justify-center h-64 text-gray-500 dark:text-gray-400">
                   Brak historii zmian
                 </div>
               ) : (
                 <table className="w-full">
-                  <thead className="bg-gray-50 sticky top-0">
+                  <thead className="bg-gray-50 dark:bg-gray-700 sticky top-0">
                     <tr>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Data</th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Uzytkownik</th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Typ</th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">SKU</th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nazwa</th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Kategoria</th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Pole</th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Stara wartosc</th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nowa wartosc</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Data</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Uzytkownik</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Typ</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">SKU</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Nazwa</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Kategoria</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Pole</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Stara wartosc</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Nowa wartosc</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-100">
+                  <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
                     {historyData.map((item) => (
-                      <tr key={item.id} className="hover:bg-gray-50">
-                        <td className="px-4 py-3 text-sm text-gray-700 whitespace-nowrap">
+                      <tr key={item.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
+                        <td className="px-4 py-3 text-sm text-gray-700 dark:text-gray-300 whitespace-nowrap">
                           {formatDate(item.created_at)}
                         </td>
-                        <td className="px-4 py-3 text-sm text-gray-700">
+                        <td className="px-4 py-3 text-sm text-gray-700 dark:text-gray-300">
                           {item.username || '-'}
                         </td>
                         <td className="px-4 py-3">
@@ -514,21 +514,21 @@ export default function WMSPage() {
                           </span>
                         </td>
                         <td className="px-4 py-3">
-                          <span className="font-mono text-sm text-gray-900">{item.sku}</span>
+                          <span className="font-mono text-sm text-gray-900 dark:text-white">{item.sku}</span>
                         </td>
-                        <td className="px-4 py-3 text-sm text-gray-700 max-w-xs truncate" title={item.nazwa}>
+                        <td className="px-4 py-3 text-sm text-gray-700 dark:text-gray-300 max-w-xs truncate" title={item.nazwa}>
                           {item.nazwa}
                         </td>
-                        <td className="px-4 py-3 text-sm text-gray-500">
+                        <td className="px-4 py-3 text-sm text-gray-500 dark:text-gray-400">
                           {item.kategoria}
                         </td>
-                        <td className="px-4 py-3 text-sm text-gray-500">
+                        <td className="px-4 py-3 text-sm text-gray-500 dark:text-gray-400">
                           {item.field_changed || '-'}
                         </td>
-                        <td className="px-4 py-3 text-sm text-red-600 max-w-xs truncate" title={item.old_value}>
+                        <td className="px-4 py-3 text-sm text-red-600 dark:text-red-400 max-w-xs truncate" title={item.old_value}>
                           {item.old_value || '-'}
                         </td>
-                        <td className="px-4 py-3 text-sm text-green-600 max-w-xs truncate" title={item.new_value}>
+                        <td className="px-4 py-3 text-sm text-green-600 dark:text-green-400 max-w-xs truncate" title={item.new_value}>
                           {item.new_value || '-'}
                         </td>
                       </tr>
@@ -540,22 +540,22 @@ export default function WMSPage() {
 
             {/* Pagination */}
             {historyPagination.totalPages > 1 && (
-              <div className="px-6 py-3 border-t border-gray-200 flex items-center justify-between">
-                <div className="text-sm text-gray-500">
+              <div className="px-6 py-3 border-t border-gray-200 dark:border-gray-700 flex items-center justify-between">
+                <div className="text-sm text-gray-500 dark:text-gray-400">
                   Strona {historyPagination.page} z {historyPagination.totalPages}
                 </div>
                 <div className="flex gap-2">
                   <button
                     onClick={() => setHistoryFilters(prev => ({ ...prev, page: Math.max(1, prev.page - 1) }))}
                     disabled={historyPagination.page <= 1}
-                    className="px-3 py-1.5 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="px-3 py-1.5 text-sm bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     Poprzednia
                   </button>
                   <button
                     onClick={() => setHistoryFilters(prev => ({ ...prev, page: Math.min(historyPagination.totalPages, prev.page + 1) }))}
                     disabled={historyPagination.page >= historyPagination.totalPages}
-                    className="px-3 py-1.5 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="px-3 py-1.5 text-sm bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     Nastepna
                   </button>

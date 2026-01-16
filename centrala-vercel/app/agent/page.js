@@ -85,22 +85,22 @@ export default function AgentPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-gray-100">
+    <div className="min-h-screen bg-gray-100 dark:bg-gray-900">
       <main className="max-w-3xl mx-auto px-3 py-4 sm:px-6 sm:py-6">
         {/* Header */}
         <div className="flex justify-between items-center mb-4">
           <div>
-            <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Agent AI</h1>
-            <p className="text-xs sm:text-sm text-gray-500">Asystent do analizy sprzedaży</p>
+            <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">Agent AI</h1>
+            <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">Asystent do analizy sprzedaży</p>
           </div>
           <div className="flex items-center gap-2">
             <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
-            <span className="text-xs text-gray-500">Online</span>
+            <span className="text-xs text-gray-500 dark:text-gray-400">Online</span>
           </div>
         </div>
 
         {/* Chat Container */}
-        <div className="bg-white rounded-lg shadow flex flex-col" style={{ height: 'calc(100vh - 200px)', minHeight: '400px' }}>
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow dark:shadow-gray-900 flex flex-col" style={{ height: 'calc(100vh - 200px)', minHeight: '400px' }}>
           {/* Messages */}
           <div className="flex-1 overflow-y-auto p-4 space-y-4">
             {messages.map((message, index) => (
@@ -112,7 +112,7 @@ export default function AgentPage() {
                   className={`max-w-[80%] rounded-lg px-4 py-2 ${
                     message.role === 'user'
                       ? 'bg-blue-600 text-white'
-                      : 'bg-gray-100 text-gray-800'
+                      : 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200'
                   }`}
                 >
                   <pre className="whitespace-pre-wrap font-sans text-sm">{message.content}</pre>
@@ -121,11 +121,11 @@ export default function AgentPage() {
             ))}
             {isLoading && (
               <div className="flex justify-start">
-                <div className="bg-gray-100 rounded-lg px-4 py-2">
+                <div className="bg-gray-100 dark:bg-gray-700 rounded-lg px-4 py-2">
                   <div className="flex space-x-2">
-                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
-                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
-                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+                    <div className="w-2 h-2 bg-gray-400 dark:bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+                    <div className="w-2 h-2 bg-gray-400 dark:bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+                    <div className="w-2 h-2 bg-gray-400 dark:bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
                   </div>
                 </div>
               </div>
@@ -136,13 +136,13 @@ export default function AgentPage() {
           {/* Example Questions */}
           {messages.length <= 1 && (
             <div className="px-4 pb-2">
-              <p className="text-xs text-gray-500 mb-2">Przykładowe pytania:</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">Przykładowe pytania:</p>
               <div className="flex flex-wrap gap-2">
                 {exampleQuestions.map((q, i) => (
                   <button
                     key={i}
                     onClick={() => setInput(q)}
-                    className="text-xs px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-full transition-colors"
+                    className="text-xs px-3 py-1.5 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-full transition-colors"
                   >
                     {q}
                   </button>
@@ -152,7 +152,7 @@ export default function AgentPage() {
           )}
 
           {/* Input */}
-          <div className="border-t border-gray-100 p-4">
+          <div className="border-t border-gray-100 dark:border-gray-700 p-4">
             <div className="flex gap-2">
               <input
                 type="text"
@@ -160,7 +160,7 @@ export default function AgentPage() {
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={handleKeyDown}
                 placeholder="Zadaj pytanie o sprzedaż..."
-                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 disabled={isLoading}
               />
               <button
@@ -177,7 +177,7 @@ export default function AgentPage() {
         </div>
 
         {/* Info */}
-        <div className="mt-4 text-center text-xs text-gray-400">
+        <div className="mt-4 text-center text-xs text-gray-400 dark:text-gray-500">
           Powered by Groq AI (Llama 3.3)
         </div>
       </main>
