@@ -10,7 +10,26 @@ export default function Navigation() {
   const router = useRouter();
   const [unreadCount, setUnreadCount] = useState(0);
   const [unreadCountEU, setUnreadCountEU] = useState(0);
+  const [userPermissions, setUserPermissions] = useState([]);
+  const [showAccessDenied, setShowAccessDenied] = useState(false);
+  const [deniedModule, setDeniedModule] = useState('');
   const { darkMode, toggleDarkMode } = useTheme();
+
+  // Fetch user permissions
+  useEffect(() => {
+    const fetchPermissions = async () => {
+      try {
+        const res = await fetch('/api/auth/me');
+        const data = await res.json();
+        if (data.success && data.user?.permissions) {
+          setUserPermissions(data.user.permissions);
+        }
+      } catch (err) {
+        // Silently ignore
+      }
+    };
+    fetchPermissions();
+  }, []);
 
   // Fetch unread messages count for CRM PL (Allegro Dobrelegowiska + Meblebox + Shopify)
   useEffect(() => {
@@ -118,16 +137,31 @@ export default function Navigation() {
   };
 
   const navItems = [
-    { href: '/', label: 'Dashboard', icon: '📊' },
-    { href: '/zamowienia', label: 'OMS', icon: '📦' },
-    { href: '/magazyny', label: 'WMS', icon: '🏭' },
-    { href: '/mes', label: 'MES', icon: '⚙️' },
-    { href: '/mts', label: 'MTS', icon: '📋' },
-    { href: '/crm', label: 'CRM 🇵🇱', icon: '👥', badge: unreadCount },
-    { href: '/crm-eu', label: 'CRM 🇪🇺', icon: '👥', badge: unreadCountEU },
-    { href: '/rank', label: 'RANK', icon: '📈' },
-    { href: '/agent', label: 'Asystent AI', icon: '🤖' },
+    { href: '/', label: 'Dashboard', icon: '📊', permission: 'dashboard' },
+    { href: '/zamowienia', label: 'OMS', icon: '📦', permission: 'oms' },
+    { href: '/magazyny', label: 'WMS', icon: '🏭', permission: 'wms' },
+    { href: '/mes', label: 'MES', icon: '⚙️', permission: 'mes' },
+    { href: '/mts', label: 'MTS', icon: '📋', permission: 'mes' },
+    { href: '/crm', label: 'CRM 🇵🇱', icon: '👥', badge: unreadCount, permission: 'crm' },
+    { href: '/crm-eu', label: 'CRM 🇪🇺', icon: '👥', badge: unreadCountEU, permission: 'crm' },
+    { href: '/rank', label: 'RANK', icon: '📈', permission: 'dashboard' },
+    { href: '/agent', label: 'Asystent AI', icon: '🤖', permission: 'agent' },
   ];
+
+  // Check if user has permission for a module
+  const hasPermission = (permission) => {
+    if (!userPermissions.length) return true; // Loading state - allow all
+    return userPermissions.includes(permission);
+  };
+
+  // Handle click on restricted module
+  const handleRestrictedClick = (e, item) => {
+    if (!hasPermission(item.permission)) {
+      e.preventDefault();
+      setDeniedModule(item.label);
+      setShowAccessDenied(true);
+    }
+  };
 
   // Podziel na 2 linie na mobile
   const topRowItems = navItems.slice(0, 4); // Dashboard, Zamowienia, Magazyny, MES
@@ -143,19 +177,28 @@ export default function Navigation() {
       (item.href === '/crm-eu' && pathname.startsWith('/crm-eu')) ||
       (item.href === '/rank' && pathname.startsWith('/rank')) ||
       (item.href === '/agent' && pathname.startsWith('/agent'));
+
+    const permitted = hasPermission(item.permission);
+
     return (
       <Link
         key={item.href}
         href={item.href}
+        onClick={(e) => handleRestrictedClick(e, item)}
         className={`relative flex-1 flex flex-col md:flex-row items-center justify-center gap-0.5 md:gap-1 py-2 md:py-3 px-1 md:px-2 lg:px-3 text-xs lg:text-sm font-medium transition-colors whitespace-nowrap ${
-          isActive
-            ? 'text-blue-600 dark:text-blue-400 border-b-2 border-blue-600 dark:border-blue-400 bg-blue-50 dark:bg-blue-900/30'
-            : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700'
+          !permitted
+            ? 'text-red-500 dark:text-red-400 bg-red-50 dark:bg-red-900/20 cursor-not-allowed'
+            : isActive
+              ? 'text-blue-600 dark:text-blue-400 border-b-2 border-blue-600 dark:border-blue-400 bg-blue-50 dark:bg-blue-900/30'
+              : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700'
         }`}
       >
         <span className="text-lg md:text-sm lg:text-base">{item.icon}</span>
         <span className="truncate max-w-[60px] md:max-w-none">{item.label}</span>
-        {item.badge > 0 && (
+        {!permitted && (
+          <span className="absolute top-0.5 right-0.5 md:static md:ml-1 text-red-500 dark:text-red-400 text-xs">🔒</span>
+        )}
+        {permitted && item.badge > 0 && (
           <span className="absolute top-1 right-1 md:static md:ml-1 w-4 h-4 md:w-5 md:h-5 flex items-center justify-center bg-red-500 text-white text-[9px] md:text-[10px] font-medium rounded-full leading-none">
             {item.badge > 99 ? '99+' : item.badge}
           </span>
@@ -214,6 +257,32 @@ export default function Navigation() {
           </div>
         </div>
       </div>
+
+      {/* Access Denied Modal */}
+      {showAccessDenied && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[100]" onClick={() => setShowAccessDenied(false)}>
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 mx-4 max-w-sm w-full" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-12 h-12 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center">
+                <span className="text-2xl">🔒</span>
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Brak dostepu</h3>
+                <p className="text-sm text-gray-500 dark:text-gray-400">Modul: {deniedModule}</p>
+              </div>
+            </div>
+            <p className="text-gray-600 dark:text-gray-300 mb-4">
+              Nie masz uprawnien do tego modulu. Skontaktuj sie z administratorem, aby uzyskac dostep.
+            </p>
+            <button
+              onClick={() => setShowAccessDenied(false)}
+              className="w-full py-2 px-4 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 rounded-lg font-medium transition-colors"
+            >
+              Zamknij
+            </button>
+          </div>
+        </div>
+      )}
     </nav>
   );
 }
