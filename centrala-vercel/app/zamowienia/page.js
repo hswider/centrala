@@ -307,7 +307,7 @@ export default function ZamowieniaPage() {
         {/* Orders Chart */}
         {dailyOrdersChart.length > 0 && (
           <div className="mb-4 bg-white dark:bg-gray-800 rounded-lg shadow dark:shadow-gray-900 p-3">
-            <div className="text-xs text-gray-500 dark:text-gray-400 mb-2">Zamowienia (ostatnie 14 dni)</div>
+            <div className="text-xs text-gray-500 dark:text-gray-400 mb-2">Zamowienia (ostatnie 30 dni)</div>
             <div className="h-32">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={dailyOrdersChart} margin={{ top: 5, right: 5, left: -20, bottom: 5 }}>
