@@ -30,7 +30,7 @@ export default function CRMEUPage() {
   const [kauflandUnreadCount, setKauflandUnreadCount] = useState(0);
   const [kauflandSearch, setKauflandSearch] = useState('');
   const [kauflandAttachments, setKauflandAttachments] = useState([]);
-  const [kauflandFilter, setKauflandFilter] = useState('all'); // all, needs_response, sent, closed
+  const [kauflandFilter, setKauflandFilter] = useState('needs_response'); // all, needs_response, sent, closed
 
   // Shared state
   const [replyText, setReplyText] = useState('');
