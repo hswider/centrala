@@ -79,6 +79,42 @@ export async function GET(request) {
           }, { status: 500 });
         }
 
+      case 'order': {
+        // Get specific order by ID
+        const orderId = searchParams.get('id');
+        if (!orderId) {
+          return NextResponse.json({ success: false, error: 'Missing id parameter' }, { status: 400 });
+        }
+        try {
+          const apiKey = process.env.BASELINKER_API_KEY;
+          const formData = new URLSearchParams();
+          formData.append('method', 'getOrders');
+          formData.append('parameters', JSON.stringify({
+            order_id: parseInt(orderId)
+          }));
+
+          const response = await fetch('https://api.baselinker.com/connector.php', {
+            method: 'POST',
+            headers: {
+              'X-BLToken': apiKey,
+              'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: formData.toString(),
+          });
+
+          const data = await response.json();
+          const order = data.orders && data.orders.length > 0 ? data.orders[0] : null;
+          return NextResponse.json({
+            success: true,
+            order: order,
+            products: order ? order.products : null,
+            productFields: order && order.products && order.products.length > 0 ? Object.keys(order.products[0]) : []
+          });
+        } catch (err) {
+          return NextResponse.json({ success: false, error: err.message }, { status: 500 });
+        }
+      }
+
       default:
         // Default: test connection by fetching statuses
         const testStatuses = await getOrderStatuses();
