@@ -15,7 +15,7 @@ export default function CRMEUPage() {
   const [amazonSyncing, setAmazonSyncing] = useState(false);
   const [amazonSyncStatus, setAmazonSyncStatus] = useState(null);
   const [amazonUnreadCount, setAmazonUnreadCount] = useState(0);
-  const [amazonFilter, setAmazonFilter] = useState('all'); // all, needs_response, sent, resolved, unresolved
+  const [amazonFilter, setAmazonFilter] = useState('needs_response'); // all, needs_response, sent, resolved, unresolved
   const [amazonSearch, setAmazonSearch] = useState(''); // Search by order ID
 
   // Kaufland state
