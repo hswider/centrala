@@ -81,6 +81,24 @@ export async function GET(request) {
           const { sql: sql2 } = await import('@vercel/postgres');
           const dbTickets = await sql2`SELECT id, status, marketplace FROM kaufland_tickets ORDER BY updated_at DESC LIMIT 10`;
           return NextResponse.json({ success: true, dbTickets: dbTickets.rows });
+        case 'compare-ids':
+          // Compare ticket IDs between tickets and messages
+          const { sql: sql3 } = await import('@vercel/postgres');
+          const ticketIds = await sql3`SELECT DISTINCT id FROM kaufland_tickets LIMIT 20`;
+          const messageTicketIds = await sql3`SELECT DISTINCT ticket_id FROM kaufland_messages LIMIT 20`;
+          const messagesCount = await sql3`SELECT COUNT(*) as count FROM kaufland_messages`;
+          const ticketsCount = await sql3`SELECT COUNT(*) as count FROM kaufland_tickets`;
+          return NextResponse.json({
+            success: true,
+            ticketIds: ticketIds.rows.map(r => r.id),
+            messageTicketIds: messageTicketIds.rows.map(r => r.ticket_id),
+            ticketsCount: ticketsCount.rows[0].count,
+            messagesCount: messagesCount.rows[0].count
+          });
+        case 'raw-message':
+          // Get raw message from API to see format
+          const rawMsgResp = await rawKauflandRequest('/tickets/messages?limit=3');
+          return NextResponse.json({ success: true, rawMessages: rawMsgResp });
         case 'test-save':
           // Test saving a message
           const { getAllMessages, parseTicketMessage } = await import('../../../../lib/kaufland');
