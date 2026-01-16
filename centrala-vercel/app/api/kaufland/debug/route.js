@@ -123,7 +123,7 @@ export async function GET(request) {
             return NextResponse.json({ success: false, error: e.message });
           }
         case 'force-update-marketplace':
-          // Force update marketplace for all tickets
+          // Force update marketplace for all tickets (only update marketplace, not storefront since it's integer)
           const { sql: sql5 } = await import('@vercel/postgres');
           const { getTicketWithMessages: getTWM, parseTicket: pT } = await import('../../../../lib/kaufland');
           const allTicketsDb = await sql5`SELECT id FROM kaufland_tickets`;
@@ -134,8 +134,8 @@ export async function GET(request) {
               const det = twm.data || twm;
               if (det.storefront) {
                 const pTicket = pT({ id_ticket: row.id, storefront: det.storefront });
-                await sql5`UPDATE kaufland_tickets SET marketplace = ${pTicket.marketplace}, storefront = ${det.storefront} WHERE id = ${row.id}`;
-                updates.push({ id: row.id, marketplace: pTicket.marketplace });
+                await sql5`UPDATE kaufland_tickets SET marketplace = ${pTicket.marketplace} WHERE id = ${row.id}`;
+                updates.push({ id: row.id, marketplace: pTicket.marketplace, storefront: det.storefront });
               }
             } catch (e) {
               updates.push({ id: row.id, error: e.message });
