@@ -95,6 +95,16 @@ export async function GET(request) {
             ticketsCount: ticketsCount.rows[0].count,
             messagesCount: messagesCount.rows[0].count
           });
+        case 'message-stats':
+          // Check message counts by sender
+          const { sql: sql4 } = await import('@vercel/postgres');
+          const senderStats = await sql4`SELECT sender, COUNT(*) as count FROM kaufland_messages GROUP BY sender`;
+          const isFromSellerStats = await sql4`SELECT is_from_seller, COUNT(*) as count FROM kaufland_messages GROUP BY is_from_seller`;
+          return NextResponse.json({
+            success: true,
+            bySender: senderStats.rows,
+            byIsFromSeller: isFromSellerStats.rows
+          });
         case 'raw-message':
           // Get raw message from API to see format
           const rawMsgResp = await rawKauflandRequest('/tickets/messages?limit=3');
