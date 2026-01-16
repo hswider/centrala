@@ -150,8 +150,20 @@ export async function GET(request) {
     if (test === 'db') {
       // Check what's in database
       const { sql } = await import('@vercel/postgres');
+      const threadId = searchParams.get('threadId');
+
+      if (threadId) {
+        // Get specific thread's messages with attachment info
+        const messages = await sql`SELECT id, thread_id, from_email, from_name, subject, has_attachments, attachments, LEFT(body_text, 200) as body_preview FROM gmail_amazon_de_messages WHERE thread_id = ${threadId} ORDER BY sent_at DESC`;
+        return NextResponse.json({
+          success: true,
+          threadId,
+          messages: messages.rows
+        });
+      }
+
       const threads = await sql`SELECT id, from_name, from_email, subject, marketplace, asin, order_id, unread, status, needs_response, has_seller_reply, last_customer_message_at FROM gmail_amazon_de_threads ORDER BY last_message_at DESC LIMIT 10`;
-      const messages = await sql`SELECT id, thread_id, from_email, from_name, subject, LEFT(body_text, 200) as body_preview FROM gmail_amazon_de_messages ORDER BY sent_at DESC LIMIT 10`;
+      const messages = await sql`SELECT id, thread_id, from_email, from_name, subject, has_attachments, attachments, LEFT(body_text, 200) as body_preview FROM gmail_amazon_de_messages ORDER BY sent_at DESC LIMIT 10`;
       return NextResponse.json({
         success: true,
         threads: threads.rows,
