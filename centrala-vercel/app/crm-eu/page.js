@@ -439,16 +439,26 @@ export default function CRMEUPage() {
     return '📎';
   };
 
-  // Parse attachments from Kaufland message text (HTML links)
+  // Parse attachments from Kaufland message text (HTML links) and format text
   const parseKauflandAttachments = (text) => {
     if (!text) return { cleanText: '', attachments: [] };
 
     const attachments = [];
+
+    // First decode HTML entities so we can process actual tags
+    let processedText = text
+      .replace(/&lt;/g, '<')
+      .replace(/&gt;/g, '>')
+      .replace(/&amp;/g, '&')
+      .replace(/&quot;/g, '"')
+      .replace(/&#39;/g, "'")
+      .replace(/&#128206;/g, '📎');
+
     // Match patterns like: <a href="https://www.kaufland.de/dynamic/files/...">filename.pdf</a>
     const linkRegex = /<a\s+href="([^"]+)"[^>]*>([^<]+)<\/a>/gi;
     let match;
 
-    while ((match = linkRegex.exec(text)) !== null) {
+    while ((match = linkRegex.exec(processedText)) !== null) {
       const url = match[1];
       const filename = match[2];
       if (url.includes('kaufland.de') || url.includes('files')) {
@@ -456,18 +466,35 @@ export default function CRMEUPage() {
       }
     }
 
-    // Clean the text - remove HTML tags and decode entities
-    let cleanText = text
-      .replace(/<hr>/gi, '\n---\n')
-      .replace(/&#128206;/g, '📎')
-      .replace(/<br\s*\/?>/gi, '\n')
+    // Convert HTML formatting to plain text equivalents
+    let cleanText = processedText
+      // Remove attachment links (we display them separately)
       .replace(/<a\s+href="[^"]*"[^>]*>[^<]*<\/a>/gi, '')
+      // Convert strong/bold to uppercase or markers
+      .replace(/<strong>([^<]*)<\/strong>/gi, '▸ $1')
+      .replace(/<b>([^<]*)<\/b>/gi, '▸ $1')
+      // Convert emphasis/italic
+      .replace(/<em>([^<]*)<\/em>/gi, '_$1_')
+      .replace(/<i>([^<]*)<\/i>/gi, '_$1_')
+      // Convert lists
+      .replace(/<li>/gi, '• ')
+      .replace(/<\/li>/gi, '\n')
+      .replace(/<ul>|<\/ul>|<ol>|<\/ol>/gi, '\n')
+      // Convert line breaks and paragraphs
+      .replace(/<br\s*\/?>/gi, '\n')
+      .replace(/<\/p>\s*<p>/gi, '\n\n')
+      .replace(/<p>/gi, '')
+      .replace(/<\/p>/gi, '\n')
+      // Convert horizontal rules
+      .replace(/<hr\s*\/?>/gi, '\n───────────────\n')
+      // Convert divs to newlines
+      .replace(/<div>/gi, '')
+      .replace(/<\/div>/gi, '\n')
+      // Remove remaining HTML tags
       .replace(/<[^>]+>/g, '')
-      .replace(/&lt;/g, '<')
-      .replace(/&gt;/g, '>')
-      .replace(/&amp;/g, '&')
-      .replace(/&quot;/g, '"')
+      // Clean up whitespace
       .replace(/\n{3,}/g, '\n\n')
+      .replace(/^\s+|\s+$/g, '')
       .trim();
 
     return { cleanText, attachments };
