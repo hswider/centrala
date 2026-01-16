@@ -2616,7 +2616,10 @@ export async function saveGmailAmazonDeMessage(message, threadId) {
       ${message.sentAt || message.internalDate || new Date().toISOString()},
       ${message.isOutgoing || false}
     )
-    ON CONFLICT (id) DO NOTHING
+    ON CONFLICT (id) DO UPDATE SET
+      body_text = EXCLUDED.body_text,
+      body_html = EXCLUDED.body_html,
+      from_name = COALESCE(EXCLUDED.from_name, gmail_amazon_de_messages.from_name)
   `;
 }
 
