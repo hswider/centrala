@@ -300,6 +300,46 @@ export default function Home() {
               </div>
             </div>
 
+            {/* Orders Count Chart - Last 14 Days */}
+            {stats?.dailyOrders?.length > 0 && (
+              <div className="bg-white dark:bg-gray-800 rounded-lg shadow dark:shadow-gray-900">
+                <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-700">
+                  <h2 className="font-semibold text-gray-900 dark:text-white">Ilosc zamowien (ostatnie 14 dni)</h2>
+                </div>
+                <div className="p-4">
+                  <div className="h-48 sm:h-64">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={stats.dailyOrders}>
+                        <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                        <XAxis
+                          dataKey="day"
+                          tick={{ fontSize: 10 }}
+                          tickLine={false}
+                          axisLine={false}
+                        />
+                        <YAxis
+                          tick={{ fontSize: 10 }}
+                          tickLine={false}
+                          axisLine={false}
+                          width={35}
+                        />
+                        <Tooltip
+                          formatter={(value) => [`${value} zamówień`, 'Ilość']}
+                          labelFormatter={(label) => label}
+                          contentStyle={{ fontSize: '12px' }}
+                        />
+                        <Bar
+                          dataKey="orders"
+                          fill="#8B5CF6"
+                          radius={[2, 2, 0, 0]}
+                        />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* Top 10 Products */}
             {stats?.topProducts?.length > 0 && (
               <div className="bg-white dark:bg-gray-800 rounded-lg shadow dark:shadow-gray-900">
