@@ -16,6 +16,7 @@ export default function CRMEUPage() {
   const [amazonSyncStatus, setAmazonSyncStatus] = useState(null);
   const [amazonUnreadCount, setAmazonUnreadCount] = useState(0);
   const [amazonFilter, setAmazonFilter] = useState('all'); // all, needs_response, sent, resolved, unresolved
+  const [amazonSearch, setAmazonSearch] = useState(''); // Search by order ID
 
   // Kaufland state
   const [kauflandAuth, setKauflandAuth] = useState({ authenticated: false, loading: true });
@@ -414,6 +415,19 @@ export default function CRMEUPage() {
 
   // Filter Amazon threads by selected filter
   const filteredAmazonThreads = amazonThreads.filter(thread => {
+    // First apply search filter
+    if (amazonSearch.trim()) {
+      const searchLower = amazonSearch.toLowerCase().trim();
+      const matchesSearch =
+        (thread.order_id && thread.order_id.toLowerCase().includes(searchLower)) ||
+        (thread.subject && thread.subject.toLowerCase().includes(searchLower)) ||
+        (thread.from_name && thread.from_name.toLowerCase().includes(searchLower)) ||
+        (thread.from_email && thread.from_email.toLowerCase().includes(searchLower)) ||
+        (thread.asin && thread.asin.toLowerCase().includes(searchLower));
+      if (!matchesSearch) return false;
+    }
+
+    // Then apply tab filter
     switch (amazonFilter) {
       case 'needs_response':
         return thread.needs_response && thread.status !== 'resolved';
@@ -523,6 +537,32 @@ export default function CRMEUPage() {
                       </button>
                     </div>
 
+                    {/* Search */}
+                    <div className="px-3 py-2 border-b border-gray-100">
+                      <div className="relative">
+                        <input
+                          type="text"
+                          value={amazonSearch}
+                          onChange={(e) => setAmazonSearch(e.target.value)}
+                          placeholder="Szukaj zamowienia, ASIN, klienta..."
+                          className="w-full pl-8 pr-8 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                        />
+                        <svg className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                        </svg>
+                        {amazonSearch && (
+                          <button
+                            onClick={() => setAmazonSearch('')}
+                            className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                          >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                          </button>
+                        )}
+                      </div>
+                    </div>
+
                     {/* Filter tabs */}
                     <div className="px-2 py-2 border-b border-gray-100 flex gap-1 overflow-x-auto bg-gray-50">
                       {amazonFilterTabs.map((tab) => (
@@ -549,7 +589,13 @@ export default function CRMEUPage() {
                       ) : filteredAmazonThreads.length === 0 ? (
                         <div className="p-4 text-center text-gray-500">
                           <p>Brak wiadomosci.</p>
-                          <p className="text-xs mt-2">{amazonThreads.length > 0 ? 'Zmien filtr aby zobaczyc wiadomosci.' : 'Kliknij "Synchronizuj" aby pobrac wiadomosci.'}</p>
+                          <p className="text-xs mt-2">
+                            {amazonSearch.trim()
+                              ? `Nie znaleziono wynikow dla "${amazonSearch}".`
+                              : amazonThreads.length > 0
+                                ? 'Zmien filtr aby zobaczyc wiadomosci.'
+                                : 'Kliknij "Synchronizuj" aby pobrac wiadomosci.'}
+                          </p>
                         </div>
                       ) : (
                         filteredAmazonThreads.map((thread) => {
