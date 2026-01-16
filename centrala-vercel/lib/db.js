@@ -1319,16 +1319,22 @@ export async function searchOrderForAgent(searchTerm) {
 // ============== User Management Functions ==============
 
 // Create a new user
-export async function createUser(username, password, role = 'user') {
+export async function createUser(username, password, role = 'user', permissions = null) {
   const passwordHash = await bcrypt.hash(password, 10);
 
+  // Default permissions based on role
+  const defaultAdminPermissions = ['dashboard', 'oms', 'wms', 'mes', 'crm', 'agent', 'admin'];
+  const defaultUserPermissions = ['dashboard', 'oms', 'wms', 'mes', 'crm', 'agent'];
+  const userPermissions = permissions || (role === 'admin' ? defaultAdminPermissions : defaultUserPermissions);
+
   const { rows } = await sql`
-    INSERT INTO users (username, password_hash, role)
-    VALUES (${username}, ${passwordHash}, ${role})
+    INSERT INTO users (username, password_hash, role, permissions)
+    VALUES (${username}, ${passwordHash}, ${role}, ${JSON.stringify(userPermissions)})
     ON CONFLICT (username) DO UPDATE SET
       password_hash = ${passwordHash},
-      role = ${role}
-    RETURNING id, username, role, created_at
+      role = ${role},
+      permissions = ${JSON.stringify(userPermissions)}
+    RETURNING id, username, role, permissions, created_at
   `;
 
   return rows[0];

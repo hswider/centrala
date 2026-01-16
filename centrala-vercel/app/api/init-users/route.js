@@ -9,11 +9,16 @@ export async function POST(request) {
     // Create Administrator user
     const admin = await createUser('Administrator', 'POOM1234!@', 'admin');
 
+    // Create hswider user - admin role but without MES access
+    const hswiderPermissions = ['dashboard', 'oms', 'wms', 'crm', 'agent', 'admin'];
+    const hswider = await createUser('hswider', 'POOM1234!@', 'admin', hswiderPermissions);
+
     return NextResponse.json({
       success: true,
       message: 'Users initialized successfully',
       users: [
-        { username: admin.username, role: admin.role }
+        { username: admin.username, role: admin.role, permissions: admin.permissions },
+        { username: hswider.username, role: hswider.role, permissions: hswider.permissions }
       ]
     });
   } catch (error) {
@@ -29,11 +34,16 @@ export async function GET() {
 
     const admin = await createUser('Administrator', 'POOM1234!@', 'admin');
 
+    // Create hswider user - admin role but without MES access
+    const hswiderPermissions = ['dashboard', 'oms', 'wms', 'crm', 'agent', 'admin'];
+    const hswider = await createUser('hswider', 'POOM1234!@', 'admin', hswiderPermissions);
+
     return NextResponse.json({
       success: true,
       message: 'Users initialized successfully',
       users: [
-        { username: admin.username, role: admin.role }
+        { username: admin.username, role: admin.role, permissions: admin.permissions },
+        { username: hswider.username, role: hswider.role, permissions: hswider.permissions }
       ]
     });
   } catch (error) {
