@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { initDatabase, saveOrders, getLastSyncDate, getOrdersMissingSendDates, updateOrderSendDates } from '@/lib/db';
-import { fetchAllNewOrders, fetchOrderSendDates } from '@/lib/apilo';
+import { fetchAllNewOrders as fetchApiloOrders, fetchOrderSendDates } from '@/lib/apilo';
+import { fetchAllNewOrders as fetchBaselinkerOrders, isConfigured as isBaselinkerConfigured } from '@/lib/baselinker';
 
 export async function GET(request) {
   // Verify cron secret for security (optional)
@@ -20,20 +21,46 @@ export async function GET(request) {
     const lastSyncDate = await getLastSyncDate();
     console.log('[Sync] Last sync:', lastSyncDate);
 
-    // Fetch all orders (new ones will be added, existing ones updated)
-    // On first sync (no lastSyncDate), fetch up to 2000 orders
-    // On subsequent syncs, fetch only updated orders
-    const maxOrders = lastSyncDate ? 1000 : 2000;
-    const orders = await fetchAllNewOrders(null, maxOrders);
+    let allOrders = [];
+    let apiloCount = 0;
+    let baselinkerCount = 0;
 
-    if (orders.length > 0) {
-      await saveOrders(orders);
-      console.log('[Sync] Saved', orders.length, 'orders');
+    // Fetch from Apilo
+    try {
+      const maxOrders = lastSyncDate ? 1000 : 2000;
+      const apiloOrders = await fetchApiloOrders(null, maxOrders);
+      apiloCount = apiloOrders.length;
+      allOrders = allOrders.concat(apiloOrders);
+      console.log('[Sync] Apilo orders:', apiloCount);
+    } catch (error) {
+      console.error('[Sync] Apilo error:', error.message);
+    }
+
+    // Fetch from Baselinker (if configured)
+    if (isBaselinkerConfigured()) {
+      try {
+        const maxOrders = lastSyncDate ? 500 : 1000;
+        const baselinkerOrders = await fetchBaselinkerOrders(lastSyncDate, maxOrders);
+        baselinkerCount = baselinkerOrders.length;
+        allOrders = allOrders.concat(baselinkerOrders);
+        console.log('[Sync] Baselinker orders:', baselinkerCount);
+      } catch (error) {
+        console.error('[Sync] Baselinker error:', error.message);
+      }
+    } else {
+      console.log('[Sync] Baselinker not configured, skipping');
+    }
+
+    // Save all orders
+    if (allOrders.length > 0) {
+      await saveOrders(allOrders);
+      console.log('[Sync] Saved', allOrders.length, 'orders total');
     } else {
       console.log('[Sync] No new orders to save');
     }
 
-    // Fetch send dates for orders missing them (max 15 per sync to stay within timeout)
+    // Fetch send dates for Apilo orders missing them (max 15 per sync to stay within timeout)
+    // Only for Apilo orders (Baselinker doesn't have this feature)
     const ordersMissingSendDates = await getOrdersMissingSendDates(15);
     let sendDatesUpdated = 0;
 
@@ -41,6 +68,9 @@ export async function GET(request) {
       console.log('[Sync] Fetching send dates for', ordersMissingSendDates.length, 'orders');
 
       for (const orderId of ordersMissingSendDates) {
+        // Skip Baselinker orders (they start with BL-)
+        if (orderId.startsWith('BL-')) continue;
+
         const sendDates = await fetchOrderSendDates(orderId);
         if (sendDates) {
           await updateOrderSendDates(orderId, sendDates.sendDateMin, sendDates.sendDateMax);
@@ -55,7 +85,9 @@ export async function GET(request) {
 
     return NextResponse.json({
       success: true,
-      count: orders.length,
+      count: allOrders.length,
+      apiloCount,
+      baselinkerCount,
       sendDatesUpdated,
       ordersMissingSendDates: ordersMissingSendDates.length,
       timestamp: new Date().toISOString()
