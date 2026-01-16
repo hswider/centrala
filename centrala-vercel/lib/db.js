@@ -1326,14 +1326,15 @@ export async function createUser(username, password, role = 'user', permissions 
   const defaultAdminPermissions = ['dashboard', 'oms', 'wms', 'mes', 'crm', 'agent', 'admin'];
   const defaultUserPermissions = ['dashboard', 'oms', 'wms', 'mes', 'crm', 'agent'];
   const userPermissions = permissions || (role === 'admin' ? defaultAdminPermissions : defaultUserPermissions);
+  const permissionsJson = JSON.stringify(userPermissions);
 
   const { rows } = await sql`
     INSERT INTO users (username, password_hash, role, permissions)
-    VALUES (${username}, ${passwordHash}, ${role}, ${JSON.stringify(userPermissions)})
+    VALUES (${username}, ${passwordHash}, ${role}, ${permissionsJson}::jsonb)
     ON CONFLICT (username) DO UPDATE SET
       password_hash = ${passwordHash},
       role = ${role},
-      permissions = ${JSON.stringify(userPermissions)}
+      permissions = ${permissionsJson}::jsonb
     RETURNING id, username, role, permissions, created_at
   `;
 

@@ -9,9 +9,9 @@ export async function POST(request) {
     // Create Administrator user
     const admin = await createUser('Administrator', 'POOM1234!@', 'admin');
 
-    // Create hswider user - admin role but without MES access
-    const hswiderPermissions = ['dashboard', 'oms', 'wms', 'crm', 'agent', 'admin'];
-    const hswider = await createUser('hswider', 'POOM1234!@', 'admin', hswiderPermissions);
+    // Create hswider user - user role without MES access
+    const hswiderPermissions = ['dashboard', 'oms', 'wms', 'crm', 'agent'];
+    const hswider = await createUser('hswider', 'POOM1234!@', 'user', hswiderPermissions);
 
     return NextResponse.json({
       success: true,
@@ -34,9 +34,9 @@ export async function GET() {
 
     const admin = await createUser('Administrator', 'POOM1234!@', 'admin');
 
-    // Create hswider user - admin role but without MES access
-    const hswiderPermissions = ['dashboard', 'oms', 'wms', 'crm', 'agent', 'admin'];
-    const hswider = await createUser('hswider', 'POOM1234!@', 'admin', hswiderPermissions);
+    // Create hswider user - user role without MES access
+    const hswiderPermissions = ['dashboard', 'oms', 'wms', 'crm', 'agent'];
+    const hswider = await createUser('hswider', 'POOM1234!@', 'user', hswiderPermissions);
 
     return NextResponse.json({
       success: true,
