@@ -105,6 +105,43 @@ export async function GET(request) {
             bySender: senderStats.rows,
             byIsFromSeller: isFromSellerStats.rows
           });
+        case 'test-storefront':
+          // Test storefront mapping
+          const { getTicketWithMessages, parseTicket, STOREFRONT_TO_COUNTRY } = await import('../../../../lib/kaufland');
+          const testTicketId = ticketId || '00123721829';
+          try {
+            const ticketWithMsgs = await getTicketWithMessages(testTicketId);
+            const detail = ticketWithMsgs.data || ticketWithMsgs;
+            const parsed = parseTicket({ id_ticket: testTicketId, storefront: detail.storefront });
+            return NextResponse.json({
+              success: true,
+              rawStorefront: detail.storefront,
+              parsedMarketplace: parsed.marketplace,
+              mapping: STOREFRONT_TO_COUNTRY
+            });
+          } catch (e) {
+            return NextResponse.json({ success: false, error: e.message });
+          }
+        case 'force-update-marketplace':
+          // Force update marketplace for all tickets
+          const { sql: sql5 } = await import('@vercel/postgres');
+          const { getTicketWithMessages: getTWM, parseTicket: pT } = await import('../../../../lib/kaufland');
+          const allTicketsDb = await sql5`SELECT id FROM kaufland_tickets`;
+          const updates = [];
+          for (const row of allTicketsDb.rows) {
+            try {
+              const twm = await getTWM(row.id);
+              const det = twm.data || twm;
+              if (det.storefront) {
+                const pTicket = pT({ id_ticket: row.id, storefront: det.storefront });
+                await sql5`UPDATE kaufland_tickets SET marketplace = ${pTicket.marketplace}, storefront = ${det.storefront} WHERE id = ${row.id}`;
+                updates.push({ id: row.id, marketplace: pTicket.marketplace });
+              }
+            } catch (e) {
+              updates.push({ id: row.id, error: e.message });
+            }
+          }
+          return NextResponse.json({ success: true, updates });
         case 'raw-message':
           // Get raw message from API to see format
           const rawMsgResp = await rawKauflandRequest('/tickets/messages?limit=3');
