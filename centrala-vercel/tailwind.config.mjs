@@ -4,6 +4,7 @@ export default {
     './app/**/*.{js,jsx}',
     './components/**/*.{js,jsx}',
   ],
+  darkMode: 'class',
   theme: {
     extend: {},
   },

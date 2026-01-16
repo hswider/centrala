@@ -3,11 +3,13 @@
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
+import { useTheme } from './ThemeProvider';
 
 export default function Navigation() {
   const pathname = usePathname();
   const router = useRouter();
   const [unreadCount, setUnreadCount] = useState(0);
+  const { darkMode, toggleDarkMode } = useTheme();
 
   // Fetch unread messages count
   useEffect(() => {
@@ -65,8 +67,8 @@ export default function Navigation() {
         href={item.href}
         className={`relative flex-1 flex flex-col sm:flex-row items-center justify-center gap-0.5 sm:gap-1.5 py-2 sm:py-3 text-xs sm:text-sm font-medium transition-colors ${
           isActive
-            ? 'text-blue-600 border-b-2 border-blue-600 bg-blue-50'
-            : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
+            ? 'text-blue-600 dark:text-blue-400 border-b-2 border-blue-600 dark:border-blue-400 bg-blue-50 dark:bg-blue-900/30'
+            : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700'
         }`}
       >
         <span className="text-lg sm:text-base">{item.icon}</span>
@@ -81,14 +83,22 @@ export default function Navigation() {
   };
 
   return (
-    <nav className="bg-white shadow sticky top-0 z-50">
+    <nav className="bg-white dark:bg-gray-800 shadow dark:shadow-gray-900 sticky top-0 z-50">
       <div className="max-w-4xl mx-auto px-1 sm:px-6">
         {/* Desktop: jedna linia */}
         <div className="hidden sm:flex items-center">
           {navItems.map(renderNavItem)}
           <button
+            onClick={toggleDarkMode}
+            className="flex flex-row items-center justify-center gap-1.5 py-3 px-3 text-sm font-medium text-gray-500 dark:text-gray-400 hover:text-yellow-600 dark:hover:text-yellow-400 hover:bg-yellow-50 dark:hover:bg-yellow-900/20 transition-colors border-l border-gray-200 dark:border-gray-700"
+            title={darkMode ? 'Tryb jasny' : 'Tryb ciemny'}
+          >
+            <span className="text-lg">{darkMode ? '☀️' : '🌙'}</span>
+            <span className="hidden lg:inline">{darkMode ? 'Jasny' : 'Ciemny'}</span>
+          </button>
+          <button
             onClick={handleLogout}
-            className="flex flex-row items-center justify-center gap-1.5 py-3 px-2 text-sm font-medium text-gray-400 hover:text-red-600 hover:bg-red-50 transition-colors"
+            className="flex flex-row items-center justify-center gap-1.5 py-3 px-2 text-sm font-medium text-gray-400 dark:text-gray-500 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
             title="Wyloguj"
           >
             <span className="text-base">🚪</span>
@@ -98,14 +108,22 @@ export default function Navigation() {
 
         {/* Mobile: dwie linie */}
         <div className="sm:hidden">
-          <div className="flex items-center border-b border-gray-100">
+          <div className="flex items-center border-b border-gray-100 dark:border-gray-700">
             {topRowItems.map(renderNavItem)}
           </div>
           <div className="flex items-center">
             {bottomRowItems.map(renderNavItem)}
             <button
+              onClick={toggleDarkMode}
+              className="flex-1 flex flex-col items-center justify-center gap-0.5 py-2 text-xs font-medium text-gray-400 dark:text-gray-500 hover:text-yellow-600 dark:hover:text-yellow-400 hover:bg-yellow-50 dark:hover:bg-yellow-900/20 transition-colors"
+              title={darkMode ? 'Tryb jasny' : 'Tryb ciemny'}
+            >
+              <span className="text-lg">{darkMode ? '☀️' : '🌙'}</span>
+              <span>{darkMode ? 'Jasny' : 'Ciemny'}</span>
+            </button>
+            <button
               onClick={handleLogout}
-              className="flex-1 flex flex-col items-center justify-center gap-0.5 py-2 text-xs font-medium text-gray-400 hover:text-red-600 hover:bg-red-50 transition-colors"
+              className="flex-1 flex flex-col items-center justify-center gap-0.5 py-2 text-xs font-medium text-gray-400 dark:text-gray-500 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
               title="Wyloguj"
             >
               <span className="text-lg">🚪</span>

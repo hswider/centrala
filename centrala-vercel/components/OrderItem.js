@@ -148,7 +148,7 @@ export default function OrderItem({ order }) {
 
   return (
     <Link href={`/zamowienia/${order.id}`} className="block">
-      <div className="bg-white rounded-lg shadow hover:shadow-md transition-shadow">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow dark:shadow-gray-900 hover:shadow-md dark:hover:shadow-gray-800 transition-shadow">
         {/* Compact Order Row */}
         <div className="p-3 sm:p-4">
           {/* Mobile Layout */}
@@ -163,18 +163,18 @@ export default function OrderItem({ order }) {
               {/* Top Row: Channel & Price */}
               <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0">
-                  <div className="font-medium text-gray-900 text-sm truncate">
+                  <div className="font-medium text-gray-900 dark:text-white text-sm truncate">
                     {order.channel?.label || 'Nieznany'}
                   </div>
-                  <div className="text-xs text-gray-500">
+                  <div className="text-xs text-gray-500 dark:text-gray-400">
                     #{order.id}
                   </div>
                 </div>
                 <div className="text-right flex-shrink-0">
-                  <div className="font-bold text-gray-900">
+                  <div className="font-bold text-gray-900 dark:text-white">
                     {formatPrice(order.financials?.totalGross, order.financials?.currency)}
                   </div>
-                  <div className="text-xs text-gray-500">
+                  <div className="text-xs text-gray-500 dark:text-gray-400">
                     {formatDate(order.dates?.orderedAt)} {formatTime(order.dates?.orderedAt)}
                   </div>
                 </div>
@@ -193,16 +193,16 @@ export default function OrderItem({ order }) {
                       unoptimized
                     />
                   ) : (
-                    <div className="w-8 h-8 bg-gray-100 rounded flex items-center justify-center text-gray-400 flex-shrink-0">
+                    <div className="w-8 h-8 bg-gray-100 dark:bg-gray-700 rounded flex items-center justify-center text-gray-400 dark:text-gray-500 flex-shrink-0">
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                       </svg>
                     </div>
                   )}
                   <div className="min-w-0 flex-grow">
-                    <div className="text-xs text-gray-700 truncate">{mainItem.name}</div>
+                    <div className="text-xs text-gray-700 dark:text-gray-300 truncate">{mainItem.name}</div>
                     {itemCount > 1 && (
-                      <div className="text-xs text-gray-400">+{itemCount - 1} wiecej</div>
+                      <div className="text-xs text-gray-400 dark:text-gray-500">+{itemCount - 1} wiecej</div>
                     )}
                   </div>
                 </div>
@@ -221,7 +221,7 @@ export default function OrderItem({ order }) {
                   {order.status?.paymentStatus === 'PAID' ? 'Zaplac.' : 'Niezapl.'}
                 </span>
                 {(order.dates?.sendDateMin || order.dates?.sendDateMax) && (
-                  <span className="text-xs text-blue-600">
+                  <span className="text-xs text-blue-600 dark:text-blue-400">
                     Wys: {order.dates?.sendDateMax ? formatDate(order.dates.sendDateMax) : formatDate(order.dates.sendDateMin)}
                   </span>
                 )}
@@ -230,7 +230,7 @@ export default function OrderItem({ order }) {
 
             {/* Arrow */}
             <div className="flex-shrink-0 self-center">
-              <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-4 h-4 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
               </svg>
             </div>

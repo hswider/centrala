@@ -264,13 +264,13 @@ export default function ZamowieniaPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100">
+    <div className="min-h-screen bg-gray-100 dark:bg-gray-900">
       <main className="max-w-7xl mx-auto px-3 py-4 sm:px-6 sm:py-6 lg:px-8">
         {/* Header */}
         <div className="flex justify-between items-center gap-3 mb-4">
           <div>
-            <h1 className="text-xl sm:text-2xl font-bold text-gray-900">OMS - Order Management System</h1>
-            <p className="text-xs sm:text-sm text-gray-500">
+            <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">OMS - Order Management System</h1>
+            <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">
               {pagination ? (
                 <>{selectedChannel ? `${selectedChannel}: ` : ''}{pagination.totalCount} zamowien</>
               ) : (
@@ -279,11 +279,11 @@ export default function ZamowieniaPage() {
             </p>
             {todayStats.total > 0 && (
               <div className="mt-2 flex flex-wrap gap-1">
-                <span className="text-xs font-medium text-green-700 bg-green-100 px-2 py-0.5 rounded">
+                <span className="text-xs font-medium text-green-700 dark:text-green-300 bg-green-100 dark:bg-green-900/50 px-2 py-0.5 rounded">
                   Dzisiaj: {todayStats.total}
                 </span>
                 {todayStats.byPlatform.map(p => (
-                  <span key={p.platform} className="text-xs text-gray-600 bg-gray-100 px-2 py-0.5 rounded">
+                  <span key={p.platform} className="text-xs text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 px-2 py-0.5 rounded">
                     {p.platform}: {p.count}
                   </span>
                 ))}
@@ -301,13 +301,13 @@ export default function ZamowieniaPage() {
 
         {/* Status Filter */}
         {statuses.length > 0 && (
-          <div className="mb-4 bg-white rounded-lg shadow p-3">
+          <div className="mb-4 bg-white dark:bg-gray-800 rounded-lg shadow dark:shadow-gray-900 p-3">
             <div className="flex items-center justify-between mb-2">
-              <div className="text-xs text-gray-500">Status</div>
+              <div className="text-xs text-gray-500 dark:text-gray-400">Status</div>
               {selectedStatus !== null && (
                 <button
                   onClick={() => handleStatusChange(selectedStatus)}
-                  className="px-2 py-0.5 rounded text-xs font-medium bg-gray-200 text-gray-600 hover:bg-gray-300"
+                  className="px-2 py-0.5 rounded text-xs font-medium bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600"
                 >
                   Wyczysc filtr
                 </button>
@@ -372,7 +372,7 @@ export default function ZamowieniaPage() {
             <select
               value={selectedChannel}
               onChange={(e) => handleChannelChange(e.target.value)}
-              className="px-3 py-2 border border-gray-300 rounded-lg bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+              className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
             >
               <option value="">Wszystkie kanaly</option>
               {channels.map((ch, idx) => (
@@ -384,17 +384,17 @@ export default function ZamowieniaPage() {
           </div>
           {/* Per Page Selector */}
           <div className="flex items-center gap-2 text-sm">
-            <span className="text-gray-600">Pokazuj:</span>
+            <span className="text-gray-600 dark:text-gray-400">Pokazuj:</span>
             <select
               value={perPage}
               onChange={(e) => handlePerPageChange(Number(e.target.value))}
-              className="px-2 py-1 border border-gray-300 rounded bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="px-2 py-1 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value={20}>20</option>
               <option value={50}>50</option>
               <option value={100}>100</option>
             </select>
-            <span className="text-gray-600">na stronie</span>
+            <span className="text-gray-600 dark:text-gray-400">na stronie</span>
             {(selectedChannel || selectedStatus !== null) && (
               <button
                 onClick={() => {
@@ -402,7 +402,7 @@ export default function ZamowieniaPage() {
                   setSelectedStatus(null);
                   fetchOrders(1, searchQuery, perPage, '', null);
                 }}
-                className="ml-2 px-2 py-1 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 text-xs"
+                className="ml-2 px-2 py-1 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 rounded hover:bg-gray-300 dark:hover:bg-gray-600 text-xs"
               >
                 Wyczysc filtry
               </button>
@@ -416,11 +416,11 @@ export default function ZamowieniaPage() {
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
           </div>
         ) : error ? (
-          <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-red-700">
+          <div className="bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded-lg p-4 text-red-700 dark:text-red-300">
             {error}
           </div>
         ) : orders.length === 0 ? (
-          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 text-yellow-700">
+          <div className="bg-yellow-50 dark:bg-yellow-900/30 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4 text-yellow-700 dark:text-yellow-300">
             {searchQuery
               ? `Nie znaleziono zamowien dla "${searchQuery}"`
               : 'Brak zamowien. Kliknij "Synchronizuj" aby pobrac dane z Apilo.'}

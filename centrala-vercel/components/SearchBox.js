@@ -38,7 +38,7 @@ export default function SearchBox({ onSearch, initialValue = '' }) {
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Szukaj po ID, nazwie produktu, kanale..."
-          className="block w-full pl-10 pr-20 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 text-sm"
+          className="block w-full pl-10 pr-20 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-blue-500 focus:border-blue-500 text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500"
         />
         <div className="absolute inset-y-0 right-0 flex items-center">
           {query && (

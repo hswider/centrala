@@ -164,11 +164,11 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100">
+    <div className="min-h-screen bg-gray-100 dark:bg-gray-900">
       <main className="max-w-7xl mx-auto px-3 py-4 sm:px-6 sm:py-6 lg:px-8">
         {/* Welcome Banner */}
         {user && (
-          <div className="bg-gradient-to-r from-blue-600 to-blue-800 rounded-lg shadow-lg p-4 sm:p-6 mb-6 text-white">
+          <div className="bg-gradient-to-r from-blue-600 to-blue-800 dark:from-blue-700 dark:to-blue-900 rounded-lg shadow-lg p-4 sm:p-6 mb-6 text-white">
             <h1 className="text-xl sm:text-2xl font-bold mb-2">
               Witaj {user.username} w Centrali POOM
             </h1>
@@ -198,8 +198,8 @@ export default function Home() {
         {/* Header */}
         <div className="flex justify-between items-center mb-6">
           <div>
-            <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Dashboard</h1>
-            <p className="text-xs sm:text-sm text-gray-500">Przeglad zamowien</p>
+            <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">Dashboard</h1>
+            <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">Przeglad zamowien</p>
           </div>
           <button
             onClick={triggerSync}
@@ -218,21 +218,21 @@ export default function Home() {
           <div className="space-y-4">
             {/* Summary Cards */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              <div className="bg-white rounded-lg shadow p-4">
-                <p className="text-xs text-gray-500">Dzisiaj</p>
-                <p className="text-2xl font-bold text-blue-600">{stats?.summary?.ordersToday || 0}</p>
+              <div className="bg-white dark:bg-gray-800 rounded-lg shadow dark:shadow-gray-900 p-4">
+                <p className="text-xs text-gray-500 dark:text-gray-400">Dzisiaj</p>
+                <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">{stats?.summary?.ordersToday || 0}</p>
               </div>
-              <div className="bg-white rounded-lg shadow p-4">
-                <p className="text-xs text-gray-500">Wczoraj</p>
-                <p className="text-2xl font-bold text-gray-700">{stats?.summary?.ordersYesterday || 0}</p>
+              <div className="bg-white dark:bg-gray-800 rounded-lg shadow dark:shadow-gray-900 p-4">
+                <p className="text-xs text-gray-500 dark:text-gray-400">Wczoraj</p>
+                <p className="text-2xl font-bold text-gray-700 dark:text-gray-300">{stats?.summary?.ordersYesterday || 0}</p>
               </div>
-              <div className="bg-white rounded-lg shadow p-4">
-                <p className="text-xs text-gray-500">Wyslano dzis</p>
-                <p className="text-2xl font-bold text-green-600">{stats?.summary?.shippedToday || 0}</p>
+              <div className="bg-white dark:bg-gray-800 rounded-lg shadow dark:shadow-gray-900 p-4">
+                <p className="text-xs text-gray-500 dark:text-gray-400">Wyslano dzis</p>
+                <p className="text-2xl font-bold text-green-600 dark:text-green-400">{stats?.summary?.shippedToday || 0}</p>
               </div>
-              <div className="bg-white rounded-lg shadow p-4">
-                <p className="text-xs text-gray-500">Wyslano wczoraj</p>
-                <p className="text-2xl font-bold text-gray-700">{stats?.summary?.shippedYesterday || 0}</p>
+              <div className="bg-white dark:bg-gray-800 rounded-lg shadow dark:shadow-gray-900 p-4">
+                <p className="text-xs text-gray-500 dark:text-gray-400">Wyslano wczoraj</p>
+                <p className="text-2xl font-bold text-gray-700 dark:text-gray-300">{stats?.summary?.shippedYesterday || 0}</p>
               </div>
             </div>
 
@@ -249,9 +249,9 @@ export default function Home() {
             </div>
 
             {/* Revenue Chart - Last 30 Days */}
-            <div className="bg-white rounded-lg shadow">
-              <div className="px-4 py-3 border-b border-gray-100">
-                <h2 className="font-semibold text-gray-900">Sprzedaż ostatnie 30 dni (PLN)</h2>
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow dark:shadow-gray-900">
+              <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-700">
+                <h2 className="font-semibold text-gray-900 dark:text-white">Sprzedaż ostatnie 30 dni (PLN)</h2>
               </div>
               <div className="p-4">
                 <div className="h-48 sm:h-64">
@@ -290,31 +290,31 @@ export default function Home() {
 
             {/* Top 10 Products */}
             {stats?.topProducts?.length > 0 && (
-              <div className="bg-white rounded-lg shadow">
-                <div className="px-4 py-3 border-b border-gray-100">
-                  <h2 className="font-semibold text-gray-900">TOP 10 produktów (ostatnie 30 dni)</h2>
+              <div className="bg-white dark:bg-gray-800 rounded-lg shadow dark:shadow-gray-900">
+                <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-700">
+                  <h2 className="font-semibold text-gray-900 dark:text-white">TOP 10 produktów (ostatnie 30 dni)</h2>
                 </div>
-                <div className="divide-y divide-gray-100">
+                <div className="divide-y divide-gray-100 dark:divide-gray-700">
                   {stats.topProducts.slice(0, 10).map((product, idx) => (
-                    <div key={idx} className="px-3 py-2 flex items-center gap-2 hover:bg-gray-50">
+                    <div key={idx} className="px-3 py-2 flex items-center gap-2 hover:bg-gray-50 dark:hover:bg-gray-700">
                       <span className="text-sm sm:text-base w-5 shrink-0 text-center">
-                        {idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : <span className="text-[10px] sm:text-xs text-gray-400 font-medium">{idx + 1}</span>}
+                        {idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : <span className="text-[10px] sm:text-xs text-gray-400 dark:text-gray-500 font-medium">{idx + 1}</span>}
                       </span>
-                      <div className="w-8 h-8 sm:w-10 sm:h-10 shrink-0 bg-gray-100 rounded overflow-hidden">
+                      <div className="w-8 h-8 sm:w-10 sm:h-10 shrink-0 bg-gray-100 dark:bg-gray-700 rounded overflow-hidden">
                         {product.image ? (
                           <img src={product.image} alt="" className="w-full h-full object-cover" />
                         ) : (
-                          <div className="w-full h-full flex items-center justify-center text-gray-400 text-[10px]">brak</div>
+                          <div className="w-full h-full flex items-center justify-center text-gray-400 dark:text-gray-500 text-[10px]">brak</div>
                         )}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <div className="text-[10px] sm:text-xs font-medium text-gray-900 line-clamp-2" title={product.name}>
+                        <div className="text-[10px] sm:text-xs font-medium text-gray-900 dark:text-white line-clamp-2" title={product.name}>
                           {product.name}
                         </div>
                       </div>
                       <div className="text-right shrink-0">
-                        <div className="text-[11px] sm:text-sm font-semibold text-gray-900">{product.quantity} szt.</div>
-                        <div className="text-[10px] sm:text-xs font-medium text-green-600">{product.revenue.toLocaleString('pl-PL')} zł</div>
+                        <div className="text-[11px] sm:text-sm font-semibold text-gray-900 dark:text-white">{product.quantity} szt.</div>
+                        <div className="text-[10px] sm:text-xs font-medium text-green-600 dark:text-green-400">{product.revenue.toLocaleString('pl-PL')} zł</div>
                       </div>
                     </div>
                   ))}
@@ -324,31 +324,31 @@ export default function Home() {
 
             {/* Top 5 Marketplaces */}
             {stats?.last30DaysByPlatform?.length > 0 && (
-              <div className="bg-white rounded-lg shadow">
-                <div className="px-4 py-3 border-b border-gray-100">
-                  <h2 className="font-semibold text-gray-900">TOP 5 Marketplace'ów (ostatnie 30 dni)</h2>
+              <div className="bg-white dark:bg-gray-800 rounded-lg shadow dark:shadow-gray-900">
+                <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-700">
+                  <h2 className="font-semibold text-gray-900 dark:text-white">TOP 5 Marketplace'ów (ostatnie 30 dni)</h2>
                 </div>
-                <div className="divide-y divide-gray-100">
+                <div className="divide-y divide-gray-100 dark:divide-gray-700">
                   {stats.last30DaysByPlatform.slice(0, 5).map((item, idx) => (
-                    <div key={idx} className="px-3 py-2 flex items-center gap-3 hover:bg-gray-50">
+                    <div key={idx} className="px-3 py-2 flex items-center gap-3 hover:bg-gray-50 dark:hover:bg-gray-700">
                       <span className="text-sm sm:text-base w-5 shrink-0 text-center">
-                        {idx === 0 ? <span>🏆</span> : idx === 1 ? <span className="grayscale brightness-110">🏆</span> : idx === 2 ? <span className="sepia brightness-75">🏆</span> : <span className="text-[10px] sm:text-xs text-gray-400 font-medium">{idx + 1}</span>}
+                        {idx === 0 ? <span>🏆</span> : idx === 1 ? <span className="grayscale brightness-110">🏆</span> : idx === 2 ? <span className="sepia brightness-75">🏆</span> : <span className="text-[10px] sm:text-xs text-gray-400 dark:text-gray-500 font-medium">{idx + 1}</span>}
                       </span>
-                      <div className="w-8 h-8 sm:w-10 sm:h-10 shrink-0 rounded overflow-hidden bg-gray-100 flex items-center justify-center">
+                      <div className="w-8 h-8 sm:w-10 sm:h-10 shrink-0 rounded overflow-hidden bg-gray-100 dark:bg-gray-700 flex items-center justify-center">
                         {platformConfig[item.platform]?.icon ? (
                           <img src={platformConfig[item.platform].icon} alt={item.platform} className="w-6 h-6 sm:w-8 sm:h-8 object-contain" />
                         ) : (
-                          <span className="text-xs font-bold text-gray-500">{item.platform?.charAt(0)}</span>
+                          <span className="text-xs font-bold text-gray-500 dark:text-gray-400">{item.platform?.charAt(0)}</span>
                         )}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <div className="text-xs sm:text-sm font-medium text-gray-900">
+                        <div className="text-xs sm:text-sm font-medium text-gray-900 dark:text-white">
                           {getPlatformLabel(item.platform)}
                         </div>
                       </div>
                       <div className="text-right shrink-0">
-                        <div className="text-sm sm:text-base font-bold text-blue-600">{item.count}</div>
-                        <div className="text-[10px] sm:text-xs text-gray-500">zamówień</div>
+                        <div className="text-sm sm:text-base font-bold text-blue-600 dark:text-blue-400">{item.count}</div>
+                        <div className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400">zamówień</div>
                       </div>
                     </div>
                   ))}
@@ -357,37 +357,37 @@ export default function Home() {
             )}
 
             {/* Orders Today by Platform */}
-            <div className="bg-white rounded-lg shadow">
-              <div className="px-4 py-3 border-b border-gray-100">
-                <h2 className="font-semibold text-gray-900">Zamowienia dzisiaj</h2>
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow dark:shadow-gray-900">
+              <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-700">
+                <h2 className="font-semibold text-gray-900 dark:text-white">Zamowienia dzisiaj</h2>
               </div>
-              <div className="divide-y divide-gray-50">
+              <div className="divide-y divide-gray-50 dark:divide-gray-700">
                 {stats?.todayByPlatform?.length > 0 ? (
                   stats.todayByPlatform.map((item, idx) => (
                     <div key={idx} className="px-4 py-2.5 flex justify-between items-center">
                       <div className="flex items-center gap-2">
                         {renderPlatformIcon(item.platform)}
-                        <span className="text-sm text-gray-700">{getPlatformLabel(item.platform)}</span>
+                        <span className="text-sm text-gray-700 dark:text-gray-300">{getPlatformLabel(item.platform)}</span>
                       </div>
-                      <span className="font-semibold text-gray-900">{item.count}</span>
+                      <span className="font-semibold text-gray-900 dark:text-white">{item.count}</span>
                     </div>
                   ))
                 ) : (
-                  <div className="px-4 py-3 text-sm text-gray-500">Brak zamowien dzisiaj</div>
+                  <div className="px-4 py-3 text-sm text-gray-500 dark:text-gray-400">Brak zamowien dzisiaj</div>
                 )}
               </div>
               {stats?.todayByPlatform?.length > 0 && (
-                <div className="px-4 py-2.5 border-t border-gray-200 flex justify-between items-center bg-gray-50">
-                  <span className="text-sm font-medium text-gray-700">Razem</span>
-                  <span className="font-bold text-blue-600">{stats?.summary?.ordersToday || 0}</span>
+                <div className="px-4 py-2.5 border-t border-gray-200 dark:border-gray-700 flex justify-between items-center bg-gray-50 dark:bg-gray-700/50">
+                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Razem</span>
+                  <span className="font-bold text-blue-600 dark:text-blue-400">{stats?.summary?.ordersToday || 0}</span>
                 </div>
               )}
             </div>
 
             {/* Orders Last 30 Days - Chart + List */}
-            <div className="bg-white rounded-lg shadow">
-              <div className="px-4 py-3 border-b border-gray-100">
-                <h2 className="font-semibold text-gray-900">Zamowienia z 30 dni</h2>
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow dark:shadow-gray-900">
+              <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-700">
+                <h2 className="font-semibold text-gray-900 dark:text-white">Zamowienia z 30 dni</h2>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2">
@@ -419,8 +419,8 @@ export default function Home() {
                 </div>
 
                 {/* List */}
-                <div className="border-t sm:border-t-0 sm:border-l border-gray-100">
-                  <div className="divide-y divide-gray-50">
+                <div className="border-t sm:border-t-0 sm:border-l border-gray-100 dark:border-gray-700">
+                  <div className="divide-y divide-gray-50 dark:divide-gray-700">
                     {stats?.last30DaysByPlatform?.map((item, idx) => (
                       <div key={idx} className="px-4 py-2 flex justify-between items-center">
                         <div className="flex items-center gap-2">
@@ -428,18 +428,18 @@ export default function Home() {
                             className="w-3 h-3 rounded-full"
                             style={{ backgroundColor: CHART_COLORS[idx % CHART_COLORS.length] }}
                           />
-                          <span className="text-xs text-gray-700">{getPlatformLabel(item.platform)}</span>
+                          <span className="text-xs text-gray-700 dark:text-gray-300">{getPlatformLabel(item.platform)}</span>
                         </div>
-                        <span className="text-xs font-semibold text-gray-900">{item.count}</span>
+                        <span className="text-xs font-semibold text-gray-900 dark:text-white">{item.count}</span>
                       </div>
                     ))}
                   </div>
                 </div>
               </div>
 
-              <div className="px-4 py-2.5 border-t border-gray-200 flex justify-between items-center bg-gray-50">
-                <span className="text-sm font-medium text-gray-700">Razem (30 dni)</span>
-                <span className="font-bold text-gray-900">
+              <div className="px-4 py-2.5 border-t border-gray-200 dark:border-gray-700 flex justify-between items-center bg-gray-50 dark:bg-gray-700/50">
+                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Razem (30 dni)</span>
+                <span className="font-bold text-gray-900 dark:text-white">
                   {stats?.last30DaysByPlatform?.reduce((sum, item) => sum + item.count, 0) || 0}
                 </span>
               </div>
@@ -447,20 +447,20 @@ export default function Home() {
 
             {/* Weather Module */}
             {weather.length > 0 && (
-              <div className="bg-white rounded-lg shadow">
-                <div className="px-4 py-3 border-b border-gray-100">
-                  <h2 className="font-semibold text-gray-900">🌡️ Pogoda w Europie dzisiaj</h2>
+              <div className="bg-white dark:bg-gray-800 rounded-lg shadow dark:shadow-gray-900">
+                <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-700">
+                  <h2 className="font-semibold text-gray-900 dark:text-white">🌡️ Pogoda w Europie dzisiaj</h2>
                 </div>
                 <div className="grid grid-cols-4 sm:grid-cols-8 gap-1 p-2">
                   {weather.map((w) => (
-                    <div key={w.country_code} className="flex flex-col items-center p-2 rounded hover:bg-gray-50">
+                    <div key={w.country_code} className="flex flex-col items-center p-2 rounded hover:bg-gray-50 dark:hover:bg-gray-700">
                       <img
                         src={`/flags/${w.country_code}.png`}
                         alt={w.country_code}
                         className="w-6 h-4 sm:w-8 sm:h-5 object-cover rounded-sm shadow-sm"
                       />
-                      <span className="text-[10px] sm:text-xs text-gray-500 mt-0.5">{w.city}</span>
-                      <span className={`text-sm sm:text-base font-bold ${parseFloat(w.temperature) < 0 ? 'text-blue-600' : parseFloat(w.temperature) > 25 ? 'text-red-600' : 'text-gray-900'}`}>
+                      <span className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400 mt-0.5">{w.city}</span>
+                      <span className={`text-sm sm:text-base font-bold ${parseFloat(w.temperature) < 0 ? 'text-blue-600 dark:text-blue-400' : parseFloat(w.temperature) > 25 ? 'text-red-600 dark:text-red-400' : 'text-gray-900 dark:text-white'}`}>
                         {Math.round(parseFloat(w.temperature))}°C
                       </span>
                     </div>
@@ -494,9 +494,9 @@ export default function Home() {
               };
 
               return (
-                <div className="bg-white rounded-lg shadow">
-                  <div className="px-4 py-3 border-b border-gray-100">
-                    <h2 className="font-semibold text-gray-900">📅 Prognoza pogody 14 dni</h2>
+                <div className="bg-white dark:bg-gray-800 rounded-lg shadow dark:shadow-gray-900">
+                  <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-700">
+                    <h2 className="font-semibold text-gray-900 dark:text-white">📅 Prognoza pogody 14 dni</h2>
                   </div>
                   <div className="p-2 sm:p-4">
                     {/* Legend */}
@@ -504,7 +504,7 @@ export default function Home() {
                       {weather.map((w) => (
                         <div key={w.country_code} className="flex items-center gap-1">
                           <div className="w-3 h-3 rounded" style={{ backgroundColor: countryColors[w.country_code] }}></div>
-                          <span className="text-[9px] sm:text-xs text-gray-600">{w.city}</span>
+                          <span className="text-[9px] sm:text-xs text-gray-600 dark:text-gray-400">{w.city}</span>
                         </div>
                       ))}
                     </div>

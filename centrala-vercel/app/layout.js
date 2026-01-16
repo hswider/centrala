@@ -1,5 +1,6 @@
 import './globals.css';
 import Navigation from '@/components/Navigation';
+import ThemeProvider from '@/components/ThemeProvider';
 
 export const metadata = {
   title: 'POOM | Centrala',
@@ -8,10 +9,12 @@ export const metadata = {
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="pl">
+    <html lang="pl" suppressHydrationWarning>
       <body>
-        <Navigation />
-        {children}
+        <ThemeProvider>
+          <Navigation />
+          {children}
+        </ThemeProvider>
       </body>
     </html>
   );
