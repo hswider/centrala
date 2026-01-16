@@ -97,6 +97,10 @@ export default function Home() {
       icon: 'https://e7.pngegg.com/pngimages/193/871/png-clipart-green-shopping-bag-illustration-shopify-logo-icons-logos-emojis-tech-companies-thumbnail.png',
       label: 'Shopify'
     },
+    'OTTO': {
+      icon: '/icons/otto.png',
+      label: 'OTTO'
+    },
     'Kaufland': {
       icon: 'https://upload.wikimedia.org/wikipedia/commons/6/65/Kaufland_Deutschland.png',
       label: 'Kaufland'

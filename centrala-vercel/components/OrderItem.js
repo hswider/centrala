@@ -118,7 +118,33 @@ export default function OrderItem({ order }) {
     return statusMap[status] || { label: `#${status}`, color: 'bg-gray-100 text-gray-800' };
   };
 
-  const renderPlatformIcon = (platform) => {
+  const renderPlatformIcon = (platform, channelLabel) => {
+    // Check channel label first for specific store icons
+    const labelLower = (channelLabel || '').toLowerCase();
+
+    // Shopify stores with custom icons
+    if (labelLower.includes('gutekissen')) {
+      return <img src="/icons/gutekissen.png" alt="Gutekissen" className="w-8 h-8 rounded-full object-cover" />;
+    }
+    if (labelLower.includes('poom kids') || labelLower.includes('poomkids')) {
+      return <img src="/icons/poomkids.png" alt="POOM KIDS" className="w-8 h-8 rounded-full object-cover" />;
+    }
+    if (labelLower.includes('dobrelegowiska') || labelLower.includes('dobre legowiska')) {
+      return <img src="/icons/dobrelegowiska.png" alt="Dobrelegowiska" className="w-8 h-8 rounded-full object-cover" />;
+    }
+    if (labelLower.includes('allepoduszki')) {
+      return <img src="/icons/allepoduszki.png" alt="Allepoduszki" className="w-8 h-8 rounded-full object-cover" />;
+    }
+    if (labelLower.includes('poom-furniture') || labelLower.includes('poom furniture')) {
+      return <img src="/icons/poom-furniture.png" alt="POOM Furniture" className="w-8 h-8 rounded-full object-cover" />;
+    }
+
+    // OTTO
+    if (platform === 'OTTO' || labelLower.includes('otto')) {
+      return <img src="/icons/otto.png" alt="OTTO" className="w-8 h-8 rounded-full object-cover" />;
+    }
+
+    // Default platform icons
     const platformIcons = {
       'Amazon': 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQoIwGv61BBxMlFDmBHeDvMo8-5HNlM4_8Skw&s',
       'Allegro': 'https://a.allegroimg.com/original/12c30c/0d4b068640de9b0daf22af9d97c5',
@@ -155,7 +181,7 @@ export default function OrderItem({ order }) {
           <div className="flex items-start gap-3">
             {/* Platform Icon */}
             <div className="flex-shrink-0">
-              {renderPlatformIcon(order.channel?.platform)}
+              {renderPlatformIcon(order.channel?.platform, order.channel?.label)}
             </div>
 
             {/* Main Content */}

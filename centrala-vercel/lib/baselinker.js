@@ -97,12 +97,18 @@ function mapOrderToDTO(order, statuses = {}) {
     else if (source.includes('ebay')) platformName = 'eBay';
     else if (source.includes('erli')) platformName = 'Erli';
     else if (source.includes('empik')) platformName = 'Empik';
+    else if (source.includes('otto')) platformName = 'OTTO';
     else if (source.includes('shopify')) platformName = 'Shopify';
     else if (source.includes('woocommerce')) platformName = 'WooCommerce';
     else if (source.includes('prestashop')) platformName = 'PrestaShop';
     else platformName = order.order_source;
 
-    channelLabel = order.order_source;
+    // Custom channel labels for specific stores
+    if (source.includes('otto')) {
+      channelLabel = 'Gutekissen'; // OTTO orders go under Gutekissen brand
+    } else {
+      channelLabel = order.order_source;
+    }
   }
 
   // Delivery address
