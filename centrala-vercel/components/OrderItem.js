@@ -134,13 +134,15 @@ export default function OrderItem({ order }) {
     if (platform === 'Kaufland') {
       return <img src="https://logotypy.net/wp-content/uploads/2023/09/logo-kaufland.jpg" alt="Kaufland" className="w-8 h-8 rounded-full object-cover" />;
     }
-    if (platform === 'OTTO') {
+    if (platform === 'OTTO' || platform === 'otto' || labelLower.includes('otto')) {
       return <img src="/icons/otto.png" alt="OTTO" className="w-8 h-8 rounded-full object-cover" />;
     }
 
-    // Shopify stores with custom icons (only for Shopify platform)
-    if (platform === 'Shopify') {
-      if (labelLower.includes('gutekissen')) {
+    // Shopify stores with custom icons (platform can be 'Shopify', 'shopify', or 'shop')
+    const isShopify = platform === 'Shopify' || platform === 'shopify' || platform === 'shop';
+    if (isShopify || labelLower === 'shop') {
+      // Gutekissen is the default Shopify store
+      if (labelLower.includes('gutekissen') || labelLower === 'shop' || labelLower === 'gutekissen') {
         return <img src="/icons/gutekissen.png" alt="Gutekissen" className="w-8 h-8 rounded-full object-cover" />;
       }
       if (labelLower.includes('poom kids') || labelLower.includes('poomkids')) {
@@ -155,8 +157,8 @@ export default function OrderItem({ order }) {
       if (labelLower.includes('poom-furniture') || labelLower.includes('poom furniture')) {
         return <img src="/icons/poom-furniture.png" alt="POOM Furniture" className="w-8 h-8 rounded-full object-cover" />;
       }
-      // Default Shopify icon
-      return <img src="https://images.icon-icons.com/836/PNG/512/Shopify_icon-icons.com_66757.png" alt="Shopify" className="w-8 h-8 rounded-full object-cover" />;
+      // Default to Gutekissen icon for shop platform
+      return <img src="/icons/gutekissen.png" alt="Gutekissen" className="w-8 h-8 rounded-full object-cover" />;
     }
 
     // Fallback for unknown platforms
