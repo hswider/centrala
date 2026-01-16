@@ -649,6 +649,17 @@ export default function CRMEUPage() {
                           {amazonAuth.email && <span className="text-orange-600">{amazonAuth.email}</span>}
                           {amazonSyncStatus?.lastSyncAt && ` • Sync: ${formatDate(amazonSyncStatus.lastSyncAt)}`}
                         </p>
+                        <a
+                          href="https://sellercentral.amazon.de/messaging/inbox?fi=responseNeeded"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-xs text-orange-600 hover:text-orange-700 hover:underline flex items-center gap-1 mt-1"
+                        >
+                          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                          </svg>
+                          Seller Central - weryfikacja wiadomosci
+                        </a>
                       </div>
                       <button onClick={handleAmazonSync} disabled={amazonSyncing} className="px-3 py-1.5 text-sm bg-orange-600 text-white rounded-lg hover:bg-orange-700 disabled:opacity-50">
                         {amazonSyncing ? 'Sync...' : 'Synchronizuj'}
