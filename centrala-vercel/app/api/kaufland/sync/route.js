@@ -10,8 +10,7 @@ import {
 import {
   isAuthenticated,
   getTickets,
-  getTicketMessages,
-  getAllMessages,
+  getTicketWithMessages,
   parseTicket,
   parseTicketMessage,
   KAUFLAND_STOREFRONTS
@@ -68,42 +67,35 @@ export async function POST(request) {
 
       const tickets = allTickets;
 
-      // Save all tickets first
+      // Save tickets and fetch messages for each ticket using embedded endpoint
+      // This ensures we get ALL messages including buyer/system messages
       for (const ticketData of tickets) {
         try {
           const ticket = parseTicket(ticketData);
           await saveKauflandTicket(ticket);
           syncedTickets++;
-        } catch (ticketError) {
-          console.error(`Error syncing ticket:`, ticketError.message);
-        }
-      }
 
-      // Fetch messages with pagination (max 30 per request)
-      try {
-        let offset = 0;
-        let hasMore = true;
-        while (hasMore && offset < 300) { // Max 300 messages
-          const messagesResponse = await getAllMessages(30, offset);
-          const messages = messagesResponse.data || [];
+          // Fetch all messages for this ticket (seller, buyer, and system)
+          try {
+            const ticketWithMessages = await getTicketWithMessages(ticket.id);
+            const ticketDetail = ticketWithMessages.data || ticketWithMessages;
+            const messages = ticketDetail.messages || [];
 
-          if (messages.length === 0) {
-            hasMore = false;
-          } else {
             for (const msgData of messages) {
               try {
                 const message = parseTicketMessage(msgData);
-                await saveKauflandMessage(message, message.ticketId);
+                await saveKauflandMessage(message, ticket.id);
                 syncedMessages++;
               } catch (msgError) {
-                console.error(`Error saving message:`, msgError.message);
+                console.error(`Error saving message for ticket ${ticket.id}:`, msgError.message);
               }
             }
-            offset += 30;
+          } catch (msgError) {
+            console.error(`Error fetching messages for ticket ${ticket.id}:`, msgError.message);
           }
+        } catch (ticketError) {
+          console.error(`Error syncing ticket:`, ticketError.message);
         }
-      } catch (msgError) {
-        console.error('Error fetching messages:', msgError.message);
       }
 
       // Update sync status
@@ -184,42 +176,35 @@ export async function GET(request) {
           }
         }
 
-        // Save all tickets first
+        // Save tickets and fetch messages for each ticket using embedded endpoint
+        // This ensures we get ALL messages including buyer/system messages
         for (const ticketData of allTickets) {
           try {
             const ticket = parseTicket(ticketData);
             await saveKauflandTicket(ticket);
             syncedTickets++;
-          } catch (ticketError) {
-            console.error(`Error syncing ticket:`, ticketError.message);
-          }
-        }
 
-        // Fetch messages with pagination (max 30 per request)
-        try {
-          let offset = 0;
-          let hasMore = true;
-          while (hasMore && offset < 300) {
-            const messagesResponse = await getAllMessages(30, offset);
-            const messages = messagesResponse.data || [];
+            // Fetch all messages for this ticket (seller, buyer, and system)
+            try {
+              const ticketWithMessages = await getTicketWithMessages(ticket.id);
+              const ticketDetail = ticketWithMessages.data || ticketWithMessages;
+              const messages = ticketDetail.messages || [];
 
-            if (messages.length === 0) {
-              hasMore = false;
-            } else {
               for (const msgData of messages) {
                 try {
                   const message = parseTicketMessage(msgData);
-                  await saveKauflandMessage(message, message.ticketId);
+                  await saveKauflandMessage(message, ticket.id);
                   syncedMessages++;
                 } catch (msgError) {
-                  console.error(`Error saving message:`, msgError.message);
+                  console.error(`Error saving message for ticket ${ticket.id}:`, msgError.message);
                 }
               }
-              offset += 30;
+            } catch (msgError) {
+              console.error(`Error fetching messages for ticket ${ticket.id}:`, msgError.message);
             }
+          } catch (ticketError) {
+            console.error(`Error syncing ticket:`, ticketError.message);
           }
-        } catch (msgError) {
-          console.error('Error fetching messages:', msgError.message);
         }
 
         await updateKauflandSyncStatus();

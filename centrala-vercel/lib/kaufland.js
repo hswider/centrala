@@ -109,9 +109,19 @@ export async function getTicket(ticketId) {
   return kauflandRequest('GET', `/tickets/${ticketId}`);
 }
 
-// Get ticket messages - use /tickets/messages endpoint with filter
+// Get single ticket with embedded messages (includes all messages: seller, buyer, system)
+export async function getTicketWithMessages(ticketId) {
+  return kauflandRequest('GET', `/tickets/${ticketId}?embedded=messages`);
+}
+
+// Get ticket messages - use embedded endpoint to get ALL messages (seller, buyer, system)
+// Note: /tickets/messages endpoint only returns seller messages, so we use embedded instead
 export async function getTicketMessages(ticketId) {
-  return kauflandRequest('GET', `/tickets/messages?id_ticket=${ticketId}&limit=30`);
+  const response = await getTicketWithMessages(ticketId);
+  // Extract messages from embedded response and format like the messages endpoint
+  const ticketData = response.data || response;
+  const messages = ticketData.messages || [];
+  return { data: messages };
 }
 
 // Get all recent messages (for sync)
@@ -201,16 +211,44 @@ export function parseTicket(ticket) {
 }
 
 // Parse ticket message
+// Note: Kaufland returns buyer messages as "system" messages containing the customer's request
 export function parseTicketMessage(message) {
   const author = message.author || {};
-  const role = author.role || message.sender || 'unknown';
+  let role = author.role || message.sender || 'unknown';
+  let senderName = author.name || null;
+  const text = message.text || '';
+
+  // System messages that contain buyer requests should be marked as buyer messages
+  // These typically start with keywords like "Rücksendung wurde angefragt", "Reklamation", etc.
+  // and contain "unser gemeinsamer Kunde" (our shared customer)
+  const isBuyerSystemMessage = role === 'system' && (
+    text.includes('unser gemeinsamer Kunde') ||
+    text.includes('Der Kunde hat folgende Nachricht') ||
+    text.includes('Käufer hat eine Nachricht') ||
+    text.includes('wurde angefragt')
+  );
+
+  // System messages about seller actions (closing ticket, etc.) stay as system
+  const isSellerActionMessage = role === 'system' && (
+    text.includes('hat die Anfrage geschlossen') ||
+    text.includes('Verkäufer hat')
+  );
+
+  if (isBuyerSystemMessage && !isSellerActionMessage) {
+    role = 'buyer';
+    // Try to extract customer name from message
+    const customerMatch = text.match(/Kunde\s+([A-Za-zÀ-ÿ]+\s+[A-Za-zÀ-ÿ]+)/);
+    if (customerMatch) {
+      senderName = customerMatch[1];
+    }
+  }
 
   return {
     id: String(message.id_ticket_message),
     ticketId: normalizeTicketId(message.id_ticket),
-    sender: role, // 'seller', 'buyer', 'kaufland'
-    senderName: author.name || null,
-    text: message.text,
+    sender: role, // 'seller', 'buyer', 'system', 'kaufland'
+    senderName: senderName,
+    text: text,
     createdAt: message.ts_created_iso || message.ts_created,
     isFromSeller: role === 'seller',
     files: message.files || [],
