@@ -94,8 +94,8 @@ export default function Home() {
       label: 'Allegro'
     },
     'Shopify': {
-      icon: '/icons/gutekissen.png',
-      label: 'Gutekissen'
+      icon: 'https://e7.pngegg.com/pngimages/193/871/png-clipart-green-shopping-bag-illustration-shopify-logo-icons-logos-emojis-tech-companies-thumbnail.png',
+      label: 'Shopify'
     },
     'shop': {
       icon: '/icons/gutekissen.png',
