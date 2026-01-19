@@ -54,6 +54,21 @@ export async function GET(request) {
         });
       }
 
+      case 'fix-otto': {
+        // Fix OTTO channel values - normalize to uppercase OTTO
+        const result = await sql`
+          UPDATE orders
+          SET channel_platform = 'OTTO',
+              channel_label = 'Gutekissen OTTO'
+          WHERE channel_platform ILIKE '%otto%' OR channel_label ILIKE '%otto%'
+        `;
+        return NextResponse.json({
+          success: true,
+          message: 'OTTO channels normalized',
+          rowsUpdated: result.rowCount
+        });
+      }
+
       case 'statuses':
         const statuses = await getOrderStatuses();
         return NextResponse.json({ success: true, statuses });
