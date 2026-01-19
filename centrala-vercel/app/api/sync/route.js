@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { initDatabase, saveOrders, getLastSyncDate, getOrdersMissingSendDates, updateOrderSendDates, getBaselinkerOrderCount } from '@/lib/db';
+import { initDatabase, saveOrders, getLastSyncDate, getOrdersMissingSendDates, updateOrderSendDates } from '@/lib/db';
 import { fetchAllNewOrders as fetchApiloOrders, fetchOrderSendDates } from '@/lib/apilo';
 import { fetchAllNewOrders as fetchBaselinkerOrders, isConfigured as isBaselinkerConfigured } from '@/lib/baselinker';
 
@@ -37,19 +37,17 @@ export async function GET(request) {
     }
 
     // Fetch from Baselinker (if configured)
+    // Always fetch last 7 days to catch any missed orders (uses upsert so duplicates are handled)
     let baselinkerError = null;
     if (isBaselinkerConfigured()) {
       try {
-        // Check if this is first Baselinker sync (no BL- orders in database)
-        const blOrderCount = await getBaselinkerOrderCount();
-        const isFirstBaselinkerSync = blOrderCount === 0;
+        // Always fetch from last 7 days - upsert handles duplicates
+        // This ensures we don't miss orders if sync fails or is delayed
+        const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+        const maxOrders = 500;
 
-        // For first sync, ignore lastSyncDate to get historical orders
-        const blSyncDate = isFirstBaselinkerSync ? null : lastSyncDate;
-        const maxOrders = isFirstBaselinkerSync ? 1000 : 500;
-
-        console.log('[Sync] Baselinker: firstSync=', isFirstBaselinkerSync, 'existingOrders=', blOrderCount, 'syncDate=', blSyncDate);
-        const baselinkerOrders = await fetchBaselinkerOrders(blSyncDate, maxOrders);
+        console.log('[Sync] Baselinker: fetching from last 7 days:', sevenDaysAgo.toISOString());
+        const baselinkerOrders = await fetchBaselinkerOrders(sevenDaysAgo, maxOrders);
         baselinkerCount = baselinkerOrders.length;
         allOrders = allOrders.concat(baselinkerOrders);
         console.log('[Sync] Baselinker orders:', baselinkerCount);
