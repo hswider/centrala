@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { isConfigured, fetchOrders, getOrderStatuses, getOrderSources } from '../../../../lib/baselinker';
+import { getBaselinkerOrderCount, getLastSyncDate } from '../../../../lib/db';
 
 export async function GET(request) {
   try {
@@ -16,6 +17,27 @@ export async function GET(request) {
     }
 
     switch (test) {
+      case 'sync-status': {
+        // Check sync status for Baselinker
+        const blOrderCount = await getBaselinkerOrderCount();
+        const lastSyncDate = await getLastSyncDate();
+        const isFirstSync = blOrderCount === 0;
+        const syncDate = isFirstSync ? null : lastSyncDate;
+        const dateFrom = syncDate
+          ? new Date(syncDate)
+          : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+
+        return NextResponse.json({
+          success: true,
+          baselinkerOrderCount: blOrderCount,
+          lastSyncDate: lastSyncDate,
+          isFirstBaselinkerSync: isFirstSync,
+          effectiveSyncDate: syncDate,
+          dateFromUsed: dateFrom.toISOString(),
+          dateFromTimestamp: Math.floor(dateFrom.getTime() / 1000)
+        });
+      }
+
       case 'statuses':
         const statuses = await getOrderStatuses();
         return NextResponse.json({ success: true, statuses });
