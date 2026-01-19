@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { isConfigured, fetchOrders, getOrderStatuses, getOrderSources } from '../../../../lib/baselinker';
 import { getBaselinkerOrderCount, getLastSyncDate } from '../../../../lib/db';
+import { sql } from '@vercel/postgres';
 
 export async function GET(request) {
   try {
@@ -35,6 +36,21 @@ export async function GET(request) {
           effectiveSyncDate: syncDate,
           dateFromUsed: dateFrom.toISOString(),
           dateFromTimestamp: Math.floor(dateFrom.getTime() / 1000)
+        });
+      }
+
+      case 'otto-channels': {
+        // Check OTTO channel values in database
+        const { rows } = await sql`
+          SELECT channel_platform, channel_label, COUNT(*) as count
+          FROM orders
+          WHERE channel_platform ILIKE '%otto%' OR channel_label ILIKE '%otto%'
+          GROUP BY channel_platform, channel_label
+          ORDER BY count DESC
+        `;
+        return NextResponse.json({
+          success: true,
+          ottoChannels: rows
         });
       }
 
