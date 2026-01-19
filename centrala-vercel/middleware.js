@@ -19,6 +19,7 @@ const publicRoutes = [
   '/api/gmail-amazon-de/debug',   // Gmail Amazon DE debug
   '/api/kaufland/sync',  // Kaufland tickets cron
   '/api/kaufland/debug', // Kaufland debug
+  '/api/baselinker/debug', // Baselinker debug
   '/api/weather/sync'    // Weather sync cron
 ];
 
