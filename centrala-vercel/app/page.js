@@ -441,7 +441,7 @@ export default function Home() {
             {stats?.topProducts?.length > 0 && (
               <div className="bg-white dark:bg-gray-800 rounded-lg shadow dark:shadow-gray-900">
                 <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-700">
-                  <h2 className="font-semibold text-gray-900 dark:text-white">TOP 10 produktów (ostatnie 30 dni)</h2>
+                  <h2 className="font-semibold text-gray-900 dark:text-white">TOP 10 produktów (ostatnie {selectedPeriod} dni)</h2>
                 </div>
                 <div className="divide-y divide-gray-100 dark:divide-gray-700">
                   {stats.topProducts.slice(0, 10).map((product, idx) => (
@@ -472,13 +472,13 @@ export default function Home() {
             )}
 
             {/* Top 5 Marketplaces */}
-            {stats?.last30DaysByPlatform?.length > 0 && (
+            {stats?.lastXDaysByPlatform?.length > 0 && (
               <div className="bg-white dark:bg-gray-800 rounded-lg shadow dark:shadow-gray-900">
                 <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-700">
-                  <h2 className="font-semibold text-gray-900 dark:text-white">TOP 5 Marketplace'ów (ostatnie 30 dni)</h2>
+                  <h2 className="font-semibold text-gray-900 dark:text-white">TOP 5 Marketplace'ów (ostatnie {selectedPeriod} dni)</h2>
                 </div>
                 <div className="divide-y divide-gray-100 dark:divide-gray-700">
-                  {stats.last30DaysByPlatform.slice(0, 5).map((item, idx) => (
+                  {stats.lastXDaysByPlatform.slice(0, 5).map((item, idx) => (
                     <div key={idx} className="px-3 py-2 flex items-center gap-3 hover:bg-gray-50 dark:hover:bg-gray-700">
                       <span className="text-sm sm:text-base w-5 shrink-0 text-center">
                         {idx === 0 ? <span>🏆</span> : idx === 1 ? <span className="grayscale brightness-110">🏆</span> : idx === 2 ? <span className="sepia brightness-75">🏆</span> : <span className="text-[10px] sm:text-xs text-gray-400 dark:text-gray-500 font-medium">{idx + 1}</span>}
