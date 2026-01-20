@@ -591,7 +591,7 @@ export default function MagazynyPage() {
     }
   };
 
-  // Kolory - otworz modal
+  // Ostrzezenie - otworz modal
   const handleOpenColorModal = (item) => {
     setColorItem(item);
     setColorYellow(item.yellow_threshold != null ? String(item.yellow_threshold) : '');
@@ -599,7 +599,7 @@ export default function MagazynyPage() {
     setShowColorModal(true);
   };
 
-  // Kolory - zapisz progi
+  // Ostrzezenie - zapisz progi
   const handleSaveColorThresholds = async () => {
     if (!colorItem) return;
 
@@ -1615,7 +1615,7 @@ export default function MagazynyPage() {
                                 }`}
                                 title={item.yellow_threshold != null || item.red_threshold != null ? `Progi ustawione: żółty < ${item.yellow_threshold ?? '-'}, czerwony < ${item.red_threshold ?? '-'}` : 'Ustaw progi kolorów'}
                               >
-                                Kolory
+                                Ostrzezenie
                               </button>
                             )}
                             <button
