@@ -143,6 +143,21 @@ export async function GET(request) {
       LIMIT 500
     `;
 
+    // Daily sales trend per product (for sparkline charts)
+    const dailyProductSales = await sql`
+      SELECT
+        DATE(o.ordered_at AT TIME ZONE 'Europe/Warsaw') as date,
+        item->>'name' as name,
+        item->>'sku' as sku,
+        SUM((item->>'quantity')::int) as quantity
+      FROM orders o,
+        jsonb_array_elements(o.items) as item
+      WHERE o.ordered_at >= (CURRENT_DATE AT TIME ZONE 'Europe/Warsaw') - INTERVAL '1 day' * ${days}
+        AND (item->>'isShipping')::boolean = false
+      GROUP BY DATE(o.ordered_at AT TIME ZONE 'Europe/Warsaw'), item->>'name', item->>'sku'
+      ORDER BY date ASC
+    `;
+
     // Aggregate top products by name/sku and convert revenue to PLN
     const productMap = {};
     topProducts.rows.forEach(p => {
@@ -164,14 +179,39 @@ export async function GET(request) {
       }
     });
 
-    // Sort by quantity and take top 100
+    // Build daily trend map per product (key = sku || name)
+    const productDailyMap = {};
+    dailyProductSales.rows.forEach(row => {
+      const key = row.sku || row.name;
+      const dateStr = new Date(row.date).toISOString().split('T')[0];
+      if (!productDailyMap[key]) {
+        productDailyMap[key] = {};
+      }
+      productDailyMap[key][dateStr] = (productDailyMap[key][dateStr] || 0) + parseInt(row.quantity);
+    });
+
+    // Generate date array for the period
+    const dateArray = [];
+    for (let i = days - 1; i >= 0; i--) {
+      const date = new Date();
+      date.setDate(date.getDate() - i);
+      dateArray.push(date.toISOString().split('T')[0]);
+    }
+
+    // Sort by quantity and take top 100, add daily trend
     const topProductsList = Object.values(productMap)
       .sort((a, b) => b.quantity - a.quantity)
       .slice(0, 100)
-      .map(p => ({
-        ...p,
-        revenue: Math.round(p.revenue)
-      }));
+      .map(p => {
+        const key = p.sku || p.name;
+        const dailyData = productDailyMap[key] || {};
+        const trend = dateArray.map(date => dailyData[date] || 0);
+        return {
+          ...p,
+          revenue: Math.round(p.revenue),
+          trend // Array of daily quantities
+        };
+      });
 
     // Build daily revenue chart data
     const dailyRevenueMap = {};

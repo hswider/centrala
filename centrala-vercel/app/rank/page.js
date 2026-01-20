@@ -2,6 +2,51 @@
 
 import { useState, useEffect } from 'react';
 
+// Mini sparkline component
+function Sparkline({ data, width = 80, height = 24 }) {
+  if (!data || data.length === 0) return null;
+
+  const max = Math.max(...data, 1);
+  const min = 0;
+  const range = max - min || 1;
+
+  const points = data.map((value, index) => {
+    const x = (index / (data.length - 1)) * width;
+    const y = height - ((value - min) / range) * height;
+    return `${x},${y}`;
+  }).join(' ');
+
+  // Determine color based on trend (compare last third to first third)
+  const firstThird = data.slice(0, Math.ceil(data.length / 3));
+  const lastThird = data.slice(-Math.ceil(data.length / 3));
+  const firstAvg = firstThird.reduce((a, b) => a + b, 0) / firstThird.length;
+  const lastAvg = lastThird.reduce((a, b) => a + b, 0) / lastThird.length;
+
+  let strokeColor = '#9CA3AF'; // gray
+  if (lastAvg > firstAvg * 1.1) strokeColor = '#10B981'; // green - trending up
+  else if (lastAvg < firstAvg * 0.9) strokeColor = '#EF4444'; // red - trending down
+
+  return (
+    <svg width={width} height={height} className="overflow-visible">
+      <polyline
+        fill="none"
+        stroke={strokeColor}
+        strokeWidth="1.5"
+        points={points}
+      />
+      {/* Last point dot */}
+      {data.length > 0 && (
+        <circle
+          cx={width}
+          cy={height - ((data[data.length - 1] - min) / range) * height}
+          r="2"
+          fill={strokeColor}
+        />
+      )}
+    </svg>
+  );
+}
+
 export default function RankPage() {
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -151,29 +196,40 @@ export default function RankPage() {
                 </div>
                 <div className="divide-y divide-gray-100 dark:divide-gray-700">
                   {stats.topProducts.map((product, idx) => (
-                    <div key={idx} className="px-3 py-2 flex items-center gap-2 hover:bg-gray-50 dark:hover:bg-gray-700">
-                      <span className="text-sm sm:text-base w-8 shrink-0 text-center">
-                        {idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : <span className="text-xs text-gray-400 dark:text-gray-500 font-medium">{idx + 1}</span>}
-                      </span>
-                      <div className="w-10 h-10 sm:w-12 sm:h-12 shrink-0 bg-gray-100 dark:bg-gray-700 rounded overflow-hidden">
-                        {product.image ? (
-                          <img src={product.image} alt="" className="w-full h-full object-cover" />
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center text-gray-400 dark:text-gray-500 text-[10px]">brak</div>
-                        )}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="text-xs sm:text-sm font-medium text-gray-900 dark:text-white line-clamp-2" title={product.name}>
-                          {product.name}
+                    <div key={idx} className="px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-700">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm sm:text-base w-8 shrink-0 text-center">
+                          {idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : <span className="text-xs text-gray-400 dark:text-gray-500 font-medium">{idx + 1}</span>}
+                        </span>
+                        <div className="w-10 h-10 sm:w-12 sm:h-12 shrink-0 bg-gray-100 dark:bg-gray-700 rounded overflow-hidden">
+                          {product.image ? (
+                            <img src={product.image} alt="" className="w-full h-full object-cover" />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center text-gray-400 dark:text-gray-500 text-[10px]">brak</div>
+                          )}
                         </div>
-                        {product.sku && (
-                          <div className="text-[10px] text-gray-400 dark:text-gray-500">SKU: {product.sku}</div>
-                        )}
+                        <div className="flex-1 min-w-0">
+                          <div className="text-xs sm:text-sm font-medium text-gray-900 dark:text-white line-clamp-2" title={product.name}>
+                            {product.name}
+                          </div>
+                          {product.sku && (
+                            <div className="text-[10px] text-gray-400 dark:text-gray-500">SKU: {product.sku}</div>
+                          )}
+                        </div>
+                        <div className="text-right shrink-0">
+                          <div className="text-sm sm:text-base font-semibold text-gray-900 dark:text-white">{product.quantity} szt.</div>
+                          <div className="text-xs sm:text-sm font-medium text-green-600 dark:text-green-400">{product.revenue.toLocaleString('pl-PL')} zł</div>
+                        </div>
                       </div>
-                      <div className="text-right shrink-0">
-                        <div className="text-sm sm:text-base font-semibold text-gray-900 dark:text-white">{product.quantity} szt.</div>
-                        <div className="text-xs sm:text-sm font-medium text-green-600 dark:text-green-400">{product.revenue.toLocaleString('pl-PL')} zł</div>
-                      </div>
+                      {/* Sparkline trend */}
+                      {product.trend && product.trend.length > 0 && (
+                        <div className="mt-1 ml-10 sm:ml-12 flex items-center gap-2">
+                          <Sparkline data={product.trend} width={100} height={20} />
+                          <span className="text-[10px] text-gray-400 dark:text-gray-500">
+                            trend {selectedPeriod}d
+                          </span>
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>
