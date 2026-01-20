@@ -82,6 +82,14 @@ export async function initDatabase() {
     // Columns might already exist
   }
 
+  // Inventory MTS columns (min_stock, lead_time_days)
+  try {
+    await sql`ALTER TABLE inventory ADD COLUMN IF NOT EXISTS min_stock INTEGER DEFAULT 0`;
+    await sql`ALTER TABLE inventory ADD COLUMN IF NOT EXISTS lead_time_days INTEGER DEFAULT 1`;
+  } catch (e) {
+    // Columns might already exist
+  }
+
   // Users table migrations - add permissions
   try {
     await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS permissions JSONB DEFAULT '["dashboard","oms","wms","mes","mts","crm","crm-eu","rank","agent"]'::jsonb`;
