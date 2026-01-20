@@ -210,6 +210,7 @@ export default function Home() {
                 const roleConfig = {
                   admin: { label: 'Administrator', emoji: '🛠️', gradient: 'from-yellow-400 to-amber-500' },
                   it_admin: { label: 'IT Administrator', emoji: '🖥️', gradient: 'from-violet-500 to-purple-600' },
+                  office_lead: { label: 'Office Operations Lead', emoji: '🗂️', gradient: 'from-rose-400 to-pink-500' },
                   warehouse_specialist: { label: 'Warehouse Operations Specialist', emoji: '📦', gradient: 'from-emerald-400 to-teal-500' },
                   user: { label: 'Uzytkownik', emoji: '👤', gradient: 'from-gray-400 to-gray-500' }
                 };
