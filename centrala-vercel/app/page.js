@@ -186,9 +186,23 @@ export default function Home() {
             <h1 className="text-xl sm:text-2xl font-bold mb-2">
               Witaj {user.username} w Centrali POOM
             </h1>
-            <p className="text-blue-100 text-sm mb-3">
-              Rola: <span className="font-medium text-white">{user.role === 'admin' ? 'Administrator' : 'Uzytkownik'}</span>
-            </p>
+            <div className="text-sm mb-3">
+              <span className="text-blue-100">Rola: </span>
+              {(() => {
+                const roleConfig = {
+                  admin: { label: 'Administrator', emoji: '👑', gradient: 'from-yellow-400 to-amber-500' },
+                  warehouse_specialist: { label: 'Warehouse Operations Specialist', emoji: '📦', gradient: 'from-emerald-400 to-teal-500' },
+                  user: { label: 'Uzytkownik', emoji: '👤', gradient: 'from-gray-400 to-gray-500' }
+                };
+                const config = roleConfig[user.role] || roleConfig.user;
+                return (
+                  <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-semibold bg-gradient-to-r ${config.gradient} text-white shadow-md`}>
+                    <span>{config.emoji}</span>
+                    <span>{config.label}</span>
+                  </span>
+                );
+              })()}
+            </div>
             <div className="text-sm">
               <p className="text-blue-200 mb-2">Dostęp do zakładek:</p>
               <div className="flex flex-wrap gap-2">
