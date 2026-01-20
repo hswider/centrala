@@ -213,6 +213,7 @@ export default function Home() {
                   office_lead: { label: 'Office Operations Lead', emoji: '🗂️', gradient: 'from-rose-400 to-pink-500' },
                   warehouse_specialist: { label: 'Warehouse Operations Specialist', emoji: '📦', gradient: 'from-emerald-400 to-teal-500' },
                   billing_eu: { label: 'Billing & Customer Support Specialist (EU Markets)', emoji: '🌍', gradient: 'from-sky-400 to-blue-500' },
+                  production_manager: { label: 'Production Manager', emoji: '🏭', gradient: 'from-orange-400 to-red-500' },
                   user: { label: 'Uzytkownik', emoji: '👤', gradient: 'from-gray-400 to-gray-500' }
                 };
                 const config = roleConfig[user.role] || roleConfig.user;
