@@ -1,8 +1,6 @@
-# Centrala POOM — Dashboard Zamówień Apilo
+# Centrala  — Dashboard Zamówień 
 
-**Produkcja:** https://centrala-poom.vercel.app/
-
-Wewnętrzna aplikacja do zarządzania zamówieniami z systemu ERP Apilo.
+Wewnętrzna aplikacja do zarządzania zamówieniami
 
 ## Tech Stack
 
