@@ -12,6 +12,7 @@ export default function Home() {
   const [weather, setWeather] = useState([]);
   const [forecast, setForecast] = useState([]);
   const [onlineUsers, setOnlineUsers] = useState([]);
+  const [selectedPeriod, setSelectedPeriod] = useState(30);
 
   // Permission labels mapping
   const permissionLabels = {
@@ -41,9 +42,9 @@ export default function Home() {
     }
   };
 
-  const fetchStats = async () => {
+  const fetchStats = async (days = 30) => {
     try {
-      const res = await fetch('/api/stats');
+      const res = await fetch(`/api/stats?days=${days}`);
       const data = await res.json();
       setStats(data);
     } catch (err) {
@@ -51,6 +52,11 @@ export default function Home() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handlePeriodChange = (days) => {
+    setSelectedPeriod(days);
+    fetchStats(days);
   };
 
   const fetchWeather = async () => {
@@ -314,6 +320,26 @@ export default function Home() {
               </div>
             </div>
 
+            {/* Period Selector */}
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-gray-500 dark:text-gray-400">Okres danych:</span>
+              <div className="flex gap-2">
+                {[7, 30, 90].map((days) => (
+                  <button
+                    key={days}
+                    onClick={() => handlePeriodChange(days)}
+                    className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors ${
+                      selectedPeriod === days
+                        ? 'bg-blue-600 text-white'
+                        : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                    }`}
+                  >
+                    {days} dni
+                  </button>
+                ))}
+              </div>
+            </div>
+
             {/* Revenue Cards - Only for admins */}
             {user?.permissions?.includes('admin') && (
               <div className="grid grid-cols-2 gap-3">
@@ -322,29 +348,29 @@ export default function Home() {
                   <p className="text-2xl font-bold">{stats?.revenue?.todayPln?.toLocaleString('pl-PL') || 0} zł</p>
                 </div>
                 <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg shadow p-4 text-white">
-                  <p className="text-xs text-blue-100">Obrót 30 dni</p>
-                  <p className="text-2xl font-bold">{stats?.revenue?.last30DaysPln?.toLocaleString('pl-PL') || 0} zł</p>
+                  <p className="text-xs text-blue-100">Obrót {selectedPeriod} dni</p>
+                  <p className="text-2xl font-bold">{stats?.revenue?.periodPln?.toLocaleString('pl-PL') || 0} zł</p>
                 </div>
               </div>
             )}
 
-            {/* Revenue Chart - Last 30 Days - Only for admins */}
+            {/* Revenue Chart - Only for admins */}
             {user?.permissions?.includes('admin') && (
               <div className="bg-white dark:bg-gray-800 rounded-lg shadow dark:shadow-gray-900">
                 <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-700">
-                  <h2 className="font-semibold text-gray-900 dark:text-white">Sprzedaż ostatnie 30 dni (PLN)</h2>
+                  <h2 className="font-semibold text-gray-900 dark:text-white">Sprzedaż ostatnie {selectedPeriod} dni (PLN)</h2>
                 </div>
                 <div className="p-4">
                   <div className="h-48 sm:h-64">
                     <ResponsiveContainer width="100%" height="100%">
-                      <BarChart data={stats?.revenue?.last30Days || []}>
+                      <BarChart data={stats?.revenue?.periodDays || []}>
                         <CartesianGrid strokeDasharray="3 3" vertical={false} />
                         <XAxis
                           dataKey="day"
                           tick={{ fontSize: 10 }}
                           tickLine={false}
                           axisLine={false}
-                          interval={2}
+                          interval={selectedPeriod > 30 ? 6 : 2}
                         />
                         <YAxis
                           tick={{ fontSize: 10 }}
@@ -370,11 +396,11 @@ export default function Home() {
               </div>
             )}
 
-            {/* Orders Count Chart - Last 14 Days */}
+            {/* Orders Count Chart */}
             {stats?.dailyOrders?.length > 0 && (
               <div className="bg-white dark:bg-gray-800 rounded-lg shadow dark:shadow-gray-900">
                 <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-700">
-                  <h2 className="font-semibold text-gray-900 dark:text-white">Ilosc zamowien (ostatnie 30 dni)</h2>
+                  <h2 className="font-semibold text-gray-900 dark:text-white">Ilosc zamowien (ostatnie {selectedPeriod} dni)</h2>
                 </div>
                 <div className="p-4">
                   <div className="h-48 sm:h-64">
@@ -386,6 +412,7 @@ export default function Home() {
                           tick={{ fontSize: 10 }}
                           tickLine={false}
                           axisLine={false}
+                          interval={selectedPeriod > 30 ? 6 : 0}
                         />
                         <YAxis
                           tick={{ fontSize: 10 }}

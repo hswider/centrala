@@ -13,9 +13,13 @@ function convertToPln(amount, currency) {
   return parseFloat(amount) * EUR_TO_PLN;
 }
 
-export async function GET() {
+export async function GET(request) {
   try {
     await initDatabase();
+
+    // Get days parameter (default 30)
+    const { searchParams } = new URL(request.url);
+    const days = parseInt(searchParams.get('days')) || 30;
 
     // Use Polish timezone for date calculations
     const TZ = 'Europe/Warsaw';
@@ -29,11 +33,11 @@ export async function GET() {
       ORDER BY count DESC
     `;
 
-    // Orders last 30 days by platform
-    const last30DaysByPlatform = await sql`
+    // Orders last X days by platform
+    const lastXDaysByPlatform = await sql`
       SELECT channel_platform as platform, COUNT(*) as count
       FROM orders
-      WHERE ordered_at >= (CURRENT_DATE AT TIME ZONE 'Europe/Warsaw') - INTERVAL '30 days'
+      WHERE ordered_at >= (CURRENT_DATE AT TIME ZONE 'Europe/Warsaw') - INTERVAL '1 day' * ${days}
       GROUP BY channel_platform
       ORDER BY count DESC
     `;
@@ -79,33 +83,33 @@ export async function GET() {
       GROUP BY currency
     `;
 
-    // Revenue last 30 days by currency
-    const revenue30Days = await sql`
+    // Revenue last X days by currency
+    const revenueXDays = await sql`
       SELECT currency, SUM(total_gross) as total
       FROM orders
-      WHERE ordered_at >= (CURRENT_DATE AT TIME ZONE 'Europe/Warsaw') - INTERVAL '30 days'
+      WHERE ordered_at >= (CURRENT_DATE AT TIME ZONE 'Europe/Warsaw') - INTERVAL '1 day' * ${days}
       GROUP BY currency
     `;
 
-    // Revenue last 30 days by day (Polish timezone)
-    const revenueLast30Days = await sql`
+    // Revenue last X days by day (Polish timezone)
+    const revenueLastXDays = await sql`
       SELECT
         DATE(ordered_at AT TIME ZONE 'Europe/Warsaw') as date,
         currency,
         SUM(total_gross) as total
       FROM orders
-      WHERE ordered_at >= (CURRENT_DATE AT TIME ZONE 'Europe/Warsaw') - INTERVAL '30 days'
+      WHERE ordered_at >= (CURRENT_DATE AT TIME ZONE 'Europe/Warsaw') - INTERVAL '1 day' * ${days}
       GROUP BY DATE(ordered_at AT TIME ZONE 'Europe/Warsaw'), currency
       ORDER BY date ASC
     `;
 
-    // Orders count last 30 days by day (Polish timezone)
-    const ordersLast30Days = await sql`
+    // Orders count last X days by day (Polish timezone)
+    const ordersLastXDays = await sql`
       SELECT
         DATE(ordered_at AT TIME ZONE 'Europe/Warsaw') as date,
         COUNT(*) as count
       FROM orders
-      WHERE ordered_at >= (CURRENT_DATE AT TIME ZONE 'Europe/Warsaw') - INTERVAL '30 days'
+      WHERE ordered_at >= (CURRENT_DATE AT TIME ZONE 'Europe/Warsaw') - INTERVAL '1 day' * ${days}
       GROUP BY DATE(ordered_at AT TIME ZONE 'Europe/Warsaw')
       ORDER BY date ASC
     `;
@@ -116,12 +120,12 @@ export async function GET() {
       revenueTodayPln += convertToPln(r.total, r.currency);
     });
 
-    let revenue30DaysPln = 0;
-    revenue30Days.rows.forEach(r => {
-      revenue30DaysPln += convertToPln(r.total, r.currency);
+    let revenueXDaysPln = 0;
+    revenueXDays.rows.forEach(r => {
+      revenueXDaysPln += convertToPln(r.total, r.currency);
     });
 
-    // Top 10 products by quantity sold in last 30 days
+    // Top 10 products by quantity sold in last X days
     const topProducts = await sql`
       SELECT
         item->>'name' as name,
@@ -132,7 +136,7 @@ export async function GET() {
         o.currency
       FROM orders o,
         jsonb_array_elements(o.items) as item
-      WHERE o.ordered_at >= (CURRENT_DATE AT TIME ZONE 'Europe/Warsaw') - INTERVAL '30 days'
+      WHERE o.ordered_at >= (CURRENT_DATE AT TIME ZONE 'Europe/Warsaw') - INTERVAL '1 day' * ${days}
         AND (item->>'isShipping')::boolean = false
       GROUP BY item->>'name', item->>'sku', item->>'image', o.currency
       ORDER BY total_quantity DESC
@@ -171,7 +175,7 @@ export async function GET() {
 
     // Build daily revenue chart data
     const dailyRevenueMap = {};
-    revenueLast30Days.rows.forEach(r => {
+    revenueLastXDays.rows.forEach(r => {
       const dateStr = new Date(r.date).toISOString().split('T')[0];
       if (!dailyRevenueMap[dateStr]) {
         dailyRevenueMap[dateStr] = 0;
@@ -179,14 +183,14 @@ export async function GET() {
       dailyRevenueMap[dateStr] += convertToPln(r.total, r.currency);
     });
 
-    // Create array for last 30 days
-    const last30DaysRevenue = [];
-    for (let i = 29; i >= 0; i--) {
+    // Create array for last X days
+    const lastXDaysRevenue = [];
+    for (let i = days - 1; i >= 0; i--) {
       const date = new Date();
       date.setDate(date.getDate() - i);
       const dateStr = date.toISOString().split('T')[0];
       const dayLabel = date.toLocaleDateString('pl-PL', { day: '2-digit', month: '2-digit' });
-      last30DaysRevenue.push({
+      lastXDaysRevenue.push({
         date: dateStr,
         day: dayLabel,
         revenue: Math.round(dailyRevenueMap[dateStr] || 0)
@@ -195,19 +199,19 @@ export async function GET() {
 
     // Build daily orders map
     const dailyOrdersMap = {};
-    ordersLast30Days.rows.forEach(r => {
+    ordersLastXDays.rows.forEach(r => {
       const dateStr = new Date(r.date).toISOString().split('T')[0];
       dailyOrdersMap[dateStr] = parseInt(r.count);
     });
 
-    // Create array for last 30 days orders
-    const last30DaysOrders = [];
-    for (let i = 29; i >= 0; i--) {
+    // Create array for last X days orders
+    const lastXDaysOrders = [];
+    for (let i = days - 1; i >= 0; i--) {
       const date = new Date();
       date.setDate(date.getDate() - i);
       const dateStr = date.toISOString().split('T')[0];
       const dayLabel = date.toLocaleDateString('pl-PL', { day: '2-digit', month: '2-digit' });
-      last30DaysOrders.push({
+      lastXDaysOrders.push({
         date: dateStr,
         day: dayLabel,
         orders: dailyOrdersMap[dateStr] || 0
@@ -215,11 +219,17 @@ export async function GET() {
     }
 
     return NextResponse.json({
+      days,
       todayByPlatform: todayByPlatform.rows.map(r => ({
         platform: r.platform || 'Inne',
         count: parseInt(r.count)
       })),
-      last30DaysByPlatform: last30DaysByPlatform.rows.map(r => ({
+      lastXDaysByPlatform: lastXDaysByPlatform.rows.map(r => ({
+        platform: r.platform || 'Inne',
+        count: parseInt(r.count)
+      })),
+      // Keep old field for backwards compatibility
+      last30DaysByPlatform: lastXDaysByPlatform.rows.map(r => ({
         platform: r.platform || 'Inne',
         count: parseInt(r.count)
       })),
@@ -232,10 +242,14 @@ export async function GET() {
       },
       revenue: {
         todayPln: Math.round(revenueTodayPln),
-        last30DaysPln: Math.round(revenue30DaysPln),
-        last30Days: last30DaysRevenue
+        periodPln: Math.round(revenueXDaysPln),
+        // Keep old field for backwards compatibility
+        last30DaysPln: Math.round(revenueXDaysPln),
+        periodDays: lastXDaysRevenue,
+        // Keep old field for backwards compatibility
+        last30Days: lastXDaysRevenue
       },
-      dailyOrders: last30DaysOrders,
+      dailyOrders: lastXDaysOrders,
       topProducts: topProductsList
     });
   } catch (error) {
