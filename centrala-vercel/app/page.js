@@ -190,7 +190,7 @@ export default function Home() {
               <span className="text-blue-100">Rola: </span>
               {(() => {
                 const roleConfig = {
-                  admin: { label: 'Administrator', emoji: '👑', gradient: 'from-yellow-400 to-amber-500' },
+                  admin: { label: 'Administrator', emoji: '🛠️', gradient: 'from-yellow-400 to-amber-500' },
                   warehouse_specialist: { label: 'Warehouse Operations Specialist', emoji: '📦', gradient: 'from-emerald-400 to-teal-500' },
                   user: { label: 'Uzytkownik', emoji: '👤', gradient: 'from-gray-400 to-gray-500' }
                 };
