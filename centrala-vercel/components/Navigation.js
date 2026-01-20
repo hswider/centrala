@@ -141,10 +141,10 @@ export default function Navigation() {
     { href: '/zamowienia', label: 'OMS', icon: '📦', permission: 'oms' },
     { href: '/magazyny', label: 'WMS', icon: '🏭', permission: 'wms' },
     { href: '/mes', label: 'MES', icon: '⚙️', permission: 'mes' },
-    { href: '/mts', label: 'MTS', icon: '📋', permission: 'mes' },
+    { href: '/mts', label: 'MTS', icon: '📋', permission: 'mts' },
     { href: '/crm', label: 'CRM 🇵🇱', icon: '👥', badge: unreadCount, permission: 'crm' },
-    { href: '/crm-eu', label: 'CRM 🇪🇺', icon: '👥', badge: unreadCountEU, permission: 'crm' },
-    { href: '/rank', label: 'RANK', icon: '📈', permission: 'dashboard' },
+    { href: '/crm-eu', label: 'CRM 🇪🇺', icon: '👥', badge: unreadCountEU, permission: 'crm-eu' },
+    { href: '/rank', label: 'RANK', icon: '📈', permission: 'rank' },
     { href: '/agent', label: 'Asystent AI', icon: '🤖', permission: 'agent' },
   ];
 

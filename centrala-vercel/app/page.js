@@ -18,13 +18,15 @@ export default function Home() {
     oms: { label: 'OMS (Zamówienia)', icon: '📦' },
     wms: { label: 'WMS (Magazyny)', icon: '🏭' },
     mes: { label: 'MES (Produkcja)', icon: '⚙️' },
-    crm: { label: 'CRM (Klienci)', icon: '👥' },
+    mts: { label: 'MTS (Make to Stock)', icon: '📋' },
+    crm: { label: 'CRM PL', icon: '👥' },
+    'crm-eu': { label: 'CRM EU', icon: '🇪🇺' },
     rank: { label: 'RANK', icon: '📈' },
     agent: { label: 'Asystent AI', icon: '🤖' },
     admin: { label: 'Administracja', icon: '🔐' }
   };
 
-  const allPermissions = ['dashboard', 'oms', 'wms', 'mes', 'crm', 'rank', 'agent'];
+  const allPermissions = ['dashboard', 'oms', 'wms', 'mes', 'mts', 'crm', 'crm-eu', 'rank', 'agent'];
 
   const fetchUser = async () => {
     try {

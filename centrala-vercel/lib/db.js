@@ -76,14 +76,14 @@ export async function initDatabase() {
 
   // Users table migrations - add permissions
   try {
-    await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS permissions JSONB DEFAULT '["dashboard","oms","wms","mes","crm","agent"]'::jsonb`;
+    await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS permissions JSONB DEFAULT '["dashboard","oms","wms","mes","mts","crm","crm-eu","rank","agent"]'::jsonb`;
   } catch (e) {
     // Column might already exist
   }
 
   // Update admin users to have all permissions
   try {
-    await sql`UPDATE users SET permissions = '["dashboard","oms","wms","mes","crm","agent","admin"]'::jsonb WHERE role = 'admin'`;
+    await sql`UPDATE users SET permissions = '["dashboard","oms","wms","mes","mts","crm","crm-eu","rank","agent","admin"]'::jsonb WHERE role = 'admin' AND (permissions IS NULL OR NOT permissions @> '["mts"]'::jsonb)`;
   } catch (e) {
     // Ignore errors
   }
@@ -1323,8 +1323,8 @@ export async function createUser(username, password, role = 'user', permissions 
   const passwordHash = await bcrypt.hash(password, 10);
 
   // Default permissions based on role
-  const defaultAdminPermissions = ['dashboard', 'oms', 'wms', 'mes', 'crm', 'agent', 'admin'];
-  const defaultUserPermissions = ['dashboard', 'oms', 'wms', 'mes', 'crm', 'agent'];
+  const defaultAdminPermissions = ['dashboard', 'oms', 'wms', 'mes', 'mts', 'crm', 'crm-eu', 'rank', 'agent', 'admin'];
+  const defaultUserPermissions = ['dashboard', 'oms', 'wms', 'mes', 'mts', 'crm', 'crm-eu', 'rank', 'agent'];
   const userPermissions = permissions || (role === 'admin' ? defaultAdminPermissions : defaultUserPermissions);
   const permissionsJson = JSON.stringify(userPermissions);
 
@@ -1366,8 +1366,8 @@ export async function verifyUser(username, password) {
   `;
 
   // Default permissions for admin
-  const defaultAdminPermissions = ['dashboard', 'oms', 'wms', 'mes', 'crm', 'agent', 'admin'];
-  const defaultUserPermissions = ['dashboard', 'oms', 'wms', 'mes', 'crm', 'agent'];
+  const defaultAdminPermissions = ['dashboard', 'oms', 'wms', 'mes', 'mts', 'crm', 'crm-eu', 'rank', 'agent', 'admin'];
+  const defaultUserPermissions = ['dashboard', 'oms', 'wms', 'mes', 'mts', 'crm', 'crm-eu', 'rank', 'agent'];
 
   return {
     id: user.id,
