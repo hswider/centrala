@@ -6,6 +6,7 @@ export default function MagazynyPage() {
   const [activeTab, setActiveTab] = useState('gotowe');
   const [showAddModal, setShowAddModal] = useState(false);
   const [showImportModal, setShowImportModal] = useState(false);
+  const [importUpdateMode, setImportUpdateMode] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -21,6 +22,14 @@ export default function MagazynyPage() {
   const [rozchódValues, setRozchódValues] = useState({});
   const [showRecipeModal, setShowRecipeModal] = useState(false);
   const [recipeItem, setRecipeItem] = useState(null);
+  const [showHistoryModal, setShowHistoryModal] = useState(false);
+  const [historyData, setHistoryData] = useState([]);
+  const [historyLoading, setHistoryLoading] = useState(false);
+  const [historyPage, setHistoryPage] = useState(1);
+  const [historyTotal, setHistoryTotal] = useState(0);
+  const [historyUsers, setHistoryUsers] = useState([]);
+  const [historyFilterUser, setHistoryFilterUser] = useState('');
+  const [historyFilterAction, setHistoryFilterAction] = useState('');
   const [recipeIngredients, setRecipeIngredients] = useState([]);
   const [loadingRecipe, setLoadingRecipe] = useState(false);
   const [ingredientSearchPolprodukty, setIngredientSearchPolprodukty] = useState('');
@@ -641,6 +650,35 @@ export default function MagazynyPage() {
     }
   };
 
+  // Pobierz historie zmian
+  const fetchHistory = useCallback(async (page = 1, username = '', actionType = '') => {
+    try {
+      setHistoryLoading(true);
+      const params = new URLSearchParams({ page, perPage: 50 });
+      if (username) params.append('username', username);
+      if (actionType) params.append('actionType', actionType);
+
+      const res = await fetch(`/api/inventory/history?${params}`);
+      const data = await res.json();
+
+      if (data.success) {
+        setHistoryData(data.history || []);
+        setHistoryTotal(data.total || 0);
+        setHistoryUsers(data.users || []);
+        setHistoryPage(page);
+      }
+    } catch (error) {
+      console.error('Blad pobierania historii:', error);
+    } finally {
+      setHistoryLoading(false);
+    }
+  }, []);
+
+  const handleOpenHistory = () => {
+    setShowHistoryModal(true);
+    fetchHistory(1, '', '');
+  };
+
   // Eksport do CSV - tylko aktualny magazyn
   const handleExportCSV = () => {
     const items = magazyny[activeTab] || [];
@@ -764,11 +802,22 @@ export default function MagazynyPage() {
         const startIndex = lines[0]?.toLowerCase().includes('nazwa') ? 1 : 0;
 
         // Pobierz istniejace nazwy w magazynie (lowercase dla porownania)
+        const existingItems = magazyny[activeTab] || [];
         const existingNames = new Set(
-          (magazyny[activeTab] || []).map(item => item.nazwa.toLowerCase().trim())
+          existingItems.map(item => item.nazwa.toLowerCase().trim())
+        );
+        // Mapa nazwa -> SKU dla trybu aktualizacji
+        const existingNameToSku = new Map(
+          existingItems.map(item => [item.nazwa.toLowerCase().trim(), item.sku])
+        );
+        // Mapa SKU -> item dla trybu aktualizacji (dopasowanie po SKU)
+        const existingSkuToItem = new Map(
+          existingItems.map(item => [item.sku?.toLowerCase().trim(), item])
         );
         // Nazwy dodane w tym imporcie (zeby wykryc duplikaty w pliku)
         const importedNames = new Set();
+        // Ilosc pozycji do aktualizacji (dla informacji)
+        let toUpdateCount = 0;
 
         for (let i = startIndex; i < lines.length; i++) {
           const line = lines[i];
@@ -814,22 +863,52 @@ export default function MagazynyPage() {
 
             // Dla wykrojow, polproduktow i surowcow SKU jest opcjonalne - generuj automatycznie jesli puste
             let finalSku = sku;
-            if (!finalSku) {
-              if (activeTab === 'wykroje') finalSku = `WYK-${Date.now()}-${i}`;
-              else if (activeTab === 'polprodukty') finalSku = `PP-${Date.now()}-${i}`;
-              else if (activeTab === 'surowce') finalSku = `SUR-${Date.now()}-${i}`;
-              else finalSku = null;
-            }
-
-            // Sprawdz duplikaty nazw
             const nazwaLower = nazwa?.toLowerCase().trim();
-            if (nazwaLower && existingNames.has(nazwaLower)) {
-              skippedDuplicates.push(`"${nazwa}" - juz istnieje w magazynie`);
-              continue;
-            }
-            if (nazwaLower && importedNames.has(nazwaLower)) {
-              skippedDuplicates.push(`"${nazwa}" - duplikat w pliku CSV`);
-              continue;
+            const skuLower = sku?.toLowerCase().trim();
+
+            // Tryb aktualizacji - znajdz istniejacy SKU po nazwie lub SKU z CSV
+            if (importUpdateMode) {
+              // Najpierw sprawdz czy SKU z CSV pasuje do istniejacego
+              if (skuLower && existingSkuToItem.has(skuLower)) {
+                finalSku = existingSkuToItem.get(skuLower).sku; // Uzyj dokladnego SKU z bazy
+                toUpdateCount++;
+              }
+              // Jesli nie ma SKU lub nie pasuje, sprawdz po nazwie
+              else if (nazwaLower && existingNameToSku.has(nazwaLower)) {
+                finalSku = existingNameToSku.get(nazwaLower); // Uzyj istniejacego SKU
+                toUpdateCount++;
+              }
+              // Jesli nie istnieje - generuj nowe SKU jesli brak
+              else if (!finalSku) {
+                if (activeTab === 'wykroje') finalSku = `WYK-${Date.now()}-${i}`;
+                else if (activeTab === 'polprodukty') finalSku = `PP-${Date.now()}-${i}`;
+                else if (activeTab === 'surowce') finalSku = `SUR-${Date.now()}-${i}`;
+                else finalSku = null;
+              }
+
+              // Sprawdz duplikaty tylko w pliku CSV (nie w magazynie, bo aktualizujemy)
+              if (nazwaLower && importedNames.has(nazwaLower)) {
+                skippedDuplicates.push(`"${nazwa}" - duplikat w pliku CSV`);
+                continue;
+              }
+            } else {
+              // Tryb normalny - pomijaj duplikaty
+              if (!finalSku) {
+                if (activeTab === 'wykroje') finalSku = `WYK-${Date.now()}-${i}`;
+                else if (activeTab === 'polprodukty') finalSku = `PP-${Date.now()}-${i}`;
+                else if (activeTab === 'surowce') finalSku = `SUR-${Date.now()}-${i}`;
+                else finalSku = null;
+              }
+
+              // Sprawdz duplikaty nazw
+              if (nazwaLower && existingNames.has(nazwaLower)) {
+                skippedDuplicates.push(`"${nazwa}" - juz istnieje w magazynie`);
+                continue;
+              }
+              if (nazwaLower && importedNames.has(nazwaLower)) {
+                skippedDuplicates.push(`"${nazwa}" - duplikat w pliku CSV`);
+                continue;
+              }
             }
 
             if (finalSku && nazwa) {
@@ -866,7 +945,16 @@ export default function MagazynyPage() {
 
           if (data.success) {
             await fetchInventory();
-            let message = `Zaimportowano ${data.imported} z ${data.total} pozycji`;
+            let message = '';
+
+            // Buduj komunikat z podzialem na nowe i zaktualizowane
+            if (data.updated > 0 && data.imported > 0) {
+              message = `Dodano ${data.imported} nowych pozycji, zaktualizowano ${data.updated} istniejacych (z ${data.total} w pliku)`;
+            } else if (data.updated > 0) {
+              message = `Zaktualizowano ${data.updated} pozycji (z ${data.total} w pliku)`;
+            } else {
+              message = `Zaimportowano ${data.imported} z ${data.total} pozycji`;
+            }
 
             // Pokazuj pominiete duplikaty
             if (skippedDuplicates.length > 0) {
@@ -913,6 +1001,7 @@ export default function MagazynyPage() {
     reader.readAsText(file);
     e.target.value = '';
     setShowImportModal(false);
+    setImportUpdateMode(false);
   };
 
   const getTabLabel = (key) => {
@@ -990,6 +1079,12 @@ export default function MagazynyPage() {
             <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">Zarzadzanie stanami magazynowymi i zapasami</p>
           </div>
           <div className="flex flex-wrap gap-2">
+            <button
+              onClick={handleOpenHistory}
+              className="px-2.5 py-1.5 text-xs sm:text-sm bg-purple-600 text-white rounded-lg hover:bg-purple-700"
+            >
+              Historia zmian
+            </button>
             <button
               onClick={handleExportCSV}
               className="px-2.5 py-1.5 text-xs sm:text-sm bg-gray-600 text-white rounded-lg hover:bg-gray-700"
@@ -1851,6 +1946,23 @@ export default function MagazynyPage() {
                 </p>
               </div>
 
+              <div className="bg-purple-50 border border-purple-200 rounded-lg p-4 mb-4">
+                <label className="flex items-start gap-3 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={importUpdateMode}
+                    onChange={(e) => setImportUpdateMode(e.target.checked)}
+                    className="mt-1 w-4 h-4 text-purple-600 border-gray-300 rounded focus:ring-purple-500"
+                  />
+                  <div>
+                    <span className="font-medium text-purple-800">Aktualizuj istniejace pozycje</span>
+                    <p className="text-xs text-purple-600 mt-1">
+                      Jesli nazwa lub SKU juz istnieje w magazynie, zaktualizuj dane (np. EAN, stan, cena) zamiast pomijac jako duplikat.
+                    </p>
+                  </div>
+                </label>
+              </div>
+
               <input
                 ref={fileInputRef}
                 type="file"
@@ -1861,7 +1973,7 @@ export default function MagazynyPage() {
 
               <div className="flex justify-end gap-2">
                 <button
-                  onClick={() => setShowImportModal(false)}
+                  onClick={() => { setShowImportModal(false); setImportUpdateMode(false); }}
                   className="px-4 py-2 text-gray-600 hover:text-gray-800"
                   disabled={saving}
                 >
@@ -2192,6 +2304,171 @@ export default function MagazynyPage() {
                     </button>
                   </div>
                 </>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Historia zmian Modal */}
+        {showHistoryModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl dark:shadow-gray-900 max-w-4xl w-full p-6 max-h-[90vh] overflow-hidden flex flex-col">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Historia zmian magazynu</h3>
+                <button
+                  onClick={() => setShowHistoryModal(false)}
+                  className="text-gray-400 hover:text-gray-600 text-2xl"
+                >
+                  &times;
+                </button>
+              </div>
+
+              {/* Filtry */}
+              <div className="flex flex-wrap gap-3 mb-4 pb-4 border-b border-gray-200 dark:border-gray-700">
+                <select
+                  value={historyFilterUser}
+                  onChange={(e) => {
+                    setHistoryFilterUser(e.target.value);
+                    fetchHistory(1, e.target.value, historyFilterAction);
+                  }}
+                  className="px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                >
+                  <option value="">Wszyscy uzytkownicy</option>
+                  {historyUsers.map(user => (
+                    <option key={user} value={user}>{user}</option>
+                  ))}
+                </select>
+                <select
+                  value={historyFilterAction}
+                  onChange={(e) => {
+                    setHistoryFilterAction(e.target.value);
+                    fetchHistory(1, historyFilterUser, e.target.value);
+                  }}
+                  className="px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                >
+                  <option value="">Wszystkie akcje</option>
+                  <option value="STAN_CHANGE">Zmiana stanu</option>
+                  <option value="PRICE_CHANGE">Zmiana ceny</option>
+                  <option value="PRODUCT_ADD">Dodanie produktu</option>
+                  <option value="PRODUCT_MODIFY">Modyfikacja produktu</option>
+                  <option value="PRODUCT_DELETE">Usuniecie produktu</option>
+                </select>
+                <span className="text-sm text-gray-500 dark:text-gray-400 self-center ml-auto">
+                  Razem: {historyTotal} zmian
+                </span>
+              </div>
+
+              {/* Lista zmian */}
+              <div className="flex-1 overflow-y-auto">
+                {historyLoading ? (
+                  <div className="flex justify-center py-8">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600"></div>
+                  </div>
+                ) : historyData.length === 0 ? (
+                  <p className="text-center py-8 text-gray-500 dark:text-gray-400">Brak historii zmian</p>
+                ) : (
+                  <table className="min-w-full">
+                    <thead className="bg-gray-50 dark:bg-gray-700 sticky top-0">
+                      <tr>
+                        <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Data</th>
+                        <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Uzytkownik</th>
+                        <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Akcja</th>
+                        <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Produkt</th>
+                        <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Zmiana</th>
+                        <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Zrodlo</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+                      {historyData.map((entry) => {
+                        const actionLabels = {
+                          'STAN_CHANGE': { label: 'Zmiana stanu', color: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200' },
+                          'PRICE_CHANGE': { label: 'Zmiana ceny', color: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200' },
+                          'PRODUCT_ADD': { label: 'Dodanie', color: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' },
+                          'PRODUCT_MODIFY': { label: 'Modyfikacja', color: 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200' },
+                          'PRODUCT_DELETE': { label: 'Usuniecie', color: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200' }
+                        };
+                        const action = actionLabels[entry.action_type] || { label: entry.action_type, color: 'bg-gray-100 text-gray-800' };
+                        const sourceLabels = {
+                          'CSV_IMPORT': 'Import CSV',
+                          'MANUAL': 'Reczna zmiana',
+                          'API': 'API'
+                        };
+
+                        return (
+                          <tr key={entry.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
+                            <td className="px-3 py-2 text-xs text-gray-600 dark:text-gray-300 whitespace-nowrap">
+                              {new Date(entry.created_at).toLocaleString('pl-PL', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                            </td>
+                            <td className="px-3 py-2 text-xs text-gray-900 dark:text-white font-medium">
+                              {entry.username || '-'}
+                            </td>
+                            <td className="px-3 py-2">
+                              <span className={`px-2 py-0.5 text-xs font-medium rounded ${action.color}`}>
+                                {action.label}
+                              </span>
+                            </td>
+                            <td className="px-3 py-2 text-xs text-gray-600 dark:text-gray-300">
+                              <div className="font-medium">{entry.sku}</div>
+                              <div className="text-gray-400 truncate max-w-[150px]">{entry.nazwa}</div>
+                            </td>
+                            <td className="px-3 py-2 text-xs">
+                              {entry.field_changed === 'stan' && (
+                                <span className="text-gray-600 dark:text-gray-300">
+                                  {parseFloat(entry.old_value || 0).toFixed(2)} → <span className="font-bold text-blue-600">{parseFloat(entry.new_value || 0).toFixed(2)}</span>
+                                  {parseFloat(entry.new_value) > parseFloat(entry.old_value) ? (
+                                    <span className="ml-1 text-green-600">(+{(parseFloat(entry.new_value) - parseFloat(entry.old_value)).toFixed(2)})</span>
+                                  ) : (
+                                    <span className="ml-1 text-red-600">({(parseFloat(entry.new_value) - parseFloat(entry.old_value)).toFixed(2)})</span>
+                                  )}
+                                </span>
+                              )}
+                              {entry.field_changed === 'cena' && (
+                                <span className="text-gray-600 dark:text-gray-300">
+                                  {parseFloat(entry.old_value || 0).toFixed(2)} zl → <span className="font-bold text-yellow-600">{parseFloat(entry.new_value || 0).toFixed(2)} zl</span>
+                                </span>
+                              )}
+                              {entry.action_type === 'PRODUCT_ADD' && (
+                                <span className="text-green-600">Nowy produkt</span>
+                              )}
+                              {entry.action_type === 'PRODUCT_DELETE' && (
+                                <span className="text-red-600">Usuniety</span>
+                              )}
+                              {entry.action_type === 'PRODUCT_MODIFY' && !entry.field_changed && (
+                                <span className="text-purple-600">Dane zaktualizowane</span>
+                              )}
+                            </td>
+                            <td className="px-3 py-2 text-xs text-gray-400">
+                              {sourceLabels[entry.source] || entry.source || '-'}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                )}
+              </div>
+
+              {/* Paginacja */}
+              {historyTotal > 50 && (
+                <div className="flex justify-center gap-2 mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+                  <button
+                    onClick={() => fetchHistory(historyPage - 1, historyFilterUser, historyFilterAction)}
+                    disabled={historyPage <= 1}
+                    className="px-3 py-1 text-sm bg-gray-200 dark:bg-gray-700 rounded disabled:opacity-50"
+                  >
+                    Poprzednia
+                  </button>
+                  <span className="px-3 py-1 text-sm text-gray-600 dark:text-gray-300">
+                    Strona {historyPage} z {Math.ceil(historyTotal / 50)}
+                  </span>
+                  <button
+                    onClick={() => fetchHistory(historyPage + 1, historyFilterUser, historyFilterAction)}
+                    disabled={historyPage >= Math.ceil(historyTotal / 50)}
+                    className="px-3 py-1 text-sm bg-gray-200 dark:bg-gray-700 rounded disabled:opacity-50"
+                  >
+                    Nastepna
+                  </button>
+                </div>
               )}
             </div>
           </div>

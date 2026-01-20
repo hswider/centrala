@@ -187,7 +187,8 @@ export async function POST(request) {
           oldValue: String(oldItem.stan),
           newValue: String(newItem.stan),
           userId,
-          username
+          username,
+          source: 'MANUAL'
         });
       }
       if (parseFloat(oldItem.cena) !== parseFloat(newItem.cena)) {
@@ -201,7 +202,8 @@ export async function POST(request) {
           oldValue: String(oldItem.cena),
           newValue: String(newItem.cena),
           userId,
-          username
+          username,
+          source: 'MANUAL'
         });
       }
       if (oldItem.nazwa !== newItem.nazwa || oldItem.ean !== newItem.ean || oldItem.tkanina !== newItem.tkanina) {
@@ -215,7 +217,8 @@ export async function POST(request) {
           oldValue: JSON.stringify({ nazwa: oldItem.nazwa, ean: oldItem.ean, tkanina: oldItem.tkanina }),
           newValue: JSON.stringify({ nazwa: newItem.nazwa, ean: newItem.ean, tkanina: newItem.tkanina }),
           userId,
-          username
+          username,
+          source: 'MANUAL'
         });
       }
     } else {
@@ -230,7 +233,8 @@ export async function POST(request) {
         oldValue: null,
         newValue: JSON.stringify({ stan: newItem.stan, cena: newItem.cena }),
         userId,
-        username
+        username,
+        source: 'MANUAL'
       });
     }
 
@@ -377,7 +381,8 @@ export async function PUT(request) {
         oldValue: String(oldItem.stan),
         newValue: String(newItem.stan),
         userId,
-        username
+        username,
+        source: 'MANUAL'
       });
     }
 
@@ -393,7 +398,8 @@ export async function PUT(request) {
         oldValue: String(oldItem.cena),
         newValue: String(newItem.cena),
         userId,
-        username
+        username,
+        source: 'MANUAL'
       });
     }
 
@@ -415,7 +421,8 @@ export async function PUT(request) {
         oldValue: JSON.stringify({ sku: oldItem.sku, nazwa: oldItem.nazwa, ean: oldItem.ean, tkanina: oldItem.tkanina }),
         newValue: JSON.stringify({ sku: newItem.sku, nazwa: newItem.nazwa, ean: newItem.ean, tkanina: newItem.tkanina }),
         userId,
-        username
+        username,
+        source: 'MANUAL'
       });
     }
 
@@ -471,7 +478,8 @@ export async function DELETE(request) {
       oldValue: JSON.stringify({ stan: deletedItem.stan, cena: deletedItem.cena }),
       newValue: null,
       userId,
-      username
+      username,
+      source: 'MANUAL'
     });
 
     return NextResponse.json({
