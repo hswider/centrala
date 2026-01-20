@@ -2,8 +2,11 @@
 
 import { useState, useEffect } from 'react';
 
-// Mini sparkline component
-function Sparkline({ data, width = 80, height = 24 }) {
+// Mini sparkline component with hover tooltip
+function Sparkline({ data, width = 80, height = 24, days = 30 }) {
+  const [hoveredIndex, setHoveredIndex] = useState(null);
+  const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
+
   if (!data || data.length === 0) return null;
 
   const max = Math.max(...data, 1);
@@ -26,24 +29,72 @@ function Sparkline({ data, width = 80, height = 24 }) {
   if (lastAvg > firstAvg * 1.1) strokeColor = '#10B981'; // green - trending up
   else if (lastAvg < firstAvg * 0.9) strokeColor = '#EF4444'; // red - trending down
 
+  // Generate dates for tooltip
+  const getDateLabel = (index) => {
+    const date = new Date();
+    date.setDate(date.getDate() - (data.length - 1 - index));
+    return date.toLocaleDateString('pl-PL', { day: '2-digit', month: '2-digit' });
+  };
+
+  const handleMouseMove = (e) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const index = Math.round((x / width) * (data.length - 1));
+    const clampedIndex = Math.max(0, Math.min(data.length - 1, index));
+    setHoveredIndex(clampedIndex);
+    setMousePos({ x: e.clientX, y: e.clientY });
+  };
+
   return (
-    <svg width={width} height={height} className="overflow-visible">
-      <polyline
-        fill="none"
-        stroke={strokeColor}
-        strokeWidth="1.5"
-        points={points}
-      />
-      {/* Last point dot */}
-      {data.length > 0 && (
-        <circle
-          cx={width}
-          cy={height - ((data[data.length - 1] - min) / range) * height}
-          r="2"
-          fill={strokeColor}
+    <div className="relative inline-block">
+      <svg
+        width={width}
+        height={height}
+        className="overflow-visible cursor-crosshair"
+        onMouseMove={handleMouseMove}
+        onMouseLeave={() => setHoveredIndex(null)}
+      >
+        <polyline
+          fill="none"
+          stroke={strokeColor}
+          strokeWidth="1.5"
+          points={points}
         />
+        {/* Hover point */}
+        {hoveredIndex !== null && (
+          <circle
+            cx={(hoveredIndex / (data.length - 1)) * width}
+            cy={height - ((data[hoveredIndex] - min) / range) * height}
+            r="3"
+            fill={strokeColor}
+            stroke="white"
+            strokeWidth="1"
+          />
+        )}
+        {/* Last point dot */}
+        {hoveredIndex === null && data.length > 0 && (
+          <circle
+            cx={width}
+            cy={height - ((data[data.length - 1] - min) / range) * height}
+            r="2"
+            fill={strokeColor}
+          />
+        )}
+      </svg>
+      {/* Tooltip */}
+      {hoveredIndex !== null && (
+        <div
+          className="fixed z-50 px-2 py-1 text-xs bg-gray-900 text-white rounded shadow-lg pointer-events-none whitespace-nowrap"
+          style={{
+            left: mousePos.x + 10,
+            top: mousePos.y - 30,
+          }}
+        >
+          <div className="font-medium">{getDateLabel(hoveredIndex)}</div>
+          <div>{data[hoveredIndex]} szt.</div>
+        </div>
       )}
-    </svg>
+    </div>
   );
 }
 
