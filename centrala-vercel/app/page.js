@@ -11,6 +11,7 @@ export default function Home() {
   const [user, setUser] = useState(null);
   const [weather, setWeather] = useState([]);
   const [forecast, setForecast] = useState([]);
+  const [onlineUsers, setOnlineUsers] = useState([]);
 
   // Permission labels mapping
   const permissionLabels = {
@@ -65,6 +66,18 @@ export default function Home() {
     }
   };
 
+  const fetchOnlineUsers = async () => {
+    try {
+      const res = await fetch('/api/users/online');
+      const data = await res.json();
+      if (data.success) {
+        setOnlineUsers(data.users);
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
   const triggerSync = async () => {
     setSyncing(true);
     try {
@@ -84,6 +97,11 @@ export default function Home() {
     fetchUser();
     fetchStats();
     fetchWeather();
+    fetchOnlineUsers();
+
+    // Refresh online users every 30 seconds
+    const onlineInterval = setInterval(fetchOnlineUsers, 30000);
+    return () => clearInterval(onlineInterval);
   }, []);
 
   const platformConfig = {
@@ -219,6 +237,34 @@ export default function Home() {
                   );
                 })}
               </div>
+            </div>
+          </div>
+        )}
+
+        {/* Online Users Bar */}
+        {onlineUsers.length > 0 && (
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow dark:shadow-gray-900 p-4 mb-6">
+            <div className="flex items-center gap-2 mb-3">
+              <span className="text-lg">👥</span>
+              <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300">Uzytkownicy systemu</h3>
+              <span className="text-xs text-gray-400 dark:text-gray-500">
+                ({onlineUsers.filter(u => u.isOnline).length} online)
+              </span>
+            </div>
+            <div className="flex flex-wrap gap-3">
+              {onlineUsers.map(u => (
+                <div
+                  key={u.id}
+                  className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium transition-all ${
+                    u.isOnline
+                      ? 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 border border-green-200 dark:border-green-800'
+                      : 'bg-gray-50 dark:bg-gray-700 text-gray-500 dark:text-gray-400 border border-gray-200 dark:border-gray-600'
+                  }`}
+                >
+                  <span className={`w-2.5 h-2.5 rounded-full ${u.isOnline ? 'bg-green-500 animate-pulse' : 'bg-red-400'}`}></span>
+                  <span>{u.username}</span>
+                </div>
+              ))}
             </div>
           </div>
         )}

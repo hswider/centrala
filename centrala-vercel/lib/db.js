@@ -88,6 +88,13 @@ export async function initDatabase() {
     // Ignore errors
   }
 
+  // Add last_activity column for online status tracking
+  try {
+    await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS last_activity TIMESTAMP`;
+  } catch (e) {
+    // Column might already exist
+  }
+
   await sql`
     CREATE TABLE IF NOT EXISTS sync_status (
       id SERIAL PRIMARY KEY,

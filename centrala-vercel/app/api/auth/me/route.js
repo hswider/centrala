@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
+import { sql } from '@vercel/postgres';
 
 export async function GET() {
   try {
@@ -13,9 +14,16 @@ export async function GET() {
 
     const user = JSON.parse(userCookie.value);
 
+    // Update last_activity for online status tracking
+    try {
+      await sql`UPDATE users SET last_activity = CURRENT_TIMESTAMP WHERE id = ${user.id}`;
+    } catch (e) {
+      // Silently ignore - don't break auth if this fails
+    }
+
     // Default permissions if not set
-    const defaultAdminPermissions = ['dashboard', 'oms', 'wms', 'mes', 'crm', 'agent', 'admin'];
-    const defaultUserPermissions = ['dashboard', 'oms', 'wms', 'mes', 'crm', 'agent'];
+    const defaultAdminPermissions = ['dashboard', 'oms', 'wms', 'mes', 'mts', 'crm', 'crm-eu', 'rank', 'agent', 'admin'];
+    const defaultUserPermissions = ['dashboard', 'oms', 'wms', 'mes', 'mts', 'crm', 'crm-eu', 'rank', 'agent'];
 
     return NextResponse.json({
       success: true,
