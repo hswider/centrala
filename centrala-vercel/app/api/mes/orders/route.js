@@ -11,7 +11,7 @@ export async function GET(request) {
     const limit = parseInt(searchParams.get('limit')) || 50;
 
     // Pobierz zamówienia które nie są wysłane (delivery_status != 13)
-    // i są opłacone (payment_status >= 2)
+    // i są opłacone (payment_status = 'PAID')
     const orders = await sql`
       SELECT
         id,
@@ -27,7 +27,7 @@ export async function GET(request) {
         delivery_status,
         payment_status
       FROM orders
-      WHERE payment_status >= 2
+      WHERE payment_status = 'PAID'
         AND (delivery_status IS NULL OR delivery_status < 13)
         AND is_canceled = false
       ORDER BY ordered_at DESC
