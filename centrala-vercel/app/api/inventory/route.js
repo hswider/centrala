@@ -97,6 +97,8 @@ export async function GET(request) {
           czas_produkcji: parseInt(row.czas_produkcji) || 0,
           jednostka: row.jednostka || 'szt',
           tkanina: row.tkanina || '',
+          yellow_threshold: row.yellow_threshold != null ? parseInt(row.yellow_threshold) : null,
+          red_threshold: row.red_threshold != null ? parseInt(row.red_threshold) : null,
           updatedAt: row.updated_at
         };
 
@@ -348,6 +350,16 @@ export async function PUT(request) {
       result = await sql`
         UPDATE inventory
         SET nazwa = ${nazwa}, updated_at = CURRENT_TIMESTAMP
+        WHERE id = ${id}
+        RETURNING *
+      `;
+    } else if (body.yellow_threshold !== undefined || body.red_threshold !== undefined) {
+      // Aktualizacja progow kolorow
+      const yellowThreshold = body.yellow_threshold !== undefined ? (body.yellow_threshold === null ? null : parseInt(body.yellow_threshold)) : oldItem.yellow_threshold;
+      const redThreshold = body.red_threshold !== undefined ? (body.red_threshold === null ? null : parseInt(body.red_threshold)) : oldItem.red_threshold;
+      result = await sql`
+        UPDATE inventory
+        SET yellow_threshold = ${yellowThreshold}, red_threshold = ${redThreshold}, updated_at = CURRENT_TIMESTAMP
         WHERE id = ${id}
         RETURNING *
       `;

@@ -40,6 +40,11 @@ export default function MagazynyPage() {
   const [selectedIds, setSelectedIds] = useState(new Set());
   const [sortBy, setSortBy] = useState('stan');
   const [sortDirection, setSortDirection] = useState('desc');
+  const [showColorModal, setShowColorModal] = useState(false);
+  const [colorItem, setColorItem] = useState(null);
+  const [colorYellow, setColorYellow] = useState('');
+  const [colorRed, setColorRed] = useState('');
+  const [savingColor, setSavingColor] = useState(false);
   const fileInputRef = useRef(null);
   const stanInputRef = useRef(null);
   const cenaInputRef = useRef(null);
@@ -49,7 +54,7 @@ export default function MagazynyPage() {
     { key: 'gotowe', label: 'Gotowe produkty', icon: '📦' },
     { key: 'polprodukty', label: 'Polprodukty', icon: '🔧' },
     { key: 'wykroje', label: 'Wykroje', icon: '✂️' },
-    { key: 'surowce', label: 'Surowce', icon: '🪵' },
+    { key: 'surowce', label: 'Surowce', icon: '🧱' },
   ];
 
   const [magazyny, setMagazyny] = useState({
@@ -586,6 +591,93 @@ export default function MagazynyPage() {
     }
   };
 
+  // Kolory - otworz modal
+  const handleOpenColorModal = (item) => {
+    setColorItem(item);
+    setColorYellow(item.yellow_threshold != null ? String(item.yellow_threshold) : '');
+    setColorRed(item.red_threshold != null ? String(item.red_threshold) : '');
+    setShowColorModal(true);
+  };
+
+  // Kolory - zapisz progi
+  const handleSaveColorThresholds = async () => {
+    if (!colorItem) return;
+
+    setSavingColor(true);
+    try {
+      const res = await fetch('/api/inventory', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: colorItem.id,
+          yellow_threshold: colorYellow === '' ? null : parseInt(colorYellow),
+          red_threshold: colorRed === '' ? null : parseInt(colorRed)
+        })
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        // Aktualizuj lokalny stan
+        setMagazyny(prev => ({
+          ...prev,
+          [activeTab]: prev[activeTab].map(i =>
+            i.id === colorItem.id
+              ? { ...i, yellow_threshold: colorYellow === '' ? null : parseInt(colorYellow), red_threshold: colorRed === '' ? null : parseInt(colorRed) }
+              : i
+          )
+        }));
+        setShowColorModal(false);
+        setColorItem(null);
+      } else {
+        alert('Blad: ' + data.error);
+      }
+    } catch (error) {
+      alert('Blad: ' + error.message);
+    } finally {
+      setSavingColor(false);
+    }
+  };
+
+  // Funkcja do okreslenia koloru stanu na podstawie progow
+  const getStanColor = (item) => {
+    const stan = parseFloat(item.stan) || 0;
+    const redThreshold = item.red_threshold;
+    const yellowThreshold = item.yellow_threshold;
+
+    // Jesli progi sa ustawione, uzyj ich
+    if (redThreshold != null && stan < redThreshold) {
+      return 'bg-red-100 text-red-800';
+    }
+    if (yellowThreshold != null && stan < yellowThreshold) {
+      return 'bg-yellow-100 text-yellow-800';
+    }
+    if (redThreshold != null || yellowThreshold != null) {
+      // Jesli progi sa ustawione i stan jest powyzej obu, zielony
+      return 'bg-green-100 text-green-800';
+    }
+
+    // Domyslne progi jesli nie ustawiono
+    if (stan <= 10) return 'bg-red-100 text-red-800';
+    if (stan <= 30) return 'bg-yellow-100 text-yellow-800';
+    return 'bg-green-100 text-green-800';
+  };
+
+  // Funkcja do obliczenia poziomu ostrzezenia (do sortowania)
+  const getWarningLevel = (item) => {
+    const stan = parseFloat(item.stan) || 0;
+    const redThreshold = item.red_threshold;
+    const yellowThreshold = item.yellow_threshold;
+
+    if (redThreshold != null && stan < redThreshold) return 0; // Krytyczny
+    if (yellowThreshold != null && stan < yellowThreshold) return 1; // Ostrzezenie
+    if (redThreshold != null || yellowThreshold != null) return 2; // OK
+
+    // Domyslne progi
+    if (stan <= 10) return 0;
+    if (stan <= 30) return 1;
+    return 2;
+  };
+
   // Dodaj skladnik do receptury
   const handleAddIngredient = async (ingredientId, quantity = 1) => {
     if (!recipeItem) return;
@@ -1010,6 +1102,8 @@ export default function MagazynyPage() {
 
   // Opcje sortowania
   const sortOptions = [
+    { value: 'ostrzezenie-asc', label: 'Ostrzezenie (krytyczne pierwsze)' },
+    { value: 'ostrzezenie-desc', label: 'Ostrzezenie (OK pierwsze)' },
     { value: 'nazwa-asc', label: 'Nazwa A-Z' },
     { value: 'nazwa-desc', label: 'Nazwa Z-A' },
     { value: 'sku-asc', label: 'SKU A-Z' },
@@ -1054,6 +1148,9 @@ export default function MagazynyPage() {
           break;
         case 'wartosc':
           comparison = ((a.cena || 0) * (a.stan || 0)) - ((b.cena || 0) * (b.stan || 0));
+          break;
+        case 'ostrzezenie':
+          comparison = getWarningLevel(a) - getWarningLevel(b);
           break;
         default:
           comparison = 0;
@@ -1338,12 +1435,8 @@ export default function MagazynyPage() {
                             ) : (
                               <button
                                 onClick={() => handleStanClick(item)}
-                                className={`px-3 py-1 rounded text-sm font-bold min-w-[50px] text-center cursor-pointer hover:ring-2 hover:ring-blue-400 transition-all whitespace-nowrap ${
-                                  item.stan <= 10 ? 'bg-red-100 text-red-800' :
-                                  item.stan <= 30 ? 'bg-yellow-100 text-yellow-800' :
-                                  'bg-green-100 text-green-800'
-                                }`}
-                                title="Kliknij aby edytowac"
+                                className={`px-3 py-1 rounded text-sm font-bold min-w-[50px] text-center cursor-pointer hover:ring-2 hover:ring-blue-400 transition-all whitespace-nowrap ${getStanColor(item)}`}
+                                title={item.yellow_threshold != null || item.red_threshold != null ? `Progi: czerwony < ${item.red_threshold ?? '-'}, żółty < ${item.yellow_threshold ?? '-'}` : 'Kliknij aby edytowac'}
                               >
                                 {item.stan}{activeTab === 'surowce' ? ` ${item.jednostka || 'szt'}` : ''}
                               </button>
@@ -1510,6 +1603,19 @@ export default function MagazynyPage() {
                                 title="Szczegoly produktu"
                               >
                                 Szczegoly
+                              </button>
+                            )}
+                            {activeTab === 'surowce' && (
+                              <button
+                                onClick={() => handleOpenColorModal(item)}
+                                className={`text-xs font-medium px-1.5 py-0.5 rounded ${
+                                  item.yellow_threshold != null || item.red_threshold != null
+                                    ? 'text-orange-600 hover:text-orange-800 bg-orange-50 hover:bg-orange-100'
+                                    : 'text-gray-500 hover:text-gray-700 bg-gray-50 hover:bg-gray-100'
+                                }`}
+                                title={item.yellow_threshold != null || item.red_threshold != null ? `Progi ustawione: żółty < ${item.yellow_threshold ?? '-'}, czerwony < ${item.red_threshold ?? '-'}` : 'Ustaw progi kolorów'}
+                              >
+                                Kolory
                               </button>
                             )}
                             <button
@@ -2470,6 +2576,112 @@ export default function MagazynyPage() {
                   </button>
                 </div>
               )}
+            </div>
+          </div>
+        )}
+
+        {/* Color Thresholds Modal */}
+        {showColorModal && colorItem && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl dark:shadow-gray-900 max-w-md w-full p-6">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                Ustaw progi kolorów
+              </h3>
+              <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+                {colorItem.nazwa}
+              </p>
+              <p className="text-xs text-gray-400 dark:text-gray-500 mb-4">
+                Aktualny stan: <span className="font-bold">{colorItem.stan} {colorItem.jednostka || 'szt'}</span>
+              </p>
+
+              <div className="space-y-4">
+                {/* Red threshold */}
+                <div>
+                  <label className="block text-sm font-medium text-red-700 dark:text-red-400 mb-1">
+                    🔴 Czerwony (krytyczny) - stan mniejszy niż:
+                  </label>
+                  <input
+                    type="number"
+                    value={colorRed}
+                    onChange={(e) => setColorRed(e.target.value)}
+                    placeholder="np. 30"
+                    min="0"
+                    className="w-full px-3 py-2 border border-red-300 dark:border-red-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 bg-red-50 dark:bg-red-900/20"
+                  />
+                </div>
+
+                {/* Yellow threshold */}
+                <div>
+                  <label className="block text-sm font-medium text-yellow-700 dark:text-yellow-400 mb-1">
+                    🟡 Żółty (ostrzeżenie) - stan mniejszy niż:
+                  </label>
+                  <input
+                    type="number"
+                    value={colorYellow}
+                    onChange={(e) => setColorYellow(e.target.value)}
+                    placeholder="np. 80"
+                    min="0"
+                    className="w-full px-3 py-2 border border-yellow-300 dark:border-yellow-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500 bg-yellow-50 dark:bg-yellow-900/20"
+                  />
+                </div>
+
+                {/* Green info */}
+                <div className="p-3 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
+                  <p className="text-sm text-green-700 dark:text-green-400">
+                    🟢 Zielony - stan równy lub wyższy niż próg żółty
+                  </p>
+                </div>
+
+                {/* Preview */}
+                <div className="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">Podgląd dla aktualnego stanu ({colorItem.stan}):</p>
+                  <div className="flex items-center gap-2">
+                    <span className={`px-3 py-1 rounded text-sm font-bold ${
+                      colorRed && colorItem.stan < parseInt(colorRed) ? 'bg-red-100 text-red-800' :
+                      colorYellow && colorItem.stan < parseInt(colorYellow) ? 'bg-yellow-100 text-yellow-800' :
+                      (colorRed || colorYellow) ? 'bg-green-100 text-green-800' :
+                      'bg-gray-100 text-gray-800'
+                    }`}>
+                      {colorItem.stan} {colorItem.jednostka || 'szt'}
+                    </span>
+                    <span className="text-xs text-gray-500">
+                      {colorRed && colorItem.stan < parseInt(colorRed) ? '← Krytyczny' :
+                       colorYellow && colorItem.stan < parseInt(colorYellow) ? '← Ostrzeżenie' :
+                       (colorRed || colorYellow) ? '← OK' : '← Brak progów'}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex justify-between gap-3 mt-6">
+                <button
+                  onClick={() => {
+                    setColorYellow('');
+                    setColorRed('');
+                  }}
+                  className="px-4 py-2 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200"
+                >
+                  Wyczyść progi
+                </button>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => {
+                      setShowColorModal(false);
+                      setColorItem(null);
+                    }}
+                    className="px-4 py-2 text-sm bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600"
+                  >
+                    Anuluj
+                  </button>
+                  <button
+                    onClick={handleSaveColorThresholds}
+                    disabled={savingColor}
+                    className="px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
+                  >
+                    {savingColor ? 'Zapisywanie...' : 'Zapisz'}
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         )}

@@ -74,6 +74,14 @@ export async function initDatabase() {
     // Column might already exist
   }
 
+  // Inventory color thresholds for stock warnings
+  try {
+    await sql`ALTER TABLE inventory ADD COLUMN IF NOT EXISTS yellow_threshold INTEGER`;
+    await sql`ALTER TABLE inventory ADD COLUMN IF NOT EXISTS red_threshold INTEGER`;
+  } catch (e) {
+    // Columns might already exist
+  }
+
   // Users table migrations - add permissions
   try {
     await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS permissions JSONB DEFAULT '["dashboard","oms","wms","mes","mts","crm","crm-eu","rank","agent"]'::jsonb`;
