@@ -314,57 +314,61 @@ export default function Home() {
               </div>
             </div>
 
-            {/* Revenue Cards */}
-            <div className="grid grid-cols-2 gap-3">
-              <div className="bg-gradient-to-br from-green-500 to-green-600 rounded-lg shadow p-4 text-white">
-                <p className="text-xs text-green-100">Obrót dzisiaj</p>
-                <p className="text-2xl font-bold">{stats?.revenue?.todayPln?.toLocaleString('pl-PL') || 0} zł</p>
-              </div>
-              <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg shadow p-4 text-white">
-                <p className="text-xs text-blue-100">Obrót 30 dni</p>
-                <p className="text-2xl font-bold">{stats?.revenue?.last30DaysPln?.toLocaleString('pl-PL') || 0} zł</p>
-              </div>
-            </div>
-
-            {/* Revenue Chart - Last 30 Days */}
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow dark:shadow-gray-900">
-              <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-700">
-                <h2 className="font-semibold text-gray-900 dark:text-white">Sprzedaż ostatnie 30 dni (PLN)</h2>
-              </div>
-              <div className="p-4">
-                <div className="h-48 sm:h-64">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={stats?.revenue?.last30Days || []}>
-                      <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                      <XAxis
-                        dataKey="day"
-                        tick={{ fontSize: 10 }}
-                        tickLine={false}
-                        axisLine={false}
-                        interval={2}
-                      />
-                      <YAxis
-                        tick={{ fontSize: 10 }}
-                        tickLine={false}
-                        axisLine={false}
-                        tickFormatter={(value) => `${(value/1000).toFixed(0)}k`}
-                        width={40}
-                      />
-                      <Tooltip
-                        formatter={(value) => [`${value.toLocaleString('pl-PL')} zł`, 'Sprzedaż']}
-                        labelFormatter={(label) => label}
-                        contentStyle={{ fontSize: '12px' }}
-                      />
-                      <Bar
-                        dataKey="revenue"
-                        fill="#3B82F6"
-                        radius={[2, 2, 0, 0]}
-                      />
-                    </BarChart>
-                  </ResponsiveContainer>
+            {/* Revenue Cards - Only for admins */}
+            {user?.permissions?.includes('admin') && (
+              <div className="grid grid-cols-2 gap-3">
+                <div className="bg-gradient-to-br from-green-500 to-green-600 rounded-lg shadow p-4 text-white">
+                  <p className="text-xs text-green-100">Obrót dzisiaj</p>
+                  <p className="text-2xl font-bold">{stats?.revenue?.todayPln?.toLocaleString('pl-PL') || 0} zł</p>
+                </div>
+                <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg shadow p-4 text-white">
+                  <p className="text-xs text-blue-100">Obrót 30 dni</p>
+                  <p className="text-2xl font-bold">{stats?.revenue?.last30DaysPln?.toLocaleString('pl-PL') || 0} zł</p>
                 </div>
               </div>
-            </div>
+            )}
+
+            {/* Revenue Chart - Last 30 Days - Only for admins */}
+            {user?.permissions?.includes('admin') && (
+              <div className="bg-white dark:bg-gray-800 rounded-lg shadow dark:shadow-gray-900">
+                <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-700">
+                  <h2 className="font-semibold text-gray-900 dark:text-white">Sprzedaż ostatnie 30 dni (PLN)</h2>
+                </div>
+                <div className="p-4">
+                  <div className="h-48 sm:h-64">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={stats?.revenue?.last30Days || []}>
+                        <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                        <XAxis
+                          dataKey="day"
+                          tick={{ fontSize: 10 }}
+                          tickLine={false}
+                          axisLine={false}
+                          interval={2}
+                        />
+                        <YAxis
+                          tick={{ fontSize: 10 }}
+                          tickLine={false}
+                          axisLine={false}
+                          tickFormatter={(value) => `${(value/1000).toFixed(0)}k`}
+                          width={40}
+                        />
+                        <Tooltip
+                          formatter={(value) => [`${value.toLocaleString('pl-PL')} zł`, 'Sprzedaż']}
+                          labelFormatter={(label) => label}
+                          contentStyle={{ fontSize: '12px' }}
+                        />
+                        <Bar
+                          dataKey="revenue"
+                          fill="#3B82F6"
+                          radius={[2, 2, 0, 0]}
+                        />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Orders Count Chart - Last 14 Days */}
             {stats?.dailyOrders?.length > 0 && (
