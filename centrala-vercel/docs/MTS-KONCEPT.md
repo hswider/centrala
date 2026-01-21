@@ -216,7 +216,7 @@ export async function getProductionPlans(page = 1, perPage = 10, status = null) 
 
 // Pobierz szczegoly planu
 export async function getProductionPlanById(id) {
-  // return plan
+  // return plan2
 }
 
 // Aktualizuj plan

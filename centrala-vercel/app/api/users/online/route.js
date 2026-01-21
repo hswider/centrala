@@ -7,7 +7,7 @@ export async function GET() {
   try {
     await initDatabase();
 
-    // User is considered online if last_activity was within last 5 minutes
+    // User is considered online if last_activity was within last 10 minutes
     const { rows } = await sql`
       SELECT
         id,
@@ -15,12 +15,12 @@ export async function GET() {
         role,
         last_activity,
         CASE
-          WHEN last_activity > NOW() - INTERVAL '5 minutes' THEN true
+          WHEN last_activity > NOW() - INTERVAL '10 minutes' THEN true
           ELSE false
         END as is_online
       FROM users
       ORDER BY
-        CASE WHEN last_activity > NOW() - INTERVAL '5 minutes' THEN 0 ELSE 1 END,
+        CASE WHEN last_activity > NOW() - INTERVAL '10 minutes' THEN 0 ELSE 1 END,
         username ASC
     `;
 
