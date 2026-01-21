@@ -59,11 +59,25 @@ function CRMContent() {
   const [poomkidsSyncStatus, setPoomkidsSyncStatus] = useState(null);
   const [poomkidsUnreadCount, setPoomkidsUnreadCount] = useState(0);
 
+  // Gmail Allepoduszki (Shopify Allepoduszki) state
+  const [allepoduszkiAuth, setAllepoduszkiAuth] = useState({ authenticated: false, user: null, loading: true });
+  const [allepoduszkiThreads, setAllepoduszkiThreads] = useState([]);
+  const [allepoduszkiThreadsLoading, setAllepoduszkiThreadsLoading] = useState(false);
+  const [allepoduszkiSelectedThread, setAllepoduszkiSelectedThread] = useState(null);
+  const [allepoduszkiThreadMessages, setAllepoduszkiThreadMessages] = useState([]);
+  const [allepoduszkiMessagesLoading, setAllepoduszkiMessagesLoading] = useState(false);
+  const [allepoduszkiReplyText, setAllepoduszkiReplyText] = useState('');
+  const [allepoduszkiSending, setAllepoduszkiSending] = useState(false);
+  const [allepoduszkiSyncing, setAllepoduszkiSyncing] = useState(false);
+  const [allepoduszkiSyncStatus, setAllepoduszkiSyncStatus] = useState(null);
+  const [allepoduszkiUnreadCount, setAllepoduszkiUnreadCount] = useState(0);
+
   const tabs = [
     { key: 'wiadomosci', label: 'Allegro Dobrelegowiska', icon: 'https://a.allegroimg.com/original/12c30c/0d4b068640de9b0daf22af9d97c5', overlayIcon: '/icons/dobrelegowiska.png', isImage: true, badge: unreadCount, color: 'orange' },
     { key: 'meblebox', label: 'Allegro Meblebox', icon: 'https://a.allegroimg.com/original/12c30c/0d4b068640de9b0daf22af9d97c5', isImage: true, badge: mebleboxUnreadCount, color: 'orange' },
     { key: 'shopify', label: 'Shopify Dobrelegowiska', icon: '/icons/dobrelegowiska.png', isImage: true, badge: gmailUnreadCount, color: 'green' },
     { key: 'poomkids', label: 'Shopify POOMKIDS', icon: '/icons/poomkids.png', isImage: true, badge: poomkidsUnreadCount, color: 'blue' },
+    { key: 'allepoduszki', label: 'Shopify Allepoduszki', icon: '/icons/allepoduszki.png', isImage: true, badge: allepoduszkiUnreadCount, color: 'purple' },
   ];
 
   // Check for success/error from OAuth callback
@@ -113,6 +127,19 @@ function CRMContent() {
     }
     if (poomkidsGmailError) {
       alert(`Blad Gmail POOMKIDS: ${poomkidsGmailError}`);
+      window.history.replaceState({}, '', '/crm');
+    }
+
+    // ALLEPODUSZKI Gmail callback
+    const allepoduszkiGmailSuccess = searchParams.get('allepoduszki_gmail_success');
+    const allepoduszkiGmailError = searchParams.get('allepoduszki_gmail_error');
+    if (allepoduszkiGmailSuccess) {
+      alert('Pomyslnie polaczono z Gmail Allepoduszki!');
+      window.history.replaceState({}, '', '/crm');
+      checkAllepoduszkiAuth();
+    }
+    if (allepoduszkiGmailError) {
+      alert(`Blad Gmail Allepoduszki: ${allepoduszkiGmailError}`);
       window.history.replaceState({}, '', '/crm');
     }
   }, [searchParams]);
@@ -665,6 +692,144 @@ function CRMContent() {
     }
   };
 
+  // ========== ALLEPODUSZKI GMAIL (Shopify Allepoduszki) FUNCTIONS ==========
+
+  // Check ALLEPODUSZKI authentication status
+  const checkAllepoduszkiAuth = useCallback(async () => {
+    try {
+      const res = await fetch('/api/gmail-allepoduszki/auth');
+      const data = await res.json();
+      setAllepoduszkiAuth({
+        authenticated: data.authenticated,
+        user: data.user,
+        loading: false
+      });
+
+      if (data.authenticated) {
+        fetchAllepoduszkiSyncStatus();
+        fetchAllepoduszkiThreads();
+      }
+    } catch (err) {
+      console.error('ALLEPODUSZKI auth check error:', err);
+      setAllepoduszkiAuth({ authenticated: false, user: null, loading: false });
+    }
+  }, []);
+
+  useEffect(() => {
+    checkAllepoduszkiAuth();
+  }, [checkAllepoduszkiAuth]);
+
+  // Fetch ALLEPODUSZKI sync status
+  const fetchAllepoduszkiSyncStatus = async () => {
+    try {
+      const res = await fetch('/api/gmail-allepoduszki/messages?action=status');
+      const data = await res.json();
+      if (data.success) {
+        setAllepoduszkiSyncStatus(data.status);
+        setAllepoduszkiUnreadCount(data.status.unreadCount || 0);
+      }
+    } catch (err) {
+      console.error('ALLEPODUSZKI sync status error:', err);
+    }
+  };
+
+  // Fetch ALLEPODUSZKI threads
+  const fetchAllepoduszkiThreads = async () => {
+    setAllepoduszkiThreadsLoading(true);
+    try {
+      const res = await fetch('/api/gmail-allepoduszki/messages');
+      const data = await res.json();
+      if (data.success) {
+        setAllepoduszkiThreads(data.threads || []);
+      }
+    } catch (err) {
+      console.error('ALLEPODUSZKI threads error:', err);
+    } finally {
+      setAllepoduszkiThreadsLoading(false);
+    }
+  };
+
+  // Sync ALLEPODUSZKI
+  const handleAllepoduszkiSync = async () => {
+    setAllepoduszkiSyncing(true);
+    try {
+      const res = await fetch('/api/gmail-allepoduszki/sync', { method: 'POST' });
+      const data = await res.json();
+      if (data.success) {
+        fetchAllepoduszkiThreads();
+        fetchAllepoduszkiSyncStatus();
+      } else {
+        alert('Blad synchronizacji: ' + data.error);
+      }
+    } catch (err) {
+      alert('Blad: ' + err.message);
+    } finally {
+      setAllepoduszkiSyncing(false);
+    }
+  };
+
+  // Open ALLEPODUSZKI thread
+  const openAllepoduszkiThread = async (thread) => {
+    setAllepoduszkiSelectedThread(thread);
+    setAllepoduszkiMessagesLoading(true);
+    setAllepoduszkiThreadMessages([]);
+
+    try {
+      const res = await fetch(`/api/gmail-allepoduszki/messages/${thread.id}?refresh=true`);
+      const data = await res.json();
+
+      if (data.success) {
+        setAllepoduszkiSelectedThread(data.thread);
+        setAllepoduszkiThreadMessages(data.messages || []);
+
+        // Mark as read
+        if (thread.unread) {
+          fetch(`/api/gmail-allepoduszki/messages/${thread.id}`, { method: 'PUT' });
+          fetchAllepoduszkiSyncStatus();
+          fetchAllepoduszkiThreads();
+        }
+      }
+    } catch (err) {
+      console.error('ALLEPODUSZKI open thread error:', err);
+    } finally {
+      setAllepoduszkiMessagesLoading(false);
+    }
+  };
+
+  // Send ALLEPODUSZKI reply
+  const handleAllepoduszkiSendReply = async () => {
+    if (!allepoduszkiReplyText.trim() || !allepoduszkiSelectedThread) return;
+
+    setAllepoduszkiSending(true);
+    try {
+      const res = await fetch(`/api/gmail-allepoduszki/messages/${allepoduszkiSelectedThread.id}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          text: allepoduszkiReplyText.trim(),
+          to: allepoduszkiSelectedThread.from_email,
+          subject: allepoduszkiSelectedThread.subject
+        })
+      });
+      const data = await res.json();
+
+      if (data.success) {
+        setAllepoduszkiReplyText('');
+        const msgRes = await fetch(`/api/gmail-allepoduszki/messages/${allepoduszkiSelectedThread.id}?refresh=true`);
+        const msgData = await msgRes.json();
+        if (msgData.success) {
+          setAllepoduszkiThreadMessages(msgData.messages || []);
+        }
+      } else {
+        alert('Blad wysylania: ' + data.error);
+      }
+    } catch (err) {
+      alert('Blad: ' + err.message);
+    } finally {
+      setAllepoduszkiSending(false);
+    }
+  };
+
   // Format date
   const formatDate = (dateStr) => {
     if (!dateStr) return '-';
@@ -703,9 +868,9 @@ function CRMContent() {
                     : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
                 }`}
                 style={activeTab === tab.key ? {
-                  color: tab.color === 'orange' ? '#ea580c' : tab.color === 'green' ? '#16a34a' : tab.color === 'blue' ? '#2563eb' : undefined,
-                  borderColor: tab.color === 'orange' ? '#ea580c' : tab.color === 'green' ? '#16a34a' : tab.color === 'blue' ? '#2563eb' : undefined,
-                  backgroundColor: tab.color === 'orange' ? '#fff7ed' : tab.color === 'green' ? '#f0fdf4' : tab.color === 'blue' ? '#eff6ff' : undefined
+                  color: tab.color === 'orange' ? '#ea580c' : tab.color === 'green' ? '#16a34a' : tab.color === 'blue' ? '#2563eb' : tab.color === 'purple' ? '#9333ea' : undefined,
+                  borderColor: tab.color === 'orange' ? '#ea580c' : tab.color === 'green' ? '#16a34a' : tab.color === 'blue' ? '#2563eb' : tab.color === 'purple' ? '#9333ea' : undefined,
+                  backgroundColor: tab.color === 'orange' ? '#fff7ed' : tab.color === 'green' ? '#f0fdf4' : tab.color === 'blue' ? '#eff6ff' : tab.color === 'purple' ? '#faf5ff' : undefined
                 } : {}}
               >
                 {tab.isImage ? (
@@ -1718,6 +1883,193 @@ function CRMContent() {
                               className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50"
                             >
                               {poomkidsSending ? '...' : 'Wyslij'}
+                            </button>
+                          </div>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Shopify Allepoduszki (Gmail) */}
+          {activeTab === 'allepoduszki' && (
+            <div>
+              {allepoduszkiAuth.loading ? (
+                <div className="p-8 text-center text-gray-500 dark:text-gray-400">Ladowanie...</div>
+              ) : !allepoduszkiAuth.authenticated ? (
+                <div className="p-8 text-center">
+                  <div className="mb-4">
+                    <span className="text-6xl">📧</span>
+                  </div>
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Polacz z Gmail Allepoduszki</h3>
+                  <p className="text-gray-500 dark:text-gray-400 mb-4">Aby zobaczyc wiadomosci, musisz polaczyc konto allepoduszki.kontakt@gmail.com</p>
+                  <a
+                    href="/api/gmail-allepoduszki/auth?action=login"
+                    className="inline-block px-6 py-3 bg-purple-500 text-white rounded-lg hover:bg-purple-600 font-medium"
+                  >
+                    Zaloguj przez Google
+                  </a>
+                </div>
+              ) : (
+                <div className="flex flex-col lg:flex-row h-[800px]">
+                  {/* Thread list */}
+                  <div className={`lg:w-1/3 border-r border-gray-200 dark:border-gray-700 flex flex-col ${allepoduszkiSelectedThread ? 'hidden lg:flex' : ''}`}>
+                    <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-700 dark:border-gray-700 flex items-center justify-between">
+                      <div>
+                        <h2 className="font-semibold text-gray-900 dark:text-white">Wiadomosci Email</h2>
+                        <p className="text-xs text-gray-500">
+                          {allepoduszkiSyncStatus?.lastSyncAt ? `Sync: ${formatDate(allepoduszkiSyncStatus.lastSyncAt)}` : 'Nie zsynchronizowano'}
+                        </p>
+                      </div>
+                      <button
+                        onClick={handleAllepoduszkiSync}
+                        disabled={allepoduszkiSyncing}
+                        className="px-3 py-1.5 text-sm bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50"
+                      >
+                        {allepoduszkiSyncing ? 'Sync...' : 'Synchronizuj'}
+                      </button>
+                    </div>
+
+                    <div className="flex-1 overflow-y-auto">
+                      {allepoduszkiThreadsLoading ? (
+                        <div className="p-4 text-center text-gray-500 dark:text-gray-400">Ladowanie...</div>
+                      ) : allepoduszkiThreads.length === 0 ? (
+                        <div className="p-4 text-center text-gray-500 dark:text-gray-400">
+                          Brak wiadomosci. Kliknij "Synchronizuj".
+                        </div>
+                      ) : (
+                        allepoduszkiThreads.map((thread) => (
+                          <button
+                            key={thread.id}
+                            onClick={() => openAllepoduszkiThread(thread)}
+                            className={`w-full text-left px-4 py-3 border-b border-gray-100 dark:border-gray-700 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 ${
+                              allepoduszkiSelectedThread?.id === thread.id ? 'bg-blue-50' : ''
+                            } ${thread.unread ? 'bg-purple-50' : ''}`}
+                          >
+                            <div className="flex items-start gap-3">
+                              <div className="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center text-purple-600 font-medium">
+                                {(thread.from_name || thread.from_email || '?')[0].toUpperCase()}
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center justify-between">
+                                  <span className={`font-medium truncate ${thread.unread ? 'text-gray-900' : 'text-gray-700'}`}>
+                                    {thread.from_name || thread.from_email || 'Nieznany'}
+                                  </span>
+                                  <span className="text-xs text-gray-400 dark:text-gray-500 ml-2 whitespace-nowrap">
+                                    {formatDate(thread.last_message_at)}
+                                  </span>
+                                </div>
+                                <p className={`text-sm truncate ${thread.unread ? 'font-medium text-gray-800' : 'text-gray-600'}`}>
+                                  {thread.subject || '(Brak tematu)'}
+                                </p>
+                                <p className="text-xs text-gray-500 truncate">{thread.snippet}</p>
+                                {thread.unread && (
+                                  <span className="inline-block mt-1 px-2 py-0.5 bg-purple-500 text-white text-xs rounded">
+                                    Nowa
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          </button>
+                        ))
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Message view */}
+                  <div className={`lg:w-2/3 flex flex-col ${!allepoduszkiSelectedThread ? 'hidden lg:flex' : ''}`}>
+                    {!allepoduszkiSelectedThread ? (
+                      <div className="flex-1 flex items-center justify-center text-gray-400 dark:text-gray-500">
+                        <div className="text-center">
+                          <span className="text-6xl">📧</span>
+                          <p className="mt-2">Wybierz watek z listy</p>
+                        </div>
+                      </div>
+                    ) : (
+                      <>
+                        {/* Thread header */}
+                        <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-700">
+                          <button
+                            onClick={() => setAllepoduszkiSelectedThread(null)}
+                            className="lg:hidden text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 mb-2"
+                          >
+                            ← Wstecz
+                          </button>
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center text-purple-600 font-medium">
+                              {(allepoduszkiSelectedThread.from_name || allepoduszkiSelectedThread.from_email || '?')[0].toUpperCase()}
+                            </div>
+                            <div className="flex-1">
+                              <h3 className="font-semibold text-gray-900 dark:text-white">
+                                {allepoduszkiSelectedThread.from_name || allepoduszkiSelectedThread.from_email || 'Nieznany'}
+                              </h3>
+                              <p className="text-sm text-gray-600 dark:text-gray-400">{allepoduszkiSelectedThread.from_email}</p>
+                            </div>
+                          </div>
+                          <h4 className="mt-2 font-medium text-gray-800 dark:text-gray-200">
+                            {allepoduszkiSelectedThread.subject || '(Brak tematu)'}
+                          </h4>
+                        </div>
+
+                        {/* Messages */}
+                        <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50 dark:bg-gray-900">
+                          {allepoduszkiMessagesLoading ? (
+                            <div className="text-center text-gray-500 dark:text-gray-400">Ladowanie wiadomosci...</div>
+                          ) : allepoduszkiThreadMessages.length === 0 ? (
+                            <div className="text-center text-gray-500 dark:text-gray-400">Brak wiadomosci</div>
+                          ) : (
+                            allepoduszkiThreadMessages.map((msg) => (
+                              <div
+                                key={msg.id}
+                                className={`flex ${msg.is_outgoing ? 'justify-end' : 'justify-start'}`}
+                              >
+                                <div
+                                  className={`max-w-[85%] px-4 py-3 rounded-lg ${
+                                    msg.is_outgoing
+                                      ? 'bg-purple-600 text-white'
+                                      : 'bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-900 dark:text-white'
+                                  }`}
+                                >
+                                  <div className={`text-xs mb-1 ${msg.is_outgoing ? 'text-purple-200' : 'text-gray-500'}`}>
+                                    {msg.from_name || msg.from_email}
+                                  </div>
+                                  <div className="whitespace-pre-wrap break-words text-sm">
+                                    {msg.body_text || '(Brak tresci tekstowej)'}
+                                  </div>
+                                  <p className={`text-xs mt-2 ${msg.is_outgoing ? 'text-purple-200' : 'text-gray-400'}`}>
+                                    {formatDate(msg.sent_at)}
+                                  </p>
+                                </div>
+                              </div>
+                            ))
+                          )}
+                        </div>
+
+                        {/* Reply input */}
+                        <div className="px-4 py-3 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
+                          <div className="flex gap-2">
+                            <textarea
+                              value={allepoduszkiReplyText}
+                              onChange={(e) => setAllepoduszkiReplyText(e.target.value)}
+                              placeholder="Napisz odpowiedz..."
+                              rows={3}
+                              className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 resize-none"
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter' && !e.shiftKey) {
+                                  e.preventDefault();
+                                  handleAllepoduszkiSendReply();
+                                }
+                              }}
+                            />
+                            <button
+                              onClick={handleAllepoduszkiSendReply}
+                              disabled={allepoduszkiSending || !allepoduszkiReplyText.trim()}
+                              className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50"
+                            >
+                              {allepoduszkiSending ? '...' : 'Wyslij'}
                             </button>
                           </div>
                         </div>
