@@ -213,7 +213,7 @@ export async function generateProductionPlan(userId, options = {}) {
 export async function getProductionPlans(page = 1, perPage = 10, status = null) {
   // return { plans: [...], pagination: {...} }
 }
-
+2
 // Pobierz szczegoly planu
 export async function getProductionPlanById(id) {
   // return plan2

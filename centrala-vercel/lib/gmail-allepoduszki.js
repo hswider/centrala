@@ -4,10 +4,10 @@ const GMAIL_API_URL = 'https://gmail.googleapis.com/gmail/v1';
 const GOOGLE_AUTH_URL = 'https://accounts.google.com/o/oauth2/v2/auth';
 const GOOGLE_TOKEN_URL = 'https://oauth2.googleapis.com/token';
 
-// Get environment variables
+// Get environment variables - using same credentials as main Gmail but different redirect
 const getCredentials = () => ({
-  clientId: process.env.GMAIL_ALLEPODUSZKI_CLIENT_ID,
-  clientSecret: process.env.GMAIL_ALLEPODUSZKI_CLIENT_SECRET,
+  clientId: process.env.GMAIL_ALLEPODUSZKI_CLIENT_ID || process.env.GMAIL_CLIENT_ID,
+  clientSecret: process.env.GMAIL_ALLEPODUSZKI_CLIENT_SECRET || process.env.GMAIL_CLIENT_SECRET,
   redirectUri: process.env.GMAIL_ALLEPODUSZKI_REDIRECT_URI || 'https://centrala-poom.vercel.app/api/gmail-allepoduszki/callback'
 });
 
