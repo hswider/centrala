@@ -674,20 +674,32 @@ export default function Home() {
                               <p className="text-xs font-medium text-gray-900 dark:text-white truncate" title={product.name}>
                                 {product.name?.length > 35 ? product.name.substring(0, 35) + '...' : product.name}
                               </p>
-                              <div className="flex items-center gap-2">
+                              <div className="flex items-center gap-1 flex-wrap">
+                                {product.platform && (
+                                  <span className={`text-[9px] px-1 py-0.5 rounded ${
+                                    product.platform === 'Amazon' ? 'bg-orange-100 text-orange-700 dark:bg-orange-900 dark:text-orange-300' :
+                                    product.platform === 'Allegro' ? 'bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-300' :
+                                    product.platform === 'Shopify' ? 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300' :
+                                    product.platform === 'eBay' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300' :
+                                    product.platform === 'Kaufland' ? 'bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300' :
+                                    'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300'
+                                  }`}>
+                                    {product.platform}
+                                  </span>
+                                )}
                                 {product.sku && (
-                                  <span className="text-[10px] text-blue-600 dark:text-blue-400 font-mono">
+                                  <span className="text-[9px] text-blue-600 dark:text-blue-400 font-mono">
                                     {product.sku}
                                   </span>
                                 )}
-                                <span className="text-[10px] text-gray-500 dark:text-gray-400">
-                                  {product.previousQuantity} → {product.currentQuantity} szt.
+                                <span className="text-[9px] text-gray-500 dark:text-gray-400">
+                                  {product.previousQuantity}→{product.currentQuantity}
                                 </span>
                               </div>
                             </div>
                             {/* Mini sparkline */}
                             {product.sparkline?.length > 1 && (
-                              <div className="w-14 h-8 hidden sm:block">
+                              <div className="w-12 h-7 hidden sm:block">
                                 <ResponsiveContainer width="100%" height="100%">
                                   <AreaChart data={product.sparkline}>
                                     <Area
@@ -702,7 +714,7 @@ export default function Home() {
                                 </ResponsiveContainer>
                               </div>
                             )}
-                            <span className={`text-xs font-bold px-1.5 py-0.5 rounded whitespace-nowrap ${
+                            <span className={`text-[10px] font-bold px-1 py-0.5 rounded whitespace-nowrap ${
                               product.trendPercent > 0
                                 ? 'bg-green-100 dark:bg-green-800 text-green-700 dark:text-green-300'
                                 : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400'
@@ -748,20 +760,32 @@ export default function Home() {
                               <p className="text-xs font-medium text-gray-900 dark:text-white truncate" title={product.name}>
                                 {product.name?.length > 35 ? product.name.substring(0, 35) + '...' : product.name}
                               </p>
-                              <div className="flex items-center gap-2">
+                              <div className="flex items-center gap-1 flex-wrap">
+                                {product.platform && (
+                                  <span className={`text-[9px] px-1 py-0.5 rounded ${
+                                    product.platform === 'Amazon' ? 'bg-orange-100 text-orange-700 dark:bg-orange-900 dark:text-orange-300' :
+                                    product.platform === 'Allegro' ? 'bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-300' :
+                                    product.platform === 'Shopify' ? 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300' :
+                                    product.platform === 'eBay' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300' :
+                                    product.platform === 'Kaufland' ? 'bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300' :
+                                    'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300'
+                                  }`}>
+                                    {product.platform}
+                                  </span>
+                                )}
                                 {product.sku && (
-                                  <span className="text-[10px] text-blue-600 dark:text-blue-400 font-mono">
+                                  <span className="text-[9px] text-blue-600 dark:text-blue-400 font-mono">
                                     {product.sku}
                                   </span>
                                 )}
-                                <span className="text-[10px] text-gray-500 dark:text-gray-400">
-                                  {product.previousQuantity} → {product.currentQuantity} szt.
+                                <span className="text-[9px] text-gray-500 dark:text-gray-400">
+                                  {product.previousQuantity}→{product.currentQuantity}
                                 </span>
                               </div>
                             </div>
                             {/* Mini sparkline */}
                             {product.sparkline?.length > 1 && (
-                              <div className="w-14 h-8 hidden sm:block">
+                              <div className="w-12 h-7 hidden sm:block">
                                 <ResponsiveContainer width="100%" height="100%">
                                   <AreaChart data={product.sparkline}>
                                     <Area
@@ -776,7 +800,7 @@ export default function Home() {
                                 </ResponsiveContainer>
                               </div>
                             )}
-                            <span className={`text-xs font-bold px-1.5 py-0.5 rounded whitespace-nowrap ${
+                            <span className={`text-[10px] font-bold px-1 py-0.5 rounded whitespace-nowrap ${
                               product.trendPercent < 0
                                 ? 'bg-red-100 dark:bg-red-800 text-red-700 dark:text-red-300'
                                 : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400'

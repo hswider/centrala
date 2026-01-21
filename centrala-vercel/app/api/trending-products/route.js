@@ -19,6 +19,7 @@ export async function GET(request) {
         item->>'name' as name,
         item->>'sku' as sku,
         item->>'image' as image,
+        channel_platform as platform,
         SUM((item->>'quantity')::int) as quantity
       FROM orders, jsonb_array_elements(items) as item
       WHERE ordered_at >= (CURRENT_DATE - ${days}::int)
@@ -26,7 +27,7 @@ export async function GET(request) {
         AND (item->>'isShipping')::boolean IS NOT TRUE
         AND item->>'name' IS NOT NULL
         AND item->>'name' != ''
-      GROUP BY item->>'name', item->>'sku', item->>'image'
+      GROUP BY item->>'name', item->>'sku', item->>'image', channel_platform
     `;
 
     // Get products from previous period (X days before current period)
@@ -35,6 +36,7 @@ export async function GET(request) {
         item->>'name' as name,
         item->>'sku' as sku,
         item->>'image' as image,
+        channel_platform as platform,
         SUM((item->>'quantity')::int) as quantity
       FROM orders, jsonb_array_elements(items) as item
       WHERE ordered_at >= (CURRENT_DATE - ${days * 2}::int)
@@ -42,7 +44,7 @@ export async function GET(request) {
         AND (item->>'isShipping')::boolean IS NOT TRUE
         AND item->>'name' IS NOT NULL
         AND item->>'name' != ''
-      GROUP BY item->>'name', item->>'sku', item->>'image'
+      GROUP BY item->>'name', item->>'sku', item->>'image', channel_platform
     `;
 
     // Create map of previous period quantities
@@ -69,6 +71,7 @@ export async function GET(request) {
         name: row.name,
         sku: row.sku,
         image: row.image,
+        platform: row.platform,
         currentQuantity: currentQty,
         previousQuantity: previousQty,
         change: currentQty - previousQty,
@@ -87,6 +90,7 @@ export async function GET(request) {
           name: row.name,
           sku: row.sku,
           image: row.image,
+          platform: row.platform,
           currentQuantity: 0,
           previousQuantity: previousQty,
           change: -previousQty,
