@@ -658,17 +658,36 @@ export default function Home() {
                             <span className="text-xs font-bold text-green-700 dark:text-green-400 w-5">
                               #{idx + 1}
                             </span>
+                            {/* Product image */}
+                            {product.image ? (
+                              <img
+                                src={product.image}
+                                alt={product.name}
+                                className="w-10 h-10 object-cover rounded border border-gray-200 dark:border-gray-600"
+                              />
+                            ) : (
+                              <div className="w-10 h-10 bg-gray-200 dark:bg-gray-700 rounded flex items-center justify-center text-gray-400 text-xs">
+                                📦
+                              </div>
+                            )}
                             <div className="flex-1 min-w-0">
                               <p className="text-xs font-medium text-gray-900 dark:text-white truncate" title={product.name}>
-                                {product.name?.length > 40 ? product.name.substring(0, 40) + '...' : product.name}
+                                {product.name?.length > 35 ? product.name.substring(0, 35) + '...' : product.name}
                               </p>
-                              <p className="text-[10px] text-gray-500 dark:text-gray-400">
-                                {product.previousQuantity} → {product.currentQuantity} szt.
-                              </p>
+                              <div className="flex items-center gap-2">
+                                {product.sku && (
+                                  <span className="text-[10px] text-blue-600 dark:text-blue-400 font-mono">
+                                    {product.sku}
+                                  </span>
+                                )}
+                                <span className="text-[10px] text-gray-500 dark:text-gray-400">
+                                  {product.previousQuantity} → {product.currentQuantity} szt.
+                                </span>
+                              </div>
                             </div>
                             {/* Mini sparkline */}
                             {product.sparkline?.length > 1 && (
-                              <div className="w-16 h-8">
+                              <div className="w-14 h-8 hidden sm:block">
                                 <ResponsiveContainer width="100%" height="100%">
                                   <AreaChart data={product.sparkline}>
                                     <Area
@@ -683,7 +702,7 @@ export default function Home() {
                                 </ResponsiveContainer>
                               </div>
                             )}
-                            <span className={`text-xs font-bold px-1.5 py-0.5 rounded ${
+                            <span className={`text-xs font-bold px-1.5 py-0.5 rounded whitespace-nowrap ${
                               product.trendPercent > 0
                                 ? 'bg-green-100 dark:bg-green-800 text-green-700 dark:text-green-300'
                                 : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400'
@@ -713,17 +732,36 @@ export default function Home() {
                             <span className="text-xs font-bold text-red-700 dark:text-red-400 w-5">
                               #{idx + 1}
                             </span>
+                            {/* Product image */}
+                            {product.image ? (
+                              <img
+                                src={product.image}
+                                alt={product.name}
+                                className="w-10 h-10 object-cover rounded border border-gray-200 dark:border-gray-600"
+                              />
+                            ) : (
+                              <div className="w-10 h-10 bg-gray-200 dark:bg-gray-700 rounded flex items-center justify-center text-gray-400 text-xs">
+                                📦
+                              </div>
+                            )}
                             <div className="flex-1 min-w-0">
                               <p className="text-xs font-medium text-gray-900 dark:text-white truncate" title={product.name}>
-                                {product.name?.length > 40 ? product.name.substring(0, 40) + '...' : product.name}
+                                {product.name?.length > 35 ? product.name.substring(0, 35) + '...' : product.name}
                               </p>
-                              <p className="text-[10px] text-gray-500 dark:text-gray-400">
-                                {product.previousQuantity} → {product.currentQuantity} szt.
-                              </p>
+                              <div className="flex items-center gap-2">
+                                {product.sku && (
+                                  <span className="text-[10px] text-blue-600 dark:text-blue-400 font-mono">
+                                    {product.sku}
+                                  </span>
+                                )}
+                                <span className="text-[10px] text-gray-500 dark:text-gray-400">
+                                  {product.previousQuantity} → {product.currentQuantity} szt.
+                                </span>
+                              </div>
                             </div>
                             {/* Mini sparkline */}
                             {product.sparkline?.length > 1 && (
-                              <div className="w-16 h-8">
+                              <div className="w-14 h-8 hidden sm:block">
                                 <ResponsiveContainer width="100%" height="100%">
                                   <AreaChart data={product.sparkline}>
                                     <Area
@@ -738,7 +776,7 @@ export default function Home() {
                                 </ResponsiveContainer>
                               </div>
                             )}
-                            <span className={`text-xs font-bold px-1.5 py-0.5 rounded ${
+                            <span className={`text-xs font-bold px-1.5 py-0.5 rounded whitespace-nowrap ${
                               product.trendPercent < 0
                                 ? 'bg-red-100 dark:bg-red-800 text-red-700 dark:text-red-300'
                                 : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400'
