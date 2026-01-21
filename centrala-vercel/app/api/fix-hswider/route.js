@@ -1,12 +1,14 @@
 import { NextResponse } from 'next/server';
 import { sql } from '@vercel/postgres';
-import bcrypt from 'bcryptjs';
 
 export async function GET() {
   try {
     // Full permissions for all modules
     const adminPermissions = JSON.stringify(['dashboard', 'oms', 'wms', 'mes', 'mts', 'crm', 'crm-eu', 'rank', 'agent', 'admin']);
     const userPermissions = JSON.stringify(['dashboard', 'oms', 'wms', 'mes', 'mts', 'crm', 'crm-eu', 'rank', 'agent']);
+
+    // Delete duplicate user 'hswider' (keeping 'Hubert')
+    await sql`DELETE FROM users WHERE username = 'hswider'`;
 
     // Update ALL admin users to have full permissions
     const { rows: adminRows } = await sql`
@@ -26,7 +28,7 @@ export async function GET() {
 
     return NextResponse.json({
       success: true,
-      message: 'All user permissions updated',
+      message: 'Deleted hswider, updated all permissions',
       adminsUpdated: adminRows.length,
       usersUpdated: userRows.length,
       admins: adminRows,
