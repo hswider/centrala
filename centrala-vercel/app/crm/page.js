@@ -1905,7 +1905,7 @@ function CRMContent() {
                     <span className="text-6xl">📧</span>
                   </div>
                   <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Polacz z Gmail Allepoduszki</h3>
-                  <p className="text-gray-500 dark:text-gray-400 mb-4">Aby zobaczyc wiadomosci, musisz polaczyc konto allepoduszki.kontakt@gmail.com</p>
+                  <p className="text-gray-500 dark:text-gray-400 mb-4">Aby zobaczyc wiadomosci, musisz polaczyc konto allepoduszki.sklep@gmail.com</p>
                   <a
                     href="/api/gmail-allepoduszki/auth?action=login"
                     className="inline-block px-6 py-3 bg-purple-500 text-white rounded-lg hover:bg-purple-600 font-medium"
