@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid, AreaChart, Area } from 'recharts';
 
 export default function Home() {
   const [stats, setStats] = useState(null);
@@ -13,6 +13,9 @@ export default function Home() {
   const [forecast, setForecast] = useState([]);
   const [onlineUsers, setOnlineUsers] = useState([]);
   const [selectedPeriod, setSelectedPeriod] = useState(30);
+  const [trending, setTrending] = useState({ topTrending: [], worstTrending: [] });
+  const [trendingPeriod, setTrendingPeriod] = useState(7);
+  const [trendingLoading, setTrendingLoading] = useState(true);
 
   // Permission labels mapping
   const permissionLabels = {
@@ -84,6 +87,26 @@ export default function Home() {
     }
   };
 
+  const fetchTrending = async (days = 7) => {
+    setTrendingLoading(true);
+    try {
+      const res = await fetch(`/api/trending-products?days=${days}`);
+      const data = await res.json();
+      if (data.success) {
+        setTrending(data);
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setTrendingLoading(false);
+    }
+  };
+
+  const handleTrendingPeriodChange = (days) => {
+    setTrendingPeriod(days);
+    fetchTrending(days);
+  };
+
   const triggerSync = async () => {
     setSyncing(true);
     try {
@@ -104,6 +127,7 @@ export default function Home() {
     fetchStats();
     fetchWeather();
     fetchOnlineUsers();
+    fetchTrending();
 
     // Refresh online users every 30 seconds
     const onlineInterval = setInterval(fetchOnlineUsers, 30000);
@@ -592,6 +616,144 @@ export default function Home() {
                   {stats?.last30DaysByPlatform?.reduce((sum, item) => sum + item.count, 0) || 0}
                 </span>
               </div>
+            </div>
+
+            {/* Trending Products Module */}
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow dark:shadow-gray-900">
+              <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between">
+                <h2 className="font-semibold text-gray-900 dark:text-white">📈 Trendujące produkty</h2>
+                <div className="flex gap-1">
+                  {[7, 30, 90].map((days) => (
+                    <button
+                      key={days}
+                      onClick={() => handleTrendingPeriodChange(days)}
+                      className={`px-2 py-1 text-xs rounded ${
+                        trendingPeriod === days
+                          ? 'bg-blue-600 text-white'
+                          : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                      }`}
+                    >
+                      {days}d
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {trendingLoading ? (
+                <div className="p-8 text-center text-gray-500 dark:text-gray-400">Ladowanie...</div>
+              ) : (
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 p-4">
+                  {/* TOP 10 Trending Up */}
+                  <div>
+                    <h3 className="text-sm font-semibold text-green-600 dark:text-green-400 mb-3 flex items-center gap-1">
+                      <span>🚀</span> TOP 10 - Wzrost sprzedaży
+                    </h3>
+                    <div className="space-y-2">
+                      {trending.topTrending?.length > 0 ? (
+                        trending.topTrending.map((product, idx) => (
+                          <div
+                            key={product.sku || product.name}
+                            className="flex items-center gap-2 p-2 bg-green-50 dark:bg-green-900/20 rounded-lg"
+                          >
+                            <span className="text-xs font-bold text-green-700 dark:text-green-400 w-5">
+                              #{idx + 1}
+                            </span>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-xs font-medium text-gray-900 dark:text-white truncate" title={product.name}>
+                                {product.name?.length > 40 ? product.name.substring(0, 40) + '...' : product.name}
+                              </p>
+                              <p className="text-[10px] text-gray-500 dark:text-gray-400">
+                                {product.previousQuantity} → {product.currentQuantity} szt.
+                              </p>
+                            </div>
+                            {/* Mini sparkline */}
+                            {product.sparkline?.length > 1 && (
+                              <div className="w-16 h-8">
+                                <ResponsiveContainer width="100%" height="100%">
+                                  <AreaChart data={product.sparkline}>
+                                    <Area
+                                      type="monotone"
+                                      dataKey="quantity"
+                                      stroke="#22c55e"
+                                      fill="#22c55e"
+                                      fillOpacity={0.3}
+                                      strokeWidth={1}
+                                    />
+                                  </AreaChart>
+                                </ResponsiveContainer>
+                              </div>
+                            )}
+                            <span className={`text-xs font-bold px-1.5 py-0.5 rounded ${
+                              product.trendPercent > 0
+                                ? 'bg-green-100 dark:bg-green-800 text-green-700 dark:text-green-300'
+                                : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400'
+                            }`}>
+                              {product.trendPercent > 0 ? '+' : ''}{product.trendPercent}%
+                            </span>
+                          </div>
+                        ))
+                      ) : (
+                        <p className="text-xs text-gray-500 dark:text-gray-400 text-center py-4">Brak danych</p>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* TOP 10 Trending Down */}
+                  <div>
+                    <h3 className="text-sm font-semibold text-red-600 dark:text-red-400 mb-3 flex items-center gap-1">
+                      <span>📉</span> TOP 10 - Spadek sprzedaży
+                    </h3>
+                    <div className="space-y-2">
+                      {trending.worstTrending?.length > 0 ? (
+                        trending.worstTrending.map((product, idx) => (
+                          <div
+                            key={product.sku || product.name}
+                            className="flex items-center gap-2 p-2 bg-red-50 dark:bg-red-900/20 rounded-lg"
+                          >
+                            <span className="text-xs font-bold text-red-700 dark:text-red-400 w-5">
+                              #{idx + 1}
+                            </span>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-xs font-medium text-gray-900 dark:text-white truncate" title={product.name}>
+                                {product.name?.length > 40 ? product.name.substring(0, 40) + '...' : product.name}
+                              </p>
+                              <p className="text-[10px] text-gray-500 dark:text-gray-400">
+                                {product.previousQuantity} → {product.currentQuantity} szt.
+                              </p>
+                            </div>
+                            {/* Mini sparkline */}
+                            {product.sparkline?.length > 1 && (
+                              <div className="w-16 h-8">
+                                <ResponsiveContainer width="100%" height="100%">
+                                  <AreaChart data={product.sparkline}>
+                                    <Area
+                                      type="monotone"
+                                      dataKey="quantity"
+                                      stroke="#ef4444"
+                                      fill="#ef4444"
+                                      fillOpacity={0.3}
+                                      strokeWidth={1}
+                                    />
+                                  </AreaChart>
+                                </ResponsiveContainer>
+                              </div>
+                            )}
+                            <span className={`text-xs font-bold px-1.5 py-0.5 rounded ${
+                              product.trendPercent < 0
+                                ? 'bg-red-100 dark:bg-red-800 text-red-700 dark:text-red-300'
+                                : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400'
+                            }`}>
+                              {product.trendPercent > 0 ? '+' : ''}{product.trendPercent}%
+                            </span>
+                          </div>
+                        ))
+                      ) : (
+                        <p className="text-xs text-gray-500 dark:text-gray-400 text-center py-4">Brak danych</p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Weather Module */}
