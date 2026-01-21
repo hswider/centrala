@@ -16,6 +16,8 @@ export default function Home() {
   const [trending, setTrending] = useState({ topTrending: [], worstTrending: [] });
   const [trendingPeriod, setTrendingPeriod] = useState(7);
   const [trendingLoading, setTrendingLoading] = useState(true);
+  const [showMoreTrending, setShowMoreTrending] = useState(false);
+  const [showMoreWorst, setShowMoreWorst] = useState(false);
 
   // Permission labels mapping
   const permissionLabels = {
@@ -643,14 +645,14 @@ export default function Home() {
                 <div className="p-8 text-center text-gray-500 dark:text-gray-400">Ladowanie...</div>
               ) : (
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 p-4">
-                  {/* TOP 10 Trending Up */}
+                  {/* TOP Trending Up */}
                   <div>
                     <h3 className="text-sm font-semibold text-green-600 dark:text-green-400 mb-3 flex items-center gap-1">
-                      <span>🚀</span> TOP 10 - Wzrost sprzedaży
+                      <span>🚀</span> TOP {showMoreTrending ? '50' : '10'} - Wzrost sprzedaży
                     </h3>
                     <div className="space-y-2">
                       {trending.topTrending?.length > 0 ? (
-                        trending.topTrending.map((product, idx) => (
+                        trending.topTrending.slice(0, showMoreTrending ? 50 : 10).map((product, idx) => (
                           <div
                             key={product.sku || product.name}
                             className="flex items-center gap-2 p-2 bg-green-50 dark:bg-green-900/20 rounded-lg"
@@ -726,17 +728,25 @@ export default function Home() {
                       ) : (
                         <p className="text-xs text-gray-500 dark:text-gray-400 text-center py-4">Brak danych</p>
                       )}
+                      {trending.topTrending?.length > 10 && (
+                        <button
+                          onClick={() => setShowMoreTrending(!showMoreTrending)}
+                          className="w-full mt-2 py-2 text-xs text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/30 rounded-lg border border-green-200 dark:border-green-800 transition-colors"
+                        >
+                          {showMoreTrending ? '▲ Pokaż mniej' : `▼ Pokaż więcej (${trending.topTrending.length} produktów)`}
+                        </button>
+                      )}
                     </div>
                   </div>
 
-                  {/* TOP 10 Trending Down */}
+                  {/* TOP Trending Down */}
                   <div>
                     <h3 className="text-sm font-semibold text-red-600 dark:text-red-400 mb-3 flex items-center gap-1">
-                      <span>📉</span> TOP 10 - Spadek sprzedaży
+                      <span>📉</span> TOP {showMoreWorst ? '50' : '10'} - Spadek sprzedaży
                     </h3>
                     <div className="space-y-2">
                       {trending.worstTrending?.length > 0 ? (
-                        trending.worstTrending.map((product, idx) => (
+                        trending.worstTrending.slice(0, showMoreWorst ? 50 : 10).map((product, idx) => (
                           <div
                             key={product.sku || product.name}
                             className="flex items-center gap-2 p-2 bg-red-50 dark:bg-red-900/20 rounded-lg"
@@ -811,6 +821,14 @@ export default function Home() {
                         ))
                       ) : (
                         <p className="text-xs text-gray-500 dark:text-gray-400 text-center py-4">Brak danych</p>
+                      )}
+                      {trending.worstTrending?.length > 10 && (
+                        <button
+                          onClick={() => setShowMoreWorst(!showMoreWorst)}
+                          className="w-full mt-2 py-2 text-xs text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg border border-red-200 dark:border-red-800 transition-colors"
+                        >
+                          {showMoreWorst ? '▲ Pokaż mniej' : `▼ Pokaż więcej (${trending.worstTrending.length} produktów)`}
+                        </button>
                       )}
                     </div>
                   </div>

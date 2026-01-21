@@ -102,15 +102,15 @@ export async function GET(request) {
     // Sort by trend percent descending for top trending
     const sortedByTrend = [...productsWithTrend].sort((a, b) => b.trendPercent - a.trendPercent);
 
-    // TOP 10 trending (highest positive growth)
+    // TOP 50 trending (highest positive growth)
     const topTrending = sortedByTrend
       .filter(p => p.currentQuantity >= 3) // Minimum 3 units to be significant
-      .slice(0, 10);
+      .slice(0, 50);
 
-    // TOP 10 worst trending (highest negative growth)
+    // TOP 50 worst trending (highest negative growth)
     const worstTrending = sortedByTrend
       .filter(p => p.previousQuantity >= 3) // Had at least 3 units before
-      .slice(-10)
+      .slice(-50)
       .reverse();
 
     // Get daily data for sparklines (last X days for top products)
