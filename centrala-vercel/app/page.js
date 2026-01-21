@@ -20,6 +20,14 @@ export default function Home() {
   const [showMoreWorst, setShowMoreWorst] = useState(false);
   const [trendingSearch, setTrendingSearch] = useState('');
 
+  // Trending channels state
+  const [trendingChannels, setTrendingChannels] = useState({ topTrending: [], worstTrending: [] });
+  const [channelsPeriod, setChannelsPeriod] = useState(7);
+  const [channelsLoading, setChannelsLoading] = useState(true);
+  const [showMoreChannelsUp, setShowMoreChannelsUp] = useState(false);
+  const [showMoreChannelsDown, setShowMoreChannelsDown] = useState(false);
+  const [channelsSearch, setChannelsSearch] = useState('');
+
   // Permission labels mapping
   const permissionLabels = {
     dashboard: { label: 'Dashboard', icon: '📊' },
@@ -110,6 +118,26 @@ export default function Home() {
     fetchTrending(days);
   };
 
+  const fetchTrendingChannels = async (days = 7) => {
+    setChannelsLoading(true);
+    try {
+      const res = await fetch(`/api/trending-channels?days=${days}`);
+      const data = await res.json();
+      if (data.success) {
+        setTrendingChannels(data);
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setChannelsLoading(false);
+    }
+  };
+
+  const handleChannelsPeriodChange = (days) => {
+    setChannelsPeriod(days);
+    fetchTrendingChannels(days);
+  };
+
   const triggerSync = async () => {
     setSyncing(true);
     try {
@@ -131,6 +159,7 @@ export default function Home() {
     fetchWeather();
     fetchOnlineUsers();
     fetchTrending();
+    fetchTrendingChannels();
 
     // Refresh online users every 30 seconds
     const onlineInterval = setInterval(fetchOnlineUsers, 30000);
@@ -868,6 +897,242 @@ export default function Home() {
                           className="w-full mt-2 py-2 text-xs text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg border border-red-200 dark:border-red-800 transition-colors"
                         >
                           {showMoreWorst ? '▲ Pokaż mniej' : `▼ Pokaż więcej (${trending.worstTrending.length} produktów)`}
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Trending Channels Module */}
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow dark:shadow-gray-900">
+              <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-700">
+                <div className="flex items-center justify-between mb-2">
+                  <h2 className="font-semibold text-gray-900 dark:text-white">🏪 Trend kanałów sprzedaży</h2>
+                  <div className="flex gap-1">
+                    {[7, 30, 90].map((days) => (
+                      <button
+                        key={days}
+                        onClick={() => handleChannelsPeriodChange(days)}
+                        className={`px-2 py-1 text-xs rounded ${
+                          channelsPeriod === days
+                            ? 'bg-blue-600 text-white'
+                            : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                        }`}
+                      >
+                        {days}d
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={channelsSearch}
+                    onChange={(e) => setChannelsSearch(e.target.value)}
+                    placeholder="Szukaj kanału..."
+                    className="w-full px-3 py-2 pl-8 text-sm border border-gray-200 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                  <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400">🔍</span>
+                  {channelsSearch && (
+                    <button
+                      onClick={() => setChannelsSearch('')}
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                    >
+                      ✕
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {channelsLoading ? (
+                <div className="p-8 text-center text-gray-500 dark:text-gray-400">Ladowanie...</div>
+              ) : (
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 p-4">
+                  {/* Channels Trending Up */}
+                  <div>
+                    <h3 className="text-sm font-semibold text-green-600 dark:text-green-400 mb-3 flex items-center gap-1">
+                      <span>🚀</span> Kanały w górę
+                    </h3>
+                    <div className="space-y-2">
+                      {(() => {
+                        const filtered = trendingChannels.topTrending?.filter(c =>
+                          !channelsSearch ||
+                          c.label?.toLowerCase().includes(channelsSearch.toLowerCase()) ||
+                          c.platform?.toLowerCase().includes(channelsSearch.toLowerCase())
+                        ) || [];
+                        const displayed = filtered.slice(0, showMoreChannelsUp ? 20 : 5);
+                        return displayed.length > 0 ? (
+                          displayed.map((channel, idx) => (
+                            <div
+                              key={channel.label || channel.platform}
+                              className="flex items-center gap-2 p-2 bg-green-50 dark:bg-green-900/20 rounded-lg"
+                            >
+                              <span className="text-xs font-bold text-green-700 dark:text-green-400 w-5">
+                                #{idx + 1}
+                              </span>
+                              <div className={`w-8 h-8 rounded flex items-center justify-center text-white text-xs font-bold ${
+                                channel.platform === 'Amazon' ? 'bg-orange-500' :
+                                channel.platform === 'Allegro' ? 'bg-amber-500' :
+                                channel.platform === 'Shopify' ? 'bg-green-600' :
+                                channel.platform === 'eBay' ? 'bg-blue-500' :
+                                channel.platform === 'Kaufland' ? 'bg-red-600' :
+                                'bg-gray-500'
+                              }`}>
+                                {channel.platform?.charAt(0) || '?'}
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="text-xs font-medium text-gray-900 dark:text-white truncate" title={channel.label}>
+                                  {channel.label?.length > 25 ? channel.label.substring(0, 25) + '...' : channel.label || channel.platform}
+                                </p>
+                                <div className="flex items-center gap-2">
+                                  <span className={`text-[9px] px-1 py-0.5 rounded ${
+                                    channel.platform === 'Amazon' ? 'bg-orange-100 text-orange-700 dark:bg-orange-900 dark:text-orange-300' :
+                                    channel.platform === 'Allegro' ? 'bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-300' :
+                                    channel.platform === 'Shopify' ? 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300' :
+                                    channel.platform === 'eBay' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300' :
+                                    channel.platform === 'Kaufland' ? 'bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300' :
+                                    'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300'
+                                  }`}>
+                                    {channel.platform}
+                                  </span>
+                                  <span className="text-[9px] text-gray-500 dark:text-gray-400">
+                                    {channel.previousOrders}→{channel.currentOrders} zam.
+                                  </span>
+                                </div>
+                              </div>
+                              {channel.sparkline?.length > 1 && (
+                                <div className="w-12 h-7 hidden sm:block">
+                                  <ResponsiveContainer width="100%" height="100%">
+                                    <AreaChart data={channel.sparkline}>
+                                      <Area
+                                        type="monotone"
+                                        dataKey="orders"
+                                        stroke="#22c55e"
+                                        fill="#22c55e"
+                                        fillOpacity={0.3}
+                                        strokeWidth={1}
+                                      />
+                                    </AreaChart>
+                                  </ResponsiveContainer>
+                                </div>
+                              )}
+                              <span className={`text-[10px] font-bold px-1 py-0.5 rounded whitespace-nowrap ${
+                                channel.orderTrend > 0
+                                  ? 'bg-green-100 dark:bg-green-800 text-green-700 dark:text-green-300'
+                                  : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400'
+                              }`}>
+                                {channel.orderTrend > 0 ? '+' : ''}{channel.orderTrend}%
+                              </span>
+                            </div>
+                          ))
+                        ) : (
+                          <p className="text-xs text-gray-500 dark:text-gray-400 text-center py-4">
+                            {channelsSearch ? 'Brak wyników' : 'Brak danych'}
+                          </p>
+                        );
+                      })()}
+                      {!channelsSearch && trendingChannels.topTrending?.length > 5 && (
+                        <button
+                          onClick={() => setShowMoreChannelsUp(!showMoreChannelsUp)}
+                          className="w-full mt-2 py-2 text-xs text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/30 rounded-lg border border-green-200 dark:border-green-800 transition-colors"
+                        >
+                          {showMoreChannelsUp ? '▲ Pokaż mniej' : `▼ Pokaż więcej (${trendingChannels.topTrending.length})`}
+                        </button>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Channels Trending Down */}
+                  <div>
+                    <h3 className="text-sm font-semibold text-red-600 dark:text-red-400 mb-3 flex items-center gap-1">
+                      <span>📉</span> Kanały w dół
+                    </h3>
+                    <div className="space-y-2">
+                      {(() => {
+                        const filtered = trendingChannels.worstTrending?.filter(c =>
+                          !channelsSearch ||
+                          c.label?.toLowerCase().includes(channelsSearch.toLowerCase()) ||
+                          c.platform?.toLowerCase().includes(channelsSearch.toLowerCase())
+                        ) || [];
+                        const displayed = filtered.slice(0, showMoreChannelsDown ? 20 : 5);
+                        return displayed.length > 0 ? (
+                          displayed.map((channel, idx) => (
+                            <div
+                              key={channel.label || channel.platform}
+                              className="flex items-center gap-2 p-2 bg-red-50 dark:bg-red-900/20 rounded-lg"
+                            >
+                              <span className="text-xs font-bold text-red-700 dark:text-red-400 w-5">
+                                #{idx + 1}
+                              </span>
+                              <div className={`w-8 h-8 rounded flex items-center justify-center text-white text-xs font-bold ${
+                                channel.platform === 'Amazon' ? 'bg-orange-500' :
+                                channel.platform === 'Allegro' ? 'bg-amber-500' :
+                                channel.platform === 'Shopify' ? 'bg-green-600' :
+                                channel.platform === 'eBay' ? 'bg-blue-500' :
+                                channel.platform === 'Kaufland' ? 'bg-red-600' :
+                                'bg-gray-500'
+                              }`}>
+                                {channel.platform?.charAt(0) || '?'}
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="text-xs font-medium text-gray-900 dark:text-white truncate" title={channel.label}>
+                                  {channel.label?.length > 25 ? channel.label.substring(0, 25) + '...' : channel.label || channel.platform}
+                                </p>
+                                <div className="flex items-center gap-2">
+                                  <span className={`text-[9px] px-1 py-0.5 rounded ${
+                                    channel.platform === 'Amazon' ? 'bg-orange-100 text-orange-700 dark:bg-orange-900 dark:text-orange-300' :
+                                    channel.platform === 'Allegro' ? 'bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-300' :
+                                    channel.platform === 'Shopify' ? 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300' :
+                                    channel.platform === 'eBay' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300' :
+                                    channel.platform === 'Kaufland' ? 'bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300' :
+                                    'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300'
+                                  }`}>
+                                    {channel.platform}
+                                  </span>
+                                  <span className="text-[9px] text-gray-500 dark:text-gray-400">
+                                    {channel.previousOrders}→{channel.currentOrders} zam.
+                                  </span>
+                                </div>
+                              </div>
+                              {channel.sparkline?.length > 1 && (
+                                <div className="w-12 h-7 hidden sm:block">
+                                  <ResponsiveContainer width="100%" height="100%">
+                                    <AreaChart data={channel.sparkline}>
+                                      <Area
+                                        type="monotone"
+                                        dataKey="orders"
+                                        stroke="#ef4444"
+                                        fill="#ef4444"
+                                        fillOpacity={0.3}
+                                        strokeWidth={1}
+                                      />
+                                    </AreaChart>
+                                  </ResponsiveContainer>
+                                </div>
+                              )}
+                              <span className={`text-[10px] font-bold px-1 py-0.5 rounded whitespace-nowrap ${
+                                channel.orderTrend < 0
+                                  ? 'bg-red-100 dark:bg-red-800 text-red-700 dark:text-red-300'
+                                  : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400'
+                              }`}>
+                                {channel.orderTrend > 0 ? '+' : ''}{channel.orderTrend}%
+                              </span>
+                            </div>
+                          ))
+                        ) : (
+                          <p className="text-xs text-gray-500 dark:text-gray-400 text-center py-4">
+                            {channelsSearch ? 'Brak wyników' : 'Brak danych'}
+                          </p>
+                        );
+                      })()}
+                      {!channelsSearch && trendingChannels.worstTrending?.length > 5 && (
+                        <button
+                          onClick={() => setShowMoreChannelsDown(!showMoreChannelsDown)}
+                          className="w-full mt-2 py-2 text-xs text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg border border-red-200 dark:border-red-800 transition-colors"
+                        >
+                          {showMoreChannelsDown ? '▲ Pokaż mniej' : `▼ Pokaż więcej (${trendingChannels.worstTrending.length})`}
                         </button>
                       )}
                     </div>
