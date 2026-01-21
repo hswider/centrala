@@ -1,41 +1,38 @@
 import { NextResponse } from 'next/server';
 import { sql } from '@vercel/postgres';
+import bcrypt from 'bcryptjs';
 
 export async function GET() {
   try {
-    // Full permissions for all modules
-    const adminPermissions = JSON.stringify(['dashboard', 'oms', 'wms', 'mes', 'mts', 'crm', 'crm-eu', 'rank', 'agent', 'admin']);
-    const userPermissions = JSON.stringify(['dashboard', 'oms', 'wms', 'mes', 'mts', 'crm', 'crm-eu', 'rank', 'agent']);
-
-    // Delete duplicate user 'hswider' (keeping 'Hubert')
-    await sql`DELETE FROM users WHERE username = 'hswider'`;
-
-    // Update ALL admin users to have full permissions
-    const { rows: adminRows } = await sql`
-      UPDATE users
-      SET permissions = ${adminPermissions}::jsonb
-      WHERE role = 'admin'
-      RETURNING id, username, role, permissions
+    // Get Karolina's permissions
+    const { rows: karolinaRows } = await sql`
+      SELECT permissions FROM users WHERE username = 'Karolina'
     `;
 
-    // Update ALL regular users to have standard permissions (without admin)
-    const { rows: userRows } = await sql`
-      UPDATE users
-      SET permissions = ${userPermissions}::jsonb
-      WHERE role = 'user'
+    const karolinaPermissions = karolinaRows[0]?.permissions || ['dashboard', 'oms', 'wms', 'mes', 'mts', 'crm', 'crm-eu', 'rank', 'agent'];
+    const permissionsJson = JSON.stringify(karolinaPermissions);
+
+    // Create new user Fabienne with same permissions as Karolina
+    const passwordHash = await bcrypt.hash('Gutekissen1234!@', 10);
+
+    const { rows: newUser } = await sql`
+      INSERT INTO users (username, password_hash, role, permissions)
+      VALUES ('Fabienne', ${passwordHash}, 'user', ${permissionsJson}::jsonb)
+      ON CONFLICT (username) DO UPDATE SET
+        password_hash = ${passwordHash},
+        permissions = ${permissionsJson}::jsonb
       RETURNING id, username, role, permissions
     `;
 
     return NextResponse.json({
       success: true,
-      message: 'Deleted hswider, updated all permissions',
-      adminsUpdated: adminRows.length,
-      usersUpdated: userRows.length,
-      admins: adminRows,
-      users: userRows
+      message: 'User Fabienne created with same permissions as Karolina',
+      user: newUser[0],
+      copiedFrom: 'Karolina',
+      permissions: karolinaPermissions
     });
   } catch (error) {
-    console.error('Fix permissions error:', error);
+    console.error('Create user error:', error);
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });
   }
 }
