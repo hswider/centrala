@@ -4,32 +4,33 @@ import bcrypt from 'bcryptjs';
 
 export async function GET() {
   try {
-    // Get Karolina's permissions
+    // Get Karolina's permissions and role
     const { rows: karolinaRows } = await sql`
-      SELECT permissions FROM users WHERE username = 'Karolina'
+      SELECT role, permissions FROM users WHERE username = 'Karolina'
     `;
 
+    const karolinaRole = karolinaRows[0]?.role || 'user';
     const karolinaPermissions = karolinaRows[0]?.permissions || ['dashboard', 'oms', 'wms', 'mes', 'mts', 'crm', 'crm-eu', 'rank', 'agent'];
     const permissionsJson = JSON.stringify(karolinaPermissions);
 
-    // Create new user Fabienne with same permissions as Karolina
-    const passwordHash = await bcrypt.hash('Gutekissen1234!@', 10);
-
-    const { rows: newUser } = await sql`
-      INSERT INTO users (username, password_hash, role, permissions)
-      VALUES ('Fabienne', ${passwordHash}, 'user', ${permissionsJson}::jsonb)
-      ON CONFLICT (username) DO UPDATE SET
-        password_hash = ${passwordHash},
-        permissions = ${permissionsJson}::jsonb
+    // Update Fabienne with same role and permissions as Karolina
+    const { rows: updatedUser } = await sql`
+      UPDATE users
+      SET role = ${karolinaRole},
+          permissions = ${permissionsJson}::jsonb
+      WHERE username = 'Fabienne'
       RETURNING id, username, role, permissions
     `;
 
     return NextResponse.json({
       success: true,
-      message: 'User Fabienne created with same permissions as Karolina',
-      user: newUser[0],
-      copiedFrom: 'Karolina',
-      permissions: karolinaPermissions
+      message: 'User Fabienne updated with same role and permissions as Karolina',
+      user: updatedUser[0],
+      copiedFrom: {
+        username: 'Karolina',
+        role: karolinaRole,
+        permissions: karolinaPermissions
+      }
     });
   } catch (error) {
     console.error('Create user error:', error);
