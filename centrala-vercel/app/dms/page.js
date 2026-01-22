@@ -729,8 +729,8 @@ export default function DMSPage() {
           .field { padding: 1.5mm; min-height: 18mm; }
           .field-1 { min-height: 22mm; }
           .field-5-row { display: flex; border-bottom: 1px solid currentColor; min-height: 14mm; }
-          .field-5-left { width: 50%; padding: 1.5mm; }
-          .field-5-right { width: 50%; background: white; position: relative; z-index: 2; padding: 1.5mm; }
+          .field-5-left { width: 25%; padding: 1.5mm; }
+          .field-5-right { width: 75%; background: white; position: relative; z-index: 2; padding: 1.5mm; }
           .field-label { font-size: 6px; line-height: 1.2; margin-bottom: 1mm; }
           .field-num { font-weight: bold; font-size: 8px; }
           .field-value { font-size: 15px; line-height: 1.3; margin-top: 1mm; color: black !important; }
@@ -990,8 +990,8 @@ export default function DMSPage() {
       .field { padding: 1.5mm; min-height: 16mm; }
       .field-1 { min-height: 20mm; }
       .field-5-row { display: flex; border-bottom: 1px solid currentColor; min-height: 14mm; }
-      .field-5-left { width: 50%; padding: 1.5mm; }
-      .field-5-right { width: 50%; background: white; position: relative; z-index: 2; padding: 1.5mm; }
+      .field-5-left { width: 25%; padding: 1.5mm; }
+      .field-5-right { width: 75%; background: white; position: relative; z-index: 2; padding: 1.5mm; }
       .field-label { font-size: 6px; line-height: 1.2; margin-bottom: 1mm; }
       .field-num { font-weight: bold; font-size: 8px; }
       .field-value { font-size: 15px; line-height: 1.3; margin-top: 1mm; color: black !important; }
