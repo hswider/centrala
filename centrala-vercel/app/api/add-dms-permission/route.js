@@ -1,12 +1,15 @@
 import { NextResponse } from 'next/server';
 import { sql } from '@vercel/postgres';
 
-export async function GET() {
+export async function GET(request) {
   try {
-    // Get all users
-    const { rows: users } = await sql`
-      SELECT id, username, permissions FROM users
-    `;
+    const { searchParams } = new URL(request.url);
+    const adminOnly = searchParams.get('adminOnly') === 'true';
+
+    // Get users (all or only admins)
+    const { rows: users } = adminOnly
+      ? await sql`SELECT id, username, role, permissions FROM users WHERE role = 'admin'`
+      : await sql`SELECT id, username, role, permissions FROM users`;
 
     const updated = [];
 
@@ -26,6 +29,7 @@ export async function GET() {
 
         updated.push({
           username: user.username,
+          role: user.role,
           oldPermissions: currentPermissions,
           newPermissions: newPermissions
         });
@@ -34,7 +38,7 @@ export async function GET() {
 
     return NextResponse.json({
       success: true,
-      message: `Added DMS permission to ${updated.length} users`,
+      message: `Added DMS permission to ${updated.length} ${adminOnly ? 'admin ' : ''}users`,
       updated: updated,
       totalUsers: users.length
     });
