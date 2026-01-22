@@ -527,7 +527,7 @@ export default function DMSPage() {
                   <div class="field-label"><span class="field-num">17</span> Kolejni przewoźnicy (nazwisko lub nazwa, adres, kraj)<br/>Nachfolgende Frachtführer (Name, Anschrift, Land)<br/>Successive carriers (name, address, country)</div>
                   <div class="field-value">${cmr.successiveCarriers || ''}</div>
                 </div>
-                <div class="field">
+                <div class="field field-18">
                   <div class="field-label"><span class="field-num">18</span> Zastrzeżenia i uwagi przewoźnika<br/>Vorbehalte und Bemerkungen der Frachtführer<br/>Carrier's reservations and observations</div>
                   <div class="field-value">${cmr.carrierReservations || ''}</div>
                 </div>
@@ -718,14 +718,14 @@ export default function DMSPage() {
           .col-left { width: 50%; border-right: 1px solid currentColor; }
           .col-right { width: 50%; }
 
-          /* Carrier section 16-18 with thick outer border */
+          /* Carrier section 16-18 with thick outer border, no internal borders */
           .two-col-carrier { display: flex; border-bottom: 1px solid currentColor; }
           .col-left-stack { width: 50%; border-right: 1px solid currentColor; }
           .col-left-stack .field { border-bottom: 1px solid currentColor; }
           .col-left-stack .field:last-child { border-bottom: none; }
           .col-right-thick { width: 50%; border: 2px solid currentColor; }
-          .col-right-thick .field { border-bottom: 1px solid currentColor; }
-          .col-right-thick .field:last-child { border-bottom: none; }
+          .col-right-thick .field { border-bottom: none; min-height: 22mm; }
+          .col-right-thick .field-18 { min-height: 28mm; }
 
           .field { padding: 1.5mm; min-height: 18mm; }
           .field-1 { min-height: 22mm; }
@@ -932,7 +932,7 @@ export default function DMSPage() {
                 <div class="cmr-legal">Niniejszy przewóz podlega postanowieniom konwencji o umowie międzynarodowej przewozu drogowego towarów (CMR).<br/>This carriage is subject to the Convention on the Contract for the International Carriage of goods by road (CMR).<br/>Diese Beförderung unterliegt den Bestimmungen des Übereinkommens über den Beförderungsvertrag im internationalen Strassengüterverkehr (CMR).</div>
               </div>
             </div>
-            <div class="two-col-carrier"><div class="col-left-stack"><div class="field"><div class="field-label"><span class="field-num">2</span> Odbiorca<br/>Empfänger<br/>Consignee</div><div class="field-value">${cmrData.consigneeName || ''}<br/>${cmrData.consigneeAddress || ''}<br/>${cmrData.consigneeCountry || ''}</div></div><div class="field"><div class="field-label"><span class="field-num">3</span> Miejsce przeznaczenia<br/>Auslieferungsort<br/>Place of delivery</div><div class="field-value">${cmrData.deliveryPlace || ''}${cmrData.deliveryCountry ? ', ' + cmrData.deliveryCountry : ''}</div></div><div class="field"><div class="field-label"><span class="field-num">4</span> Miejsce i data załadowania<br/>Ort und Tag der Übernahme<br/>Place and date of taking over</div><div class="field-value">${cmrData.loadingPlace || ''}<br/>${cmrData.loadingDate || ''}</div></div></div><div class="col-right-thick"><div class="field"><div class="field-label"><span class="field-num">16</span> Przewoźnik<br/>Frachtführer<br/>Carrier</div><div class="field-value">${cmrData.carrierName || ''}<br/>${cmrData.carrierAddress || ''}<br/>${cmrData.carrierCountry || ''}</div></div><div class="field"><div class="field-label"><span class="field-num">17</span> Kolejni przewoźnicy<br/>Nachfolgende Frachtführer<br/>Successive carriers</div><div class="field-value">${cmrData.successiveCarriers || ''}</div></div><div class="field"><div class="field-label"><span class="field-num">18</span> Zastrzeżenia przewoźnika<br/>Vorbehalte des Frachtführers<br/>Carrier's reservations</div><div class="field-value">${cmrData.carrierReservations || ''}</div></div></div></div>
+            <div class="two-col-carrier"><div class="col-left-stack"><div class="field"><div class="field-label"><span class="field-num">2</span> Odbiorca<br/>Empfänger<br/>Consignee</div><div class="field-value">${cmrData.consigneeName || ''}<br/>${cmrData.consigneeAddress || ''}<br/>${cmrData.consigneeCountry || ''}</div></div><div class="field"><div class="field-label"><span class="field-num">3</span> Miejsce przeznaczenia<br/>Auslieferungsort<br/>Place of delivery</div><div class="field-value">${cmrData.deliveryPlace || ''}${cmrData.deliveryCountry ? ', ' + cmrData.deliveryCountry : ''}</div></div><div class="field"><div class="field-label"><span class="field-num">4</span> Miejsce i data załadowania<br/>Ort und Tag der Übernahme<br/>Place and date of taking over</div><div class="field-value">${cmrData.loadingPlace || ''}<br/>${cmrData.loadingDate || ''}</div></div></div><div class="col-right-thick"><div class="field"><div class="field-label"><span class="field-num">16</span> Przewoźnik<br/>Frachtführer<br/>Carrier</div><div class="field-value">${cmrData.carrierName || ''}<br/>${cmrData.carrierAddress || ''}<br/>${cmrData.carrierCountry || ''}</div></div><div class="field"><div class="field-label"><span class="field-num">17</span> Kolejni przewoźnicy<br/>Nachfolgende Frachtführer<br/>Successive carriers</div><div class="field-value">${cmrData.successiveCarriers || ''}</div></div><div class="field field-18"><div class="field-label"><span class="field-num">18</span> Zastrzeżenia przewoźnika<br/>Vorbehalte des Frachtführers<br/>Carrier's reservations</div><div class="field-value">${cmrData.carrierReservations || ''}</div></div></div></div>
             <div class="field field-5"><div class="field-label"><span class="field-num">5</span> Załączone dokumenty / Beigefügte Dokumente / Documents attached</div><div class="field-value">${cmrData.documents || ''}</div></div>
             <div class="goods-row">
               <div class="goods-cell gc-6"><div class="field-label"><span class="field-num">6</span> Cechy<br/>Kennzeichen<br/>Marks</div><div class="field-value">${cmrData.marksAndNos || ''}</div></div>
@@ -985,8 +985,8 @@ export default function DMSPage() {
       .col-left-stack .field { border-bottom: 1px solid currentColor; }
       .col-left-stack .field:last-child { border-bottom: none; }
       .col-right-thick { width: 50%; border: 2px solid currentColor; }
-      .col-right-thick .field { border-bottom: 1px solid currentColor; }
-      .col-right-thick .field:last-child { border-bottom: none; }
+      .col-right-thick .field { border-bottom: none; min-height: 22mm; }
+      .col-right-thick .field-18 { min-height: 28mm; }
       .field { padding: 1.5mm; min-height: 16mm; }
       .field-1 { min-height: 20mm; }
       .field-5 { border-bottom: 1px solid currentColor; min-height: 12mm; padding: 1.5mm; }
