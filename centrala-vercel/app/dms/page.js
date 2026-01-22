@@ -730,7 +730,7 @@ export default function DMSPage() {
           .field-value { font-size: 9px; line-height: 1.3; margin-top: 1mm; }
 
           .goods-row { display: flex; border-bottom: 1px solid currentColor; min-height: 32mm; }
-          .goods-cell { border-right: 1px solid currentColor; padding: 1.5mm; }
+          .goods-cell { border-right: 1px solid currentColor; padding: 1.5mm; background: white; position: relative; z-index: 2; }
           .goods-cell:last-child { border-right: none; }
           .gc-6 { width: 10%; }
           .gc-7 { width: 8%; }
@@ -741,7 +741,7 @@ export default function DMSPage() {
           .gc-12 { width: 14%; }
 
           .adr-row { display: flex; border-bottom: 1px solid currentColor; min-height: 14mm; }
-          .adr-cell { flex: 1; border-right: 1px solid currentColor; padding: 1.5mm; }
+          .adr-cell { flex: 1; border-right: 1px solid currentColor; padding: 1.5mm; background: white; position: relative; z-index: 2; }
           .adr-cell:last-child { border-right: none; }
           .adr-label { display: flex; align-items: center; justify-content: center; font-size: 8px; }
 
@@ -988,11 +988,11 @@ export default function DMSPage() {
       .field-num { font-weight: bold; font-size: 8px; }
       .field-value { font-size: 9px; line-height: 1.3; margin-top: 1mm; }
       .goods-row { display: flex; border-bottom: 1px solid currentColor; min-height: 28mm; }
-      .goods-cell { border-right: 1px solid currentColor; padding: 1.5mm; }
+      .goods-cell { border-right: 1px solid currentColor; padding: 1.5mm; background: white; position: relative; z-index: 2; }
       .goods-cell:last-child { border-right: none; }
       .gc-6 { width: 10%; } .gc-7 { width: 8%; } .gc-8 { width: 10%; } .gc-9 { width: 24%; } .gc-10 { width: 10%; } .gc-11 { width: 14%; } .gc-12 { width: 14%; }
       .adr-row { display: flex; border-bottom: 1px solid currentColor; min-height: 12mm; }
-      .adr-cell { flex: 1; border-right: 1px solid currentColor; padding: 1.5mm; }
+      .adr-cell { flex: 1; border-right: 1px solid currentColor; padding: 1.5mm; background: white; position: relative; z-index: 2; }
       .adr-cell:last-child { border-right: none; }
       .adr-label { display: flex; align-items: center; justify-content: center; font-size: 8px; }
       .field-14 .checkbox-row { font-size: 7px; margin: 1mm 0; }
