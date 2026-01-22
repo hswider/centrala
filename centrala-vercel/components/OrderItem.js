@@ -137,6 +137,9 @@ export default function OrderItem({ order }) {
     if (platform === 'OTTO' || platform === 'otto' || labelLower.includes('otto')) {
       return <img src="/icons/otto.png" alt="OTTO" className="w-8 h-8 rounded-full object-cover" />;
     }
+    if (labelLower.includes('poom business')) {
+      return <img src="/icons/poom-business.png" alt="POOM Business" className="w-8 h-8 rounded-full object-cover" />;
+    }
 
     // Shopify stores with custom icons (platform can be 'Shopify', 'shopify', or 'shop')
     const isShopify = platform === 'Shopify' || platform === 'shopify' || platform === 'shop';
