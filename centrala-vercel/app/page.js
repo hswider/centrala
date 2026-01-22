@@ -44,6 +44,66 @@ export default function Home() {
 
   const allPermissions = ['dashboard', 'oms', 'wms', 'mes', 'mts', 'crm', 'crm-eu', 'rank', 'agent'];
 
+  // Helper function to render channel icons (same as in OrderItem)
+  const renderChannelIcon = (platform, channelLabel) => {
+    const labelLower = (channelLabel || '').toLowerCase();
+
+    // Major marketplaces
+    if (platform === 'Allegro') {
+      return <img src="https://a.allegroimg.com/original/12c30c/0d4b068640de9b0daf22af9d97c5" alt="Allegro" className="w-8 h-8 rounded-full object-cover" />;
+    }
+    if (platform === 'Amazon') {
+      return <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQoIwGv61BBxMlFDmBHeDvMo8-5HNlM4_8Skw&s" alt="Amazon" className="w-8 h-8 rounded-full object-cover" />;
+    }
+    if (platform === 'eBay' || platform === 'Ebay') {
+      return <img src="/icons/ebay.png" alt="eBay" className="w-8 h-8 rounded-full object-cover" />;
+    }
+    if (platform === 'Kaufland') {
+      return <img src="https://logotypy.net/wp-content/uploads/2023/09/logo-kaufland.jpg" alt="Kaufland" className="w-8 h-8 rounded-full object-cover" />;
+    }
+    if (platform === 'OTTO' || platform === 'otto' || labelLower.includes('otto')) {
+      return <img src="/icons/otto.png" alt="OTTO" className="w-8 h-8 rounded-full object-cover" />;
+    }
+    if (labelLower.includes('poom business')) {
+      return <img src="/icons/poom-business.png" alt="POOM Business" className="w-8 h-8 rounded-full object-cover" />;
+    }
+
+    // Shopify stores with custom icons
+    const isShopify = platform === 'Shopify' || platform === 'shopify' || platform === 'shop';
+    if (isShopify || labelLower === 'shop') {
+      if (labelLower.includes('gutekissen') || labelLower === 'shop' || labelLower === 'gutekissen') {
+        return <img src="/icons/gutekissen.png" alt="Gutekissen" className="w-8 h-8 rounded-full object-cover" />;
+      }
+      if (labelLower.includes('poom kids') || labelLower.includes('poomkids')) {
+        return <img src="/icons/poomkids.png" alt="POOM KIDS" className="w-8 h-8 rounded-full object-cover" />;
+      }
+      if (labelLower.includes('dobrelegowiska') || labelLower.includes('dobre legowiska')) {
+        return <img src="/icons/dobrelegowiska.png" alt="Dobrelegowiska" className="w-8 h-8 rounded-full object-cover" />;
+      }
+      if (labelLower.includes('allepoduszki')) {
+        return <img src="/icons/allepoduszki.png" alt="Allepoduszki" className="w-8 h-8 rounded-full object-cover" />;
+      }
+      if (labelLower.includes('poom-furniture') || labelLower.includes('poom furniture')) {
+        return <img src="/icons/poom-furniture.png" alt="POOM Furniture" className="w-8 h-8 rounded-full object-cover" />;
+      }
+      return <img src="/icons/gutekissen.png" alt="Gutekissen" className="w-8 h-8 rounded-full object-cover" />;
+    }
+
+    // Fallback
+    return (
+      <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold ${
+        platform === 'Amazon' ? 'bg-orange-500' :
+        platform === 'Allegro' ? 'bg-amber-500' :
+        platform === 'Shopify' ? 'bg-green-600' :
+        platform === 'eBay' ? 'bg-blue-500' :
+        platform === 'Kaufland' ? 'bg-red-600' :
+        'bg-gray-500'
+      }`}>
+        {platform?.charAt(0) || '?'}
+      </div>
+    );
+  };
+
   const fetchUser = async () => {
     try {
       const res = await fetch('/api/auth/me');
@@ -973,16 +1033,7 @@ export default function Home() {
                               <span className="text-xs font-bold text-green-700 dark:text-green-400 w-5">
                                 #{idx + 1}
                               </span>
-                              <div className={`w-8 h-8 rounded flex items-center justify-center text-white text-xs font-bold ${
-                                channel.platform === 'Amazon' ? 'bg-orange-500' :
-                                channel.platform === 'Allegro' ? 'bg-amber-500' :
-                                channel.platform === 'Shopify' ? 'bg-green-600' :
-                                channel.platform === 'eBay' ? 'bg-blue-500' :
-                                channel.platform === 'Kaufland' ? 'bg-red-600' :
-                                'bg-gray-500'
-                              }`}>
-                                {channel.platform?.charAt(0) || '?'}
-                              </div>
+                              {renderChannelIcon(channel.platform, channel.label)}
                               <div className="flex-1 min-w-0">
                                 <p className="text-xs font-medium text-gray-900 dark:text-white truncate" title={channel.label}>
                                   {channel.label?.length > 25 ? channel.label.substring(0, 25) + '...' : channel.label || channel.platform}
@@ -1067,16 +1118,7 @@ export default function Home() {
                               <span className="text-xs font-bold text-red-700 dark:text-red-400 w-5">
                                 #{idx + 1}
                               </span>
-                              <div className={`w-8 h-8 rounded flex items-center justify-center text-white text-xs font-bold ${
-                                channel.platform === 'Amazon' ? 'bg-orange-500' :
-                                channel.platform === 'Allegro' ? 'bg-amber-500' :
-                                channel.platform === 'Shopify' ? 'bg-green-600' :
-                                channel.platform === 'eBay' ? 'bg-blue-500' :
-                                channel.platform === 'Kaufland' ? 'bg-red-600' :
-                                'bg-gray-500'
-                              }`}>
-                                {channel.platform?.charAt(0) || '?'}
-                              </div>
+                              {renderChannelIcon(channel.platform, channel.label)}
                               <div className="flex-1 min-w-0">
                                 <p className="text-xs font-medium text-gray-900 dark:text-white truncate" title={channel.label}>
                                   {channel.label?.length > 25 ? channel.label.substring(0, 25) + '...' : channel.label || channel.platform}
