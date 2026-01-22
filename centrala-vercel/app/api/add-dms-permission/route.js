@@ -5,11 +5,27 @@ export async function GET(request) {
   try {
     const { searchParams } = new URL(request.url);
     const adminOnly = searchParams.get('adminOnly') === 'true';
+    const usersParam = searchParams.get('users'); // comma-separated usernames
 
-    // Get users (all or only admins)
-    const { rows: users } = adminOnly
-      ? await sql`SELECT id, username, role, permissions FROM users WHERE role = 'admin'`
-      : await sql`SELECT id, username, role, permissions FROM users`;
+    let users;
+
+    if (usersParam) {
+      // Get specific users by username
+      const usernames = usersParam.split(',').map(u => u.trim());
+      const { rows } = await sql`
+        SELECT id, username, role, permissions FROM users
+        WHERE username = ANY(${usernames})
+      `;
+      users = rows;
+    } else if (adminOnly) {
+      // Get only admin users
+      const { rows } = await sql`SELECT id, username, role, permissions FROM users WHERE role = 'admin'`;
+      users = rows;
+    } else {
+      // Get all users
+      const { rows } = await sql`SELECT id, username, role, permissions FROM users`;
+      users = rows;
+    }
 
     const updated = [];
 
@@ -38,7 +54,7 @@ export async function GET(request) {
 
     return NextResponse.json({
       success: true,
-      message: `Added DMS permission to ${updated.length} ${adminOnly ? 'admin ' : ''}users`,
+      message: `Added DMS permission to ${updated.length} users`,
       updated: updated,
       totalUsers: users.length
     });
