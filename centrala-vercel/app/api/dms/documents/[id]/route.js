@@ -1,6 +1,18 @@
 import { NextResponse } from 'next/server';
 import { sql } from '@vercel/postgres';
 
+// Helper to log history
+async function logHistory(documentId, action, actionDetails, userName, userId) {
+  try {
+    await sql`
+      INSERT INTO document_history (document_id, action, action_details, user_name, user_id)
+      VALUES (${documentId}, ${action}, ${JSON.stringify(actionDetails || {})}, ${userName || 'System'}, ${userId || null})
+    `;
+  } catch (error) {
+    console.error('Error logging history:', error);
+  }
+}
+
 // GET - get single document
 export async function GET(request, { params }) {
   try {
@@ -29,7 +41,18 @@ export async function PUT(request, { params }) {
   try {
     const { id } = await params;
     const body = await request.json();
-    const { docNumber, customerName, data, status } = body;
+    const { docNumber, customerName, data, status, userName, userId } = body;
+
+    // Get current document for comparison
+    const { rows: currentRows } = await sql`
+      SELECT * FROM generated_documents WHERE id = ${id}
+    `;
+
+    if (currentRows.length === 0) {
+      return NextResponse.json({ success: false, error: 'Document not found' }, { status: 404 });
+    }
+
+    const currentDoc = currentRows[0];
 
     const { rows } = await sql`
       UPDATE generated_documents
@@ -43,13 +66,29 @@ export async function PUT(request, { params }) {
       RETURNING *
     `;
 
-    if (rows.length === 0) {
-      return NextResponse.json({ success: false, error: 'Document not found' }, { status: 404 });
+    const updatedDoc = rows[0];
+
+    // Log history based on what changed
+    const changes = {};
+    if (status && status !== currentDoc.status) {
+      changes.statusChange = { from: currentDoc.status, to: status };
+      await logHistory(id, 'status_changed', {
+        from: currentDoc.status,
+        to: status,
+        docNumber: updatedDoc.doc_number
+      }, userName, userId);
+    }
+
+    if (data) {
+      await logHistory(id, 'edited', {
+        docNumber: updatedDoc.doc_number,
+        customerName: updatedDoc.customer_name
+      }, userName, userId);
     }
 
     return NextResponse.json({
       success: true,
-      document: rows[0]
+      document: updatedDoc
     });
   } catch (error) {
     console.error('Update document error:', error);
@@ -61,14 +100,31 @@ export async function PUT(request, { params }) {
 export async function DELETE(request, { params }) {
   try {
     const { id } = await params;
+    const { searchParams } = new URL(request.url);
+    const userName = searchParams.get('userName');
+    const userId = searchParams.get('userId');
+
+    // Get document info before deleting
+    const { rows: docRows } = await sql`
+      SELECT * FROM generated_documents WHERE id = ${id}
+    `;
+
+    if (docRows.length === 0) {
+      return NextResponse.json({ success: false, error: 'Document not found' }, { status: 404 });
+    }
+
+    const doc = docRows[0];
+
+    // Log history before deleting (will be orphaned but that's ok for audit)
+    await logHistory(id, 'deleted', {
+      docType: doc.doc_type,
+      docNumber: doc.doc_number,
+      customerName: doc.customer_name
+    }, userName, userId ? parseInt(userId) : null);
 
     const { rows } = await sql`
       DELETE FROM generated_documents WHERE id = ${id} RETURNING *
     `;
-
-    if (rows.length === 0) {
-      return NextResponse.json({ success: false, error: 'Document not found' }, { status: 404 });
-    }
 
     return NextResponse.json({
       success: true,

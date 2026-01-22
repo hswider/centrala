@@ -1,6 +1,18 @@
 import { NextResponse } from 'next/server';
 import { sql } from '@vercel/postgres';
 
+// Helper to log history
+async function logHistory(documentId, action, actionDetails, userName, userId) {
+  try {
+    await sql`
+      INSERT INTO document_history (document_id, action, action_details, user_name, user_id)
+      VALUES (${documentId}, ${action}, ${JSON.stringify(actionDetails || {})}, ${userName || 'System'}, ${userId || null})
+    `;
+  } catch (error) {
+    console.error('Error logging history:', error);
+  }
+}
+
 // GET - list all documents
 export async function GET(request) {
   try {
@@ -58,17 +70,27 @@ export async function GET(request) {
 export async function POST(request) {
   try {
     const body = await request.json();
-    const { docType, docNumber, orderId, customerName, data, status = 'draft' } = body;
+    const { docType, docNumber, orderId, customerName, data, status = 'draft', userName, userId } = body;
 
     const { rows } = await sql`
-      INSERT INTO generated_documents (doc_type, doc_number, order_id, customer_name, data, status)
-      VALUES (${docType}, ${docNumber}, ${orderId}, ${customerName}, ${JSON.stringify(data)}, ${status})
+      INSERT INTO generated_documents (doc_type, doc_number, order_id, customer_name, data, status, created_by)
+      VALUES (${docType}, ${docNumber}, ${orderId}, ${customerName}, ${JSON.stringify(data)}, ${status}, ${userName || null})
       RETURNING *
     `;
 
+    const document = rows[0];
+
+    // Log history
+    await logHistory(document.id, 'created', {
+      docType,
+      docNumber,
+      customerName,
+      orderId
+    }, userName, userId);
+
     return NextResponse.json({
       success: true,
-      document: rows[0]
+      document
     });
   } catch (error) {
     console.error('Create document error:', error);

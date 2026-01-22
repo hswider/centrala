@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from 'react';
 
 export default function DMSPage() {
-  const [activeTab, setActiveTab] = useState('generated'); // 'generated' | 'fromOrder' | 'manual'
+  const [activeTab, setActiveTab] = useState('generated'); // 'generated' | 'fromOrder' | 'manual' | 'history'
   const [search, setSearch] = useState('');
   const [orders, setOrders] = useState([]);
   const [selectedOrder, setSelectedOrder] = useState(null);
@@ -16,12 +16,43 @@ export default function DMSPage() {
   const [manualDocType, setManualDocType] = useState(null); // null | 'gutekissen-invoice' | 'cmr'
   const [selectedDocType, setSelectedDocType] = useState(null); // for fromOrder tab
   const [editingDoc, setEditingDoc] = useState(null); // document being edited
+  const [user, setUser] = useState(null); // current user
+  const [history, setHistory] = useState([]); // document history
+  const [historyLoading, setHistoryLoading] = useState(false);
   const invoiceRef = useRef(null);
 
-  // Load documents from API on mount
+  // Load user and documents on mount
   useEffect(() => {
+    fetchUser();
     loadDocuments();
   }, []);
+
+  const fetchUser = async () => {
+    try {
+      const res = await fetch('/api/auth/me');
+      const data = await res.json();
+      if (data.success) {
+        setUser(data.user);
+      }
+    } catch (err) {
+      console.error('Error fetching user:', err);
+    }
+  };
+
+  const loadHistory = async () => {
+    try {
+      setHistoryLoading(true);
+      const res = await fetch('/api/dms/history?limit=100');
+      const data = await res.json();
+      if (data.success) {
+        setHistory(data.history);
+      }
+    } catch (error) {
+      console.error('Error loading history:', error);
+    } finally {
+      setHistoryLoading(false);
+    }
+  };
 
   const loadDocuments = async () => {
     try {
@@ -63,7 +94,9 @@ export default function DMSPage() {
           orderId: doc.orderId,
           customerName: doc.customer,
           data: doc.data,
-          status: 'draft'
+          status: 'draft',
+          userName: user?.username || 'Unknown',
+          userId: user?.id || null
         })
       });
       const data = await res.json();
@@ -83,7 +116,11 @@ export default function DMSPage() {
       const res = await fetch(`/api/dms/documents/${docId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status: newStatus })
+        body: JSON.stringify({
+          status: newStatus,
+          userName: user?.username || 'Unknown',
+          userId: user?.id || null
+        })
       });
       const data = await res.json();
       if (data.success) {
@@ -101,7 +138,11 @@ export default function DMSPage() {
   const deleteDocument = async (docId) => {
     if (!confirm('Czy na pewno chcesz usunąć ten dokument?')) return;
     try {
-      const res = await fetch(`/api/dms/documents/${docId}`, {
+      const params = new URLSearchParams();
+      if (user?.username) params.append('userName', user.username);
+      if (user?.id) params.append('userId', user.id);
+
+      const res = await fetch(`/api/dms/documents/${docId}?${params.toString()}`, {
         method: 'DELETE'
       });
       const data = await res.json();
@@ -1580,6 +1621,16 @@ export default function DMSPage() {
           >
             <span>✏️</span> Wygeneruj recznie
           </button>
+          <button
+            onClick={() => { setActiveTab('history'); loadHistory(); }}
+            className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors flex items-center gap-2 ${
+              activeTab === 'history'
+                ? 'bg-blue-600 text-white'
+                : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
+            }`}
+          >
+            <span>📜</span> Historia zmian
+          </button>
         </div>
 
         {/* Tab: Generated Documents */}
@@ -2038,6 +2089,96 @@ export default function DMSPage() {
               </>
             )}
           </>
+        )}
+
+        {/* Tab: History */}
+        {activeTab === 'history' && (
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow dark:shadow-gray-900">
+            <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Historia zmian dokumentów</h2>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">Wszystkie operacje na dokumentach</p>
+                </div>
+                <button
+                  onClick={loadHistory}
+                  className="px-3 py-1.5 text-xs font-medium bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded-lg hover:bg-blue-200 dark:hover:bg-blue-900/50"
+                >
+                  🔄 Odśwież
+                </button>
+              </div>
+            </div>
+            {historyLoading ? (
+              <div className="p-12 text-center">
+                <div className="inline-block w-8 h-8 border-2 border-blue-600 border-t-transparent rounded-full animate-spin mb-3"></div>
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-1">Ładowanie historii...</h3>
+              </div>
+            ) : history.length === 0 ? (
+              <div className="p-12 text-center">
+                <div className="text-4xl mb-3">📜</div>
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-1">Brak historii</h3>
+                <p className="text-sm text-gray-500 dark:text-gray-400">Historia operacji pojawi się tutaj po wykonaniu akcji na dokumentach.</p>
+              </div>
+            ) : (
+              <div className="divide-y divide-gray-200 dark:divide-gray-700">
+                {history.map((entry) => (
+                  <div key={entry.id} className="p-4 hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                    <div className="flex items-start gap-3">
+                      <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${
+                        entry.action === 'created' ? 'bg-green-100 dark:bg-green-900/30' :
+                        entry.action === 'edited' ? 'bg-yellow-100 dark:bg-yellow-900/30' :
+                        entry.action === 'status_changed' ? 'bg-blue-100 dark:bg-blue-900/30' :
+                        entry.action === 'deleted' ? 'bg-red-100 dark:bg-red-900/30' :
+                        'bg-gray-100 dark:bg-gray-700'
+                      }`}>
+                        <span className="text-lg">
+                          {entry.action === 'created' ? '✨' :
+                           entry.action === 'edited' ? '✏️' :
+                           entry.action === 'status_changed' ? '🔄' :
+                           entry.action === 'deleted' ? '🗑️' : '📄'}
+                        </span>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className={`px-2 py-0.5 text-xs font-medium rounded ${
+                            entry.action === 'created' ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300' :
+                            entry.action === 'edited' ? 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-300' :
+                            entry.action === 'status_changed' ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300' :
+                            entry.action === 'deleted' ? 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300' :
+                            'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300'
+                          }`}>
+                            {entry.action === 'created' ? 'Utworzono' :
+                             entry.action === 'edited' ? 'Edytowano' :
+                             entry.action === 'status_changed' ? 'Zmiana statusu' :
+                             entry.action === 'deleted' ? 'Usunięto' : entry.action}
+                          </span>
+                          <span className={`px-2 py-0.5 text-xs font-medium rounded ${
+                            entry.doc_type === 'invoice' ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300' :
+                            'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300'
+                          }`}>
+                            {entry.doc_type === 'invoice' ? 'Faktura' : 'CMR'}
+                          </span>
+                          {entry.doc_number && (
+                            <span className="text-sm font-medium text-gray-900 dark:text-white">{entry.doc_number}</span>
+                          )}
+                        </div>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                          <span className="font-medium text-gray-700 dark:text-gray-300">{entry.user_name}</span>
+                          {entry.customer_name && ` • Klient: ${entry.customer_name}`}
+                          {entry.action_details?.from && entry.action_details?.to && (
+                            <span> • {entry.action_details.from} → {entry.action_details.to}</span>
+                          )}
+                        </p>
+                        <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+                          {formatDatePL(entry.created_at)}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         )}
       </main>
     </div>
