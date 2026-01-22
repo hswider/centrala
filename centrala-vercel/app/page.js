@@ -782,11 +782,11 @@ export default function Home() {
                             </span>
                           </div>
                         ))
-                        )) : (
-                          <p className="text-xs text-gray-500 dark:text-gray-400 text-center py-4">
-                            {trendingSearch ? 'Brak wyników dla wyszukiwania' : 'Brak danych'}
-                          </p>
-                        ));
+                      ) : (
+                        <p className="text-xs text-gray-500 dark:text-gray-400 text-center py-4">
+                          {trendingSearch ? 'Brak wyników dla wyszukiwania' : 'Brak danych'}
+                        </p>
+                      );
                       })()}
                       {!trendingSearch && trending.topTrending?.length > 10 && (
                         <button
