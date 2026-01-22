@@ -306,8 +306,8 @@ export default function DMSPage() {
     return <span className="px-2 py-0.5 text-xs font-medium bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-300 rounded">Nieoplacone</span>;
   };
 
-  // Invoice Form Component
-  const InvoiceForm = () => (
+  // Invoice Form JSX (rendered inline to prevent focus loss)
+  const invoiceFormJSX = (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
       {/* Invoice Form */}
       <div className="lg:col-span-2 bg-white dark:bg-gray-800 rounded-lg shadow dark:shadow-gray-900 p-6">
@@ -760,14 +760,14 @@ export default function DMSPage() {
                     ← Wróć do wyszukiwania
                   </button>
                 </div>
-                <InvoiceForm />
+                {invoiceFormJSX}
               </>
             )}
           </>
         )}
 
         {/* Tab: Manual */}
-        {activeTab === 'manual' && <InvoiceForm />}
+        {activeTab === 'manual' && invoiceFormJSX}
       </main>
     </div>
   );
