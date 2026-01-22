@@ -20,7 +20,8 @@ const publicRoutes = [
   '/api/kaufland/sync',  // Kaufland tickets cron
   '/api/kaufland/debug', // Kaufland debug
   '/api/baselinker/debug', // Baselinker debug
-  '/api/weather/sync'    // Weather sync cron
+  '/api/weather/sync',   // Weather sync cron
+  '/api/dms/init'        // DMS table initialization
 ];
 
 export function middleware(request) {
