@@ -724,7 +724,8 @@ export default function DMSPage() {
           .col-left-stack .field { border-bottom: 1px solid currentColor; }
           .col-left-stack .field:last-child { border-bottom: none; }
           .col-right-thick { width: 50%; border: 2px solid currentColor; }
-          .col-right-thick .field { border-bottom: none; min-height: 22mm; }
+          .col-right-thick .field { border-bottom: 1px solid currentColor; min-height: 22mm; }
+          .col-right-thick .field:last-child { border-bottom: none; }
           .col-right-thick .field-18 { min-height: 28mm; }
 
           .field { padding: 1.5mm; min-height: 18mm; }
@@ -985,7 +986,8 @@ export default function DMSPage() {
       .col-left-stack .field { border-bottom: 1px solid currentColor; }
       .col-left-stack .field:last-child { border-bottom: none; }
       .col-right-thick { width: 50%; border: 2px solid currentColor; }
-      .col-right-thick .field { border-bottom: none; min-height: 22mm; }
+      .col-right-thick .field { border-bottom: 1px solid currentColor; min-height: 22mm; }
+      .col-right-thick .field:last-child { border-bottom: none; }
       .col-right-thick .field-18 { min-height: 28mm; }
       .field { padding: 1.5mm; min-height: 16mm; }
       .field-1 { min-height: 20mm; }
