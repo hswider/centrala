@@ -473,11 +473,6 @@ export default function DMSPage() {
         </div>
 
         <div class="cmr-main">
-          <!-- Left margin text (vertical) -->
-          <div class="left-margin">
-            <div class="margin-text">Rubryki obwiedzenie tłustymi liniami wypełnia przewoźnik.<br/>Die mit fett gedruckten Linien eingerahmten Rubriken müssen von Frachtführer ausgefüllt werden.<br/>The spaces framed with heavy lines must be filled in by the carrier.</div>
-          </div>
-
           <div class="cmr-content">
             <!-- Header row -->
             <div class="header-row">
@@ -703,8 +698,6 @@ export default function DMSPage() {
           .copy-text { font-size: 7px; line-height: 1.3; }
 
           .cmr-main { display: flex; border: 1px solid currentColor; }
-          .left-margin { width: 6mm; border-right: 1px solid currentColor; padding: 1mm; writing-mode: vertical-rl; transform: rotate(180deg); }
-          .margin-text { font-size: 5px; line-height: 1.2; }
           .cmr-content { flex: 1; position: relative; }
           .cmr-content::before { content: ''; position: absolute; left: 50%; top: 0; bottom: 0; border-left: 1px solid currentColor; z-index: 1; }
 
@@ -919,8 +912,7 @@ export default function DMSPage() {
           <span class="copy-text">${copy.title}<br/>${copy.titleDe}<br/>${copy.titleEn}</span>
         </div>
         <div class="cmr-main">
-          <div class="left-margin"><div class="margin-text">Rubryki obwiedzenie tłustymi liniami wypełnia przewoźnik.<br/>Die mit fett gedruckten Linien eingerahmten Rubriken müssen von Frachtführer ausgefüllt werden.<br/>The spaces framed with heavy lines must be filled in by the carrier.</div></div>
-          <div class="cmr-content">
+                    <div class="cmr-content">
             <div class="header-row">
               <div class="header-left">
                 <div class="field field-1">
@@ -970,8 +962,6 @@ export default function DMSPage() {
       .copy-num { font-size: 24px; font-weight: bold; margin-right: 3mm; }
       .copy-text { font-size: 7px; line-height: 1.3; }
       .cmr-main { display: flex; border: 1px solid currentColor; }
-      .left-margin { width: 6mm; border-right: 1px solid currentColor; padding: 1mm; writing-mode: vertical-rl; transform: rotate(180deg); }
-      .margin-text { font-size: 5px; line-height: 1.2; }
       .cmr-content { flex: 1; position: relative; }
       .cmr-content::before { content: ''; position: absolute; left: 50%; top: 0; bottom: 0; border-left: 1px solid currentColor; z-index: 1; }
       .header-row { display: flex; border-bottom: 1px solid currentColor; }
