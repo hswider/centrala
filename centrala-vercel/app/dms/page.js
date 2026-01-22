@@ -235,11 +235,15 @@ export default function DMSPage() {
     const totalQty = items.reduce((sum, i) => sum + (i.quantity || 1), 0);
 
     // Build consignee name - just the name, no "Kom:" prefix
-    const consigneeName = shipping.name || shipping.companyName || '';
+    // Remove any "Kom:" prefix if present in the name
+    let consigneeName = shipping.name || shipping.companyName || '';
+    if (consigneeName.toLowerCase().startsWith('kom:') || consigneeName.toLowerCase().startsWith('komm.')) {
+      consigneeName = consigneeName.replace(/^(kom:|komm\.)\s*/i, '').trim();
+    }
     // Build address: street, zipCode city
     const consigneeAddress = `${shipping.street || ''}, ${shipping.zipCode || ''} ${shipping.city || ''}`.trim().replace(/^,\s*/, '');
-    // KOM number from externalId
-    const komNumber = order.externalId ? `Kom: ${order.externalId}` : '';
+    // KOM number from extraField1 (Pole dodatkowe 1 in BaseLinker)
+    const komNumber = order.extraField1 ? `${order.extraField1}` : '';
 
     setCmr(prev => ({
       ...prev,
@@ -251,7 +255,7 @@ export default function DMSPage() {
       consigneeName: consigneeName,
       consigneeAddress: consigneeAddress,
       consigneeCountry: shipping.country || '',
-      // Delivery place with KOM number
+      // Delivery place with KOM number from extraField1
       deliveryPlace: komNumber ? `${komNumber}\n${shipping.city || ''}, ${shipping.country || ''}` : `${shipping.city || ''}, ${shipping.country || ''}`,
       deliveryCountry: shipping.country || '',
       // Loading - Barczewo

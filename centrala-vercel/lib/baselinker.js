@@ -234,6 +234,8 @@ async function mapOrderToDTO(order, statuses = {}, fetchImages = false) {
     id: `BL-${order.order_id}`, // Prefix with BL to distinguish from Apilo orders
     externalId: order.shop_order_id || order.external_order_id || null,
     externalId2: order.user_login || null,
+    extraField1: order.extra_field_1 || null, // Pole dodatkowe 1 (KOM number)
+    extraField2: order.extra_field_2 || null, // Pole dodatkowe 2
     channel: {
       label: channelLabel,
       platform: platformName
