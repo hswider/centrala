@@ -156,8 +156,8 @@ export default function DMSPage() {
       // Loading - Barczewo
       loadingPlace: 'Barczewo, Polska',
       loadingDate: new Date().toISOString().split('T')[0],
-      // Goods
-      natureOfGoods: productNames.substring(0, 500),
+      // Goods - NIE nadpisuj natureOfGoods, ma być zawsze "Gartenmöbel"
+      // natureOfGoods pozostaje domyślne "Gartenmöbel"
       numberOfPackages: String(totalQty),
       methodOfPacking: 'Kartony',
       // Established in
@@ -731,7 +731,7 @@ export default function DMSPage() {
           .two-col { display: flex; border-bottom: 1px solid currentColor; }
           .col-left { width: 50%; border-right: 1px solid currentColor; }
           .col-right { width: 50%; }
-          .col-thick { border-left: 2px solid currentColor; }
+          .col-thick { border: 2px solid currentColor; border-right: none; border-bottom: none; }
 
           .field { padding: 1.5mm; min-height: 18mm; }
           .field-1 { min-height: 22mm; }
@@ -757,12 +757,12 @@ export default function DMSPage() {
           .adr-label { display: flex; align-items: center; justify-content: center; font-size: 8px; }
 
           .field-14 .checkbox-row { font-size: 7px; margin: 1mm 0; }
-          .field-20 { padding: 0; }
-          .field-20 .field-label { padding: 1.5mm; border-bottom: 1px solid currentColor; }
+          .field-20 { padding: 0; border: 2px solid currentColor; border-right: none; border-bottom: none; }
+          .field-20 .field-label { padding: 1.5mm; border-bottom: 2px solid currentColor; }
           .payment-table { width: 100%; border-collapse: collapse; font-size: 5px; }
           .payment-table th, .payment-table td { border: 1px solid currentColor; padding: 0.5mm 1mm; text-align: left; }
           .payment-table th { font-weight: normal; }
-          .payment-table .total-row { font-weight: bold; }
+          .payment-table .total-row { font-weight: bold; border-top: 2px solid currentColor; }
 
           .field-21 .field-value-inline { display: flex; align-items: flex-end; gap: 3mm; margin-top: 2mm; font-size: 9px; }
           .field-21 .date-label { font-size: 6px; line-height: 1.2; }
@@ -984,7 +984,7 @@ export default function DMSPage() {
       .two-col { display: flex; border-bottom: 1px solid currentColor; }
       .col-left { width: 50%; border-right: 1px solid currentColor; }
       .col-right { width: 50%; }
-      .col-thick { border-left: 2px solid currentColor; }
+      .col-thick { border: 2px solid currentColor; border-right: none; border-bottom: none; }
       .field { padding: 1.5mm; min-height: 16mm; }
       .field-1 { min-height: 20mm; }
       .field-5 { border-bottom: 1px solid currentColor; min-height: 12mm; padding: 1.5mm; }
@@ -1000,11 +1000,11 @@ export default function DMSPage() {
       .adr-cell:last-child { border-right: none; }
       .adr-label { display: flex; align-items: center; justify-content: center; font-size: 8px; }
       .field-14 .checkbox-row { font-size: 7px; margin: 1mm 0; }
-      .field-20 { padding: 0; }
-      .field-20 .field-label { padding: 1.5mm; border-bottom: 1px solid currentColor; }
+      .field-20 { padding: 0; border: 2px solid currentColor; border-right: none; border-bottom: none; }
+      .field-20 .field-label { padding: 1.5mm; border-bottom: 2px solid currentColor; }
       .payment-table { width: 100%; border-collapse: collapse; font-size: 5px; }
       .payment-table th, .payment-table td { border: 1px solid currentColor; padding: 0.5mm 1mm; text-align: left; }
-      .payment-table .total-row { font-weight: bold; }
+      .payment-table .total-row { font-weight: bold; border-top: 2px solid currentColor; }
       .field-21 .field-value-inline { display: flex; align-items: flex-end; gap: 3mm; margin-top: 2mm; font-size: 9px; }
       .field-21 .date-label { font-size: 6px; }
       .signatures-row { display: flex; min-height: 26mm; }
