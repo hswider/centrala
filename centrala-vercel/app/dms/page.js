@@ -39,7 +39,7 @@ export default function DMSPage() {
     loadingPlace: '',
     loadingDate: '',
     // 5. Załączone dokumenty (Documents attached)
-    documents: '',
+    documents: 'PACKING LIST',
     // 6. Cechy i numery (Marks and numbers)
     marksAndNos: '',
     // 7. Ilość sztuk (Number of packages)
@@ -96,7 +96,7 @@ export default function DMSPage() {
       deliveryCountry: '',
       loadingPlace: '',
       loadingDate: '',
-      documents: '',
+      documents: 'PACKING LIST',
       marksAndNos: '',
       numberOfPackages: '',
       methodOfPacking: '',
