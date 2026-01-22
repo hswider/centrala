@@ -705,7 +705,8 @@ export default function DMSPage() {
           .cmr-main { display: flex; border: 1px solid currentColor; }
           .left-margin { width: 6mm; border-right: 1px solid currentColor; padding: 1mm; writing-mode: vertical-rl; transform: rotate(180deg); }
           .margin-text { font-size: 5px; line-height: 1.2; }
-          .cmr-content { flex: 1; }
+          .cmr-content { flex: 1; position: relative; }
+          .cmr-content::before { content: ''; position: absolute; left: 50%; top: 0; bottom: 0; border-left: 1px solid currentColor; z-index: 1; }
 
           .header-row { display: flex; border-bottom: 1px solid currentColor; }
           .header-left { width: 50%; border-right: 1px solid currentColor; }
@@ -971,7 +972,8 @@ export default function DMSPage() {
       .cmr-main { display: flex; border: 1px solid currentColor; }
       .left-margin { width: 6mm; border-right: 1px solid currentColor; padding: 1mm; writing-mode: vertical-rl; transform: rotate(180deg); }
       .margin-text { font-size: 5px; line-height: 1.2; }
-      .cmr-content { flex: 1; }
+      .cmr-content { flex: 1; position: relative; }
+      .cmr-content::before { content: ''; position: absolute; left: 50%; top: 0; bottom: 0; border-left: 1px solid currentColor; z-index: 1; }
       .header-row { display: flex; border-bottom: 1px solid currentColor; }
       .header-left { width: 50%; border-right: 1px solid currentColor; }
       .header-right { width: 50%; padding: 2mm; }
