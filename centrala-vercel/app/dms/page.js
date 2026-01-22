@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 
 export default function DMSPage() {
   const [activeTab, setActiveTab] = useState('generated'); // 'generated' | 'fromOrder' | 'manual'
@@ -10,11 +10,110 @@ export default function DMSPage() {
   const [loading, setLoading] = useState(false);
   const [searched, setSearched] = useState(false);
   const [generatedDocs, setGeneratedDocs] = useState([]);
+  const [docsLoading, setDocsLoading] = useState(true);
   const [docsSearch, setDocsSearch] = useState('');
   const [docsSort, setDocsSort] = useState('date-desc'); // 'date-desc' | 'date-asc' | 'type' | 'customer'
   const [manualDocType, setManualDocType] = useState(null); // null | 'gutekissen-invoice' | 'cmr'
   const [selectedDocType, setSelectedDocType] = useState(null); // for fromOrder tab
+  const [editingDoc, setEditingDoc] = useState(null); // document being edited
   const invoiceRef = useRef(null);
+
+  // Load documents from API on mount
+  useEffect(() => {
+    loadDocuments();
+  }, []);
+
+  const loadDocuments = async () => {
+    try {
+      setDocsLoading(true);
+      const res = await fetch('/api/dms/documents');
+      const data = await res.json();
+      if (data.success) {
+        // Map API response to local format
+        const docs = data.documents.map(doc => ({
+          id: doc.id,
+          docType: doc.doc_type,
+          type: doc.doc_type === 'invoice' ? 'Faktura GuteKissen' : 'CMR',
+          number: doc.doc_number,
+          customer: doc.customer_name,
+          date: doc.created_at,
+          orderId: doc.order_id,
+          total: doc.data?.total || null,
+          currency: doc.data?.currency || 'EUR',
+          data: doc.data,
+          status: doc.status || 'draft'
+        }));
+        setGeneratedDocs(docs);
+      }
+    } catch (error) {
+      console.error('Error loading documents:', error);
+    } finally {
+      setDocsLoading(false);
+    }
+  };
+
+  const saveDocument = async (doc) => {
+    try {
+      const res = await fetch('/api/dms/documents', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          docType: doc.docType,
+          docNumber: doc.number,
+          orderId: doc.orderId,
+          customerName: doc.customer,
+          data: doc.data,
+          status: 'draft'
+        })
+      });
+      const data = await res.json();
+      if (data.success) {
+        // Reload documents to get the saved one with ID
+        await loadDocuments();
+      }
+      return data;
+    } catch (error) {
+      console.error('Error saving document:', error);
+      return { success: false, error: error.message };
+    }
+  };
+
+  const updateDocumentStatus = async (docId, newStatus) => {
+    try {
+      const res = await fetch(`/api/dms/documents/${docId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: newStatus })
+      });
+      const data = await res.json();
+      if (data.success) {
+        setGeneratedDocs(prev => prev.map(doc =>
+          doc.id === docId ? { ...doc, status: newStatus } : doc
+        ));
+      }
+      return data;
+    } catch (error) {
+      console.error('Error updating document:', error);
+      return { success: false, error: error.message };
+    }
+  };
+
+  const deleteDocument = async (docId) => {
+    if (!confirm('Czy na pewno chcesz usunąć ten dokument?')) return;
+    try {
+      const res = await fetch(`/api/dms/documents/${docId}`, {
+        method: 'DELETE'
+      });
+      const data = await res.json();
+      if (data.success) {
+        setGeneratedDocs(prev => prev.filter(doc => doc.id !== docId));
+      }
+      return data;
+    } catch (error) {
+      console.error('Error deleting document:', error);
+      return { success: false, error: error.message };
+    }
+  };
 
   // CMR form state - Nadawca is constant
   const SENDER_CONSTANT = {
@@ -438,7 +537,6 @@ export default function DMSPage() {
 
     // Add to generated docs
     const newDoc = {
-      id: Date.now(),
       type: 'Faktura VAT',
       docType: 'invoice',
       number: invoice.invoiceNumber,
@@ -449,7 +547,7 @@ export default function DMSPage() {
       orderId: selectedOrder?.id || null,
       data: { ...invoice } // Store full invoice data for re-download
     };
-    setGeneratedDocs(prev => [newDoc, ...prev]);
+    saveDocument(newDoc);
   };
 
   const generateCmrPDF = () => {
@@ -789,7 +887,6 @@ export default function DMSPage() {
 
     // Add to generated docs
     const newDoc = {
-      id: Date.now(),
       type: 'CMR',
       docType: 'cmr',
       number: cmr.registrationNumber || 'CMR-' + Date.now(),
@@ -800,7 +897,7 @@ export default function DMSPage() {
       orderId: selectedOrder?.id || null,
       data: { ...cmr } // Store full CMR data for re-download
     };
-    setGeneratedDocs(prev => [newDoc, ...prev]);
+    saveDocument(newDoc);
   };
 
   // Re-download a previously generated document
@@ -1510,7 +1607,14 @@ export default function DMSPage() {
                 )}
               </div>
             </div>
-            {generatedDocs.length === 0 ? (
+            {docsLoading ? (
+              <div className="p-12 text-center">
+                <div className="inline-block w-8 h-8 border-2 border-blue-600 border-t-transparent rounded-full animate-spin mb-3"></div>
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-1">
+                  Ładowanie dokumentów...
+                </h3>
+              </div>
+            ) : generatedDocs.length === 0 ? (
               <div className="p-12 text-center">
                 <div className="text-4xl mb-3">📄</div>
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-1">
@@ -1583,6 +1687,17 @@ export default function DMSPage() {
                               {doc.type}
                             </span>
                             <span className="text-sm font-medium text-gray-900 dark:text-white truncate">{doc.number}</span>
+                            <span className={`px-2 py-0.5 text-xs font-medium rounded ${
+                              doc.status === 'sent' ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300' :
+                              doc.status === 'completed' ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300' :
+                              doc.status === 'cancelled' ? 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300' :
+                              'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300'
+                            }`}>
+                              {doc.status === 'draft' ? 'Wersja robocza' :
+                               doc.status === 'sent' ? 'Wysłany' :
+                               doc.status === 'completed' ? 'Zakończony' :
+                               doc.status === 'cancelled' ? 'Anulowany' : doc.status}
+                            </span>
                           </div>
                           <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
                             {doc.customer || 'Brak klienta'} • {formatDatePL(doc.date)}
@@ -1590,17 +1705,52 @@ export default function DMSPage() {
                           </p>
                         </div>
                       </div>
-                      <div className="flex items-center gap-3 flex-shrink-0">
+                      <div className="flex items-center gap-2 flex-shrink-0">
                         {doc.total !== null && (
-                          <p className="text-sm font-bold text-gray-900 dark:text-white">
+                          <p className="text-sm font-bold text-gray-900 dark:text-white mr-2">
                             {formatCurrency(doc.total, doc.currency)}
                           </p>
                         )}
+                        <select
+                          value={doc.status || 'draft'}
+                          onChange={(e) => updateDocumentStatus(doc.id, e.target.value)}
+                          className="px-2 py-1 text-xs border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300"
+                        >
+                          <option value="draft">Wersja robocza</option>
+                          <option value="sent">Wysłany</option>
+                          <option value="completed">Zakończony</option>
+                          <option value="cancelled">Anulowany</option>
+                        </select>
+                        <button
+                          onClick={() => {
+                            if (doc.docType === 'cmr' && doc.data) {
+                              setCmr(doc.data);
+                              setActiveTab('manual');
+                              setManualDocType('cmr');
+                            } else if (doc.docType === 'invoice' && doc.data) {
+                              setInvoice(doc.data);
+                              setActiveTab('manual');
+                              setManualDocType('gutekissen-invoice');
+                            }
+                          }}
+                          className="px-2 py-1.5 text-xs font-medium bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-300 rounded-lg hover:bg-yellow-200 dark:hover:bg-yellow-900/50"
+                          title="Edytuj"
+                        >
+                          ✏️
+                        </button>
                         <button
                           onClick={() => redownloadDocument(doc)}
-                          className="px-3 py-1.5 text-xs font-medium bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded-lg hover:bg-blue-200 dark:hover:bg-blue-900/50 flex items-center gap-1"
+                          className="px-2 py-1.5 text-xs font-medium bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded-lg hover:bg-blue-200 dark:hover:bg-blue-900/50"
+                          title="Pobierz"
                         >
-                          <span>📥</span> Pobierz
+                          📥
+                        </button>
+                        <button
+                          onClick={() => deleteDocument(doc.id)}
+                          className="px-2 py-1.5 text-xs font-medium bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 rounded-lg hover:bg-red-200 dark:hover:bg-red-900/50"
+                          title="Usuń"
+                        >
+                          🗑️
                         </button>
                       </div>
                     </div>
