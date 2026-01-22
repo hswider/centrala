@@ -727,7 +727,7 @@ export default function DMSPage() {
           .field-5 { border-bottom: 1px solid currentColor; min-height: 14mm; padding: 1.5mm; }
           .field-label { font-size: 6px; line-height: 1.2; margin-bottom: 1mm; }
           .field-num { font-weight: bold; font-size: 8px; }
-          .field-value { font-size: 9px; line-height: 1.3; margin-top: 1mm; }
+          .field-value { font-size: 9px; line-height: 1.3; margin-top: 1mm; color: black !important; }
 
           .goods-row { display: flex; border-bottom: 1px solid currentColor; min-height: 32mm; }
           .goods-cell { border-right: 1px solid currentColor; padding: 1.5mm; background: white; position: relative; z-index: 2; }
@@ -986,7 +986,7 @@ export default function DMSPage() {
       .field-5 { border-bottom: 1px solid currentColor; min-height: 12mm; padding: 1.5mm; }
       .field-label { font-size: 6px; line-height: 1.2; margin-bottom: 1mm; }
       .field-num { font-weight: bold; font-size: 8px; }
-      .field-value { font-size: 9px; line-height: 1.3; margin-top: 1mm; }
+      .field-value { font-size: 9px; line-height: 1.3; margin-top: 1mm; color: black !important; }
       .goods-row { display: flex; border-bottom: 1px solid currentColor; min-height: 28mm; }
       .goods-cell { border-right: 1px solid currentColor; padding: 1.5mm; background: white; position: relative; z-index: 2; }
       .goods-cell:last-child { border-right: none; }
