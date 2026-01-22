@@ -10,6 +10,7 @@ export default function DMSPage() {
   const [loading, setLoading] = useState(false);
   const [searched, setSearched] = useState(false);
   const [generatedDocs, setGeneratedDocs] = useState([]);
+  const [manualDocType, setManualDocType] = useState(null); // null | 'gutekissen-invoice' | ...
   const invoiceRef = useRef(null);
 
   // Invoice form state
@@ -574,7 +575,7 @@ export default function DMSPage() {
             <span>📦</span> Wygeneruj z zamowienia
           </button>
           <button
-            onClick={() => { setActiveTab('manual'); resetInvoice(); }}
+            onClick={() => { setActiveTab('manual'); setManualDocType(null); }}
             className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors flex items-center gap-2 ${
               activeTab === 'manual'
                 ? 'bg-blue-600 text-white'
@@ -767,7 +768,78 @@ export default function DMSPage() {
         )}
 
         {/* Tab: Manual */}
-        {activeTab === 'manual' && invoiceFormJSX}
+        {activeTab === 'manual' && (
+          <>
+            {!manualDocType ? (
+              <div className="bg-white dark:bg-gray-800 rounded-lg shadow dark:shadow-gray-900 p-6">
+                <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Wybierz typ dokumentu</h2>
+                <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">Wybierz szablon dokumentu do wygenerowania ręcznie</p>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {/* GuteKissen Invoice */}
+                  <button
+                    onClick={() => { setManualDocType('gutekissen-invoice'); resetInvoice(); }}
+                    className="p-4 border-2 border-gray-200 dark:border-gray-700 rounded-lg hover:border-green-500 dark:hover:border-green-500 hover:bg-green-50 dark:hover:bg-green-900/20 transition-colors text-left group"
+                  >
+                    <div className="flex items-center gap-3 mb-3">
+                      <img src="/icons/gutekissen.png" alt="GuteKissen" className="w-10 h-10 rounded-full" />
+                      <div>
+                        <h3 className="font-semibold text-gray-900 dark:text-white group-hover:text-green-700 dark:group-hover:text-green-400">Faktura VAT</h3>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">GuteKissen</p>
+                      </div>
+                    </div>
+                    <p className="text-xs text-gray-600 dark:text-gray-400">
+                      Rechnung - faktura w języku niemieckim dla sklepu GuteKissen
+                    </p>
+                  </button>
+
+                  {/* Placeholder for future document types */}
+                  <div className="p-4 border-2 border-dashed border-gray-200 dark:border-gray-700 rounded-lg opacity-50">
+                    <div className="flex items-center gap-3 mb-3">
+                      <div className="w-10 h-10 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
+                        <span className="text-gray-400">📄</span>
+                      </div>
+                      <div>
+                        <h3 className="font-semibold text-gray-400">List przewozowy</h3>
+                        <p className="text-xs text-gray-400">Wkrótce</p>
+                      </div>
+                    </div>
+                    <p className="text-xs text-gray-400">
+                      Dokument przewozowy dla przesyłek
+                    </p>
+                  </div>
+
+                  <div className="p-4 border-2 border-dashed border-gray-200 dark:border-gray-700 rounded-lg opacity-50">
+                    <div className="flex items-center gap-3 mb-3">
+                      <div className="w-10 h-10 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
+                        <span className="text-gray-400">🏷️</span>
+                      </div>
+                      <div>
+                        <h3 className="font-semibold text-gray-400">Etykieta wysyłkowa</h3>
+                        <p className="text-xs text-gray-400">Wkrótce</p>
+                      </div>
+                    </div>
+                    <p className="text-xs text-gray-400">
+                      Etykieta adresowa na przesyłkę
+                    </p>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <>
+                <div className="mb-4">
+                  <button
+                    onClick={() => setManualDocType(null)}
+                    className="px-3 py-1.5 text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600"
+                  >
+                    ← Wróć do wyboru dokumentu
+                  </button>
+                </div>
+                {manualDocType === 'gutekissen-invoice' && invoiceFormJSX}
+              </>
+            )}
+          </>
+        )}
       </main>
     </div>
   );
