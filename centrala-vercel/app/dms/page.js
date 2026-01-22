@@ -696,7 +696,7 @@ export default function DMSPage() {
           @media print { .cmr-page { page-break-after: always; } .cmr-page:last-child { page-break-after: avoid; } }
           html, body { font-family: Arial, sans-serif; font-size: 6px; }
 
-          .cmr-page { width: 210mm; min-height: 297mm; padding: 15mm 18mm 5mm 18mm; }
+          .cmr-page { width: 210mm; height: 297mm; padding: 8mm 10mm 5mm 10mm; box-sizing: border-box; overflow: hidden; }
           .copy-title { display: flex; align-items: flex-start; margin-bottom: 1mm; }
           .copy-num { font-size: 24px; font-weight: bold; margin-right: 3mm; }
           .copy-text { font-size: 7px; line-height: 1.3; }
@@ -963,7 +963,7 @@ export default function DMSPage() {
       @page { size: A4; margin: 0; }
       @media print { .cmr-page { page-break-after: always; } .cmr-page:last-child { page-break-after: avoid; } }
       html, body { font-family: Arial, sans-serif; font-size: 6px; }
-      .cmr-page { width: 210mm; min-height: 297mm; padding: 15mm 18mm 5mm 18mm; }
+      .cmr-page { width: 210mm; height: 297mm; padding: 8mm 10mm 5mm 10mm; box-sizing: border-box; overflow: hidden; }
       .copy-title { display: flex; align-items: flex-start; margin-bottom: 1mm; }
       .copy-num { font-size: 24px; font-weight: bold; margin-right: 3mm; }
       .copy-text { font-size: 7px; line-height: 1.3; }
