@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef } from 'react';
+import { jsPDF } from 'jspdf';
 
 export default function DMSPage() {
   const [activeTab, setActiveTab] = useState('generated'); // 'generated' | 'fromOrder' | 'manual'
@@ -341,86 +342,8 @@ export default function DMSPage() {
   };
 
   const generatePDF = () => {
-    const printWindow = window.open('', '_blank');
-
-    printWindow.document.write(`
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <title>Rechnung ${invoice.invoiceNumber}</title>
-        <style>
-          * { margin: 0; padding: 0; box-sizing: border-box; }
-          body { font-family: 'Segoe UI', Arial, sans-serif; padding: 40px; color: #333; font-size: 12px; }
-          .invoice-header { display: flex; justify-content: space-between; margin-bottom: 40px; }
-          .logo { font-size: 24px; font-weight: bold; color: #2d5a27; }
-          .invoice-title { font-size: 28px; font-weight: 300; color: #333; margin-bottom: 20px; }
-          .parties { display: flex; gap: 60px; margin-bottom: 30px; }
-          .party { flex: 1; }
-          .party-title { font-weight: 600; margin-bottom: 10px; color: #555; font-size: 11px; text-transform: uppercase; }
-          .party-name { font-weight: 600; font-size: 14px; margin-bottom: 5px; }
-          .party-detail { color: #666; margin-bottom: 3px; }
-          .invoice-meta { display: flex; gap: 30px; margin-bottom: 30px; padding: 15px; background: #f8f9fa; border-radius: 4px; }
-          .meta-item { }
-          .meta-label { font-size: 10px; color: #666; text-transform: uppercase; }
-          .meta-value { font-weight: 600; }
-          .items-table { width: 100%; border-collapse: collapse; margin-bottom: 30px; }
-          .items-table th { text-align: left; padding: 10px; border-bottom: 2px solid #ddd; font-size: 10px; text-transform: uppercase; color: #666; }
-          .items-table td { padding: 12px 10px; border-bottom: 1px solid #eee; }
-          .items-table .amount { text-align: right; }
-          .totals { margin-left: auto; width: 250px; }
-          .total-row { display: flex; justify-content: space-between; padding: 8px 0; }
-          .total-row.final { font-weight: bold; font-size: 16px; border-top: 2px solid #333; margin-top: 10px; padding-top: 15px; }
-          .notes { margin-top: 40px; padding: 15px; background: #f8f9fa; border-radius: 4px; }
-          .notes-title { font-weight: 600; margin-bottom: 8px; }
-          .footer { margin-top: 60px; text-align: center; color: #999; font-size: 10px; }
-          @media print { body { padding: 20px; } @page { margin: 1cm; } }
-        </style>
-      </head>
-      <body>
-        <div class="invoice-header">
-          <div class="invoice-title">Rechnung</div>
-          <div><div class="logo">gutekissen</div></div>
-        </div>
-        <div class="parties">
-          <div class="party">
-            <div class="party-title">Von</div>
-            <div class="party-name">${invoice.sellerName}</div>
-            <div class="party-detail">${invoice.sellerEmail}</div>
-            <div class="party-detail">${invoice.sellerAddress}</div>
-            ${invoice.sellerPhone ? `<div class="party-detail">Tel: ${invoice.sellerPhone}</div>` : ''}
-            <div class="party-detail">USt-IdNr: ${invoice.sellerTaxId}</div>
-          </div>
-          <div class="party">
-            <div class="party-title">Rechnungsempfänger</div>
-            <div class="party-name">${invoice.buyerName}</div>
-            ${invoice.buyerEmail ? `<div class="party-detail">${invoice.buyerEmail}</div>` : ''}
-            <div class="party-detail">${invoice.buyerAddress}</div>
-            ${invoice.buyerPhone ? `<div class="party-detail">Tel: ${invoice.buyerPhone}</div>` : ''}
-          </div>
-        </div>
-        <div class="invoice-meta">
-          <div class="meta-item"><div class="meta-label">Rechnungsnr.</div><div class="meta-value">${invoice.invoiceNumber}</div></div>
-          <div class="meta-item"><div class="meta-label">Datum</div><div class="meta-value">${formatDateDE(invoice.invoiceDate)}</div></div>
-          <div class="meta-item"><div class="meta-label">Zahlungsbedingungen</div><div class="meta-value">${invoice.paymentTerms}</div></div>
-        </div>
-        <table class="items-table">
-          <thead><tr><th style="width: 50%">Beschreibung</th><th class="amount">Einzelpreis</th><th class="amount">Menge</th><th class="amount">Betrag</th></tr></thead>
-          <tbody>${invoice.items.map(item => `<tr><td>${item.description}</td><td class="amount">${formatCurrency(item.unitPrice, invoice.currency)}</td><td class="amount">${item.quantity}</td><td class="amount">${formatCurrency(item.total, invoice.currency)}</td></tr>`).join('')}</tbody>
-        </table>
-        <div class="totals">
-          <div class="total-row"><span>Zwischensumme</span><span>${formatCurrency(invoice.subtotal, invoice.currency)}</span></div>
-          <div class="total-row"><span>MwSt. (${invoice.taxRate}%)</span><span>inkl. ${formatCurrency(invoice.taxAmount, invoice.currency)}</span></div>
-          <div class="total-row final"><span>Gesamtbetrag</span><span>${formatCurrency(invoice.total, invoice.currency)}</span></div>
-        </div>
-        ${invoice.notes ? `<div class="notes"><div class="notes-title">Anmerkungen</div><div>${invoice.notes}</div></div>` : ''}
-        <div class="footer">GuteKissen • ${invoice.sellerAddress} • ${invoice.sellerEmail}</div>
-      </body>
-      </html>
-    `);
-
-    printWindow.document.close();
-    printWindow.focus();
-    setTimeout(() => { printWindow.print(); }, 250);
+    // Use jsPDF for direct download
+    generatePDFFromData(invoice);
 
     // Add to generated docs
     const newDoc = {
@@ -439,246 +362,8 @@ export default function DMSPage() {
   };
 
   const generateCmrPDF = () => {
-    const printWindow = window.open('', '_blank');
-    printWindow.document.write(`
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <title>CMR - List Przewozowy</title>
-        <style>
-          * { margin: 0; padding: 0; box-sizing: border-box; }
-          @page { size: A4; margin: 0; }
-          html, body { width: 210mm; height: 297mm; }
-          body { font-family: Arial, sans-serif; font-size: 8px; color: #000; }
-          .cmr-page { width: 210mm; height: 297mm; padding: 5mm; display: flex; flex-direction: column; }
-          .cmr-container { border: 1px solid #000; flex: 1; display: flex; flex-direction: column; }
-
-          /* Header */
-          .cmr-header { display: flex; border-bottom: 1px solid #000; min-height: 20mm; }
-          .cmr-header-left { flex: 1; padding: 2mm; font-size: 7px; }
-          .cmr-header-right { width: 50mm; padding: 2mm; display: flex; flex-direction: column; align-items: center; justify-content: center; border-left: 1px solid #000; }
-          .cmr-title { font-size: 6px; text-align: center; margin-bottom: 2mm; }
-          .cmr-box { font-size: 18px; font-weight: bold; border: 2px solid #000; padding: 2mm 8mm; }
-          .cmr-legal { font-size: 5px; margin-top: 2mm; text-align: center; }
-
-          /* Two column layout */
-          .two-col { display: flex; border-bottom: 1px solid #000; }
-          .col-left { width: 50%; border-right: 1px solid #000; }
-          .col-right { width: 50%; }
-
-          /* Cells */
-          .cell { padding: 1.5mm; min-height: 18mm; border-bottom: 1px solid #000; position: relative; }
-          .cell:last-child { border-bottom: none; }
-          .cell-label { font-size: 6px; color: #000; margin-bottom: 1mm; }
-          .cell-num { font-weight: bold; font-size: 8px; margin-right: 2px; }
-          .cell-value { font-size: 9px; white-space: pre-wrap; line-height: 1.3; }
-
-          /* Registration number */
-          .reg-row { text-align: center; padding: 3mm; border-bottom: 1px solid #000; font-size: 14px; font-weight: bold; }
-
-          /* Goods row */
-          .goods-row { display: flex; border-bottom: 1px solid #000; min-height: 25mm; }
-          .goods-cell { border-right: 1px solid #000; padding: 1.5mm; }
-          .goods-cell:last-child { border-right: none; }
-          .gc1 { width: 12%; }
-          .gc2 { width: 10%; }
-          .gc3 { width: 12%; }
-          .gc4 { width: 26%; }
-          .gc5 { width: 10%; }
-          .gc6 { width: 15%; }
-          .gc7 { width: 15%; }
-
-          /* Payment table */
-          .payment-table { font-size: 7px; width: 100%; }
-          .payment-table td { padding: 1mm 0; border-bottom: 1px solid #ccc; }
-          .payment-table tr:last-child td { border-bottom: none; font-weight: bold; }
-
-          /* Signatures */
-          .signatures-row { display: flex; min-height: 25mm; }
-          .sig-cell { flex: 1; border-right: 1px solid #000; padding: 1.5mm; }
-          .sig-cell:last-child { border-right: none; }
-
-          /* Footer */
-          .cmr-footer { font-size: 5px; text-align: center; padding: 1mm; color: #666; }
-
-          @media print {
-            body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-          }
-        </style>
-      </head>
-      <body>
-        <div class="cmr-page">
-          <div class="cmr-container">
-            <!-- Header -->
-            <div class="cmr-header">
-              <div class="cmr-header-left">
-                <div style="font-size: 8px; font-weight: bold; margin-bottom: 2mm;">MIĘDZYNARODOWY SAMOCHODOWY LIST PRZEWOZOWY</div>
-                <div style="font-size: 6px;">INTERNATIONALER FRACHTBRIEF / INTERNATIONAL CONSIGNMENT</div>
-              </div>
-              <div class="cmr-header-right">
-                <div class="cmr-box">CMR</div>
-                <div class="cmr-legal" style="font-size: 5px; margin-top: 2mm; max-width: 45mm;">
-                  Niniejszy przewóz podlega postanowieniom Konwencji o umowie międzynarodowej przewozu drogowego towarów (CMR)
-                </div>
-              </div>
-            </div>
-
-            <!-- Row 1-2 / 16-17 -->
-            <div class="two-col">
-              <div class="col-left">
-                <div class="cell">
-                  <div class="cell-label"><span class="cell-num">1</span> Nadawca (nazwisko lub nazwa, adres, kraj) / Absender / Sender</div>
-                  <div class="cell-value">${cmr.senderName}<br/>${cmr.senderAddress}<br/>${cmr.senderCountry}</div>
-                </div>
-                <div class="cell">
-                  <div class="cell-label"><span class="cell-num">2</span> Odbiorca (nazwisko lub nazwa, adres, kraj) / Empfänger / Consignee</div>
-                  <div class="cell-value">${cmr.consigneeName}<br/>${cmr.consigneeAddress}<br/>${cmr.consigneeCountry}</div>
-                </div>
-              </div>
-              <div class="col-right">
-                <div class="cell">
-                  <div class="cell-label"><span class="cell-num">16</span> Przewoźnik (nazwisko lub nazwa, adres, kraj) / Frachtführer / Carrier</div>
-                  <div class="cell-value">${cmr.carrierName}<br/>${cmr.carrierAddress}<br/>${cmr.carrierCountry}</div>
-                </div>
-                <div class="cell">
-                  <div class="cell-label"><span class="cell-num">17</span> Kolejni przewoźnicy / Nachfolgende Frachtführer / Successive carriers</div>
-                  <div class="cell-value">${cmr.successiveCarriers}</div>
-                </div>
-              </div>
-            </div>
-
-            <!-- NR REJ -->
-            <div class="reg-row">NR REJ.: ${cmr.registrationNumber}</div>
-
-            <!-- Row 3-5 / 18-20 -->
-            <div class="two-col">
-              <div class="col-left">
-                <div class="cell" style="min-height: 12mm;">
-                  <div class="cell-label"><span class="cell-num">3</span> Miejsce przeznaczenia (miejscowość, kraj) / Auslieferungsort / Place of delivery</div>
-                  <div class="cell-value">${cmr.deliveryPlace}${cmr.deliveryCountry ? ', ' + cmr.deliveryCountry : ''}</div>
-                </div>
-                <div class="cell" style="min-height: 12mm;">
-                  <div class="cell-label"><span class="cell-num">4</span> Miejsce i data załadowania (Ort, Land, Datum) / Place and date of loading</div>
-                  <div class="cell-value">${cmr.loadingPlace}<br/>${cmr.loadingDate}</div>
-                </div>
-                <div class="cell" style="min-height: 12mm;">
-                  <div class="cell-label"><span class="cell-num">5</span> Załączone dokumenty / Beigefügte Dokumente / Documents attached</div>
-                  <div class="cell-value">${cmr.documents}</div>
-                </div>
-              </div>
-              <div class="col-right">
-                <div class="cell" style="min-height: 12mm;">
-                  <div class="cell-label"><span class="cell-num">18</span> Zastrzeżenia i uwagi przewoźnika / Vorbehalte des Frachtführers / Carrier's reservations</div>
-                  <div class="cell-value">${cmr.carrierReservations}</div>
-                </div>
-                <div class="cell" style="min-height: 12mm;">
-                  <div class="cell-label"><span class="cell-num">19</span> Postanowienia specjalne / Besondere Vereinbarungen / Special agreements</div>
-                  <div class="cell-value">${cmr.specialAgreements}</div>
-                </div>
-                <div class="cell" style="min-height: 12mm;">
-                  <div class="cell-label"><span class="cell-num">20</span> Do zapłacenia / Zu zahlen / To be paid by</div>
-                  <table class="payment-table">
-                    <tr><td>Przewoźne / Fracht</td><td style="text-align:right;">${cmr.carriageCharges}</td></tr>
-                    <tr><td>Bonifikaty / Ermäßigungen</td><td style="text-align:right;">${cmr.deductions}</td></tr>
-                    <tr><td>Saldo / Balance</td><td style="text-align:right;">${cmr.balance}</td></tr>
-                    <tr><td>Dopłaty / Zuschläge</td><td style="text-align:right;">${cmr.supplements}</td></tr>
-                    <tr><td>Inne / Sonstige</td><td style="text-align:right;">${cmr.otherCharges}</td></tr>
-                    <tr><td>Razem / Gesamt</td><td style="text-align:right;">${cmr.totalToPay}</td></tr>
-                  </table>
-                </div>
-              </div>
-            </div>
-
-            <!-- Row 6-12 Goods -->
-            <div class="goods-row">
-              <div class="goods-cell gc1">
-                <div class="cell-label"><span class="cell-num">6</span> Cechy i numery / Kennzeichen / Marks and Nos</div>
-                <div class="cell-value">${cmr.marksAndNos}</div>
-              </div>
-              <div class="goods-cell gc2">
-                <div class="cell-label"><span class="cell-num">7</span> Ilość sztuk / Anzahl / Number of packages</div>
-                <div class="cell-value">${cmr.numberOfPackages}</div>
-              </div>
-              <div class="goods-cell gc3">
-                <div class="cell-label"><span class="cell-num">8</span> Sposób opakowania / Art der Verpackung / Method of packing</div>
-                <div class="cell-value">${cmr.methodOfPacking}</div>
-              </div>
-              <div class="goods-cell gc4">
-                <div class="cell-label"><span class="cell-num">9</span> Rodzaj towaru / Bezeichnung des Gutes / Nature of the goods</div>
-                <div class="cell-value">${cmr.natureOfGoods}</div>
-              </div>
-              <div class="goods-cell gc5">
-                <div class="cell-label"><span class="cell-num">10</span> Nr statyst. / Stat. Nr</div>
-                <div class="cell-value">${cmr.statisticalNumber}</div>
-              </div>
-              <div class="goods-cell gc6">
-                <div class="cell-label"><span class="cell-num">11</span> Waga brutto kg / Bruttogewicht</div>
-                <div class="cell-value">${cmr.grossWeight}</div>
-              </div>
-              <div class="goods-cell gc7">
-                <div class="cell-label"><span class="cell-num">12</span> Objętość m³ / Umfang</div>
-                <div class="cell-value">${cmr.volume}</div>
-              </div>
-            </div>
-
-            <!-- Row 13/15 -->
-            <div class="two-col">
-              <div class="col-left">
-                <div class="cell" style="min-height: 15mm;">
-                  <div class="cell-label"><span class="cell-num">13</span> Instrukcje nadawcy / Anweisungen des Absenders / Sender's instructions</div>
-                  <div class="cell-value">${cmr.senderInstructions}</div>
-                </div>
-              </div>
-              <div class="col-right">
-                <div class="cell" style="min-height: 15mm;">
-                  <div class="cell-label"><span class="cell-num">15</span> Zapłata / Rückerstattung / Cash on delivery</div>
-                  <div class="cell-value">${cmr.cashOnDelivery}</div>
-                </div>
-              </div>
-            </div>
-
-            <!-- Row 14/21 -->
-            <div class="two-col">
-              <div class="col-left">
-                <div class="cell" style="min-height: 15mm;">
-                  <div class="cell-label"><span class="cell-num">14</span> Postanowienia odnośnie przewoźnego / Frachtzahlungsanweisungen / Payment instructions</div>
-                  <div class="cell-value">${cmr.paymentInstructions}</div>
-                </div>
-              </div>
-              <div class="col-right">
-                <div class="cell" style="min-height: 15mm;">
-                  <div class="cell-label"><span class="cell-num">21</span> Wystawiono w / Ausgestellt in / Established in</div>
-                  <div class="cell-value">${cmr.establishedIn}<br/>dnia ${cmr.establishedDate}</div>
-                </div>
-              </div>
-            </div>
-
-            <!-- Signatures 22-24 -->
-            <div class="signatures-row">
-              <div class="sig-cell">
-                <div class="cell-label"><span class="cell-num">22</span> Podpis i stempel nadawcy / Unterschrift des Absenders / Signature of sender</div>
-              </div>
-              <div class="sig-cell">
-                <div class="cell-label"><span class="cell-num">23</span> Podpis i stempel przewoźnika / Unterschrift des Frachtführers / Signature of carrier</div>
-              </div>
-              <div class="sig-cell">
-                <div class="cell-label"><span class="cell-num">24</span> Przesyłkę otrzymano / Gut empfangen / Goods received</div>
-                <div class="cell-value" style="margin-top: 10mm;">Miejscowość / Ort: _________________ dnia / am: _________</div>
-              </div>
-            </div>
-
-            <div class="cmr-footer">
-              Wzór CMR / IRU / Polska z 1978 dla międzynarodowych przewozów drogowych odpowiada ustaleniom, które zostały dokonane przez Międzynarodową Unię Transportu Drogowego /IRU/
-            </div>
-          </div>
-        </div>
-      </body>
-      </html>
-    `);
-
-    printWindow.document.close();
-    printWindow.focus();
-    setTimeout(() => { printWindow.print(); }, 250);
+    // Use jsPDF for direct download
+    generateCmrPDFFromData(cmr);
 
     // Add to generated docs
     const newDoc = {
@@ -699,204 +384,274 @@ export default function DMSPage() {
   // Re-download a previously generated document
   const redownloadDocument = (doc) => {
     if (doc.docType === 'invoice') {
-      // Temporarily set invoice state and generate PDF
-      const savedInvoice = invoice;
-      setInvoice(doc.data);
-      setTimeout(() => {
-        generatePDFFromData(doc.data);
-        setInvoice(savedInvoice);
-      }, 100);
+      generatePDFFromData(doc.data);
     } else if (doc.docType === 'cmr') {
       generateCmrPDFFromData(doc.data);
     }
   };
 
-  // Generate invoice PDF from stored data
+  // Generate invoice PDF from stored data - direct download
   const generatePDFFromData = (invoiceData) => {
-    const printWindow = window.open('', '_blank');
-    printWindow.document.write(`
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <title>Rechnung ${invoiceData.invoiceNumber}</title>
-        <style>
-          * { margin: 0; padding: 0; box-sizing: border-box; }
-          body { font-family: 'Segoe UI', Arial, sans-serif; padding: 40px; color: #333; font-size: 12px; }
-          .invoice-header { display: flex; justify-content: space-between; margin-bottom: 40px; }
-          .logo { font-size: 24px; font-weight: bold; color: #2d5a27; }
-          .invoice-title { font-size: 28px; font-weight: 300; color: #333; margin-bottom: 20px; }
-          .parties { display: flex; gap: 60px; margin-bottom: 30px; }
-          .party { flex: 1; }
-          .party-title { font-weight: 600; margin-bottom: 10px; color: #555; font-size: 11px; text-transform: uppercase; }
-          .party-name { font-weight: 600; font-size: 14px; margin-bottom: 5px; }
-          .party-detail { color: #666; margin-bottom: 3px; }
-          .invoice-meta { display: flex; gap: 30px; margin-bottom: 30px; padding: 15px; background: #f8f9fa; border-radius: 4px; }
-          .meta-item { }
-          .meta-label { font-size: 10px; color: #666; text-transform: uppercase; }
-          .meta-value { font-weight: 600; }
-          .items-table { width: 100%; border-collapse: collapse; margin-bottom: 30px; }
-          .items-table th { text-align: left; padding: 10px; border-bottom: 2px solid #ddd; font-size: 10px; text-transform: uppercase; color: #666; }
-          .items-table td { padding: 12px 10px; border-bottom: 1px solid #eee; }
-          .items-table .amount { text-align: right; }
-          .totals { margin-left: auto; width: 250px; }
-          .total-row { display: flex; justify-content: space-between; padding: 8px 0; }
-          .total-row.final { font-weight: bold; font-size: 16px; border-top: 2px solid #333; margin-top: 10px; padding-top: 15px; }
-          .notes { margin-top: 40px; padding: 15px; background: #f8f9fa; border-radius: 4px; }
-          .notes-title { font-weight: 600; margin-bottom: 8px; }
-          .footer { margin-top: 60px; text-align: center; color: #999; font-size: 10px; }
-          @media print { body { padding: 20px; } @page { margin: 1cm; } }
-        </style>
-      </head>
-      <body>
-        <div class="invoice-header">
-          <div class="invoice-title">Rechnung</div>
-          <div><div class="logo">gutekissen</div></div>
-        </div>
-        <div class="parties">
-          <div class="party">
-            <div class="party-title">Von</div>
-            <div class="party-name">${invoiceData.sellerName}</div>
-            <div class="party-detail">${invoiceData.sellerEmail}</div>
-            <div class="party-detail">${invoiceData.sellerAddress}</div>
-            ${invoiceData.sellerPhone ? `<div class="party-detail">Tel: ${invoiceData.sellerPhone}</div>` : ''}
-            <div class="party-detail">USt-IdNr: ${invoiceData.sellerTaxId}</div>
-          </div>
-          <div class="party">
-            <div class="party-title">Rechnungsempfänger</div>
-            <div class="party-name">${invoiceData.buyerName}</div>
-            ${invoiceData.buyerEmail ? `<div class="party-detail">${invoiceData.buyerEmail}</div>` : ''}
-            <div class="party-detail">${invoiceData.buyerAddress}</div>
-            ${invoiceData.buyerPhone ? `<div class="party-detail">Tel: ${invoiceData.buyerPhone}</div>` : ''}
-          </div>
-        </div>
-        <div class="invoice-meta">
-          <div class="meta-item"><div class="meta-label">Rechnungsnr.</div><div class="meta-value">${invoiceData.invoiceNumber}</div></div>
-          <div class="meta-item"><div class="meta-label">Datum</div><div class="meta-value">${formatDateDE(invoiceData.invoiceDate)}</div></div>
-          <div class="meta-item"><div class="meta-label">Zahlungsbedingungen</div><div class="meta-value">${invoiceData.paymentTerms}</div></div>
-        </div>
-        <table class="items-table">
-          <thead><tr><th style="width: 50%">Beschreibung</th><th class="amount">Einzelpreis</th><th class="amount">Menge</th><th class="amount">Betrag</th></tr></thead>
-          <tbody>${invoiceData.items.map(item => `<tr><td>${item.description}</td><td class="amount">${formatCurrency(item.unitPrice, invoiceData.currency)}</td><td class="amount">${item.quantity}</td><td class="amount">${formatCurrency(item.total, invoiceData.currency)}</td></tr>`).join('')}</tbody>
-        </table>
-        <div class="totals">
-          <div class="total-row"><span>Zwischensumme</span><span>${formatCurrency(invoiceData.subtotal, invoiceData.currency)}</span></div>
-          <div class="total-row"><span>MwSt. (${invoiceData.taxRate}%)</span><span>inkl. ${formatCurrency(invoiceData.taxAmount, invoiceData.currency)}</span></div>
-          <div class="total-row final"><span>Gesamtbetrag</span><span>${formatCurrency(invoiceData.total, invoiceData.currency)}</span></div>
-        </div>
-        ${invoiceData.notes ? `<div class="notes"><div class="notes-title">Anmerkungen</div><div>${invoiceData.notes}</div></div>` : ''}
-        <div class="footer">GuteKissen • ${invoiceData.sellerAddress} • ${invoiceData.sellerEmail}</div>
-      </body>
-      </html>
-    `);
-    printWindow.document.close();
-    printWindow.focus();
-    setTimeout(() => { printWindow.print(); }, 250);
+    const doc = new jsPDF();
+    const pageWidth = doc.internal.pageSize.getWidth();
+    let y = 20;
+
+    // Header
+    doc.setFontSize(24);
+    doc.setTextColor(51, 51, 51);
+    doc.text('Rechnung', 20, y);
+    doc.setFontSize(18);
+    doc.setTextColor(45, 90, 39);
+    doc.text('gutekissen', pageWidth - 20, y, { align: 'right' });
+    y += 20;
+
+    // Seller info
+    doc.setFontSize(8);
+    doc.setTextColor(100);
+    doc.text('VON', 20, y);
+    doc.text('RECHNUNGSEMPFÄNGER', 110, y);
+    y += 6;
+    doc.setFontSize(11);
+    doc.setTextColor(51);
+    doc.text(invoiceData.sellerName || '', 20, y);
+    doc.text(invoiceData.buyerName || '', 110, y);
+    y += 5;
+    doc.setFontSize(9);
+    doc.setTextColor(100);
+    doc.text(invoiceData.sellerEmail || '', 20, y);
+    if (invoiceData.buyerEmail) doc.text(invoiceData.buyerEmail, 110, y);
+    y += 5;
+    doc.text(invoiceData.sellerAddress || '', 20, y);
+    doc.text(invoiceData.buyerAddress || '', 110, y);
+    y += 5;
+    if (invoiceData.sellerPhone) { doc.text(`Tel: ${invoiceData.sellerPhone}`, 20, y); y += 5; }
+    doc.text(`USt-IdNr: ${invoiceData.sellerTaxId || ''}`, 20, y);
+    y += 15;
+
+    // Invoice meta
+    doc.setFillColor(248, 249, 250);
+    doc.rect(20, y - 3, pageWidth - 40, 14, 'F');
+    doc.setFontSize(7);
+    doc.setTextColor(100);
+    doc.text('RECHNUNGSNR.', 25, y + 2);
+    doc.text('DATUM', 70, y + 2);
+    doc.text('ZAHLUNGSBEDINGUNGEN', 115, y + 2);
+    doc.setFontSize(10);
+    doc.setTextColor(51);
+    doc.text(invoiceData.invoiceNumber || '', 25, y + 8);
+    doc.text(formatDateDE(invoiceData.invoiceDate), 70, y + 8);
+    doc.text(invoiceData.paymentTerms || '', 115, y + 8);
+    y += 22;
+
+    // Table header
+    doc.setFontSize(8);
+    doc.setTextColor(100);
+    doc.text('BESCHREIBUNG', 20, y);
+    doc.text('EINZELPREIS', 120, y);
+    doc.text('MENGE', 150, y);
+    doc.text('BETRAG', 175, y);
+    y += 2;
+    doc.setDrawColor(200);
+    doc.line(20, y, pageWidth - 20, y);
+    y += 6;
+
+    // Items
+    doc.setFontSize(9);
+    doc.setTextColor(51);
+    (invoiceData.items || []).forEach(item => {
+      const desc = doc.splitTextToSize(item.description || '', 90);
+      doc.text(desc, 20, y);
+      doc.text(formatCurrency(item.unitPrice, invoiceData.currency), 120, y);
+      doc.text(String(item.quantity), 150, y);
+      doc.text(formatCurrency(item.total, invoiceData.currency), 175, y);
+      y += desc.length * 5 + 3;
+      doc.setDrawColor(230);
+      doc.line(20, y - 2, pageWidth - 20, y - 2);
+    });
+    y += 8;
+
+    // Totals
+    doc.setFontSize(9);
+    doc.text('Zwischensumme', 130, y);
+    doc.text(formatCurrency(invoiceData.subtotal, invoiceData.currency), 175, y);
+    y += 6;
+    doc.text(`MwSt. (${invoiceData.taxRate}%)`, 130, y);
+    doc.text(`inkl. ${formatCurrency(invoiceData.taxAmount, invoiceData.currency)}`, 175, y);
+    y += 8;
+    doc.setDrawColor(51);
+    doc.line(130, y - 2, pageWidth - 20, y - 2);
+    doc.setFontSize(12);
+    doc.setFont(undefined, 'bold');
+    doc.text('Gesamtbetrag', 130, y + 4);
+    doc.text(formatCurrency(invoiceData.total, invoiceData.currency), 175, y + 4);
+    doc.setFont(undefined, 'normal');
+    y += 15;
+
+    // Notes
+    if (invoiceData.notes) {
+      doc.setFillColor(248, 249, 250);
+      doc.rect(20, y, pageWidth - 40, 20, 'F');
+      doc.setFontSize(9);
+      doc.setFont(undefined, 'bold');
+      doc.text('Anmerkungen', 25, y + 6);
+      doc.setFont(undefined, 'normal');
+      doc.text(invoiceData.notes, 25, y + 12);
+    }
+
+    // Footer
+    doc.setFontSize(8);
+    doc.setTextColor(150);
+    doc.text(`GuteKissen • ${invoiceData.sellerAddress} • ${invoiceData.sellerEmail}`, pageWidth / 2, 285, { align: 'center' });
+
+    // Download
+    doc.save(`Rechnung_${invoiceData.invoiceNumber || 'dokument'}.pdf`);
   };
 
-  // Generate CMR PDF from stored data
+  // Generate CMR PDF from stored data - direct download
   const generateCmrPDFFromData = (cmrData) => {
-    const printWindow = window.open('', '_blank');
-    printWindow.document.write(`
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <title>CMR - List Przewozowy</title>
-        <style>
-          * { margin: 0; padding: 0; box-sizing: border-box; }
-          @page { size: A4; margin: 0; }
-          html, body { width: 210mm; height: 297mm; }
-          body { font-family: Arial, sans-serif; font-size: 8px; color: #000; }
-          .cmr-page { width: 210mm; height: 297mm; padding: 5mm; display: flex; flex-direction: column; }
-          .cmr-container { border: 1px solid #000; flex: 1; display: flex; flex-direction: column; }
-          .cmr-header { display: flex; border-bottom: 1px solid #000; min-height: 20mm; }
-          .cmr-header-left { flex: 1; padding: 2mm; font-size: 7px; }
-          .cmr-header-right { width: 50mm; padding: 2mm; display: flex; flex-direction: column; align-items: center; justify-content: center; border-left: 1px solid #000; }
-          .cmr-box { font-size: 18px; font-weight: bold; border: 2px solid #000; padding: 2mm 8mm; }
-          .two-col { display: flex; border-bottom: 1px solid #000; }
-          .col-left { width: 50%; border-right: 1px solid #000; }
-          .col-right { width: 50%; }
-          .cell { padding: 1.5mm; min-height: 18mm; border-bottom: 1px solid #000; }
-          .cell:last-child { border-bottom: none; }
-          .cell-label { font-size: 6px; margin-bottom: 1mm; }
-          .cell-num { font-weight: bold; font-size: 8px; margin-right: 2px; }
-          .cell-value { font-size: 9px; white-space: pre-wrap; line-height: 1.3; }
-          .reg-row { text-align: center; padding: 3mm; border-bottom: 1px solid #000; font-size: 14px; font-weight: bold; }
-          .goods-row { display: flex; border-bottom: 1px solid #000; min-height: 25mm; }
-          .goods-cell { border-right: 1px solid #000; padding: 1.5mm; }
-          .goods-cell:last-child { border-right: none; }
-          .gc1 { width: 12%; } .gc2 { width: 10%; } .gc3 { width: 12%; } .gc4 { width: 26%; } .gc5 { width: 10%; } .gc6 { width: 15%; } .gc7 { width: 15%; }
-          .payment-table { font-size: 7px; width: 100%; }
-          .payment-table td { padding: 1mm 0; border-bottom: 1px solid #ccc; }
-          .signatures-row { display: flex; min-height: 25mm; }
-          .sig-cell { flex: 1; border-right: 1px solid #000; padding: 1.5mm; }
-          .sig-cell:last-child { border-right: none; }
-          .cmr-footer { font-size: 5px; text-align: center; padding: 1mm; color: #666; }
-        </style>
-      </head>
-      <body>
-        <div class="cmr-page">
-          <div class="cmr-container">
-            <div class="cmr-header">
-              <div class="cmr-header-left">
-                <div style="font-size: 8px; font-weight: bold; margin-bottom: 2mm;">MIĘDZYNARODOWY SAMOCHODOWY LIST PRZEWOZOWY</div>
-                <div style="font-size: 6px;">INTERNATIONALER FRACHTBRIEF / INTERNATIONAL CONSIGNMENT</div>
-              </div>
-              <div class="cmr-header-right"><div class="cmr-box">CMR</div></div>
-            </div>
-            <div class="two-col">
-              <div class="col-left">
-                <div class="cell"><div class="cell-label"><span class="cell-num">1</span> Nadawca</div><div class="cell-value">${cmrData.senderName}<br/>${cmrData.senderAddress}<br/>${cmrData.senderCountry}</div></div>
-                <div class="cell"><div class="cell-label"><span class="cell-num">2</span> Odbiorca</div><div class="cell-value">${cmrData.consigneeName}<br/>${cmrData.consigneeAddress}<br/>${cmrData.consigneeCountry}</div></div>
-              </div>
-              <div class="col-right">
-                <div class="cell"><div class="cell-label"><span class="cell-num">16</span> Przewoźnik</div><div class="cell-value">${cmrData.carrierName}<br/>${cmrData.carrierAddress}<br/>${cmrData.carrierCountry}</div></div>
-                <div class="cell"><div class="cell-label"><span class="cell-num">17</span> Kolejni przewoźnicy</div><div class="cell-value">${cmrData.successiveCarriers}</div></div>
-              </div>
-            </div>
-            <div class="reg-row">NR REJ.: ${cmrData.registrationNumber}</div>
-            <div class="two-col">
-              <div class="col-left">
-                <div class="cell" style="min-height:12mm;"><div class="cell-label"><span class="cell-num">3</span> Miejsce przeznaczenia</div><div class="cell-value">${cmrData.deliveryPlace}${cmrData.deliveryCountry ? ', ' + cmrData.deliveryCountry : ''}</div></div>
-                <div class="cell" style="min-height:12mm;"><div class="cell-label"><span class="cell-num">4</span> Miejsce i data załadowania</div><div class="cell-value">${cmrData.loadingPlace}<br/>${cmrData.loadingDate}</div></div>
-                <div class="cell" style="min-height:12mm;"><div class="cell-label"><span class="cell-num">5</span> Załączone dokumenty</div><div class="cell-value">${cmrData.documents}</div></div>
-              </div>
-              <div class="col-right">
-                <div class="cell" style="min-height:12mm;"><div class="cell-label"><span class="cell-num">18</span> Zastrzeżenia przewoźnika</div><div class="cell-value">${cmrData.carrierReservations}</div></div>
-                <div class="cell" style="min-height:12mm;"><div class="cell-label"><span class="cell-num">19</span> Postanowienia specjalne</div><div class="cell-value">${cmrData.specialAgreements}</div></div>
-                <div class="cell" style="min-height:12mm;"><div class="cell-label"><span class="cell-num">20</span> Do zapłacenia</div><table class="payment-table"><tr><td>Przewoźne</td><td>${cmrData.carriageCharges}</td></tr><tr><td>Razem</td><td><strong>${cmrData.totalToPay}</strong></td></tr></table></div>
-              </div>
-            </div>
-            <div class="goods-row">
-              <div class="goods-cell gc1"><div class="cell-label"><span class="cell-num">6</span> Cechy</div><div class="cell-value">${cmrData.marksAndNos}</div></div>
-              <div class="goods-cell gc2"><div class="cell-label"><span class="cell-num">7</span> Ilość</div><div class="cell-value">${cmrData.numberOfPackages}</div></div>
-              <div class="goods-cell gc3"><div class="cell-label"><span class="cell-num">8</span> Opakowanie</div><div class="cell-value">${cmrData.methodOfPacking}</div></div>
-              <div class="goods-cell gc4"><div class="cell-label"><span class="cell-num">9</span> Rodzaj towaru</div><div class="cell-value">${cmrData.natureOfGoods}</div></div>
-              <div class="goods-cell gc5"><div class="cell-label"><span class="cell-num">10</span> Nr stat.</div><div class="cell-value">${cmrData.statisticalNumber}</div></div>
-              <div class="goods-cell gc6"><div class="cell-label"><span class="cell-num">11</span> Waga kg</div><div class="cell-value">${cmrData.grossWeight}</div></div>
-              <div class="goods-cell gc7"><div class="cell-label"><span class="cell-num">12</span> m³</div><div class="cell-value">${cmrData.volume}</div></div>
-            </div>
-            <div class="two-col">
-              <div class="col-left"><div class="cell" style="min-height:15mm;"><div class="cell-label"><span class="cell-num">13</span> Instrukcje nadawcy</div><div class="cell-value">${cmrData.senderInstructions}</div></div></div>
-              <div class="col-right"><div class="cell" style="min-height:15mm;"><div class="cell-label"><span class="cell-num">15</span> Zapłata</div><div class="cell-value">${cmrData.cashOnDelivery}</div></div></div>
-            </div>
-            <div class="two-col">
-              <div class="col-left"><div class="cell" style="min-height:15mm;"><div class="cell-label"><span class="cell-num">14</span> Postanowienia o przewoźnym</div><div class="cell-value">${cmrData.paymentInstructions}</div></div></div>
-              <div class="col-right"><div class="cell" style="min-height:15mm;"><div class="cell-label"><span class="cell-num">21</span> Wystawiono w</div><div class="cell-value">${cmrData.establishedIn}<br/>dnia ${cmrData.establishedDate}</div></div></div>
-            </div>
-            <div class="signatures-row">
-              <div class="sig-cell"><div class="cell-label"><span class="cell-num">22</span> Podpis nadawcy</div></div>
-              <div class="sig-cell"><div class="cell-label"><span class="cell-num">23</span> Podpis przewoźnika</div></div>
-              <div class="sig-cell"><div class="cell-label"><span class="cell-num">24</span> Przesyłkę otrzymano</div><div class="cell-value" style="margin-top:10mm;">Miejscowość: _________ dnia: _____</div></div>
-            </div>
-            <div class="cmr-footer">Wzór CMR / IRU / Polska z 1978</div>
-          </div>
-        </div>
-      </body>
-      </html>
-    `);
-    printWindow.document.close();
-    printWindow.focus();
-    setTimeout(() => { printWindow.print(); }, 250);
+    const doc = new jsPDF();
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const pageHeight = doc.internal.pageSize.getHeight();
+    const margin = 10;
+    const colWidth = (pageWidth - 2 * margin) / 2;
+    let y = margin;
+
+    // Helper for drawing cells
+    const drawCell = (x, yPos, w, h, num, label, value) => {
+      doc.setDrawColor(0);
+      doc.rect(x, yPos, w, h);
+      doc.setFontSize(6);
+      doc.setTextColor(0);
+      doc.setFont(undefined, 'bold');
+      doc.text(`${num}`, x + 2, yPos + 4);
+      doc.setFont(undefined, 'normal');
+      doc.text(label, x + 6, yPos + 4);
+      doc.setFontSize(8);
+      const lines = doc.splitTextToSize(value || '', w - 4);
+      doc.text(lines, x + 2, yPos + 9);
+    };
+
+    // Header
+    doc.setDrawColor(0);
+    doc.rect(margin, y, pageWidth - 2 * margin, 18);
+    doc.setFontSize(9);
+    doc.setFont(undefined, 'bold');
+    doc.text('MIEDZYNARODOWY SAMOCHODOWY LIST PRZEWOZOWY', margin + 3, y + 6);
+    doc.setFont(undefined, 'normal');
+    doc.setFontSize(6);
+    doc.text('INTERNATIONALER FRACHTBRIEF / INTERNATIONAL CONSIGNMENT', margin + 3, y + 11);
+    // CMR box
+    doc.setLineWidth(0.5);
+    doc.rect(pageWidth - margin - 35, y + 3, 30, 12);
+    doc.setFontSize(14);
+    doc.setFont(undefined, 'bold');
+    doc.text('CMR', pageWidth - margin - 20, y + 11, { align: 'center' });
+    doc.setLineWidth(0.2);
+    doc.setFont(undefined, 'normal');
+    y += 18;
+
+    // Row 1: Sender (1) | Carrier (16)
+    const row1H = 22;
+    drawCell(margin, y, colWidth, row1H, '1', 'Nadawca', `${cmrData.senderName || ''}\n${cmrData.senderAddress || ''}\n${cmrData.senderCountry || ''}`);
+    drawCell(margin + colWidth, y, colWidth, row1H, '16', 'Przewoznik', `${cmrData.carrierName || ''}\n${cmrData.carrierAddress || ''}\n${cmrData.carrierCountry || ''}`);
+    y += row1H;
+
+    // Row 2: Consignee (2) | Successive carriers (17)
+    const row2H = 22;
+    drawCell(margin, y, colWidth, row2H, '2', 'Odbiorca', `${cmrData.consigneeName || ''}\n${cmrData.consigneeAddress || ''}\n${cmrData.consigneeCountry || ''}`);
+    drawCell(margin + colWidth, y, colWidth, row2H, '17', 'Kolejni przewoznicy', cmrData.successiveCarriers || '');
+    y += row2H;
+
+    // Registration number row
+    doc.rect(margin, y, pageWidth - 2 * margin, 10);
+    doc.setFontSize(12);
+    doc.setFont(undefined, 'bold');
+    doc.text(`NR REJ.: ${cmrData.registrationNumber || ''}`, pageWidth / 2, y + 7, { align: 'center' });
+    doc.setFont(undefined, 'normal');
+    y += 10;
+
+    // Row 3: Delivery place (3) | Carrier reservations (18)
+    const row3H = 15;
+    drawCell(margin, y, colWidth, row3H, '3', 'Miejsce przeznaczenia', `${cmrData.deliveryPlace || ''}${cmrData.deliveryCountry ? ', ' + cmrData.deliveryCountry : ''}`);
+    drawCell(margin + colWidth, y, colWidth, row3H, '18', 'Zastrzezenia przewoznika', cmrData.carrierReservations || '');
+    y += row3H;
+
+    // Row 4: Loading place (4) | Special agreements (19)
+    const row4H = 15;
+    drawCell(margin, y, colWidth, row4H, '4', 'Miejsce i data zaladowania', `${cmrData.loadingPlace || ''}\n${cmrData.loadingDate || ''}`);
+    drawCell(margin + colWidth, y, colWidth, row4H, '19', 'Postanowienia specjalne', cmrData.specialAgreements || '');
+    y += row4H;
+
+    // Row 5: Documents (5) | Payment (20)
+    const row5H = 15;
+    drawCell(margin, y, colWidth, row5H, '5', 'Zalaczone dokumenty', cmrData.documents || '');
+    doc.rect(margin + colWidth, y, colWidth, row5H);
+    doc.setFontSize(6);
+    doc.text('20', margin + colWidth + 2, y + 4);
+    doc.text('Do zaplacenia', margin + colWidth + 6, y + 4);
+    doc.setFontSize(7);
+    doc.text(`Przewozne: ${cmrData.carriageCharges || ''}`, margin + colWidth + 3, y + 9);
+    doc.setFont(undefined, 'bold');
+    doc.text(`Razem: ${cmrData.totalToPay || ''}`, margin + colWidth + 3, y + 13);
+    doc.setFont(undefined, 'normal');
+    y += row5H;
+
+    // Goods row (6-12)
+    const goodsH = 25;
+    const gcWidths = [0.12, 0.10, 0.12, 0.26, 0.10, 0.15, 0.15];
+    const gcLabels = [['6', 'Cechy'], ['7', 'Ilosc'], ['8', 'Opakowanie'], ['9', 'Rodzaj towaru'], ['10', 'Nr stat.'], ['11', 'Waga kg'], ['12', 'm³']];
+    const gcValues = [cmrData.marksAndNos, cmrData.numberOfPackages, cmrData.methodOfPacking, cmrData.natureOfGoods, cmrData.statisticalNumber, cmrData.grossWeight, cmrData.volume];
+    let gx = margin;
+    const totalW = pageWidth - 2 * margin;
+    gcWidths.forEach((wPct, i) => {
+      const w = totalW * wPct;
+      doc.rect(gx, y, w, goodsH);
+      doc.setFontSize(5);
+      doc.text(gcLabels[i][0], gx + 1, y + 3);
+      doc.text(gcLabels[i][1], gx + 4, y + 3);
+      doc.setFontSize(7);
+      const lines = doc.splitTextToSize(gcValues[i] || '', w - 2);
+      doc.text(lines, gx + 1, y + 8);
+      gx += w;
+    });
+    y += goodsH;
+
+    // Row: Instructions (13) | Payment (15)
+    const row6H = 15;
+    drawCell(margin, y, colWidth, row6H, '13', 'Instrukcje nadawcy', cmrData.senderInstructions || '');
+    drawCell(margin + colWidth, y, colWidth, row6H, '15', 'Zaplata', cmrData.cashOnDelivery || '');
+    y += row6H;
+
+    // Row: Payment instructions (14) | Established (21)
+    const row7H = 15;
+    drawCell(margin, y, colWidth, row7H, '14', 'Postanowienia o przewoznym', cmrData.paymentInstructions || '');
+    drawCell(margin + colWidth, y, colWidth, row7H, '21', 'Wystawiono w', `${cmrData.establishedIn || ''}\ndnia ${cmrData.establishedDate || ''}`);
+    y += row7H;
+
+    // Signatures row (22, 23, 24)
+    const sigH = 25;
+    const sigW = (pageWidth - 2 * margin) / 3;
+    doc.rect(margin, y, sigW, sigH);
+    doc.setFontSize(6);
+    doc.text('22', margin + 2, y + 4);
+    doc.text('Podpis nadawcy', margin + 6, y + 4);
+    doc.rect(margin + sigW, y, sigW, sigH);
+    doc.text('23', margin + sigW + 2, y + 4);
+    doc.text('Podpis przewoznika', margin + sigW + 6, y + 4);
+    doc.rect(margin + 2 * sigW, y, sigW, sigH);
+    doc.text('24', margin + 2 * sigW + 2, y + 4);
+    doc.text('Przesylke otrzymano', margin + 2 * sigW + 6, y + 4);
+    doc.setFontSize(7);
+    doc.text('Miejscowosc: _______ dnia: _____', margin + 2 * sigW + 3, y + 18);
+    y += sigH;
+
+    // Footer
+    doc.setFontSize(5);
+    doc.setTextColor(100);
+    doc.text('Wzor CMR / IRU / Polska z 1978', pageWidth / 2, y + 4, { align: 'center' });
+
+    // Download
+    doc.save(`CMR_${cmrData.registrationNumber || 'dokument'}.pdf`);
   };
 
   const getStatusBadge = (order) => {
