@@ -10,6 +10,8 @@ export default function DMSPage() {
   const [loading, setLoading] = useState(false);
   const [searched, setSearched] = useState(false);
   const [generatedDocs, setGeneratedDocs] = useState([]);
+  const [docsSearch, setDocsSearch] = useState('');
+  const [docsSort, setDocsSort] = useState('date-desc'); // 'date-desc' | 'date-asc' | 'type' | 'customer'
   const [manualDocType, setManualDocType] = useState(null); // null | 'gutekissen-invoice' | 'cmr'
   const [selectedDocType, setSelectedDocType] = useState(null); // for fromOrder tab
   const invoiceRef = useRef(null);
@@ -423,13 +425,15 @@ export default function DMSPage() {
     // Add to generated docs
     const newDoc = {
       id: Date.now(),
-      type: 'Rechnung',
+      type: 'Faktura VAT',
+      docType: 'invoice',
       number: invoice.invoiceNumber,
       date: invoice.invoiceDate,
       customer: invoice.buyerName,
       total: invoice.total,
       currency: invoice.currency,
-      orderId: selectedOrder?.id || null
+      orderId: selectedOrder?.id || null,
+      data: { ...invoice } // Store full invoice data for re-download
     };
     setGeneratedDocs(prev => [newDoc, ...prev]);
   };
@@ -680,14 +684,219 @@ export default function DMSPage() {
     const newDoc = {
       id: Date.now(),
       type: 'CMR',
+      docType: 'cmr',
       number: cmr.registrationNumber || 'CMR-' + Date.now(),
       date: cmr.establishedDate,
       customer: cmr.consigneeName,
       total: null,
       currency: null,
-      orderId: selectedOrder?.id || null
+      orderId: selectedOrder?.id || null,
+      data: { ...cmr } // Store full CMR data for re-download
     };
     setGeneratedDocs(prev => [newDoc, ...prev]);
+  };
+
+  // Re-download a previously generated document
+  const redownloadDocument = (doc) => {
+    if (doc.docType === 'invoice') {
+      // Temporarily set invoice state and generate PDF
+      const savedInvoice = invoice;
+      setInvoice(doc.data);
+      setTimeout(() => {
+        generatePDFFromData(doc.data);
+        setInvoice(savedInvoice);
+      }, 100);
+    } else if (doc.docType === 'cmr') {
+      generateCmrPDFFromData(doc.data);
+    }
+  };
+
+  // Generate invoice PDF from stored data
+  const generatePDFFromData = (invoiceData) => {
+    const printWindow = window.open('', '_blank');
+    printWindow.document.write(`
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>Rechnung ${invoiceData.invoiceNumber}</title>
+        <style>
+          * { margin: 0; padding: 0; box-sizing: border-box; }
+          body { font-family: 'Segoe UI', Arial, sans-serif; padding: 40px; color: #333; font-size: 12px; }
+          .invoice-header { display: flex; justify-content: space-between; margin-bottom: 40px; }
+          .logo { font-size: 24px; font-weight: bold; color: #2d5a27; }
+          .invoice-title { font-size: 28px; font-weight: 300; color: #333; margin-bottom: 20px; }
+          .parties { display: flex; gap: 60px; margin-bottom: 30px; }
+          .party { flex: 1; }
+          .party-title { font-weight: 600; margin-bottom: 10px; color: #555; font-size: 11px; text-transform: uppercase; }
+          .party-name { font-weight: 600; font-size: 14px; margin-bottom: 5px; }
+          .party-detail { color: #666; margin-bottom: 3px; }
+          .invoice-meta { display: flex; gap: 30px; margin-bottom: 30px; padding: 15px; background: #f8f9fa; border-radius: 4px; }
+          .meta-item { }
+          .meta-label { font-size: 10px; color: #666; text-transform: uppercase; }
+          .meta-value { font-weight: 600; }
+          .items-table { width: 100%; border-collapse: collapse; margin-bottom: 30px; }
+          .items-table th { text-align: left; padding: 10px; border-bottom: 2px solid #ddd; font-size: 10px; text-transform: uppercase; color: #666; }
+          .items-table td { padding: 12px 10px; border-bottom: 1px solid #eee; }
+          .items-table .amount { text-align: right; }
+          .totals { margin-left: auto; width: 250px; }
+          .total-row { display: flex; justify-content: space-between; padding: 8px 0; }
+          .total-row.final { font-weight: bold; font-size: 16px; border-top: 2px solid #333; margin-top: 10px; padding-top: 15px; }
+          .notes { margin-top: 40px; padding: 15px; background: #f8f9fa; border-radius: 4px; }
+          .notes-title { font-weight: 600; margin-bottom: 8px; }
+          .footer { margin-top: 60px; text-align: center; color: #999; font-size: 10px; }
+          @media print { body { padding: 20px; } @page { margin: 1cm; } }
+        </style>
+      </head>
+      <body>
+        <div class="invoice-header">
+          <div class="invoice-title">Rechnung</div>
+          <div><div class="logo">gutekissen</div></div>
+        </div>
+        <div class="parties">
+          <div class="party">
+            <div class="party-title">Von</div>
+            <div class="party-name">${invoiceData.sellerName}</div>
+            <div class="party-detail">${invoiceData.sellerEmail}</div>
+            <div class="party-detail">${invoiceData.sellerAddress}</div>
+            ${invoiceData.sellerPhone ? `<div class="party-detail">Tel: ${invoiceData.sellerPhone}</div>` : ''}
+            <div class="party-detail">USt-IdNr: ${invoiceData.sellerTaxId}</div>
+          </div>
+          <div class="party">
+            <div class="party-title">Rechnungsempfänger</div>
+            <div class="party-name">${invoiceData.buyerName}</div>
+            ${invoiceData.buyerEmail ? `<div class="party-detail">${invoiceData.buyerEmail}</div>` : ''}
+            <div class="party-detail">${invoiceData.buyerAddress}</div>
+            ${invoiceData.buyerPhone ? `<div class="party-detail">Tel: ${invoiceData.buyerPhone}</div>` : ''}
+          </div>
+        </div>
+        <div class="invoice-meta">
+          <div class="meta-item"><div class="meta-label">Rechnungsnr.</div><div class="meta-value">${invoiceData.invoiceNumber}</div></div>
+          <div class="meta-item"><div class="meta-label">Datum</div><div class="meta-value">${formatDateDE(invoiceData.invoiceDate)}</div></div>
+          <div class="meta-item"><div class="meta-label">Zahlungsbedingungen</div><div class="meta-value">${invoiceData.paymentTerms}</div></div>
+        </div>
+        <table class="items-table">
+          <thead><tr><th style="width: 50%">Beschreibung</th><th class="amount">Einzelpreis</th><th class="amount">Menge</th><th class="amount">Betrag</th></tr></thead>
+          <tbody>${invoiceData.items.map(item => `<tr><td>${item.description}</td><td class="amount">${formatCurrency(item.unitPrice, invoiceData.currency)}</td><td class="amount">${item.quantity}</td><td class="amount">${formatCurrency(item.total, invoiceData.currency)}</td></tr>`).join('')}</tbody>
+        </table>
+        <div class="totals">
+          <div class="total-row"><span>Zwischensumme</span><span>${formatCurrency(invoiceData.subtotal, invoiceData.currency)}</span></div>
+          <div class="total-row"><span>MwSt. (${invoiceData.taxRate}%)</span><span>inkl. ${formatCurrency(invoiceData.taxAmount, invoiceData.currency)}</span></div>
+          <div class="total-row final"><span>Gesamtbetrag</span><span>${formatCurrency(invoiceData.total, invoiceData.currency)}</span></div>
+        </div>
+        ${invoiceData.notes ? `<div class="notes"><div class="notes-title">Anmerkungen</div><div>${invoiceData.notes}</div></div>` : ''}
+        <div class="footer">GuteKissen • ${invoiceData.sellerAddress} • ${invoiceData.sellerEmail}</div>
+      </body>
+      </html>
+    `);
+    printWindow.document.close();
+    printWindow.focus();
+    setTimeout(() => { printWindow.print(); }, 250);
+  };
+
+  // Generate CMR PDF from stored data
+  const generateCmrPDFFromData = (cmrData) => {
+    const printWindow = window.open('', '_blank');
+    printWindow.document.write(`
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>CMR - List Przewozowy</title>
+        <style>
+          * { margin: 0; padding: 0; box-sizing: border-box; }
+          @page { size: A4; margin: 0; }
+          html, body { width: 210mm; height: 297mm; }
+          body { font-family: Arial, sans-serif; font-size: 8px; color: #000; }
+          .cmr-page { width: 210mm; height: 297mm; padding: 5mm; display: flex; flex-direction: column; }
+          .cmr-container { border: 1px solid #000; flex: 1; display: flex; flex-direction: column; }
+          .cmr-header { display: flex; border-bottom: 1px solid #000; min-height: 20mm; }
+          .cmr-header-left { flex: 1; padding: 2mm; font-size: 7px; }
+          .cmr-header-right { width: 50mm; padding: 2mm; display: flex; flex-direction: column; align-items: center; justify-content: center; border-left: 1px solid #000; }
+          .cmr-box { font-size: 18px; font-weight: bold; border: 2px solid #000; padding: 2mm 8mm; }
+          .two-col { display: flex; border-bottom: 1px solid #000; }
+          .col-left { width: 50%; border-right: 1px solid #000; }
+          .col-right { width: 50%; }
+          .cell { padding: 1.5mm; min-height: 18mm; border-bottom: 1px solid #000; }
+          .cell:last-child { border-bottom: none; }
+          .cell-label { font-size: 6px; margin-bottom: 1mm; }
+          .cell-num { font-weight: bold; font-size: 8px; margin-right: 2px; }
+          .cell-value { font-size: 9px; white-space: pre-wrap; line-height: 1.3; }
+          .reg-row { text-align: center; padding: 3mm; border-bottom: 1px solid #000; font-size: 14px; font-weight: bold; }
+          .goods-row { display: flex; border-bottom: 1px solid #000; min-height: 25mm; }
+          .goods-cell { border-right: 1px solid #000; padding: 1.5mm; }
+          .goods-cell:last-child { border-right: none; }
+          .gc1 { width: 12%; } .gc2 { width: 10%; } .gc3 { width: 12%; } .gc4 { width: 26%; } .gc5 { width: 10%; } .gc6 { width: 15%; } .gc7 { width: 15%; }
+          .payment-table { font-size: 7px; width: 100%; }
+          .payment-table td { padding: 1mm 0; border-bottom: 1px solid #ccc; }
+          .signatures-row { display: flex; min-height: 25mm; }
+          .sig-cell { flex: 1; border-right: 1px solid #000; padding: 1.5mm; }
+          .sig-cell:last-child { border-right: none; }
+          .cmr-footer { font-size: 5px; text-align: center; padding: 1mm; color: #666; }
+        </style>
+      </head>
+      <body>
+        <div class="cmr-page">
+          <div class="cmr-container">
+            <div class="cmr-header">
+              <div class="cmr-header-left">
+                <div style="font-size: 8px; font-weight: bold; margin-bottom: 2mm;">MIĘDZYNARODOWY SAMOCHODOWY LIST PRZEWOZOWY</div>
+                <div style="font-size: 6px;">INTERNATIONALER FRACHTBRIEF / INTERNATIONAL CONSIGNMENT</div>
+              </div>
+              <div class="cmr-header-right"><div class="cmr-box">CMR</div></div>
+            </div>
+            <div class="two-col">
+              <div class="col-left">
+                <div class="cell"><div class="cell-label"><span class="cell-num">1</span> Nadawca</div><div class="cell-value">${cmrData.senderName}<br/>${cmrData.senderAddress}<br/>${cmrData.senderCountry}</div></div>
+                <div class="cell"><div class="cell-label"><span class="cell-num">2</span> Odbiorca</div><div class="cell-value">${cmrData.consigneeName}<br/>${cmrData.consigneeAddress}<br/>${cmrData.consigneeCountry}</div></div>
+              </div>
+              <div class="col-right">
+                <div class="cell"><div class="cell-label"><span class="cell-num">16</span> Przewoźnik</div><div class="cell-value">${cmrData.carrierName}<br/>${cmrData.carrierAddress}<br/>${cmrData.carrierCountry}</div></div>
+                <div class="cell"><div class="cell-label"><span class="cell-num">17</span> Kolejni przewoźnicy</div><div class="cell-value">${cmrData.successiveCarriers}</div></div>
+              </div>
+            </div>
+            <div class="reg-row">NR REJ.: ${cmrData.registrationNumber}</div>
+            <div class="two-col">
+              <div class="col-left">
+                <div class="cell" style="min-height:12mm;"><div class="cell-label"><span class="cell-num">3</span> Miejsce przeznaczenia</div><div class="cell-value">${cmrData.deliveryPlace}${cmrData.deliveryCountry ? ', ' + cmrData.deliveryCountry : ''}</div></div>
+                <div class="cell" style="min-height:12mm;"><div class="cell-label"><span class="cell-num">4</span> Miejsce i data załadowania</div><div class="cell-value">${cmrData.loadingPlace}<br/>${cmrData.loadingDate}</div></div>
+                <div class="cell" style="min-height:12mm;"><div class="cell-label"><span class="cell-num">5</span> Załączone dokumenty</div><div class="cell-value">${cmrData.documents}</div></div>
+              </div>
+              <div class="col-right">
+                <div class="cell" style="min-height:12mm;"><div class="cell-label"><span class="cell-num">18</span> Zastrzeżenia przewoźnika</div><div class="cell-value">${cmrData.carrierReservations}</div></div>
+                <div class="cell" style="min-height:12mm;"><div class="cell-label"><span class="cell-num">19</span> Postanowienia specjalne</div><div class="cell-value">${cmrData.specialAgreements}</div></div>
+                <div class="cell" style="min-height:12mm;"><div class="cell-label"><span class="cell-num">20</span> Do zapłacenia</div><table class="payment-table"><tr><td>Przewoźne</td><td>${cmrData.carriageCharges}</td></tr><tr><td>Razem</td><td><strong>${cmrData.totalToPay}</strong></td></tr></table></div>
+              </div>
+            </div>
+            <div class="goods-row">
+              <div class="goods-cell gc1"><div class="cell-label"><span class="cell-num">6</span> Cechy</div><div class="cell-value">${cmrData.marksAndNos}</div></div>
+              <div class="goods-cell gc2"><div class="cell-label"><span class="cell-num">7</span> Ilość</div><div class="cell-value">${cmrData.numberOfPackages}</div></div>
+              <div class="goods-cell gc3"><div class="cell-label"><span class="cell-num">8</span> Opakowanie</div><div class="cell-value">${cmrData.methodOfPacking}</div></div>
+              <div class="goods-cell gc4"><div class="cell-label"><span class="cell-num">9</span> Rodzaj towaru</div><div class="cell-value">${cmrData.natureOfGoods}</div></div>
+              <div class="goods-cell gc5"><div class="cell-label"><span class="cell-num">10</span> Nr stat.</div><div class="cell-value">${cmrData.statisticalNumber}</div></div>
+              <div class="goods-cell gc6"><div class="cell-label"><span class="cell-num">11</span> Waga kg</div><div class="cell-value">${cmrData.grossWeight}</div></div>
+              <div class="goods-cell gc7"><div class="cell-label"><span class="cell-num">12</span> m³</div><div class="cell-value">${cmrData.volume}</div></div>
+            </div>
+            <div class="two-col">
+              <div class="col-left"><div class="cell" style="min-height:15mm;"><div class="cell-label"><span class="cell-num">13</span> Instrukcje nadawcy</div><div class="cell-value">${cmrData.senderInstructions}</div></div></div>
+              <div class="col-right"><div class="cell" style="min-height:15mm;"><div class="cell-label"><span class="cell-num">15</span> Zapłata</div><div class="cell-value">${cmrData.cashOnDelivery}</div></div></div>
+            </div>
+            <div class="two-col">
+              <div class="col-left"><div class="cell" style="min-height:15mm;"><div class="cell-label"><span class="cell-num">14</span> Postanowienia o przewoźnym</div><div class="cell-value">${cmrData.paymentInstructions}</div></div></div>
+              <div class="col-right"><div class="cell" style="min-height:15mm;"><div class="cell-label"><span class="cell-num">21</span> Wystawiono w</div><div class="cell-value">${cmrData.establishedIn}<br/>dnia ${cmrData.establishedDate}</div></div></div>
+            </div>
+            <div class="signatures-row">
+              <div class="sig-cell"><div class="cell-label"><span class="cell-num">22</span> Podpis nadawcy</div></div>
+              <div class="sig-cell"><div class="cell-label"><span class="cell-num">23</span> Podpis przewoźnika</div></div>
+              <div class="sig-cell"><div class="cell-label"><span class="cell-num">24</span> Przesyłkę otrzymano</div><div class="cell-value" style="margin-top:10mm;">Miejscowość: _________ dnia: _____</div></div>
+            </div>
+            <div class="cmr-footer">Wzór CMR / IRU / Polska z 1978</div>
+          </div>
+        </div>
+      </body>
+      </html>
+    `);
+    printWindow.document.close();
+    printWindow.focus();
+    setTimeout(() => { printWindow.print(); }, 250);
   };
 
   const getStatusBadge = (order) => {
@@ -1146,9 +1355,32 @@ export default function DMSPage() {
         {activeTab === 'generated' && (
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow dark:shadow-gray-900">
             <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700">
-              <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300">
-                Wygenerowane dokumenty ({generatedDocs.length})
-              </h3>
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                  Wygenerowane dokumenty ({generatedDocs.length})
+                </h3>
+                {generatedDocs.length > 0 && (
+                  <div className="flex flex-col sm:flex-row gap-2">
+                    <input
+                      type="text"
+                      value={docsSearch}
+                      onChange={(e) => setDocsSearch(e.target.value)}
+                      placeholder="Szukaj dokumentu..."
+                      className="px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400"
+                    />
+                    <select
+                      value={docsSort}
+                      onChange={(e) => setDocsSort(e.target.value)}
+                      className="px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    >
+                      <option value="date-desc">Najnowsze</option>
+                      <option value="date-asc">Najstarsze</option>
+                      <option value="type">Typ dokumentu</option>
+                      <option value="customer">Klient A-Z</option>
+                    </select>
+                  </div>
+                )}
+              </div>
             </div>
             {generatedDocs.length === 0 ? (
               <div className="p-12 text-center">
@@ -1167,7 +1399,7 @@ export default function DMSPage() {
                     Wygeneruj z zamowienia
                   </button>
                   <button
-                    onClick={() => { setActiveTab('manual'); resetInvoice(); }}
+                    onClick={() => { setActiveTab('manual'); setManualDocType(null); }}
                     className="px-4 py-2 text-sm font-medium bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600"
                   >
                     Wygeneruj recznie
@@ -1176,29 +1408,90 @@ export default function DMSPage() {
               </div>
             ) : (
               <div className="divide-y divide-gray-200 dark:divide-gray-700">
-                {generatedDocs.map((doc) => (
+                {generatedDocs
+                  .filter(doc => {
+                    if (!docsSearch.trim()) return true;
+                    const searchLower = docsSearch.toLowerCase();
+                    return (
+                      (doc.number || '').toLowerCase().includes(searchLower) ||
+                      (doc.customer || '').toLowerCase().includes(searchLower) ||
+                      (doc.type || '').toLowerCase().includes(searchLower) ||
+                      (doc.orderId && String(doc.orderId).includes(searchLower))
+                    );
+                  })
+                  .sort((a, b) => {
+                    switch (docsSort) {
+                      case 'date-asc':
+                        return new Date(a.date) - new Date(b.date);
+                      case 'type':
+                        return (a.type || '').localeCompare(b.type || '');
+                      case 'customer':
+                        return (a.customer || '').localeCompare(b.customer || '');
+                      case 'date-desc':
+                      default:
+                        return new Date(b.date) - new Date(a.date);
+                    }
+                  })
+                  .map((doc) => (
                   <div key={doc.id} className="p-4 hover:bg-gray-50 dark:hover:bg-gray-700/50">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-green-100 dark:bg-green-900/30 rounded-lg flex items-center justify-center">
-                          <span className="text-green-600 dark:text-green-400">📄</span>
-                        </div>
-                        <div>
-                          <p className="text-sm font-medium text-gray-900 dark:text-white">{doc.type} {doc.number}</p>
-                          <p className="text-xs text-gray-500 dark:text-gray-400">
-                            {doc.customer} • {formatDatePL(doc.date)}
+                    <div className="flex items-center justify-between gap-4">
+                      <div className="flex items-center gap-3 min-w-0">
+                        {doc.docType === 'invoice' ? (
+                          <div className="w-10 h-10 bg-green-100 dark:bg-green-900/30 rounded-lg flex items-center justify-center flex-shrink-0">
+                            <img src="/icons/gutekissen.png" alt="GuteKissen" className="w-7 h-7 rounded-full" />
+                          </div>
+                        ) : (
+                          <div className="w-10 h-10 bg-red-100 dark:bg-red-900/30 rounded-lg flex items-center justify-center flex-shrink-0">
+                            <span className="text-red-600 dark:text-red-400 font-bold text-xs">CMR</span>
+                          </div>
+                        )}
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className={`px-2 py-0.5 text-xs font-medium rounded ${
+                              doc.docType === 'invoice'
+                                ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300'
+                                : 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300'
+                            }`}>
+                              {doc.type}
+                            </span>
+                            <span className="text-sm font-medium text-gray-900 dark:text-white truncate">{doc.number}</span>
+                          </div>
+                          <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                            {doc.customer || 'Brak klienta'} • {formatDatePL(doc.date)}
                             {doc.orderId && ` • Zam. #${doc.orderId}`}
                           </p>
                         </div>
                       </div>
-                      <div className="text-right">
-                        <p className="text-sm font-bold text-gray-900 dark:text-white">
-                          {formatCurrency(doc.total, doc.currency)}
-                        </p>
+                      <div className="flex items-center gap-3 flex-shrink-0">
+                        {doc.total !== null && (
+                          <p className="text-sm font-bold text-gray-900 dark:text-white">
+                            {formatCurrency(doc.total, doc.currency)}
+                          </p>
+                        )}
+                        <button
+                          onClick={() => redownloadDocument(doc)}
+                          className="px-3 py-1.5 text-xs font-medium bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded-lg hover:bg-blue-200 dark:hover:bg-blue-900/50 flex items-center gap-1"
+                        >
+                          <span>📥</span> Pobierz
+                        </button>
                       </div>
                     </div>
                   </div>
                 ))}
+                {generatedDocs.length > 0 && generatedDocs.filter(doc => {
+                  if (!docsSearch.trim()) return true;
+                  const searchLower = docsSearch.toLowerCase();
+                  return (
+                    (doc.number || '').toLowerCase().includes(searchLower) ||
+                    (doc.customer || '').toLowerCase().includes(searchLower) ||
+                    (doc.type || '').toLowerCase().includes(searchLower) ||
+                    (doc.orderId && String(doc.orderId).includes(searchLower))
+                  );
+                }).length === 0 && (
+                  <div className="p-8 text-center">
+                    <p className="text-sm text-gray-500 dark:text-gray-400">Brak dokumentow pasujacych do wyszukiwania</p>
+                  </div>
+                )}
               </div>
             )}
           </div>
