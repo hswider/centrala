@@ -443,177 +443,229 @@ export default function DMSPage() {
         <title>CMR - List Przewozowy</title>
         <style>
           * { margin: 0; padding: 0; box-sizing: border-box; }
-          body { font-family: Arial, sans-serif; padding: 15px; color: #000; font-size: 9px; }
-          .cmr-container { border: 2px solid #c00; padding: 0; max-width: 210mm; }
-          .cmr-header { display: flex; border-bottom: 2px solid #c00; }
-          .cmr-header-left { flex: 1; padding: 8px; border-right: 1px solid #c00; }
-          .cmr-header-right { width: 200px; padding: 8px; text-align: center; }
-          .cmr-title { font-size: 14px; font-weight: bold; color: #c00; }
-          .cmr-subtitle { font-size: 7px; color: #c00; margin-top: 2px; }
-          .cmr-box { font-size: 16px; font-weight: bold; border: 2px solid #c00; padding: 5px 15px; display: inline-block; color: #c00; }
-          .row { display: flex; border-bottom: 1px solid #c00; }
-          .cell { padding: 4px 6px; border-right: 1px solid #c00; min-height: 50px; }
-          .cell:last-child { border-right: none; }
-          .cell-label { font-size: 7px; color: #c00; margin-bottom: 2px; }
-          .cell-num { font-size: 10px; font-weight: bold; color: #c00; }
-          .cell-value { font-size: 9px; color: #000; min-height: 20px; white-space: pre-wrap; }
-          .w10 { width: 10%; } .w15 { width: 15%; } .w20 { width: 20%; } .w25 { width: 25%; }
-          .w30 { width: 30%; } .w33 { width: 33.33%; } .w40 { width: 40%; } .w50 { width: 50%; }
-          .w60 { width: 60%; } .w70 { width: 70%; } .w100 { width: 100%; }
-          .reg-number { text-align: center; padding: 10px; border-bottom: 1px solid #c00; font-size: 14px; }
-          .signatures { display: flex; border-top: 2px solid #c00; }
-          .signature-box { flex: 1; padding: 8px; border-right: 1px solid #c00; min-height: 60px; }
-          .signature-box:last-child { border-right: none; }
-          .small-text { font-size: 6px; color: #666; }
-          @media print { body { padding: 5px; } @page { margin: 5mm; size: A4; } }
+          @page { size: A4; margin: 0; }
+          html, body { width: 210mm; height: 297mm; }
+          body { font-family: Arial, sans-serif; font-size: 8px; color: #000; }
+          .cmr-page { width: 210mm; height: 297mm; padding: 5mm; display: flex; flex-direction: column; }
+          .cmr-container { border: 1px solid #000; flex: 1; display: flex; flex-direction: column; }
+
+          /* Header */
+          .cmr-header { display: flex; border-bottom: 1px solid #000; min-height: 20mm; }
+          .cmr-header-left { flex: 1; padding: 2mm; font-size: 7px; }
+          .cmr-header-right { width: 50mm; padding: 2mm; display: flex; flex-direction: column; align-items: center; justify-content: center; border-left: 1px solid #000; }
+          .cmr-title { font-size: 6px; text-align: center; margin-bottom: 2mm; }
+          .cmr-box { font-size: 18px; font-weight: bold; border: 2px solid #000; padding: 2mm 8mm; }
+          .cmr-legal { font-size: 5px; margin-top: 2mm; text-align: center; }
+
+          /* Two column layout */
+          .two-col { display: flex; border-bottom: 1px solid #000; }
+          .col-left { width: 50%; border-right: 1px solid #000; }
+          .col-right { width: 50%; }
+
+          /* Cells */
+          .cell { padding: 1.5mm; min-height: 18mm; border-bottom: 1px solid #000; position: relative; }
+          .cell:last-child { border-bottom: none; }
+          .cell-label { font-size: 6px; color: #000; margin-bottom: 1mm; }
+          .cell-num { font-weight: bold; font-size: 8px; margin-right: 2px; }
+          .cell-value { font-size: 9px; white-space: pre-wrap; line-height: 1.3; }
+
+          /* Registration number */
+          .reg-row { text-align: center; padding: 3mm; border-bottom: 1px solid #000; font-size: 14px; font-weight: bold; }
+
+          /* Goods row */
+          .goods-row { display: flex; border-bottom: 1px solid #000; min-height: 25mm; }
+          .goods-cell { border-right: 1px solid #000; padding: 1.5mm; }
+          .goods-cell:last-child { border-right: none; }
+          .gc1 { width: 12%; }
+          .gc2 { width: 10%; }
+          .gc3 { width: 12%; }
+          .gc4 { width: 26%; }
+          .gc5 { width: 10%; }
+          .gc6 { width: 15%; }
+          .gc7 { width: 15%; }
+
+          /* Payment table */
+          .payment-table { font-size: 7px; width: 100%; }
+          .payment-table td { padding: 1mm 0; border-bottom: 1px solid #ccc; }
+          .payment-table tr:last-child td { border-bottom: none; font-weight: bold; }
+
+          /* Signatures */
+          .signatures-row { display: flex; min-height: 25mm; }
+          .sig-cell { flex: 1; border-right: 1px solid #000; padding: 1.5mm; }
+          .sig-cell:last-child { border-right: none; }
+
+          /* Footer */
+          .cmr-footer { font-size: 5px; text-align: center; padding: 1mm; color: #666; }
+
+          @media print {
+            body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+          }
         </style>
       </head>
       <body>
-        <div class="cmr-container">
-          <div class="cmr-header">
-            <div class="cmr-header-left">
-              <div class="cmr-subtitle">MIĘDZYNARODOWY SAMOCHODOWY LIST PRZEWOZOWY</div>
-              <div class="cmr-subtitle">INTERNATIONALER FRACHTBRIEF / INTERNATIONAL CONSIGNMENT</div>
+        <div class="cmr-page">
+          <div class="cmr-container">
+            <!-- Header -->
+            <div class="cmr-header">
+              <div class="cmr-header-left">
+                <div style="font-size: 8px; font-weight: bold; margin-bottom: 2mm;">MIĘDZYNARODOWY SAMOCHODOWY LIST PRZEWOZOWY</div>
+                <div style="font-size: 6px;">INTERNATIONALER FRACHTBRIEF / INTERNATIONAL CONSIGNMENT</div>
+              </div>
+              <div class="cmr-header-right">
+                <div class="cmr-box">CMR</div>
+                <div class="cmr-legal" style="font-size: 5px; margin-top: 2mm; max-width: 45mm;">
+                  Niniejszy przewóz podlega postanowieniom Konwencji o umowie międzynarodowej przewozu drogowego towarów (CMR)
+                </div>
+              </div>
             </div>
-            <div class="cmr-header-right">
-              <div class="cmr-box">CMR</div>
-            </div>
-          </div>
 
-          <div class="row">
-            <div class="cell w50">
-              <div class="cell-label"><span class="cell-num">1</span> Nadawca (nazwisko lub nazwa, adres, kraj) / Absender / Sender</div>
-              <div class="cell-value">${cmr.senderName}\n${cmr.senderAddress}\n${cmr.senderCountry}</div>
+            <!-- Row 1-2 / 16-17 -->
+            <div class="two-col">
+              <div class="col-left">
+                <div class="cell">
+                  <div class="cell-label"><span class="cell-num">1</span> Nadawca (nazwisko lub nazwa, adres, kraj) / Absender / Sender</div>
+                  <div class="cell-value">${cmr.senderName}<br/>${cmr.senderAddress}<br/>${cmr.senderCountry}</div>
+                </div>
+                <div class="cell">
+                  <div class="cell-label"><span class="cell-num">2</span> Odbiorca (nazwisko lub nazwa, adres, kraj) / Empfänger / Consignee</div>
+                  <div class="cell-value">${cmr.consigneeName}<br/>${cmr.consigneeAddress}<br/>${cmr.consigneeCountry}</div>
+                </div>
+              </div>
+              <div class="col-right">
+                <div class="cell">
+                  <div class="cell-label"><span class="cell-num">16</span> Przewoźnik (nazwisko lub nazwa, adres, kraj) / Frachtführer / Carrier</div>
+                  <div class="cell-value">${cmr.carrierName}<br/>${cmr.carrierAddress}<br/>${cmr.carrierCountry}</div>
+                </div>
+                <div class="cell">
+                  <div class="cell-label"><span class="cell-num">17</span> Kolejni przewoźnicy / Nachfolgende Frachtführer / Successive carriers</div>
+                  <div class="cell-value">${cmr.successiveCarriers}</div>
+                </div>
+              </div>
             </div>
-            <div class="cell w50">
-              <div class="cell-label"><span class="cell-num">16</span> Przewoźnik (nazwisko lub nazwa, adres, kraj) / Frachtführer / Carrier</div>
-              <div class="cell-value">${cmr.carrierName}\n${cmr.carrierAddress}\n${cmr.carrierCountry}</div>
-            </div>
-          </div>
 
-          <div class="row">
-            <div class="cell w50">
-              <div class="cell-label"><span class="cell-num">2</span> Odbiorca (nazwisko lub nazwa, adres, kraj) / Empfänger / Consignee</div>
-              <div class="cell-value">${cmr.consigneeName}\n${cmr.consigneeAddress}\n${cmr.consigneeCountry}</div>
-            </div>
-            <div class="cell w50">
-              <div class="cell-label"><span class="cell-num">17</span> Kolejni przewoźnicy / Nachfolgende Frachtführer / Successive carriers</div>
-              <div class="cell-value">${cmr.successiveCarriers}</div>
-            </div>
-          </div>
+            <!-- NR REJ -->
+            <div class="reg-row">NR REJ.: ${cmr.registrationNumber}</div>
 
-          <div class="reg-number">
-            <strong>NR REJ.:</strong> ${cmr.registrationNumber}
-          </div>
+            <!-- Row 3-5 / 18-20 -->
+            <div class="two-col">
+              <div class="col-left">
+                <div class="cell" style="min-height: 12mm;">
+                  <div class="cell-label"><span class="cell-num">3</span> Miejsce przeznaczenia (miejscowość, kraj) / Auslieferungsort / Place of delivery</div>
+                  <div class="cell-value">${cmr.deliveryPlace}${cmr.deliveryCountry ? ', ' + cmr.deliveryCountry : ''}</div>
+                </div>
+                <div class="cell" style="min-height: 12mm;">
+                  <div class="cell-label"><span class="cell-num">4</span> Miejsce i data załadowania (Ort, Land, Datum) / Place and date of loading</div>
+                  <div class="cell-value">${cmr.loadingPlace}<br/>${cmr.loadingDate}</div>
+                </div>
+                <div class="cell" style="min-height: 12mm;">
+                  <div class="cell-label"><span class="cell-num">5</span> Załączone dokumenty / Beigefügte Dokumente / Documents attached</div>
+                  <div class="cell-value">${cmr.documents}</div>
+                </div>
+              </div>
+              <div class="col-right">
+                <div class="cell" style="min-height: 12mm;">
+                  <div class="cell-label"><span class="cell-num">18</span> Zastrzeżenia i uwagi przewoźnika / Vorbehalte des Frachtführers / Carrier's reservations</div>
+                  <div class="cell-value">${cmr.carrierReservations}</div>
+                </div>
+                <div class="cell" style="min-height: 12mm;">
+                  <div class="cell-label"><span class="cell-num">19</span> Postanowienia specjalne / Besondere Vereinbarungen / Special agreements</div>
+                  <div class="cell-value">${cmr.specialAgreements}</div>
+                </div>
+                <div class="cell" style="min-height: 12mm;">
+                  <div class="cell-label"><span class="cell-num">20</span> Do zapłacenia / Zu zahlen / To be paid by</div>
+                  <table class="payment-table">
+                    <tr><td>Przewoźne / Fracht</td><td style="text-align:right;">${cmr.carriageCharges}</td></tr>
+                    <tr><td>Bonifikaty / Ermäßigungen</td><td style="text-align:right;">${cmr.deductions}</td></tr>
+                    <tr><td>Saldo / Balance</td><td style="text-align:right;">${cmr.balance}</td></tr>
+                    <tr><td>Dopłaty / Zuschläge</td><td style="text-align:right;">${cmr.supplements}</td></tr>
+                    <tr><td>Inne / Sonstige</td><td style="text-align:right;">${cmr.otherCharges}</td></tr>
+                    <tr><td>Razem / Gesamt</td><td style="text-align:right;">${cmr.totalToPay}</td></tr>
+                  </table>
+                </div>
+              </div>
+            </div>
 
-          <div class="row">
-            <div class="cell w50">
-              <div class="cell-label"><span class="cell-num">3</span> Miejsce przeznaczenia (miejscowość, kraj) / Auslieferungsort / Place of delivery</div>
-              <div class="cell-value">${cmr.deliveryPlace}, ${cmr.deliveryCountry}</div>
+            <!-- Row 6-12 Goods -->
+            <div class="goods-row">
+              <div class="goods-cell gc1">
+                <div class="cell-label"><span class="cell-num">6</span> Cechy i numery / Kennzeichen / Marks and Nos</div>
+                <div class="cell-value">${cmr.marksAndNos}</div>
+              </div>
+              <div class="goods-cell gc2">
+                <div class="cell-label"><span class="cell-num">7</span> Ilość sztuk / Anzahl / Number of packages</div>
+                <div class="cell-value">${cmr.numberOfPackages}</div>
+              </div>
+              <div class="goods-cell gc3">
+                <div class="cell-label"><span class="cell-num">8</span> Sposób opakowania / Art der Verpackung / Method of packing</div>
+                <div class="cell-value">${cmr.methodOfPacking}</div>
+              </div>
+              <div class="goods-cell gc4">
+                <div class="cell-label"><span class="cell-num">9</span> Rodzaj towaru / Bezeichnung des Gutes / Nature of the goods</div>
+                <div class="cell-value">${cmr.natureOfGoods}</div>
+              </div>
+              <div class="goods-cell gc5">
+                <div class="cell-label"><span class="cell-num">10</span> Nr statyst. / Stat. Nr</div>
+                <div class="cell-value">${cmr.statisticalNumber}</div>
+              </div>
+              <div class="goods-cell gc6">
+                <div class="cell-label"><span class="cell-num">11</span> Waga brutto kg / Bruttogewicht</div>
+                <div class="cell-value">${cmr.grossWeight}</div>
+              </div>
+              <div class="goods-cell gc7">
+                <div class="cell-label"><span class="cell-num">12</span> Objętość m³ / Umfang</div>
+                <div class="cell-value">${cmr.volume}</div>
+              </div>
             </div>
-            <div class="cell w50">
-              <div class="cell-label"><span class="cell-num">18</span> Zastrzeżenia i uwagi przewoźnika / Vorbehalte des Frachtführers / Carrier's reservations</div>
-              <div class="cell-value">${cmr.carrierReservations}</div>
-            </div>
-          </div>
 
-          <div class="row">
-            <div class="cell w50">
-              <div class="cell-label"><span class="cell-num">4</span> Miejsce i data załadowania (Ort, Land, Datum) / Place and date of loading</div>
-              <div class="cell-value">${cmr.loadingPlace}\n${cmr.loadingDate}</div>
+            <!-- Row 13/15 -->
+            <div class="two-col">
+              <div class="col-left">
+                <div class="cell" style="min-height: 15mm;">
+                  <div class="cell-label"><span class="cell-num">13</span> Instrukcje nadawcy / Anweisungen des Absenders / Sender's instructions</div>
+                  <div class="cell-value">${cmr.senderInstructions}</div>
+                </div>
+              </div>
+              <div class="col-right">
+                <div class="cell" style="min-height: 15mm;">
+                  <div class="cell-label"><span class="cell-num">15</span> Zapłata / Rückerstattung / Cash on delivery</div>
+                  <div class="cell-value">${cmr.cashOnDelivery}</div>
+                </div>
+              </div>
             </div>
-            <div class="cell w50" style="min-height: 30px;">
-              <div class="cell-label"><span class="cell-num">19</span> Postanowienia specjalne / Besondere Vereinbarungen / Special agreements</div>
-              <div class="cell-value">${cmr.specialAgreements}</div>
-            </div>
-          </div>
 
-          <div class="row">
-            <div class="cell w50">
-              <div class="cell-label"><span class="cell-num">5</span> Załączone dokumenty / Beigefügte Dokumente / Documents attached</div>
-              <div class="cell-value">${cmr.documents}</div>
+            <!-- Row 14/21 -->
+            <div class="two-col">
+              <div class="col-left">
+                <div class="cell" style="min-height: 15mm;">
+                  <div class="cell-label"><span class="cell-num">14</span> Postanowienia odnośnie przewoźnego / Frachtzahlungsanweisungen / Payment instructions</div>
+                  <div class="cell-value">${cmr.paymentInstructions}</div>
+                </div>
+              </div>
+              <div class="col-right">
+                <div class="cell" style="min-height: 15mm;">
+                  <div class="cell-label"><span class="cell-num">21</span> Wystawiono w / Ausgestellt in / Established in</div>
+                  <div class="cell-value">${cmr.establishedIn}<br/>dnia ${cmr.establishedDate}</div>
+                </div>
+              </div>
             </div>
-            <div class="cell w50" rowspan="2">
-              <div class="cell-label"><span class="cell-num">20</span> Do zapłacenia / Zu zahlen / To be paid by</div>
-              <table style="width:100%; font-size: 8px; border-collapse: collapse;">
-                <tr><td style="border-bottom:1px solid #c00;">Przewoźne / Fracht</td><td style="border-bottom:1px solid #c00;">${cmr.carriageCharges}</td></tr>
-                <tr><td style="border-bottom:1px solid #c00;">Bonifikaty / Ermäßigungen</td><td style="border-bottom:1px solid #c00;">${cmr.deductions}</td></tr>
-                <tr><td style="border-bottom:1px solid #c00;">Saldo / Balance</td><td style="border-bottom:1px solid #c00;">${cmr.balance}</td></tr>
-                <tr><td style="border-bottom:1px solid #c00;">Dopłaty / Zuschläge</td><td style="border-bottom:1px solid #c00;">${cmr.supplements}</td></tr>
-                <tr><td style="border-bottom:1px solid #c00;">Inne / Sonstige</td><td style="border-bottom:1px solid #c00;">${cmr.otherCharges}</td></tr>
-                <tr><td><strong>Razem / Gesamt</strong></td><td><strong>${cmr.totalToPay}</strong></td></tr>
-              </table>
-            </div>
-          </div>
 
-          <div class="row">
-            <div class="cell w15">
-              <div class="cell-label"><span class="cell-num">6</span> Cechy i numery / Kennzeichen / Marks and Nos</div>
-              <div class="cell-value">${cmr.marksAndNos}</div>
+            <!-- Signatures 22-24 -->
+            <div class="signatures-row">
+              <div class="sig-cell">
+                <div class="cell-label"><span class="cell-num">22</span> Podpis i stempel nadawcy / Unterschrift des Absenders / Signature of sender</div>
+              </div>
+              <div class="sig-cell">
+                <div class="cell-label"><span class="cell-num">23</span> Podpis i stempel przewoźnika / Unterschrift des Frachtführers / Signature of carrier</div>
+              </div>
+              <div class="sig-cell">
+                <div class="cell-label"><span class="cell-num">24</span> Przesyłkę otrzymano / Gut empfangen / Goods received</div>
+                <div class="cell-value" style="margin-top: 10mm;">Miejscowość / Ort: _________________ dnia / am: _________</div>
+              </div>
             </div>
-            <div class="cell w10">
-              <div class="cell-label"><span class="cell-num">7</span> Ilość sztuk / Anzahl / Number of packages</div>
-              <div class="cell-value">${cmr.numberOfPackages}</div>
-            </div>
-            <div class="cell w15">
-              <div class="cell-label"><span class="cell-num">8</span> Sposób opakowania / Art der Verpackung / Method of packing</div>
-              <div class="cell-value">${cmr.methodOfPacking}</div>
-            </div>
-            <div class="cell w20">
-              <div class="cell-label"><span class="cell-num">9</span> Rodzaj towaru / Bezeichnung des Gutes / Nature of goods</div>
-              <div class="cell-value">${cmr.natureOfGoods}</div>
-            </div>
-            <div class="cell w10">
-              <div class="cell-label"><span class="cell-num">10</span> Nr statyst. / Stat. Nr</div>
-              <div class="cell-value">${cmr.statisticalNumber}</div>
-            </div>
-            <div class="cell w15">
-              <div class="cell-label"><span class="cell-num">11</span> Waga brutto kg / Bruttogewicht</div>
-              <div class="cell-value">${cmr.grossWeight}</div>
-            </div>
-            <div class="cell w15">
-              <div class="cell-label"><span class="cell-num">12</span> Objętość m³ / Umfang</div>
-              <div class="cell-value">${cmr.volume}</div>
-            </div>
-          </div>
 
-          <div class="row">
-            <div class="cell w50">
-              <div class="cell-label"><span class="cell-num">13</span> Instrukcje nadawcy / Anweisungen des Absenders / Sender's instructions</div>
-              <div class="cell-value">${cmr.senderInstructions}</div>
+            <div class="cmr-footer">
+              Wzór CMR / IRU / Polska z 1978 dla międzynarodowych przewozów drogowych odpowiada ustaleniom, które zostały dokonane przez Międzynarodową Unię Transportu Drogowego /IRU/
             </div>
-            <div class="cell w50">
-              <div class="cell-label"><span class="cell-num">15</span> Zapłata / Rückerstattung / Cash on delivery</div>
-              <div class="cell-value">${cmr.cashOnDelivery}</div>
-            </div>
-          </div>
-
-          <div class="row">
-            <div class="cell w50">
-              <div class="cell-label"><span class="cell-num">14</span> Postanowienia odnośnie przewoźnego / Frachtzahlungsanweisungen / Payment instructions</div>
-              <div class="cell-value">${cmr.paymentInstructions}</div>
-            </div>
-            <div class="cell w50">
-              <div class="cell-label"><span class="cell-num">21</span> Wystawiono w / Ausgestellt in / Established in</div>
-              <div class="cell-value">${cmr.establishedIn}, dnia ${cmr.establishedDate}</div>
-            </div>
-          </div>
-
-          <div class="signatures">
-            <div class="signature-box">
-              <div class="cell-label"><span class="cell-num">22</span> Podpis i stempel nadawcy / Unterschrift des Absenders / Signature of sender</div>
-            </div>
-            <div class="signature-box">
-              <div class="cell-label"><span class="cell-num">23</span> Podpis i stempel przewoźnika / Unterschrift des Frachtführers / Signature of carrier</div>
-            </div>
-            <div class="signature-box">
-              <div class="cell-label"><span class="cell-num">24</span> Przesyłkę otrzymano / Gut empfangen / Goods received</div>
-              <div class="cell-value" style="margin-top: 20px;">Miejscowość / Ort: _________________ dnia / am: _________</div>
-            </div>
-          </div>
-
-          <div style="padding: 5px; font-size: 6px; color: #666; text-align: center;">
-            Wzór CMR / IRU / Polska z 1978 dla międzynarodowych przewozów drogowych
           </div>
         </div>
       </body>
