@@ -142,6 +142,7 @@ export default function Navigation() {
     { href: '/magazyny', label: 'WMS', icon: '🏭', permission: 'wms' },
     { href: '/mes', label: 'MES', icon: '⚙️', permission: 'mes' },
     { href: '/mts', label: 'MTS', icon: '📋', permission: 'mts' },
+    { href: '/dms', label: 'DMS', icon: '📄', permission: 'dms' },
     { href: '/crm', label: 'CRM 🇵🇱', icon: '👥', badge: unreadCount, permission: 'crm' },
     { href: '/crm-eu', label: 'CRM 🇪🇺', icon: '👥', badge: unreadCountEU, permission: 'crm-eu' },
     { href: '/rank', label: 'RANK', icon: '📈', permission: 'rank' },
@@ -164,8 +165,8 @@ export default function Navigation() {
   };
 
   // Podziel na 2 linie na mobile
-  const topRowItems = navItems.slice(0, 4); // Dashboard, Zamowienia, Magazyny, MES
-  const bottomRowItems = navItems.slice(4);  // CRM, Agent AI
+  const topRowItems = navItems.slice(0, 5); // Dashboard, Zamowienia, Magazyny, MES, MTS
+  const bottomRowItems = navItems.slice(5);  // DMS, CRM, Agent AI
 
   const renderNavItem = (item) => {
     const isActive = pathname === item.href ||
@@ -173,6 +174,7 @@ export default function Navigation() {
       (item.href === '/magazyny' && pathname.startsWith('/magazyny')) ||
       (item.href === '/mes' && pathname.startsWith('/mes')) ||
       (item.href === '/mts' && pathname.startsWith('/mts')) ||
+      (item.href === '/dms' && pathname.startsWith('/dms')) ||
       (item.href === '/crm' && pathname === '/crm') ||
       (item.href === '/crm-eu' && pathname.startsWith('/crm-eu')) ||
       (item.href === '/rank' && pathname.startsWith('/rank')) ||
