@@ -502,47 +502,31 @@ export default function DMSPage() {
               </div>
             </div>
 
-            <!-- Row 2 / 16 -->
-            <div class="two-col">
-              <div class="col-left">
+            <!-- Rows 2-4 / 16-18 (carrier section has thick outer border) -->
+            <div class="two-col-carrier">
+              <div class="col-left-stack">
                 <div class="field">
                   <div class="field-label"><span class="field-num">2</span> Odbiorca (nazwisko lub nazwa, adres, kraj)<br/>Empfänger (Name, Anschrift, Land)<br/>Consignee (name, address, country)</div>
                   <div class="field-value">${cmr.consigneeName || ''}<br/>${cmr.consigneeAddress || ''}<br/>${cmr.consigneeCountry || ''}</div>
                 </div>
-              </div>
-              <div class="col-right col-thick">
-                <div class="field">
-                  <div class="field-label"><span class="field-num">16</span> Przewoźnik (nazwisko lub nazwa, adres, kraj)<br/>Frachtführer (Name, Anschrift, Land)<br/>Carrier (name, address, country)</div>
-                  <div class="field-value">${cmr.carrierName || ''}<br/>${cmr.carrierAddress || ''}<br/>${cmr.carrierCountry || ''}</div>
-                </div>
-              </div>
-            </div>
-
-            <!-- Row 3 / 17 -->
-            <div class="two-col">
-              <div class="col-left">
                 <div class="field">
                   <div class="field-label"><span class="field-num">3</span> Miejsce przeznaczenia (miejscowość, kraj)<br/>Auslieferungsort des Gutes (Ort, Land)<br/>Place of delivery of the goods (place, country)</div>
                   <div class="field-value">${cmr.deliveryPlace || ''}${cmr.deliveryCountry ? ', ' + cmr.deliveryCountry : ''}</div>
                 </div>
-              </div>
-              <div class="col-right col-thick">
-                <div class="field">
-                  <div class="field-label"><span class="field-num">17</span> Kolejni przewoźnicy (nazwisko lub nazwa, adres, kraj)<br/>Nachfolgende Frachtführer (Name, Anschrift, Land)<br/>Successive carriers (name, address, country)</div>
-                  <div class="field-value">${cmr.successiveCarriers || ''}</div>
-                </div>
-              </div>
-            </div>
-
-            <!-- Row 4 / 18 -->
-            <div class="two-col">
-              <div class="col-left">
                 <div class="field">
                   <div class="field-label"><span class="field-num">4</span> Miejsce i data załadowania (miejscowość, kraj, data)<br/>Ort und Tag der Übernahme des Gutes (Ort, Land, Datum)<br/>Place and date of taking over the goods (place, country, date)</div>
                   <div class="field-value">${cmr.loadingPlace || ''}<br/>${cmr.loadingDate || ''}</div>
                 </div>
               </div>
-              <div class="col-right col-thick">
+              <div class="col-right-thick">
+                <div class="field">
+                  <div class="field-label"><span class="field-num">16</span> Przewoźnik (nazwisko lub nazwa, adres, kraj)<br/>Frachtführer (Name, Anschrift, Land)<br/>Carrier (name, address, country)</div>
+                  <div class="field-value">${cmr.carrierName || ''}<br/>${cmr.carrierAddress || ''}<br/>${cmr.carrierCountry || ''}</div>
+                </div>
+                <div class="field">
+                  <div class="field-label"><span class="field-num">17</span> Kolejni przewoźnicy (nazwisko lub nazwa, adres, kraj)<br/>Nachfolgende Frachtführer (Name, Anschrift, Land)<br/>Successive carriers (name, address, country)</div>
+                  <div class="field-value">${cmr.successiveCarriers || ''}</div>
+                </div>
                 <div class="field">
                   <div class="field-label"><span class="field-num">18</span> Zastrzeżenia i uwagi przewoźnika<br/>Vorbehalte und Bemerkungen der Frachtführer<br/>Carrier's reservations and observations</div>
                   <div class="field-value">${cmr.carrierReservations || ''}</div>
@@ -623,7 +607,7 @@ export default function DMSPage() {
               </div>
             </div>
 
-            <!-- Row 14 / 20 -->
+            <!-- Row 14 / 20 (field 20 has thick outer border) -->
             <div class="two-col">
               <div class="col-left">
                 <div class="field field-14">
@@ -634,18 +618,20 @@ export default function DMSPage() {
                   </div>
                 </div>
               </div>
-              <div class="col-right">
-                <div class="field field-20">
-                  <div class="field-label"><span class="field-num">20</span> Do zapłacenia<br/>Zu zahlen vom:<br/>To be paid by</div>
-                  <table class="payment-table">
-                    <tr><th></th><th>Nadawca<br/>Absender<br/>Sender</th><th>Waluta<br/>Währung<br/>Currency</th><th>Odbiorca<br/>Empfänger<br/>Consignee</th></tr>
-                    <tr><td>Przewoźne / Fracht / Carriage charges</td><td>${cmr.carriageCharges || ''}</td><td></td><td></td></tr>
-                    <tr><td>Bonifikaty / Ermässigungen / Reductions</td><td></td><td></td><td></td></tr>
-                    <tr><td>Saldo / Zuschläge / Balance</td><td></td><td></td><td></td></tr>
-                    <tr><td>Dopłaty / Nebengebühren / Supplem. / charges</td><td></td><td></td><td></td></tr>
-                    <tr><td>Koszty dodatkowe / Son-stiges / Miscellaneous +</td><td></td><td></td><td></td></tr>
-                    <tr class="total-row"><td>Razem / Gesamtsumme / Total to be paid</td><td>${cmr.totalToPay || ''}</td><td></td><td></td></tr>
-                  </table>
+              <div class="col-right-20">
+                <div class="field-20-wrapper">
+                  <div class="field field-20">
+                    <div class="field-label"><span class="field-num">20</span> Do zapłacenia<br/>Zu zahlen vom:<br/>To be paid by</div>
+                    <table class="payment-table">
+                      <tr><th></th><th>Nadawca<br/>Absender<br/>Sender</th><th>Waluta<br/>Währung<br/>Currency</th><th>Odbiorca<br/>Empfänger<br/>Consignee</th></tr>
+                      <tr><td>Przewoźne / Fracht / Carriage charges</td><td>${cmr.carriageCharges || ''}</td><td></td><td></td></tr>
+                      <tr><td>Bonifikaty / Ermässigungen / Reductions</td><td></td><td></td><td></td></tr>
+                      <tr><td>Saldo / Zuschläge / Balance</td><td></td><td></td><td></td></tr>
+                      <tr><td>Dopłaty / Nebengebühren / Supplem. / charges</td><td></td><td></td><td></td></tr>
+                      <tr><td>Koszty dodatkowe / Son-stiges / Miscellaneous +</td><td></td><td></td><td></td></tr>
+                      <tr class="total-row"><td>Razem / Gesamtsumme / Total to be paid</td><td>${cmr.totalToPay || ''}</td><td></td><td></td></tr>
+                    </table>
+                  </div>
                 </div>
               </div>
             </div>
@@ -731,7 +717,15 @@ export default function DMSPage() {
           .two-col { display: flex; border-bottom: 1px solid currentColor; }
           .col-left { width: 50%; border-right: 1px solid currentColor; }
           .col-right { width: 50%; }
-          .col-thick { border: 2px solid currentColor; border-right: none; border-bottom: none; }
+
+          /* Carrier section 16-18 with thick outer border */
+          .two-col-carrier { display: flex; border-bottom: 1px solid currentColor; }
+          .col-left-stack { width: 50%; border-right: 1px solid currentColor; }
+          .col-left-stack .field { border-bottom: 1px solid currentColor; }
+          .col-left-stack .field:last-child { border-bottom: none; }
+          .col-right-thick { width: 50%; border: 2px solid currentColor; }
+          .col-right-thick .field { border-bottom: 1px solid currentColor; }
+          .col-right-thick .field:last-child { border-bottom: none; }
 
           .field { padding: 1.5mm; min-height: 18mm; }
           .field-1 { min-height: 22mm; }
@@ -757,12 +751,16 @@ export default function DMSPage() {
           .adr-label { display: flex; align-items: center; justify-content: center; font-size: 8px; }
 
           .field-14 .checkbox-row { font-size: 7px; margin: 1mm 0; }
-          .field-20 { padding: 0; border: 2px solid currentColor; border-right: none; border-bottom: none; }
-          .field-20 .field-label { padding: 1.5mm; border-bottom: 2px solid currentColor; }
+
+          /* Field 20 with thick outer border */
+          .col-right-20 { width: 50%; }
+          .field-20-wrapper { border: 2px solid currentColor; height: 100%; }
+          .field-20 { padding: 0; }
+          .field-20 .field-label { padding: 1.5mm; border-bottom: 1px solid currentColor; }
           .payment-table { width: 100%; border-collapse: collapse; font-size: 5px; }
           .payment-table th, .payment-table td { border: 1px solid currentColor; padding: 0.5mm 1mm; text-align: left; }
           .payment-table th { font-weight: normal; }
-          .payment-table .total-row { font-weight: bold; border-top: 2px solid currentColor; }
+          .payment-table .total-row { font-weight: bold; }
 
           .field-21 .field-value-inline { display: flex; align-items: flex-end; gap: 3mm; margin-top: 2mm; font-size: 9px; }
           .field-21 .date-label { font-size: 6px; line-height: 1.2; }
@@ -934,9 +932,7 @@ export default function DMSPage() {
                 <div class="cmr-legal">Niniejszy przewóz podlega postanowieniom konwencji o umowie międzynarodowej przewozu drogowego towarów (CMR).<br/>This carriage is subject to the Convention on the Contract for the International Carriage of goods by road (CMR).<br/>Diese Beförderung unterliegt den Bestimmungen des Übereinkommens über den Beförderungsvertrag im internationalen Strassengüterverkehr (CMR).</div>
               </div>
             </div>
-            <div class="two-col"><div class="col-left"><div class="field"><div class="field-label"><span class="field-num">2</span> Odbiorca<br/>Empfänger<br/>Consignee</div><div class="field-value">${cmrData.consigneeName || ''}<br/>${cmrData.consigneeAddress || ''}<br/>${cmrData.consigneeCountry || ''}</div></div></div><div class="col-right col-thick"><div class="field"><div class="field-label"><span class="field-num">16</span> Przewoźnik<br/>Frachtführer<br/>Carrier</div><div class="field-value">${cmrData.carrierName || ''}<br/>${cmrData.carrierAddress || ''}<br/>${cmrData.carrierCountry || ''}</div></div></div></div>
-            <div class="two-col"><div class="col-left"><div class="field"><div class="field-label"><span class="field-num">3</span> Miejsce przeznaczenia<br/>Auslieferungsort<br/>Place of delivery</div><div class="field-value">${cmrData.deliveryPlace || ''}${cmrData.deliveryCountry ? ', ' + cmrData.deliveryCountry : ''}</div></div></div><div class="col-right col-thick"><div class="field"><div class="field-label"><span class="field-num">17</span> Kolejni przewoźnicy<br/>Nachfolgende Frachtführer<br/>Successive carriers</div><div class="field-value">${cmrData.successiveCarriers || ''}</div></div></div></div>
-            <div class="two-col"><div class="col-left"><div class="field"><div class="field-label"><span class="field-num">4</span> Miejsce i data załadowania<br/>Ort und Tag der Übernahme<br/>Place and date of taking over</div><div class="field-value">${cmrData.loadingPlace || ''}<br/>${cmrData.loadingDate || ''}</div></div></div><div class="col-right col-thick"><div class="field"><div class="field-label"><span class="field-num">18</span> Zastrzeżenia przewoźnika<br/>Vorbehalte des Frachtführers<br/>Carrier's reservations</div><div class="field-value">${cmrData.carrierReservations || ''}</div></div></div></div>
+            <div class="two-col-carrier"><div class="col-left-stack"><div class="field"><div class="field-label"><span class="field-num">2</span> Odbiorca<br/>Empfänger<br/>Consignee</div><div class="field-value">${cmrData.consigneeName || ''}<br/>${cmrData.consigneeAddress || ''}<br/>${cmrData.consigneeCountry || ''}</div></div><div class="field"><div class="field-label"><span class="field-num">3</span> Miejsce przeznaczenia<br/>Auslieferungsort<br/>Place of delivery</div><div class="field-value">${cmrData.deliveryPlace || ''}${cmrData.deliveryCountry ? ', ' + cmrData.deliveryCountry : ''}</div></div><div class="field"><div class="field-label"><span class="field-num">4</span> Miejsce i data załadowania<br/>Ort und Tag der Übernahme<br/>Place and date of taking over</div><div class="field-value">${cmrData.loadingPlace || ''}<br/>${cmrData.loadingDate || ''}</div></div></div><div class="col-right-thick"><div class="field"><div class="field-label"><span class="field-num">16</span> Przewoźnik<br/>Frachtführer<br/>Carrier</div><div class="field-value">${cmrData.carrierName || ''}<br/>${cmrData.carrierAddress || ''}<br/>${cmrData.carrierCountry || ''}</div></div><div class="field"><div class="field-label"><span class="field-num">17</span> Kolejni przewoźnicy<br/>Nachfolgende Frachtführer<br/>Successive carriers</div><div class="field-value">${cmrData.successiveCarriers || ''}</div></div><div class="field"><div class="field-label"><span class="field-num">18</span> Zastrzeżenia przewoźnika<br/>Vorbehalte des Frachtführers<br/>Carrier's reservations</div><div class="field-value">${cmrData.carrierReservations || ''}</div></div></div></div>
             <div class="field field-5"><div class="field-label"><span class="field-num">5</span> Załączone dokumenty / Beigefügte Dokumente / Documents attached</div><div class="field-value">${cmrData.documents || ''}</div></div>
             <div class="goods-row">
               <div class="goods-cell gc-6"><div class="field-label"><span class="field-num">6</span> Cechy<br/>Kennzeichen<br/>Marks</div><div class="field-value">${cmrData.marksAndNos || ''}</div></div>
@@ -949,7 +945,7 @@ export default function DMSPage() {
             </div>
             <div class="adr-row"><div class="adr-cell"><div class="field-label">Klasa/Klasse/Class</div></div><div class="adr-cell"><div class="field-label">Liczba/Ziffer/Number</div></div><div class="adr-cell"><div class="field-label">Litera/Buchstabe/Letter</div></div><div class="adr-cell adr-label">(ADR*)</div></div>
             <div class="two-col"><div class="col-left"><div class="field"><div class="field-label"><span class="field-num">13</span> Instrukcje nadawcy / Anweisungen des Absenders / Sender's instructions</div><div class="field-value">${cmrData.senderInstructions || ''}</div></div></div><div class="col-right"><div class="field"><div class="field-label"><span class="field-num">19</span> Postanowienia specjalne / Besondere Vereinbarungen / Special agreements</div><div class="field-value">${cmrData.specialAgreements || ''}</div></div></div></div>
-            <div class="two-col"><div class="col-left"><div class="field field-14"><div class="field-label"><span class="field-num">14</span> Postanowienia odnośnie przewoźnego</div><div class="field-value"><div class="checkbox-row">☐ Przewoźne zapłacone / Frei / Carriage paid</div><div class="checkbox-row">☐ Przewoźne nie opłacone / Unfrei / Carriage forward</div></div></div></div><div class="col-right"><div class="field field-20"><div class="field-label"><span class="field-num">20</span> Do zapłacenia / Zu zahlen / To be paid</div><table class="payment-table"><tr><th></th><th>Nadawca</th><th>Waluta</th><th>Odbiorca</th></tr><tr><td>Przewoźne</td><td>${cmrData.carriageCharges || ''}</td><td></td><td></td></tr><tr><td>Bonifikaty</td><td></td><td></td><td></td></tr><tr><td>Dopłaty</td><td></td><td></td><td></td></tr><tr class="total-row"><td>Razem</td><td>${cmrData.totalToPay || ''}</td><td></td><td></td></tr></table></div></div></div>
+            <div class="two-col"><div class="col-left"><div class="field field-14"><div class="field-label"><span class="field-num">14</span> Postanowienia odnośnie przewoźnego</div><div class="field-value"><div class="checkbox-row">☐ Przewoźne zapłacone / Frei / Carriage paid</div><div class="checkbox-row">☐ Przewoźne nie opłacone / Unfrei / Carriage forward</div></div></div></div><div class="col-right-20"><div class="field-20-wrapper"><div class="field field-20"><div class="field-label"><span class="field-num">20</span> Do zapłacenia / Zu zahlen / To be paid</div><table class="payment-table"><tr><th></th><th>Nadawca</th><th>Waluta</th><th>Odbiorca</th></tr><tr><td>Przewoźne</td><td>${cmrData.carriageCharges || ''}</td><td></td><td></td></tr><tr><td>Bonifikaty</td><td></td><td></td><td></td></tr><tr><td>Dopłaty</td><td></td><td></td><td></td></tr><tr class="total-row"><td>Razem</td><td>${cmrData.totalToPay || ''}</td><td></td><td></td></tr></table></div></div></div></div>
             <div class="two-col"><div class="col-left"><div class="field field-21"><div class="field-label"><span class="field-num">21</span> Wystawiono w / Ausgefertigt in / Established in</div><div class="field-value-inline"><span>${cmrData.establishedIn || ''}</span><span class="date-label">dnia/am/on</span><span>20${(cmrData.establishedDate || '').substring(2) || '___'}</span></div></div></div><div class="col-right"><div class="field"><div class="field-label"><span class="field-num">15</span> Zapłata / Rückerstattung / Cash on delivery</div><div class="field-value">${cmrData.cashOnDelivery || ''}</div></div></div></div>
             <div class="signatures-row">
               <div class="sig-cell"><div class="sig-num">22</div><div class="sig-content"></div><div class="sig-label">Podpis i stempel nadawcy<br/>Unterschrift und Stempel des Absenders<br/>Signature and stamp of the sender</div></div>
@@ -984,7 +980,13 @@ export default function DMSPage() {
       .two-col { display: flex; border-bottom: 1px solid currentColor; }
       .col-left { width: 50%; border-right: 1px solid currentColor; }
       .col-right { width: 50%; }
-      .col-thick { border: 2px solid currentColor; border-right: none; border-bottom: none; }
+      .two-col-carrier { display: flex; border-bottom: 1px solid currentColor; }
+      .col-left-stack { width: 50%; border-right: 1px solid currentColor; }
+      .col-left-stack .field { border-bottom: 1px solid currentColor; }
+      .col-left-stack .field:last-child { border-bottom: none; }
+      .col-right-thick { width: 50%; border: 2px solid currentColor; }
+      .col-right-thick .field { border-bottom: 1px solid currentColor; }
+      .col-right-thick .field:last-child { border-bottom: none; }
       .field { padding: 1.5mm; min-height: 16mm; }
       .field-1 { min-height: 20mm; }
       .field-5 { border-bottom: 1px solid currentColor; min-height: 12mm; padding: 1.5mm; }
@@ -1000,11 +1002,13 @@ export default function DMSPage() {
       .adr-cell:last-child { border-right: none; }
       .adr-label { display: flex; align-items: center; justify-content: center; font-size: 8px; }
       .field-14 .checkbox-row { font-size: 7px; margin: 1mm 0; }
-      .field-20 { padding: 0; border: 2px solid currentColor; border-right: none; border-bottom: none; }
-      .field-20 .field-label { padding: 1.5mm; border-bottom: 2px solid currentColor; }
+      .col-right-20 { width: 50%; }
+      .field-20-wrapper { border: 2px solid currentColor; height: 100%; }
+      .field-20 { padding: 0; }
+      .field-20 .field-label { padding: 1.5mm; border-bottom: 1px solid currentColor; }
       .payment-table { width: 100%; border-collapse: collapse; font-size: 5px; }
       .payment-table th, .payment-table td { border: 1px solid currentColor; padding: 0.5mm 1mm; text-align: left; }
-      .payment-table .total-row { font-weight: bold; border-top: 2px solid currentColor; }
+      .payment-table .total-row { font-weight: bold; }
       .field-21 .field-value-inline { display: flex; align-items: flex-end; gap: 3mm; margin-top: 2mm; font-size: 9px; }
       .field-21 .date-label { font-size: 6px; }
       .signatures-row { display: flex; min-height: 26mm; }
