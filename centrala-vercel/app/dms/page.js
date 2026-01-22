@@ -768,7 +768,7 @@ export default function DMSPage() {
           .field-21 .date-value { border-bottom: 1px solid currentColor; min-width: 15mm; }
 
           .signatures-row { display: flex; min-height: 28mm; }
-          .sig-cell { flex: 1; border-right: 1px solid currentColor; padding: 1.5mm; display: flex; flex-direction: column; }
+          .sig-cell { flex: 1; border-right: 1px solid currentColor; padding: 1.5mm; display: flex; flex-direction: column; background: white; position: relative; z-index: 2; }
           .sig-cell:last-child { border-right: none; }
           .sig-num { font-size: 12px; font-weight: bold; }
           .sig-header { font-size: 6px; margin-bottom: 2mm; }
@@ -1014,7 +1014,7 @@ export default function DMSPage() {
       .field-21 .field-value-inline { display: flex; align-items: flex-end; gap: 3mm; margin-top: 2mm; font-size: 9px; }
       .field-21 .date-label { font-size: 6px; }
       .signatures-row { display: flex; min-height: 26mm; }
-      .sig-cell { flex: 1; border-right: 1px solid currentColor; padding: 1.5mm; display: flex; flex-direction: column; }
+      .sig-cell { flex: 1; border-right: 1px solid currentColor; padding: 1.5mm; display: flex; flex-direction: column; background: white; position: relative; z-index: 2; }
       .sig-cell:last-child { border-right: none; }
       .sig-num { font-size: 12px; font-weight: bold; }
       .sig-header { font-size: 6px; margin-bottom: 2mm; }
