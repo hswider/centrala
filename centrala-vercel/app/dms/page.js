@@ -238,6 +238,8 @@ export default function DMSPage() {
     const consigneeName = shipping.name || shipping.companyName || '';
     // Build address: street, zipCode city
     const consigneeAddress = `${shipping.street || ''}, ${shipping.zipCode || ''} ${shipping.city || ''}`.trim().replace(/^,\s*/, '');
+    // KOM number from externalId
+    const komNumber = order.externalId ? `Kom: ${order.externalId}` : '';
 
     setCmr(prev => ({
       ...prev,
@@ -249,8 +251,8 @@ export default function DMSPage() {
       consigneeName: consigneeName,
       consigneeAddress: consigneeAddress,
       consigneeCountry: shipping.country || '',
-      // Delivery place
-      deliveryPlace: `${shipping.city || ''}, ${shipping.country || ''}`,
+      // Delivery place with KOM number
+      deliveryPlace: komNumber ? `${komNumber}\n${shipping.city || ''}, ${shipping.country || ''}` : `${shipping.city || ''}, ${shipping.country || ''}`,
       deliveryCountry: shipping.country || '',
       // Loading - Barczewo
       loadingPlace: 'Barczewo, Polska',
