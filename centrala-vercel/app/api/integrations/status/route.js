@@ -77,7 +77,7 @@ export async function GET() {
       const gmailTokens = await sql`SELECT email, expires_at, updated_at FROM gmail_tokens WHERE id = 1`;
       const token = gmailTokens.rows[0];
       const tokenValid = token?.expires_at && parseInt(token.expires_at) > Date.now();
-      const lastSync = await safeGetLastSync('gmail_threads');
+      const lastSync = await safeGetLastSync('gmail_threads', 'updated_at');
       const syncStatus = getSyncStatus(lastSync);
 
       let status = 'error';
@@ -104,7 +104,7 @@ export async function GET() {
       const tokens = await sql`SELECT email, expires_at, updated_at FROM gmail_poomkids_tokens WHERE id = 1`;
       const token = tokens.rows[0];
       const tokenValid = token?.expires_at && parseInt(token.expires_at) > Date.now();
-      const lastSync = await safeGetLastSync('gmail_poomkids_threads');
+      const lastSync = await safeGetLastSync('gmail_poomkids_threads', 'updated_at');
       const syncStatus = getSyncStatus(lastSync);
 
       let status = 'error';
@@ -131,7 +131,7 @@ export async function GET() {
       const tokens = await sql`SELECT email, expires_at, updated_at FROM gmail_allepoduszki_tokens WHERE id = 1`;
       const token = tokens.rows[0];
       const tokenValid = token?.expires_at && parseInt(token.expires_at) > Date.now();
-      const lastSync = await safeGetLastSync('gmail_allepoduszki_threads');
+      const lastSync = await safeGetLastSync('gmail_allepoduszki_threads', 'updated_at');
       const syncStatus = getSyncStatus(lastSync);
 
       let status = 'error';
@@ -158,7 +158,7 @@ export async function GET() {
       const tokens = await sql`SELECT email, expires_at, updated_at FROM gmail_poomfurniture_tokens WHERE id = 1`;
       const token = tokens.rows[0];
       const tokenValid = token?.expires_at && parseInt(token.expires_at) > Date.now();
-      const lastSync = await safeGetLastSync('gmail_poomfurniture_threads');
+      const lastSync = await safeGetLastSync('gmail_poomfurniture_threads', 'updated_at');
       const syncStatus = getSyncStatus(lastSync);
 
       let status = 'error';
@@ -185,7 +185,7 @@ export async function GET() {
       const tokens = await sql`SELECT access_token, expires_at, updated_at FROM allegro_tokens WHERE id = 1`;
       const token = tokens.rows[0];
       const tokenValid = token?.expires_at && parseInt(token.expires_at) > Date.now();
-      const lastSync = await safeGetLastSync('allegro_messages');
+      const lastSync = await safeGetLastSync('allegro_threads', 'updated_at');
       const syncStatus = getSyncStatus(lastSync);
 
       let status = 'error';
@@ -212,7 +212,7 @@ export async function GET() {
       const tokens = await sql`SELECT email, expires_at, updated_at FROM gmail_amazon_de_tokens WHERE id = 1`;
       const token = tokens.rows[0];
       const tokenValid = token?.expires_at && parseInt(token.expires_at) > Date.now();
-      const lastSync = await safeGetLastSync('gmail_amazon_de_threads');
+      const lastSync = await safeGetLastSync('gmail_amazon_de_threads', 'updated_at');
       const syncStatus = getSyncStatus(lastSync);
 
       let status = 'error';
@@ -239,7 +239,7 @@ export async function GET() {
       const tokens = await sql`SELECT access_token, expires_at, updated_at FROM allegro_meblebox_tokens WHERE id = 1`;
       const token = tokens.rows[0];
       const tokenValid = token?.expires_at && parseInt(token.expires_at) > Date.now();
-      const lastSync = await safeGetLastSync('allegro_meblebox_messages');
+      const lastSync = await safeGetLastSync('allegro_meblebox_threads', 'updated_at');
       const syncStatus = getSyncStatus(lastSync);
 
       let status = 'error';
