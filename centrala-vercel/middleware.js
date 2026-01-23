@@ -14,6 +14,7 @@ const publicRoutes = [
   '/api/allegro-meblebox/callback', // Allegro Meblebox OAuth callback
   '/api/gmail/sync',     // Gmail (Shopify) messages cron
   '/api/gmail/callback', // Gmail OAuth callback
+  '/api/gmail-amazon-de/auth',    // Gmail Amazon DE auth
   '/api/gmail-amazon-de/sync',    // Gmail Amazon DE messages cron
   '/api/gmail-amazon-de/callback', // Gmail Amazon DE OAuth callback
   '/api/gmail-amazon-de/debug',   // Gmail Amazon DE debug
