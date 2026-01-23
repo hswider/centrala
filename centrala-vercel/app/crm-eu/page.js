@@ -615,9 +615,11 @@ export default function CRMEUPage() {
               const lastSync = tab.syncStatus?.lastSyncAt ? new Date(tab.syncStatus.lastSyncAt) : null;
               const now = new Date();
               const syncAgeMinutes = lastSync ? Math.floor((now - lastSync) / 60000) : null;
-              const isSyncOld = syncAgeMinutes !== null && syncAgeMinutes > 35;
+              const syncAgeHours = syncAgeMinutes !== null ? syncAgeMinutes / 60 : null;
+              const isYellow = syncAgeHours !== null && syncAgeHours >= 5 && syncAgeHours < 24;
+              const isRed = syncAgeHours !== null && syncAgeHours >= 24;
               const neverSynced = tab.isConnected && !lastSync;
-              const isWorking = tab.isConnected && lastSync && !isSyncOld;
+              const isWorking = tab.isConnected && lastSync && !isYellow && !isRed;
 
               return (
                 <div
@@ -626,7 +628,7 @@ export default function CRMEUPage() {
                     tab.isLoading ? 'bg-gray-100 dark:bg-gray-700 text-gray-500' :
                     isWorking ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400' :
                     neverSynced ? 'bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400' :
-                    tab.isConnected && isSyncOld ? 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400' :
+                    tab.isConnected && isYellow ? 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400' :
                     'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400'
                   }`}
                 >
@@ -638,8 +640,8 @@ export default function CRMEUPage() {
                     <span className="w-2 h-2 rounded-full bg-green-500"></span>
                   ) : neverSynced ? (
                     <span className="w-2 h-2 rounded-full bg-orange-500" title="Nigdy nie zsynchronizowano"></span>
-                  ) : tab.isConnected && isSyncOld ? (
-                    <span className="w-2 h-2 rounded-full bg-yellow-500" title={`Ostatnia sync: ${syncAgeMinutes} min temu`}></span>
+                  ) : tab.isConnected && isYellow ? (
+                    <span className="w-2 h-2 rounded-full bg-yellow-500" title={`Ostatnia sync: ${Math.floor(syncAgeHours)}h temu`}></span>
                   ) : (
                     <span className="w-2 h-2 rounded-full bg-red-500"></span>
                   )}
