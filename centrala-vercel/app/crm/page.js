@@ -519,6 +519,27 @@ function CRMContent() {
     }
   };
 
+  // Logout Gmail
+  const handleGmailLogout = async () => {
+    if (!confirm('Czy na pewno chcesz sie wylogowac z Gmail Dobrelegowiska?')) return;
+    try {
+      const res = await fetch('/api/gmail/auth', { method: 'DELETE' });
+      const data = await res.json();
+      if (data.success) {
+        setGmailAuth({ authenticated: false, user: null, loading: false });
+        setGmailThreads([]);
+        setGmailSelectedThread(null);
+        setGmailThreadMessages([]);
+        setGmailSyncStatus(null);
+        setGmailUnreadCount(0);
+      } else {
+        alert('Blad wylogowania: ' + data.error);
+      }
+    } catch (err) {
+      alert('Blad: ' + err.message);
+    }
+  };
+
   // Open Gmail thread
   const openGmailThread = async (thread) => {
     setGmailSelectedThread(thread);
@@ -1776,16 +1797,27 @@ function CRMContent() {
                       <div>
                         <h2 className="font-semibold text-gray-900 dark:text-white">Wiadomosci Email</h2>
                         <p className="text-xs text-gray-500">
+                          {gmailAuth.user?.email && <span className="text-blue-600">{gmailAuth.user.email}</span>}
+                          {gmailAuth.user?.email && ' • '}
                           {gmailSyncStatus?.lastSyncAt ? `Sync: ${formatDate(gmailSyncStatus.lastSyncAt)}` : 'Nie zsynchronizowano'}
                         </p>
                       </div>
-                      <button
-                        onClick={handleGmailSync}
-                        disabled={gmailSyncing}
-                        className="px-3 py-1.5 text-sm bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50"
-                      >
-                        {gmailSyncing ? 'Sync...' : 'Synchronizuj'}
-                      </button>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={handleGmailSync}
+                          disabled={gmailSyncing}
+                          className="px-3 py-1.5 text-sm bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50"
+                        >
+                          {gmailSyncing ? 'Sync...' : 'Synchronizuj'}
+                        </button>
+                        <button
+                          onClick={handleGmailLogout}
+                          className="px-3 py-1.5 text-sm bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600"
+                          title="Wyloguj z Gmail"
+                        >
+                          Wyloguj
+                        </button>
+                      </div>
                     </div>
 
                     <div className="flex-1 overflow-y-auto">
