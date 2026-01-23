@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getAuthorizationUrl, isAuthenticated, getCurrentUser } from '../../../../lib/gmail-poomfurniture';
-import { initDatabase, getGmailPoomfurnitureTokens } from '../../../../lib/db';
+import { initDatabase, getGmailPoomfurnitureTokens, clearGmailPoomfurnitureTokens } from '../../../../lib/db';
 
 export async function GET(request) {
   try {
@@ -35,6 +35,21 @@ export async function GET(request) {
     console.error('Gmail POOMFURNITURE auth error:', error);
     return NextResponse.json(
       { authenticated: false, error: error.message },
+      { status: 500 }
+    );
+  }
+}
+
+// Logout - clear tokens
+export async function DELETE(request) {
+  try {
+    await initDatabase();
+    await clearGmailPoomfurnitureTokens();
+    return NextResponse.json({ success: true, message: 'Logged out successfully' });
+  } catch (error) {
+    console.error('Gmail POOMFURNITURE logout error:', error);
+    return NextResponse.json(
+      { success: false, error: error.message },
       { status: 500 }
     );
   }

@@ -678,6 +678,27 @@ function CRMContent() {
     }
   };
 
+  // Logout Gmail POOMKIDS
+  const handlePoomkidsLogout = async () => {
+    if (!confirm('Czy na pewno chcesz sie wylogowac z Gmail POOMKIDS?')) return;
+    try {
+      const res = await fetch('/api/gmail-poomkids/auth', { method: 'DELETE' });
+      const data = await res.json();
+      if (data.success) {
+        setPoomkidsAuth({ authenticated: false, user: null, loading: false });
+        setPoomkidsThreads([]);
+        setPoomkidsSelectedThread(null);
+        setPoomkidsThreadMessages([]);
+        setPoomkidsSyncStatus(null);
+        setPoomkidsUnreadCount(0);
+      } else {
+        alert('Blad wylogowania: ' + data.error);
+      }
+    } catch (err) {
+      alert('Blad: ' + err.message);
+    }
+  };
+
   // Open POOMKIDS thread
   const openPoomkidsThread = async (thread) => {
     setPoomkidsSelectedThread(thread);
@@ -816,6 +837,27 @@ function CRMContent() {
     }
   };
 
+  // Logout Gmail ALLEPODUSZKI
+  const handleAllepoduszkiLogout = async () => {
+    if (!confirm('Czy na pewno chcesz sie wylogowac z Gmail Allepoduszki?')) return;
+    try {
+      const res = await fetch('/api/gmail-allepoduszki/auth', { method: 'DELETE' });
+      const data = await res.json();
+      if (data.success) {
+        setAllepoduszkiAuth({ authenticated: false, user: null, loading: false });
+        setAllepoduszkiThreads([]);
+        setAllepoduszkiSelectedThread(null);
+        setAllepoduszkiThreadMessages([]);
+        setAllepoduszkiSyncStatus(null);
+        setAllepoduszkiUnreadCount(0);
+      } else {
+        alert('Blad wylogowania: ' + data.error);
+      }
+    } catch (err) {
+      alert('Blad: ' + err.message);
+    }
+  };
+
   // Open ALLEPODUSZKI thread
   const openAllepoduszkiThread = async (thread) => {
     setAllepoduszkiSelectedThread(thread);
@@ -951,6 +993,27 @@ function CRMContent() {
       alert('Blad: ' + err.message);
     } finally {
       setPoomfurnitureSyncing(false);
+    }
+  };
+
+  // Logout Gmail POOMFURNITURE
+  const handlePoomfurnitureLogout = async () => {
+    if (!confirm('Czy na pewno chcesz sie wylogowac z Gmail poom-furniture.com?')) return;
+    try {
+      const res = await fetch('/api/gmail-poomfurniture/auth', { method: 'DELETE' });
+      const data = await res.json();
+      if (data.success) {
+        setPoomfurnitureAuth({ authenticated: false, user: null, loading: false });
+        setPoomfurnitureThreads([]);
+        setPoomfurnitureSelectedThread(null);
+        setPoomfurnitureThreadMessages([]);
+        setPoomfurnitureSyncStatus(null);
+        setPoomfurnitureUnreadCount(0);
+      } else {
+        alert('Blad wylogowania: ' + data.error);
+      }
+    } catch (err) {
+      alert('Blad: ' + err.message);
     }
   };
 
@@ -1995,16 +2058,27 @@ function CRMContent() {
                       <div>
                         <h2 className="font-semibold text-gray-900 dark:text-white">Wiadomosci Email</h2>
                         <p className="text-xs text-gray-500">
+                          {poomkidsAuth.user?.email && <span className="text-green-600">{poomkidsAuth.user.email}</span>}
+                          {poomkidsAuth.user?.email && ' • '}
                           {poomkidsSyncStatus?.lastSyncAt ? `Sync: ${formatDate(poomkidsSyncStatus.lastSyncAt)}` : 'Nie zsynchronizowano'}
                         </p>
                       </div>
-                      <button
-                        onClick={handlePoomkidsSync}
-                        disabled={poomkidsSyncing}
-                        className="px-3 py-1.5 text-sm bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50"
-                      >
-                        {poomkidsSyncing ? 'Sync...' : 'Synchronizuj'}
-                      </button>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={handlePoomkidsSync}
+                          disabled={poomkidsSyncing}
+                          className="px-3 py-1.5 text-sm bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50"
+                        >
+                          {poomkidsSyncing ? 'Sync...' : 'Synchronizuj'}
+                        </button>
+                        <button
+                          onClick={handlePoomkidsLogout}
+                          className="px-3 py-1.5 text-sm bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600"
+                          title="Wyloguj z Gmail"
+                        >
+                          Wyloguj
+                        </button>
+                      </div>
                     </div>
 
                     <div className="flex-1 overflow-y-auto">
@@ -2182,16 +2256,27 @@ function CRMContent() {
                       <div>
                         <h2 className="font-semibold text-gray-900 dark:text-white">Wiadomosci Email</h2>
                         <p className="text-xs text-gray-500">
+                          {allepoduszkiAuth.user?.email && <span className="text-purple-600">{allepoduszkiAuth.user.email}</span>}
+                          {allepoduszkiAuth.user?.email && ' • '}
                           {allepoduszkiSyncStatus?.lastSyncAt ? `Sync: ${formatDate(allepoduszkiSyncStatus.lastSyncAt)}` : 'Nie zsynchronizowano'}
                         </p>
                       </div>
-                      <button
-                        onClick={handleAllepoduszkiSync}
-                        disabled={allepoduszkiSyncing}
-                        className="px-3 py-1.5 text-sm bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50"
-                      >
-                        {allepoduszkiSyncing ? 'Sync...' : 'Synchronizuj'}
-                      </button>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={handleAllepoduszkiSync}
+                          disabled={allepoduszkiSyncing}
+                          className="px-3 py-1.5 text-sm bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50"
+                        >
+                          {allepoduszkiSyncing ? 'Sync...' : 'Synchronizuj'}
+                        </button>
+                        <button
+                          onClick={handleAllepoduszkiLogout}
+                          className="px-3 py-1.5 text-sm bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600"
+                          title="Wyloguj z Gmail"
+                        >
+                          Wyloguj
+                        </button>
+                      </div>
                     </div>
 
                     <div className="flex-1 overflow-y-auto">
@@ -2369,16 +2454,27 @@ function CRMContent() {
                       <div>
                         <h2 className="font-semibold text-gray-900 dark:text-white">Wiadomosci Email</h2>
                         <p className="text-xs text-gray-500">
+                          {poomfurnitureAuth.user?.email && <span className="text-teal-600">{poomfurnitureAuth.user.email}</span>}
+                          {poomfurnitureAuth.user?.email && ' • '}
                           {poomfurnitureSyncStatus?.lastSyncAt ? `Sync: ${formatDate(poomfurnitureSyncStatus.lastSyncAt)}` : 'Nie zsynchronizowano'}
                         </p>
                       </div>
-                      <button
-                        onClick={handlePoomfurnitureSync}
-                        disabled={poomfurnitureSyncing}
-                        className="px-3 py-1.5 text-sm bg-teal-600 text-white rounded-lg hover:bg-teal-700 disabled:opacity-50"
-                      >
-                        {poomfurnitureSyncing ? 'Sync...' : 'Synchronizuj'}
-                      </button>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={handlePoomfurnitureSync}
+                          disabled={poomfurnitureSyncing}
+                          className="px-3 py-1.5 text-sm bg-teal-600 text-white rounded-lg hover:bg-teal-700 disabled:opacity-50"
+                        >
+                          {poomfurnitureSyncing ? 'Sync...' : 'Synchronizuj'}
+                        </button>
+                        <button
+                          onClick={handlePoomfurnitureLogout}
+                          className="px-3 py-1.5 text-sm bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600"
+                          title="Wyloguj z Gmail"
+                        >
+                          Wyloguj
+                        </button>
+                      </div>
                     </div>
 
                     <div className="flex-1 overflow-y-auto">

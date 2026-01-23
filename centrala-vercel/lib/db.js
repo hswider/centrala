@@ -2559,6 +2559,19 @@ export async function saveGmailAllepoduszkiTokens(accessToken, refreshToken, exp
   `;
 }
 
+// Clear Gmail Allepoduszki tokens (logout)
+export async function clearGmailAllepoduszkiTokens() {
+  await sql`
+    UPDATE gmail_allepoduszki_tokens
+    SET access_token = NULL,
+        refresh_token = NULL,
+        expires_at = NULL,
+        email = NULL,
+        updated_at = CURRENT_TIMESTAMP
+    WHERE id = 1
+  `;
+}
+
 // Get Gmail Allepoduszki sync status
 export async function getGmailAllepoduszkiSyncStatus() {
   const { rows } = await sql`SELECT * FROM gmail_allepoduszki_sync_status WHERE id = 1`;
@@ -2716,6 +2729,19 @@ export async function saveGmailPoomfurnitureTokens(accessToken, refreshToken, ex
         refresh_token = ${refreshToken},
         expires_at = ${expiresAt},
         email = COALESCE(${email}, email),
+        updated_at = CURRENT_TIMESTAMP
+    WHERE id = 1
+  `;
+}
+
+// Clear Gmail Poomfurniture tokens (logout)
+export async function clearGmailPoomfurnitureTokens() {
+  await sql`
+    UPDATE gmail_poomfurniture_tokens
+    SET access_token = NULL,
+        refresh_token = NULL,
+        expires_at = NULL,
+        email = NULL,
         updated_at = CURRENT_TIMESTAMP
     WHERE id = 1
   `;

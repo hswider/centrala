@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getAuthorizationUrl, isAuthenticated, getCurrentUser } from '../../../../lib/gmail-allepoduszki';
-import { initDatabase, getGmailAllepoduszkiTokens } from '../../../../lib/db';
+import { initDatabase, getGmailAllepoduszkiTokens, clearGmailAllepoduszkiTokens } from '../../../../lib/db';
 
 export async function GET(request) {
   try {
@@ -35,6 +35,21 @@ export async function GET(request) {
     console.error('Gmail ALLEPODUSZKI auth error:', error);
     return NextResponse.json(
       { authenticated: false, error: error.message },
+      { status: 500 }
+    );
+  }
+}
+
+// Logout - clear tokens
+export async function DELETE(request) {
+  try {
+    await initDatabase();
+    await clearGmailAllepoduszkiTokens();
+    return NextResponse.json({ success: true, message: 'Logged out successfully' });
+  } catch (error) {
+    console.error('Gmail ALLEPODUSZKI logout error:', error);
+    return NextResponse.json(
+      { success: false, error: error.message },
       { status: 500 }
     );
   }

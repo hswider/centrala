@@ -117,6 +117,27 @@ export default function CRMEUPage() {
     }
   };
 
+  // Logout Amazon Gmail
+  const handleAmazonLogout = async () => {
+    if (!confirm('Czy na pewno chcesz sie wylogowac z Gmail Amazon?')) return;
+    try {
+      const res = await fetch('/api/gmail-amazon-de/auth', { method: 'DELETE' });
+      const data = await res.json();
+      if (data.success) {
+        setAmazonAuth({ authenticated: false, loading: false, authUrl: null });
+        setAmazonThreads([]);
+        setAmazonSelectedThread(null);
+        setAmazonMessages([]);
+        setAmazonSyncStatus(null);
+        setAmazonUnreadCount(0);
+      } else {
+        alert('Blad wylogowania: ' + data.error);
+      }
+    } catch (err) {
+      alert('Blad: ' + err.message);
+    }
+  };
+
   const openAmazonThread = async (thread) => {
     setAmazonSelectedThread(thread);
     setAmazonMessagesLoading(true);
@@ -721,9 +742,18 @@ export default function CRMEUPage() {
                           Seller Central - weryfikacja wiadomosci
                         </a>
                       </div>
-                      <button onClick={handleAmazonSync} disabled={amazonSyncing} className="px-3 py-1.5 text-sm bg-orange-600 text-white rounded-lg hover:bg-orange-700 disabled:opacity-50">
-                        {amazonSyncing ? 'Sync...' : 'Synchronizuj'}
-                      </button>
+                      <div className="flex gap-2">
+                        <button onClick={handleAmazonSync} disabled={amazonSyncing} className="px-3 py-1.5 text-sm bg-orange-600 text-white rounded-lg hover:bg-orange-700 disabled:opacity-50">
+                          {amazonSyncing ? 'Sync...' : 'Synchronizuj'}
+                        </button>
+                        <button
+                          onClick={handleAmazonLogout}
+                          className="px-3 py-1.5 text-sm bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600"
+                          title="Wyloguj z Gmail"
+                        >
+                          Wyloguj
+                        </button>
+                      </div>
                     </div>
 
                     {/* Search */}
