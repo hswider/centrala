@@ -32,6 +32,7 @@ const publicRoutes = [
   '/api/baselinker/debug', // Baselinker debug
   '/api/debug',          // Apilo debug
   '/api/debug-apilo',    // Apilo detailed debug
+  '/api/apilo-refresh',  // Force Apilo token refresh
   '/api/weather/sync',   // Weather sync cron
   '/api/dms/init'        // DMS table initialization
 ];
