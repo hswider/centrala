@@ -2,6 +2,23 @@ import { NextResponse } from 'next/server';
 import { sql } from '@vercel/postgres';
 import { initDatabase } from '@/lib/db';
 
+// Helper to calculate sync status based on hours since last sync
+function getSyncStatus(lastSyncDate, hoursWarning = 5, hoursError = 24) {
+  if (!lastSyncDate) return { status: 'error', hoursAgo: null, message: 'Brak synchronizacji' };
+
+  const now = new Date();
+  const lastSync = new Date(lastSyncDate);
+  const hoursAgo = Math.round((now - lastSync) / (1000 * 60 * 60));
+
+  if (hoursAgo > hoursError) {
+    return { status: 'error', hoursAgo, message: `Ostatni sync ${hoursAgo}h temu` };
+  } else if (hoursAgo > hoursWarning) {
+    return { status: 'warning', hoursAgo, message: `Ostatni sync ${hoursAgo}h temu` };
+  } else {
+    return { status: 'ok', hoursAgo, message: hoursAgo === 0 ? 'Zsynchronizowano' : `Sync ${hoursAgo}h temu` };
+  }
+}
+
 export async function GET() {
   try {
     await initDatabase();
@@ -48,15 +65,34 @@ export async function GET() {
     try {
       const gmailTokens = await sql`SELECT email, expires_at, updated_at FROM gmail_tokens WHERE id = 1`;
       const token = gmailTokens.rows[0];
-      const isValid = token?.expires_at && parseInt(token.expires_at) > Date.now();
+      const tokenValid = token?.expires_at && parseInt(token.expires_at) > Date.now();
+
+      // Check last synced thread
+      const lastThread = await sql`SELECT MAX(synced_at) as last_sync FROM gmail_threads`;
+      const lastSync = lastThread.rows[0]?.last_sync;
+      const syncStatus = getSyncStatus(lastSync);
+
+      let status = 'error';
+      let message = 'Nie połączono';
+
+      if (!token) {
+        status = 'error';
+        message = 'Nie połączono';
+      } else if (!tokenValid) {
+        status = 'warning';
+        message = 'Token wymaga odświeżenia';
+      } else {
+        status = syncStatus.status;
+        message = syncStatus.message;
+      }
 
       integrations.push({
         id: 'gmail-shopify',
         name: 'Gmail Shopify',
         category: 'crm-pl',
-        status: token ? (isValid ? 'ok' : 'warning') : 'error',
-        message: token ? (isValid ? token.email : 'Token wymaga odświeżenia') : 'Nie połączono',
-        lastSync: token?.updated_at
+        status,
+        message,
+        lastSync
       });
     } catch (e) {
       integrations.push({
@@ -72,15 +108,33 @@ export async function GET() {
     try {
       const tokens = await sql`SELECT email, expires_at, updated_at FROM gmail_poomkids_tokens WHERE id = 1`;
       const token = tokens.rows[0];
-      const isValid = token?.expires_at && parseInt(token.expires_at) > Date.now();
+      const tokenValid = token?.expires_at && parseInt(token.expires_at) > Date.now();
+
+      const lastThread = await sql`SELECT MAX(synced_at) as last_sync FROM gmail_poomkids_threads`;
+      const lastSync = lastThread.rows[0]?.last_sync;
+      const syncStatus = getSyncStatus(lastSync);
+
+      let status = 'error';
+      let message = 'Nie połączono';
+
+      if (!token) {
+        status = 'error';
+        message = 'Nie połączono';
+      } else if (!tokenValid) {
+        status = 'warning';
+        message = 'Token wymaga odświeżenia';
+      } else {
+        status = syncStatus.status;
+        message = syncStatus.message;
+      }
 
       integrations.push({
         id: 'gmail-poomkids',
         name: 'Gmail POOMKIDS',
         category: 'crm-pl',
-        status: token ? (isValid ? 'ok' : 'warning') : 'error',
-        message: token ? (isValid ? token.email : 'Token wymaga odświeżenia') : 'Nie połączono',
-        lastSync: token?.updated_at
+        status,
+        message,
+        lastSync
       });
     } catch (e) {
       integrations.push({
@@ -96,15 +150,33 @@ export async function GET() {
     try {
       const tokens = await sql`SELECT email, expires_at, updated_at FROM gmail_allepoduszki_tokens WHERE id = 1`;
       const token = tokens.rows[0];
-      const isValid = token?.expires_at && parseInt(token.expires_at) > Date.now();
+      const tokenValid = token?.expires_at && parseInt(token.expires_at) > Date.now();
+
+      const lastThread = await sql`SELECT MAX(synced_at) as last_sync FROM gmail_allepoduszki_threads`;
+      const lastSync = lastThread.rows[0]?.last_sync;
+      const syncStatus = getSyncStatus(lastSync);
+
+      let status = 'error';
+      let message = 'Nie połączono';
+
+      if (!token) {
+        status = 'error';
+        message = 'Nie połączono';
+      } else if (!tokenValid) {
+        status = 'warning';
+        message = 'Token wymaga odświeżenia';
+      } else {
+        status = syncStatus.status;
+        message = syncStatus.message;
+      }
 
       integrations.push({
         id: 'gmail-allepoduszki',
         name: 'Gmail Allepoduszki',
         category: 'crm-pl',
-        status: token ? (isValid ? 'ok' : 'warning') : 'error',
-        message: token ? (isValid ? token.email : 'Token wymaga odświeżenia') : 'Nie połączono',
-        lastSync: token?.updated_at
+        status,
+        message,
+        lastSync
       });
     } catch (e) {
       integrations.push({
@@ -120,15 +192,33 @@ export async function GET() {
     try {
       const tokens = await sql`SELECT email, expires_at, updated_at FROM gmail_poomfurniture_tokens WHERE id = 1`;
       const token = tokens.rows[0];
-      const isValid = token?.expires_at && parseInt(token.expires_at) > Date.now();
+      const tokenValid = token?.expires_at && parseInt(token.expires_at) > Date.now();
+
+      const lastThread = await sql`SELECT MAX(synced_at) as last_sync FROM gmail_poomfurniture_threads`;
+      const lastSync = lastThread.rows[0]?.last_sync;
+      const syncStatus = getSyncStatus(lastSync);
+
+      let status = 'error';
+      let message = 'Nie połączono';
+
+      if (!token) {
+        status = 'error';
+        message = 'Nie połączono';
+      } else if (!tokenValid) {
+        status = 'warning';
+        message = 'Token wymaga odświeżenia';
+      } else {
+        status = syncStatus.status;
+        message = syncStatus.message;
+      }
 
       integrations.push({
         id: 'gmail-poomfurniture',
         name: 'Gmail poom-furniture',
         category: 'crm-pl',
-        status: token ? (isValid ? 'ok' : 'warning') : 'error',
-        message: token ? (isValid ? token.email : 'Token wymaga odświeżenia') : 'Nie połączono',
-        lastSync: token?.updated_at
+        status,
+        message,
+        lastSync
       });
     } catch (e) {
       integrations.push({
@@ -144,15 +234,33 @@ export async function GET() {
     try {
       const tokens = await sql`SELECT access_token, expires_at, updated_at FROM allegro_tokens WHERE id = 1`;
       const token = tokens.rows[0];
-      const isValid = token?.expires_at && parseInt(token.expires_at) > Date.now();
+      const tokenValid = token?.expires_at && parseInt(token.expires_at) > Date.now();
+
+      const lastMsg = await sql`SELECT MAX(synced_at) as last_sync FROM allegro_messages`;
+      const lastSync = lastMsg.rows[0]?.last_sync;
+      const syncStatus = getSyncStatus(lastSync);
+
+      let status = 'error';
+      let message = 'Nie połączono';
+
+      if (!token) {
+        status = 'error';
+        message = 'Nie połączono';
+      } else if (!tokenValid) {
+        status = 'warning';
+        message = 'Token wymaga odświeżenia';
+      } else {
+        status = syncStatus.status;
+        message = syncStatus.message;
+      }
 
       integrations.push({
         id: 'allegro-dobrelegowiska',
         name: 'Allegro Dobrelegowiska',
         category: 'crm-pl',
-        status: token ? (isValid ? 'ok' : 'warning') : 'error',
-        message: token ? (isValid ? 'Połączono' : 'Token wymaga odświeżenia') : 'Nie połączono',
-        lastSync: token?.updated_at
+        status,
+        message,
+        lastSync
       });
     } catch (e) {
       integrations.push({
@@ -168,15 +276,33 @@ export async function GET() {
     try {
       const tokens = await sql`SELECT email, expires_at, updated_at FROM gmail_amazon_de_tokens WHERE id = 1`;
       const token = tokens.rows[0];
-      const isValid = token?.expires_at && parseInt(token.expires_at) > Date.now();
+      const tokenValid = token?.expires_at && parseInt(token.expires_at) > Date.now();
+
+      const lastThread = await sql`SELECT MAX(synced_at) as last_sync FROM gmail_amazon_de_threads`;
+      const lastSync = lastThread.rows[0]?.last_sync;
+      const syncStatus = getSyncStatus(lastSync);
+
+      let status = 'error';
+      let message = 'Nie połączono';
+
+      if (!token) {
+        status = 'error';
+        message = 'Nie połączono';
+      } else if (!tokenValid) {
+        status = 'warning';
+        message = 'Token wymaga odświeżenia';
+      } else {
+        status = syncStatus.status;
+        message = syncStatus.message;
+      }
 
       integrations.push({
         id: 'gmail-amazon-de',
         name: 'Gmail Amazon DE',
         category: 'crm-eu',
-        status: token ? (isValid ? 'ok' : 'warning') : 'error',
-        message: token ? (isValid ? token.email : 'Token wymaga odświeżenia') : 'Nie połączono',
-        lastSync: token?.updated_at
+        status,
+        message,
+        lastSync
       });
     } catch (e) {
       integrations.push({
@@ -192,15 +318,33 @@ export async function GET() {
     try {
       const tokens = await sql`SELECT access_token, expires_at, updated_at FROM allegro_meblebox_tokens WHERE id = 1`;
       const token = tokens.rows[0];
-      const isValid = token?.expires_at && parseInt(token.expires_at) > Date.now();
+      const tokenValid = token?.expires_at && parseInt(token.expires_at) > Date.now();
+
+      const lastMsg = await sql`SELECT MAX(synced_at) as last_sync FROM allegro_meblebox_messages`;
+      const lastSync = lastMsg.rows[0]?.last_sync;
+      const syncStatus = getSyncStatus(lastSync);
+
+      let status = 'error';
+      let message = 'Nie połączono';
+
+      if (!token) {
+        status = 'error';
+        message = 'Nie połączono';
+      } else if (!tokenValid) {
+        status = 'warning';
+        message = 'Token wymaga odświeżenia';
+      } else {
+        status = syncStatus.status;
+        message = syncStatus.message;
+      }
 
       integrations.push({
         id: 'allegro-meblebox',
         name: 'Allegro Meblebox',
         category: 'crm-eu',
-        status: token ? (isValid ? 'ok' : 'warning') : 'error',
-        message: token ? (isValid ? 'Połączono' : 'Token wymaga odświeżenia') : 'Nie połączono',
-        lastSync: token?.updated_at
+        status,
+        message,
+        lastSync
       });
     } catch (e) {
       integrations.push({
@@ -213,14 +357,40 @@ export async function GET() {
     }
 
     // Check Kaufland
-    const kauflandConfigured = !!process.env.KAUFLAND_CLIENT_KEY && !!process.env.KAUFLAND_SECRET_KEY;
-    integrations.push({
-      id: 'kaufland',
-      name: 'Kaufland',
-      category: 'crm-eu',
-      status: kauflandConfigured ? 'ok' : 'disabled',
-      message: kauflandConfigured ? 'Skonfigurowany' : 'Nie skonfigurowany'
-    });
+    try {
+      const kauflandConfigured = !!process.env.KAUFLAND_CLIENT_KEY && !!process.env.KAUFLAND_SECRET_KEY;
+
+      if (!kauflandConfigured) {
+        integrations.push({
+          id: 'kaufland',
+          name: 'Kaufland',
+          category: 'crm-eu',
+          status: 'disabled',
+          message: 'Nie skonfigurowany'
+        });
+      } else {
+        const lastTicket = await sql`SELECT MAX(synced_at) as last_sync FROM kaufland_tickets`;
+        const lastSync = lastTicket.rows[0]?.last_sync;
+        const syncStatus = getSyncStatus(lastSync);
+
+        integrations.push({
+          id: 'kaufland',
+          name: 'Kaufland',
+          category: 'crm-eu',
+          status: syncStatus.status,
+          message: syncStatus.message,
+          lastSync
+        });
+      }
+    } catch (e) {
+      integrations.push({
+        id: 'kaufland',
+        name: 'Kaufland',
+        category: 'crm-eu',
+        status: 'error',
+        message: 'Błąd sprawdzania'
+      });
+    }
 
     // Calculate summary
     const summary = {
