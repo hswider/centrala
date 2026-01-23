@@ -407,20 +407,20 @@ export default function Home() {
             <div className="flex flex-wrap gap-3">
               {onlineUsers.map(u => {
                 const roleConfig = {
-                  admin: { label: 'Admin', color: 'text-purple-500 dark:text-purple-400' },
-                  it_admin: { label: 'IT Admin', color: 'text-blue-500 dark:text-blue-400' },
-                  office_lead: { label: 'Kierownik biura', color: 'text-indigo-500 dark:text-indigo-400' },
-                  warehouse_specialist: { label: 'Magazynier', color: 'text-orange-500 dark:text-orange-400' },
-                  production_manager: { label: 'Kierownik produkcji', color: 'text-teal-500 dark:text-teal-400' },
-                  billing_eu: { label: 'Rozliczenia EU', color: 'text-pink-500 dark:text-pink-400' },
-                  user: { label: 'Uzytkownik', color: 'text-gray-500 dark:text-gray-400' }
+                  admin: { label: 'Administrator', icon: '👑', bg: 'bg-purple-100 dark:bg-purple-900/30', text: 'text-purple-700 dark:text-purple-300', border: 'border-purple-300 dark:border-purple-700' },
+                  it_admin: { label: 'IT Administrator', icon: '🖥️', bg: 'bg-blue-100 dark:bg-blue-900/30', text: 'text-blue-700 dark:text-blue-300', border: 'border-blue-300 dark:border-blue-700' },
+                  office_lead: { label: 'Office Lead', icon: '📋', bg: 'bg-indigo-100 dark:bg-indigo-900/30', text: 'text-indigo-700 dark:text-indigo-300', border: 'border-indigo-300 dark:border-indigo-700' },
+                  warehouse_specialist: { label: 'Warehouse Specialist', icon: '📦', bg: 'bg-orange-100 dark:bg-orange-900/30', text: 'text-orange-700 dark:text-orange-300', border: 'border-orange-300 dark:border-orange-700' },
+                  production_manager: { label: 'Production Manager', icon: '⚙️', bg: 'bg-teal-100 dark:bg-teal-900/30', text: 'text-teal-700 dark:text-teal-300', border: 'border-teal-300 dark:border-teal-700' },
+                  billing_eu: { label: 'Billing EU', icon: '💶', bg: 'bg-pink-100 dark:bg-pink-900/30', text: 'text-pink-700 dark:text-pink-300', border: 'border-pink-300 dark:border-pink-700' },
+                  user: { label: 'User', icon: '👤', bg: 'bg-gray-100 dark:bg-gray-700', text: 'text-gray-600 dark:text-gray-300', border: 'border-gray-300 dark:border-gray-600' }
                 };
-                const role = roleConfig[u.role] || { label: u.role, color: 'text-gray-500 dark:text-gray-400' };
+                const role = roleConfig[u.role] || { label: u.role, icon: '👤', bg: 'bg-gray-100 dark:bg-gray-700', text: 'text-gray-600 dark:text-gray-300', border: 'border-gray-300 dark:border-gray-600' };
 
                 return (
                   <div
                     key={u.id}
-                    className={`inline-flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
+                    className={`inline-flex flex-col items-center gap-1 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
                       u.isOnline
                         ? 'bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800'
                         : 'bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600'
@@ -430,7 +430,10 @@ export default function Home() {
                       <span className={`w-2 h-2 rounded-full ${u.isOnline ? 'bg-green-500 animate-pulse' : 'bg-red-400'}`}></span>
                       <span className={u.isOnline ? 'text-green-700 dark:text-green-400' : 'text-gray-500 dark:text-gray-400'}>{u.username}</span>
                     </div>
-                    <span className={`text-[10px] ${role.color}`}>{role.label}</span>
+                    <div className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] border ${role.bg} ${role.text} ${role.border}`}>
+                      <span>{role.icon}</span>
+                      <span>{role.label}</span>
+                    </div>
                   </div>
                 );
               })}
