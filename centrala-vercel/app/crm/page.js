@@ -73,11 +73,11 @@ function CRMContent() {
   const [allepoduszkiUnreadCount, setAllepoduszkiUnreadCount] = useState(0);
 
   const tabs = [
-    { key: 'wiadomosci', label: 'Allegro Dobrelegowiska', icon: 'https://a.allegroimg.com/original/12c30c/0d4b068640de9b0daf22af9d97c5', overlayIcon: '/icons/dobrelegowiska.png', isImage: true, badge: unreadCount, color: 'orange' },
-    { key: 'meblebox', label: 'Allegro Meblebox', icon: 'https://a.allegroimg.com/original/12c30c/0d4b068640de9b0daf22af9d97c5', isImage: true, badge: mebleboxUnreadCount, color: 'orange' },
-    { key: 'shopify', label: 'Shopify Dobrelegowiska', icon: '/icons/dobrelegowiska.png', isImage: true, badge: gmailUnreadCount, color: 'green' },
-    { key: 'poomkids', label: 'Shopify POOMKIDS', icon: '/icons/poomkids.png', isImage: true, badge: poomkidsUnreadCount, color: 'blue' },
-    { key: 'allepoduszki', label: 'Shopify Allepoduszki', icon: '/icons/allepoduszki.png', isImage: true, badge: allepoduszkiUnreadCount, color: 'purple' },
+    { key: 'wiadomosci', label: 'Allegro Dobrelegowiska', icon: 'https://a.allegroimg.com/original/12c30c/0d4b068640de9b0daf22af9d97c5', overlayIcon: '/icons/dobrelegowiska.png', isImage: true, badge: unreadCount, color: 'orange', isConnected: allegroAuth.authenticated, isLoading: allegroAuth.loading },
+    { key: 'meblebox', label: 'Allegro Meblebox', icon: 'https://a.allegroimg.com/original/12c30c/0d4b068640de9b0daf22af9d97c5', isImage: true, badge: mebleboxUnreadCount, color: 'orange', isConnected: mebleboxAuth.authenticated, isLoading: mebleboxAuth.loading },
+    { key: 'shopify', label: 'Shopify Dobrelegowiska', icon: '/icons/dobrelegowiska.png', isImage: true, badge: gmailUnreadCount, color: 'green', isConnected: gmailAuth.authenticated, isLoading: gmailAuth.loading },
+    { key: 'poomkids', label: 'Shopify POOMKIDS', icon: '/icons/poomkids.png', isImage: true, badge: poomkidsUnreadCount, color: 'blue', isConnected: poomkidsAuth.authenticated, isLoading: poomkidsAuth.loading },
+    { key: 'allepoduszki', label: 'Shopify Allepoduszki', icon: '/icons/allepoduszki.png', isImage: true, badge: allepoduszkiUnreadCount, color: 'purple', isConnected: allepoduszkiAuth.authenticated, isLoading: allepoduszkiAuth.loading },
   ];
 
   // Check for success/error from OAuth callback
@@ -96,7 +96,7 @@ function CRMContent() {
     }
     if (error) {
       alert(`Blad Allegro Dobrelegowiska: ${error}`);
-      window.history.replaceState({}, '', '/crm');
+      window.history.replaceState({}, '', '/crm');2
     }
     if (mebleboxSuccess) {
       alert('Pomyslnie polaczono z Allegro Meblebox!');
@@ -884,6 +884,15 @@ function CRMContent() {
                   <span>{tab.icon}</span>
                 )}
                 <span className="hidden sm:inline">{tab.label}</span>
+                {/* Status integracji */}
+                {tab.isLoading ? (
+                  <span className="w-2 h-2 rounded-full bg-gray-300 dark:bg-gray-600 animate-pulse" title="Sprawdzanie..."></span>
+                ) : (
+                  <span
+                    className={`w-2 h-2 rounded-full ${tab.isConnected ? 'bg-green-500' : 'bg-red-500'}`}
+                    title={tab.isConnected ? 'Integracja dziala' : 'Integracja nie dziala'}
+                  ></span>
+                )}
                 {tab.badge > 0 && (
                   <span className="px-1.5 py-0.5 bg-red-500 text-white text-xs rounded-full">{tab.badge}</span>
                 )}
