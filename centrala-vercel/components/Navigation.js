@@ -80,6 +80,28 @@ export default function Navigation() {
         // Silently ignore
       }
 
+      // Allepoduszki (Gmail)
+      try {
+        const res = await fetch('/api/gmail-allepoduszki/messages');
+        const data = await res.json();
+        if (data.success && data.threads) {
+          totalUnread += data.threads.filter(t => t.unread).length;
+        }
+      } catch (err) {
+        // Silently ignore
+      }
+
+      // poom-furniture (Gmail)
+      try {
+        const res = await fetch('/api/gmail-poomfurniture/messages');
+        const data = await res.json();
+        if (data.success && data.threads) {
+          totalUnread += data.threads.filter(t => t.unread).length;
+        }
+      } catch (err) {
+        // Silently ignore
+      }
+
       setUnreadCount(totalUnread);
     };
 
