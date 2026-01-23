@@ -42,13 +42,23 @@ async function getAccessToken() {
     throw new Error('No tokens found. Please set initial tokens in database.');
   }
 
+  const expiresAt = parseInt(tokens.expires_at);
+  const now = Date.now();
+
+  // Proactive refresh: if token expires in less than 7 days, refresh it now
+  const sevenDaysMs = 7 * 24 * 60 * 60 * 1000;
+  const shouldRefreshProactively = expiresAt && (expiresAt - now) < sevenDaysMs;
+
   // Check if token is still valid
-  if (tokens.expires_at && Date.now() < parseInt(tokens.expires_at)) {
+  if (tokens.expires_at && now < expiresAt && !shouldRefreshProactively) {
     return tokens.access_token;
   }
 
-  // Refresh token
+  // Refresh token (either expired or proactive refresh)
   if (tokens.refresh_token) {
+    if (shouldRefreshProactively) {
+      console.log('[Apilo] Proactive token refresh - expires in', Math.round((expiresAt - now) / (24 * 60 * 60 * 1000)), 'days');
+    }
     return await refreshTokens(tokens.refresh_token);
   }
 

@@ -31,11 +31,6 @@ const publicRoutes = [
   '/api/kaufland/debug', // Kaufland debug
   '/api/baselinker/debug', // Baselinker debug
   '/api/debug',          // Apilo debug
-  '/api/debug-apilo',    // Apilo detailed debug
-  '/api/apilo-refresh',  // Force Apilo token refresh
-  '/api/apilo-set-token', // Set new Apilo token
-  '/api/apilo-auth',     // Exchange auth code for tokens
-  '/api/apilo-check',    // Check Apilo credentials
   '/api/weather/sync',   // Weather sync cron
   '/api/dms/init'        // DMS table initialization
 ];
