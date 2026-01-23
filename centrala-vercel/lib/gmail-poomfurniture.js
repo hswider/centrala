@@ -290,6 +290,43 @@ export async function isAuthenticated() {
 
 // ========== HELPERS ==========
 
+// Extract plain text from HTML
+function htmlToPlainText(html) {
+  if (!html) return '';
+
+  // Remove style and script tags and their content
+  let text = html.replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '');
+  text = text.replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '');
+
+  // Replace <br>, <p>, <div> with newlines
+  text = text.replace(/<br\s*\/?>/gi, '\n');
+  text = text.replace(/<\/p>/gi, '\n\n');
+  text = text.replace(/<\/div>/gi, '\n');
+  text = text.replace(/<\/tr>/gi, '\n');
+  text = text.replace(/<\/li>/gi, '\n');
+
+  // Remove all remaining HTML tags
+  text = text.replace(/<[^>]+>/g, '');
+
+  // Decode HTML entities
+  text = text.replace(/&nbsp;/gi, ' ');
+  text = text.replace(/&amp;/gi, '&');
+  text = text.replace(/&lt;/gi, '<');
+  text = text.replace(/&gt;/gi, '>');
+  text = text.replace(/&quot;/gi, '"');
+  text = text.replace(/&#39;/gi, "'");
+  text = text.replace(/&apos;/gi, "'");
+
+  // Clean up whitespace
+  text = text.replace(/\r\n/g, '\n');
+  text = text.replace(/\n{3,}/g, '\n\n');
+  text = text.replace(/[ \t]+/g, ' ');
+  text = text.split('\n').map(line => line.trim()).join('\n');
+  text = text.trim();
+
+  return text;
+}
+
 // Parse email message to extract useful data
 export function parseMessage(message) {
   const headers = message.payload?.headers || [];
@@ -301,7 +338,11 @@ export function parseMessage(message) {
 
   const extractBodyAndAttachments = (part) => {
     if (part.mimeType === 'text/plain' && part.body?.data) {
-      bodyText = Buffer.from(part.body.data, 'base64').toString('utf-8');
+      const decoded = Buffer.from(part.body.data, 'base64').toString('utf-8');
+      // Only use if not empty/whitespace only
+      if (decoded.trim()) {
+        bodyText = decoded;
+      }
     } else if (part.mimeType === 'text/html' && part.body?.data) {
       bodyHtml = Buffer.from(part.body.data, 'base64').toString('utf-8');
     } else if (part.filename && part.body?.attachmentId) {
@@ -336,6 +377,11 @@ export function parseMessage(message) {
         mimeType: message.payload.mimeType,
         size: message.payload.body.size || 0
       });
+    }
+
+    // FALLBACK: If bodyText is still empty but we have HTML, extract text from HTML
+    if (!bodyText && bodyHtml) {
+      bodyText = htmlToPlainText(bodyHtml);
     }
   }
 
