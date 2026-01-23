@@ -405,19 +405,35 @@ export default function Home() {
               </span>
             </div>
             <div className="flex flex-wrap gap-3">
-              {onlineUsers.map(u => (
-                <div
-                  key={u.id}
-                  className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium transition-all ${
-                    u.isOnline
-                      ? 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 border border-green-200 dark:border-green-800'
-                      : 'bg-gray-50 dark:bg-gray-700 text-gray-500 dark:text-gray-400 border border-gray-200 dark:border-gray-600'
-                  }`}
-                >
-                  <span className={`w-2.5 h-2.5 rounded-full ${u.isOnline ? 'bg-green-500 animate-pulse' : 'bg-red-400'}`}></span>
-                  <span>{u.username}</span>
-                </div>
-              ))}
+              {onlineUsers.map(u => {
+                const roleConfig = {
+                  admin: { label: 'Admin', color: 'text-purple-500 dark:text-purple-400' },
+                  it_admin: { label: 'IT Admin', color: 'text-blue-500 dark:text-blue-400' },
+                  office_lead: { label: 'Kierownik biura', color: 'text-indigo-500 dark:text-indigo-400' },
+                  warehouse_specialist: { label: 'Magazynier', color: 'text-orange-500 dark:text-orange-400' },
+                  production_manager: { label: 'Kierownik produkcji', color: 'text-teal-500 dark:text-teal-400' },
+                  billing_eu: { label: 'Rozliczenia EU', color: 'text-pink-500 dark:text-pink-400' },
+                  user: { label: 'Uzytkownik', color: 'text-gray-500 dark:text-gray-400' }
+                };
+                const role = roleConfig[u.role] || { label: u.role, color: 'text-gray-500 dark:text-gray-400' };
+
+                return (
+                  <div
+                    key={u.id}
+                    className={`inline-flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
+                      u.isOnline
+                        ? 'bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800'
+                        : 'bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2">
+                      <span className={`w-2 h-2 rounded-full ${u.isOnline ? 'bg-green-500 animate-pulse' : 'bg-red-400'}`}></span>
+                      <span className={u.isOnline ? 'text-green-700 dark:text-green-400' : 'text-gray-500 dark:text-gray-400'}>{u.username}</span>
+                    </div>
+                    <span className={`text-[10px] ${role.color}`}>{role.label}</span>
+                  </div>
+                );
+              })}
             </div>
           </div>
         )}
