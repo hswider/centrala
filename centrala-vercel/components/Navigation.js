@@ -165,6 +165,7 @@ export default function Navigation() {
     { href: '/mes', label: 'MES', icon: '⚙️', permission: 'mes' },
     { href: '/mts', label: 'MTS', icon: '📋', permission: 'mts' },
     { href: '/dms', label: 'DMS', icon: '📄', permission: 'dms' },
+    { href: '/ecom', label: 'ECOM', icon: '🖥️', permission: 'ecom' },
     { href: '/crm', label: 'CRM 🇵🇱', icon: '👥', badge: unreadCount, permission: 'crm' },
     { href: '/crm-eu', label: 'CRM 🇪🇺', icon: '👥', badge: unreadCountEU, permission: 'crm-eu' },
     { href: '/rank', label: 'RANK', icon: '📈', permission: 'rank' },
@@ -197,6 +198,7 @@ export default function Navigation() {
       (item.href === '/mes' && pathname.startsWith('/mes')) ||
       (item.href === '/mts' && pathname.startsWith('/mts')) ||
       (item.href === '/dms' && pathname.startsWith('/dms')) ||
+      (item.href === '/ecom' && pathname.startsWith('/ecom')) ||
       (item.href === '/crm' && pathname === '/crm') ||
       (item.href === '/crm-eu' && pathname.startsWith('/crm-eu')) ||
       (item.href === '/rank' && pathname.startsWith('/rank')) ||
