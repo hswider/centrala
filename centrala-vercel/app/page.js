@@ -28,6 +28,12 @@ export default function Home() {
   const [showMoreChannelsDown, setShowMoreChannelsDown] = useState(false);
   const [channelsSearch, setChannelsSearch] = useState('');
 
+  // Integrations status state
+  const [integrations, setIntegrations] = useState([]);
+  const [integrationsSummary, setIntegrationsSummary] = useState(null);
+  const [integrationsLoading, setIntegrationsLoading] = useState(true);
+  const [showIntegrationsDetails, setShowIntegrationsDetails] = useState(false);
+
   // Permission labels mapping
   const permissionLabels = {
     dashboard: { label: 'Dashboard', icon: '📊' },
@@ -198,6 +204,21 @@ export default function Home() {
     fetchTrendingChannels(days);
   };
 
+  const fetchIntegrationsStatus = async () => {
+    try {
+      const res = await fetch('/api/integrations/status');
+      const data = await res.json();
+      if (data.success) {
+        setIntegrations(data.integrations);
+        setIntegrationsSummary(data.summary);
+      }
+    } catch (err) {
+      console.error('Error fetching integrations status:', err);
+    } finally {
+      setIntegrationsLoading(false);
+    }
+  };
+
   const triggerSync = async () => {
     setSyncing(true);
     try {
@@ -220,10 +241,16 @@ export default function Home() {
     fetchOnlineUsers();
     fetchTrending();
     fetchTrendingChannels();
+    fetchIntegrationsStatus();
 
     // Refresh online users every 30 seconds
     const onlineInterval = setInterval(fetchOnlineUsers, 30000);
-    return () => clearInterval(onlineInterval);
+    // Refresh integrations status every 5 minutes
+    const integrationsInterval = setInterval(fetchIntegrationsStatus, 5 * 60 * 1000);
+    return () => {
+      clearInterval(onlineInterval);
+      clearInterval(integrationsInterval);
+    };
   }, []);
 
   const platformConfig = {
@@ -392,6 +419,134 @@ export default function Home() {
                 </div>
               ))}
             </div>
+          </div>
+        )}
+
+        {/* Integrations Status Bar */}
+        {!integrationsLoading && integrationsSummary && (
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow dark:shadow-gray-900 p-4 mb-6">
+            <div
+              className="flex items-center justify-between cursor-pointer"
+              onClick={() => setShowIntegrationsDetails(!showIntegrationsDetails)}
+            >
+              <div className="flex items-center gap-2">
+                <span className="text-lg">🔌</span>
+                <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300">Status integracji</h3>
+              </div>
+              <div className="flex items-center gap-3">
+                {integrationsSummary.ok > 0 && (
+                  <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400">
+                    <span className="w-2 h-2 rounded-full bg-green-500"></span>
+                    {integrationsSummary.ok} OK
+                  </span>
+                )}
+                {integrationsSummary.warning > 0 && (
+                  <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400">
+                    <span className="w-2 h-2 rounded-full bg-yellow-500"></span>
+                    {integrationsSummary.warning} Uwaga
+                  </span>
+                )}
+                {integrationsSummary.error > 0 && (
+                  <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400">
+                    <span className="w-2 h-2 rounded-full bg-red-500"></span>
+                    {integrationsSummary.error} Błąd
+                  </span>
+                )}
+                <span className="text-gray-400 text-xs">{showIntegrationsDetails ? '▲' : '▼'}</span>
+              </div>
+            </div>
+
+            {/* Expanded details */}
+            {showIntegrationsDetails && (
+              <div className="mt-4 space-y-4">
+                {/* Orders integrations */}
+                <div>
+                  <h4 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase mb-2">Zamówienia</h4>
+                  <div className="flex flex-wrap gap-2">
+                    {integrations.filter(i => i.category === 'orders').map(integration => (
+                      <div
+                        key={integration.id}
+                        className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium border ${
+                          integration.status === 'ok'
+                            ? 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 border-green-200 dark:border-green-800'
+                            : integration.status === 'warning'
+                            ? 'bg-yellow-50 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-400 border-yellow-200 dark:border-yellow-800'
+                            : integration.status === 'disabled'
+                            ? 'bg-gray-50 dark:bg-gray-700 text-gray-500 dark:text-gray-400 border-gray-200 dark:border-gray-600'
+                            : 'bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 border-red-200 dark:border-red-800'
+                        }`}
+                        title={integration.message}
+                      >
+                        <span className={`w-2 h-2 rounded-full ${
+                          integration.status === 'ok' ? 'bg-green-500' :
+                          integration.status === 'warning' ? 'bg-yellow-500' :
+                          integration.status === 'disabled' ? 'bg-gray-400' : 'bg-red-500'
+                        }`}></span>
+                        <span>{integration.name}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* CRM PL integrations */}
+                <div>
+                  <h4 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase mb-2">CRM PL</h4>
+                  <div className="flex flex-wrap gap-2">
+                    {integrations.filter(i => i.category === 'crm-pl').map(integration => (
+                      <div
+                        key={integration.id}
+                        className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium border ${
+                          integration.status === 'ok'
+                            ? 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 border-green-200 dark:border-green-800'
+                            : integration.status === 'warning'
+                            ? 'bg-yellow-50 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-400 border-yellow-200 dark:border-yellow-800'
+                            : integration.status === 'disabled'
+                            ? 'bg-gray-50 dark:bg-gray-700 text-gray-500 dark:text-gray-400 border-gray-200 dark:border-gray-600'
+                            : 'bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 border-red-200 dark:border-red-800'
+                        }`}
+                        title={integration.message}
+                      >
+                        <span className={`w-2 h-2 rounded-full ${
+                          integration.status === 'ok' ? 'bg-green-500' :
+                          integration.status === 'warning' ? 'bg-yellow-500' :
+                          integration.status === 'disabled' ? 'bg-gray-400' : 'bg-red-500'
+                        }`}></span>
+                        <span>{integration.name}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* CRM EU integrations */}
+                <div>
+                  <h4 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase mb-2">CRM EU</h4>
+                  <div className="flex flex-wrap gap-2">
+                    {integrations.filter(i => i.category === 'crm-eu').map(integration => (
+                      <div
+                        key={integration.id}
+                        className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium border ${
+                          integration.status === 'ok'
+                            ? 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 border-green-200 dark:border-green-800'
+                            : integration.status === 'warning'
+                            ? 'bg-yellow-50 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-400 border-yellow-200 dark:border-yellow-800'
+                            : integration.status === 'disabled'
+                            ? 'bg-gray-50 dark:bg-gray-700 text-gray-500 dark:text-gray-400 border-gray-200 dark:border-gray-600'
+                            : 'bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 border-red-200 dark:border-red-800'
+                        }`}
+                        title={integration.message}
+                      >
+                        <span className={`w-2 h-2 rounded-full ${
+                          integration.status === 'ok' ? 'bg-green-500' :
+                          integration.status === 'warning' ? 'bg-yellow-500' :
+                          integration.status === 'disabled' ? 'bg-gray-400' : 'bg-red-500'
+                        }`}></span>
+                        <span>{integration.name}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         )}
 
