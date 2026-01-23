@@ -587,6 +587,7 @@ export default function CRMEUPage() {
 
         {/* Status integracji */}
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow dark:shadow-gray-900 mb-4 p-3">
+          <h3 className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-2 uppercase tracking-wide">Status integracji</h3>
           <div className="flex flex-wrap gap-3">
             {tabs.map((tab) => {
               const lastSync = tab.syncStatus?.lastSyncAt ? new Date(tab.syncStatus.lastSyncAt) : null;
@@ -637,6 +638,9 @@ export default function CRMEUPage() {
 
         {/* Tabs */}
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow dark:shadow-gray-900 mb-4">
+          <div className="px-4 pt-3 pb-1">
+            <h3 className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">Wiadomosci z kanalow sprzedazy</h3>
+          </div>
           <div className="flex border-b border-gray-100 dark:border-gray-700 overflow-x-auto">
             {tabs.map((tab) => (
               <button
