@@ -34,7 +34,8 @@ const publicRoutes = [
   '/api/debug',          // Apilo debug
   '/api/integrations/status', // Integrations status (for dashboard)
   '/api/weather/sync',   // Weather sync cron
-  '/api/dms/init'        // DMS table initialization
+  '/api/dms/init',        // DMS table initialization
+  '/api/ecom/delivery-time' // ECOM delivery time check
 ];
 
 export function middleware(request) {
