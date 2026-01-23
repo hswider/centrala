@@ -1894,13 +1894,6 @@ function CRMContent() {
                           {gmailSyncing ? 'Sync...' : 'Synchronizuj'}
                         </button>
                         <button
-                          onClick={handleGmailClearHistory}
-                          className="px-3 py-1.5 text-sm bg-yellow-500 text-white rounded-lg hover:bg-yellow-600"
-                          title="Wyczyść całą historię wiadomości"
-                        >
-                          Wyczyść
-                        </button>
-                        <button
                           onClick={handleGmailLogout}
                           className="px-3 py-1.5 text-sm bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600"
                           title="Wyloguj z Gmail"
