@@ -540,6 +540,26 @@ function CRMContent() {
     }
   };
 
+  // Clear Gmail history
+  const handleGmailClearHistory = async () => {
+    if (!confirm('Czy na pewno chcesz usunac cala historie wiadomosci? Ta operacja jest nieodwracalna.')) return;
+    try {
+      const res = await fetch('/api/gmail/auth?action=clear-history', { method: 'POST' });
+      const data = await res.json();
+      if (data.success) {
+        setGmailThreads([]);
+        setGmailSelectedThread(null);
+        setGmailThreadMessages([]);
+        setGmailUnreadCount(0);
+        alert('Historia zostala wyczyszczona');
+      } else {
+        alert('Blad: ' + data.error);
+      }
+    } catch (err) {
+      alert('Blad: ' + err.message);
+    }
+  };
+
   // Open Gmail thread
   const openGmailThread = async (thread) => {
     setGmailSelectedThread(thread);
@@ -1872,6 +1892,13 @@ function CRMContent() {
                           className="px-3 py-1.5 text-sm bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50"
                         >
                           {gmailSyncing ? 'Sync...' : 'Synchronizuj'}
+                        </button>
+                        <button
+                          onClick={handleGmailClearHistory}
+                          className="px-3 py-1.5 text-sm bg-yellow-500 text-white rounded-lg hover:bg-yellow-600"
+                          title="Wyczyść całą historię wiadomości"
+                        >
+                          Wyczyść
                         </button>
                         <button
                           onClick={handleGmailLogout}

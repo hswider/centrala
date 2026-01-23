@@ -2021,6 +2021,11 @@ export async function clearGmailTokens() {
     WHERE id = 1
   `;
   // Clear messages and threads history
+  await clearGmailHistory();
+}
+
+// Clear Gmail history only (threads and messages)
+export async function clearGmailHistory() {
   await sql`DELETE FROM gmail_messages`;
   await sql`DELETE FROM gmail_threads`;
 }

@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { redirect } from 'next/navigation';
 import { getAuthorizationUrl, isAuthenticated, getCurrentUser } from '../../../../lib/gmail';
-import { initDatabase, getGmailTokens, clearGmailTokens } from '../../../../lib/db';
+import { initDatabase, getGmailTokens, clearGmailTokens, clearGmailHistory } from '../../../../lib/db';
 
 export async function GET(request) {
   try {
@@ -49,6 +49,28 @@ export async function DELETE(request) {
     return NextResponse.json({ success: true, message: 'Logged out successfully' });
   } catch (error) {
     console.error('Gmail logout error:', error);
+    return NextResponse.json(
+      { success: false, error: error.message },
+      { status: 500 }
+    );
+  }
+}
+
+// Clear history only (POST with action=clear-history)
+export async function POST(request) {
+  try {
+    await initDatabase();
+    const { searchParams } = new URL(request.url);
+    const action = searchParams.get('action');
+
+    if (action === 'clear-history') {
+      await clearGmailHistory();
+      return NextResponse.json({ success: true, message: 'History cleared successfully' });
+    }
+
+    return NextResponse.json({ success: false, error: 'Unknown action' }, { status: 400 });
+  } catch (error) {
+    console.error('Gmail POST error:', error);
     return NextResponse.json(
       { success: false, error: error.message },
       { status: 500 }
