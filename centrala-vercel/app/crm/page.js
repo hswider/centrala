@@ -2136,6 +2136,7 @@ function CRMContent() {
                                 console.error('Error parsing attachments:', e);
                               }
                               const isSelected = gmailSelectedMessages.includes(msg.id);
+                              const senderInitial = (msg.from_email || '?')[0].toUpperCase();
                               return (
                               <div
                                 key={msg.id}
@@ -2148,46 +2149,59 @@ function CRMContent() {
                                   onChange={() => toggleGmailMessageSelection(msg.id)}
                                   className={`mt-3 w-4 h-4 rounded cursor-pointer ${msg.is_outgoing ? 'order-last ml-2' : 'mr-0'}`}
                                 />
-                                <div
-                                  className={`max-w-[80%] px-4 py-3 rounded-lg ${isSelected ? 'ring-2 ring-red-500' : ''} ${
-                                    msg.is_outgoing
-                                      ? 'bg-red-600 text-white'
-                                      : 'bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-900 dark:text-white'
-                                  }`}
-                                >
-                                  <div className={`text-xs mb-1 ${msg.is_outgoing ? 'text-red-200' : 'text-gray-500'}`}>
-                                    {msg.from_name || msg.from_email}
-                                  </div>
-                                  <div className="whitespace-pre-wrap break-words text-sm">
-                                    {msg.body_text || '(Brak tresci tekstowej)'}
-                                  </div>
-                                  {/* Attachments */}
-                                  {msgAttachments.length > 0 && (
-                                    <div className="mt-2">
-                                      <p className={`text-[10px] mb-1 ${msg.is_outgoing ? 'text-red-200' : 'text-gray-400'}`}>Zalaczniki:</p>
-                                      <div className="flex flex-wrap gap-1">
-                                        {msgAttachments.map((att, i) => (
-                                          <a
-                                            key={i}
-                                            href={`/api/gmail/attachments/${msg.id}/${att.id}?filename=${encodeURIComponent(att.filename)}&mimeType=${encodeURIComponent(att.mimeType)}`}
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            className={`inline-flex items-center gap-1 px-2 py-1 rounded text-xs ${
-                                              msg.is_outgoing
-                                                ? 'bg-red-700 hover:bg-red-800 text-white'
-                                                : 'bg-gray-100 dark:bg-gray-600 hover:bg-gray-200 dark:hover:bg-gray-500 text-gray-700 dark:text-gray-200'
-                                            }`}
-                                          >
-                                            <span>{getAttachmentIcon(att.mimeType)}</span>
-                                            <span className="truncate max-w-[100px]">{att.filename}</span>
-                                          </a>
-                                        ))}
-                                      </div>
+                                {/* Message with avatar */}
+                                <div className="relative">
+                                  {/* Avatar overlapping corner */}
+                                  {msg.is_outgoing ? (
+                                    <div className="absolute -bottom-2 -right-2 w-8 h-8 rounded-full bg-white dark:bg-gray-800 border-2 border-red-600 flex items-center justify-center overflow-hidden z-10">
+                                      <img src="/icons/dobrelegowiska.png" alt="" className="w-5 h-5 object-contain" />
+                                    </div>
+                                  ) : (
+                                    <div className="absolute -bottom-2 -left-2 w-8 h-8 rounded-full bg-red-100 border-2 border-white dark:border-gray-800 flex items-center justify-center text-red-600 font-bold text-sm z-10">
+                                      {senderInitial}
                                     </div>
                                   )}
-                                  <p className={`text-xs mt-2 ${msg.is_outgoing ? 'text-red-200' : 'text-gray-400'}`}>
-                                    {formatDate(msg.sent_at)}
-                                  </p>
+                                  <div
+                                    className={`max-w-[80%] min-w-[200px] px-4 py-3 rounded-lg ${isSelected ? 'ring-2 ring-red-500' : ''} ${
+                                      msg.is_outgoing
+                                        ? 'bg-red-600 text-white'
+                                        : 'bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-900 dark:text-white'
+                                    }`}
+                                  >
+                                    <div className={`text-xs mb-1 ${msg.is_outgoing ? 'text-red-200' : 'text-gray-500'}`}>
+                                      {msg.from_name || msg.from_email}
+                                    </div>
+                                    <div className="whitespace-pre-wrap break-words text-sm">
+                                      {msg.body_text || '(Brak tresci tekstowej)'}
+                                    </div>
+                                    {/* Attachments */}
+                                    {msgAttachments.length > 0 && (
+                                      <div className="mt-2">
+                                        <p className={`text-[10px] mb-1 ${msg.is_outgoing ? 'text-red-200' : 'text-gray-400'}`}>Zalaczniki:</p>
+                                        <div className="flex flex-wrap gap-1">
+                                          {msgAttachments.map((att, i) => (
+                                            <a
+                                              key={i}
+                                              href={`/api/gmail/attachments/${msg.id}/${att.id}?filename=${encodeURIComponent(att.filename)}&mimeType=${encodeURIComponent(att.mimeType)}`}
+                                              target="_blank"
+                                              rel="noopener noreferrer"
+                                              className={`inline-flex items-center gap-1 px-2 py-1 rounded text-xs ${
+                                                msg.is_outgoing
+                                                  ? 'bg-red-700 hover:bg-red-800 text-white'
+                                                  : 'bg-gray-100 dark:bg-gray-600 hover:bg-gray-200 dark:hover:bg-gray-500 text-gray-700 dark:text-gray-200'
+                                              }`}
+                                            >
+                                              <span>{getAttachmentIcon(att.mimeType)}</span>
+                                              <span className="truncate max-w-[100px]">{att.filename}</span>
+                                            </a>
+                                          ))}
+                                        </div>
+                                      </div>
+                                    )}
+                                    <p className={`text-xs mt-2 ${msg.is_outgoing ? 'text-red-200' : 'text-gray-400'}`}>
+                                      {formatDate(msg.sent_at)}
+                                    </p>
+                                  </div>
                                 </div>
                               </div>
                             );
