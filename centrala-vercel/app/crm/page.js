@@ -45,6 +45,7 @@ function CRMContent() {
   const [gmailSyncing, setGmailSyncing] = useState(false);
   const [gmailSyncStatus, setGmailSyncStatus] = useState(null);
   const [gmailUnreadCount, setGmailUnreadCount] = useState(0);
+  const [gmailAttachments, setGmailAttachments] = useState([]);
 
   // Gmail POOMKIDS (Shopify POOMKIDS) state
   const [poomkidsAuth, setPoomkidsAuth] = useState({ authenticated: false, user: null, loading: true });
@@ -58,6 +59,7 @@ function CRMContent() {
   const [poomkidsSyncing, setPoomkidsSyncing] = useState(false);
   const [poomkidsSyncStatus, setPoomkidsSyncStatus] = useState(null);
   const [poomkidsUnreadCount, setPoomkidsUnreadCount] = useState(0);
+  const [poomkidsAttachments, setPoomkidsAttachments] = useState([]);
 
   // Gmail Allepoduszki (Shopify Allepoduszki) state
   const [allepoduszkiAuth, setAllepoduszkiAuth] = useState({ authenticated: false, user: null, loading: true });
@@ -71,6 +73,7 @@ function CRMContent() {
   const [allepoduszkiSyncing, setAllepoduszkiSyncing] = useState(false);
   const [allepoduszkiSyncStatus, setAllepoduszkiSyncStatus] = useState(null);
   const [allepoduszkiUnreadCount, setAllepoduszkiUnreadCount] = useState(0);
+  const [allepoduszkiAttachments, setAllepoduszkiAttachments] = useState([]);
 
   // Gmail Poomfurniture (Shopify poom-furniture.com) state
   const [poomfurnitureAuth, setPoomfurnitureAuth] = useState({ authenticated: false, user: null, loading: true });
@@ -84,6 +87,7 @@ function CRMContent() {
   const [poomfurnitureSyncing, setPoomfurnitureSyncing] = useState(false);
   const [poomfurnitureSyncStatus, setPoomfurnitureSyncStatus] = useState(null);
   const [poomfurnitureUnreadCount, setPoomfurnitureUnreadCount] = useState(0);
+  const [poomfurnitureAttachments, setPoomfurnitureAttachments] = useState([]);
 
   const tabs = [
     { key: 'wiadomosci', label: 'Allegro Dobrelegowiska', icon: 'https://a.allegroimg.com/original/12c30c/0d4b068640de9b0daf22af9d97c5', overlayIcon: '/icons/dobrelegowiska.png', isImage: true, badge: unreadCount, color: 'orange', isConnected: allegroAuth.authenticated, isLoading: allegroAuth.loading },
@@ -590,23 +594,38 @@ function CRMContent() {
 
   // Send Gmail reply
   const handleGmailSendReply = async () => {
-    if (!gmailReplyText.trim() || !gmailSelectedThread) return;
+    if ((!gmailReplyText.trim() && gmailAttachments.length === 0) || !gmailSelectedThread) return;
 
     setGmailSending(true);
     try {
+      // Convert attachments to base64
+      const attachmentData = await Promise.all(gmailAttachments.map(file => {
+        return new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => {
+            const base64 = reader.result.split(',')[1];
+            resolve({ filename: file.name, mimeType: file.type, data: base64 });
+          };
+          reader.onerror = reject;
+          reader.readAsDataURL(file);
+        });
+      }));
+
       const res = await fetch(`/api/gmail/messages/${gmailSelectedThread.id}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           text: gmailReplyText.trim(),
           to: gmailSelectedThread.from_email,
-          subject: gmailSelectedThread.subject
+          subject: gmailSelectedThread.subject,
+          attachments: attachmentData
         })
       });
       const data = await res.json();
 
       if (data.success) {
         setGmailReplyText('');
+        setGmailAttachments([]);
         const msgRes = await fetch(`/api/gmail/messages/${gmailSelectedThread.id}?refresh=true`);
         const msgData = await msgRes.json();
         if (msgData.success) {
@@ -1097,6 +1116,16 @@ function CRMContent() {
     } finally {
       setPoomfurnitureSending(false);
     }
+  };
+
+  // Get attachment icon based on mime type
+  const getAttachmentIcon = (mimeType, filename = '') => {
+    if (mimeType?.startsWith('image/')) return '🖼️';
+    if (mimeType?.includes('pdf') || filename?.endsWith('.pdf')) return '📄';
+    if (mimeType?.includes('word') || filename?.match(/\.(doc|docx)$/)) return '📝';
+    if (mimeType?.includes('excel') || filename?.match(/\.(xls|xlsx)$/)) return '📊';
+    if (mimeType?.includes('zip') || filename?.match(/\.(zip|rar|7z)$/)) return '📦';
+    return '📎';
   };
 
   // Format date
@@ -1993,7 +2022,17 @@ function CRMContent() {
                           ) : gmailThreadMessages.length === 0 ? (
                             <div className="text-center text-gray-500 dark:text-gray-400">Brak wiadomosci</div>
                           ) : (
-                            gmailThreadMessages.map((msg) => (
+                            gmailThreadMessages.map((msg) => {
+                              let msgAttachments = [];
+                              try {
+                                if (msg.attachments) {
+                                  msgAttachments = typeof msg.attachments === 'string' ? JSON.parse(msg.attachments) : msg.attachments;
+                                  if (!Array.isArray(msgAttachments)) msgAttachments = [];
+                                }
+                              } catch (e) {
+                                console.error('Error parsing attachments:', e);
+                              }
+                              return (
                               <div
                                 key={msg.id}
                                 className={`flex ${msg.is_outgoing ? 'justify-end' : 'justify-start'}`}
@@ -2011,23 +2050,76 @@ function CRMContent() {
                                   <div className="whitespace-pre-wrap break-words text-sm">
                                     {msg.body_text || '(Brak tresci tekstowej)'}
                                   </div>
+                                  {/* Attachments */}
+                                  {msgAttachments.length > 0 && (
+                                    <div className="mt-2">
+                                      <p className={`text-[10px] mb-1 ${msg.is_outgoing ? 'text-red-200' : 'text-gray-400'}`}>Zalaczniki:</p>
+                                      <div className="flex flex-wrap gap-1">
+                                        {msgAttachments.map((att, i) => (
+                                          <a
+                                            key={i}
+                                            href={`/api/gmail/attachments/${msg.id}/${att.id}?filename=${encodeURIComponent(att.filename)}&mimeType=${encodeURIComponent(att.mimeType)}`}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className={`inline-flex items-center gap-1 px-2 py-1 rounded text-xs ${
+                                              msg.is_outgoing
+                                                ? 'bg-red-700 hover:bg-red-800 text-white'
+                                                : 'bg-gray-100 dark:bg-gray-600 hover:bg-gray-200 dark:hover:bg-gray-500 text-gray-700 dark:text-gray-200'
+                                            }`}
+                                          >
+                                            <span>{getAttachmentIcon(att.mimeType)}</span>
+                                            <span className="truncate max-w-[100px]">{att.filename}</span>
+                                          </a>
+                                        ))}
+                                      </div>
+                                    </div>
+                                  )}
                                   <p className={`text-xs mt-2 ${msg.is_outgoing ? 'text-red-200' : 'text-gray-400'}`}>
                                     {formatDate(msg.sent_at)}
                                   </p>
                                 </div>
                               </div>
-                            ))
+                            );
+                            })
                           )}
                         </div>
 
                         {/* Reply input */}
                         <div className="px-4 py-3 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
+                          {/* Attachment preview */}
+                          {gmailAttachments.length > 0 && (
+                            <div className="flex flex-wrap gap-2 mb-2">
+                              {gmailAttachments.map((file, index) => (
+                                <div key={index} className="flex items-center gap-1 px-2 py-1 bg-gray-100 dark:bg-gray-700 rounded text-xs">
+                                  <span>{getAttachmentIcon(file.type, file.name)}</span>
+                                  <span className="truncate max-w-[100px]">{file.name}</span>
+                                  <button
+                                    onClick={() => setGmailAttachments(prev => prev.filter((_, i) => i !== index))}
+                                    className="text-gray-500 hover:text-red-500 ml-1"
+                                  >×</button>
+                                </div>
+                              ))}
+                            </div>
+                          )}
                           <div className="flex gap-2">
+                            <label className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer flex items-center" title="Dodaj zalacznik">
+                              <span>📎</span>
+                              <input
+                                type="file"
+                                multiple
+                                className="hidden"
+                                onChange={(e) => {
+                                  const files = Array.from(e.target.files || []);
+                                  setGmailAttachments(prev => [...prev, ...files]);
+                                  e.target.value = '';
+                                }}
+                              />
+                            </label>
                             <textarea
                               value={gmailReplyText}
                               onChange={(e) => setGmailReplyText(e.target.value)}
                               placeholder="Napisz odpowiedz..."
-                              rows={3}
+                              rows={2}
                               className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 resize-none"
                               onKeyDown={(e) => {
                                 if (e.key === 'Enter' && !e.shiftKey) {
@@ -2038,7 +2130,7 @@ function CRMContent() {
                             />
                             <button
                               onClick={handleGmailSendReply}
-                              disabled={gmailSending || !gmailReplyText.trim()}
+                              disabled={gmailSending || (!gmailReplyText.trim() && gmailAttachments.length === 0)}
                               className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50"
                             >
                               {gmailSending ? '...' : 'Wyslij'}
