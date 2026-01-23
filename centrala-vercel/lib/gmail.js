@@ -293,6 +293,38 @@ export async function isAuthenticated() {
 
 // ========== HELPERS ==========
 
+// Strip quoted reply content from email body
+function stripQuotedReply(text) {
+  if (!text) return '';
+
+  // Patterns that indicate start of quoted content
+  const quotePatterns = [
+    // Polish
+    /\n*W dniu \d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2} użytkownik .+ napisał:[\s\S]*/i,
+    /\n*Dnia \d{4}-\d{2}-\d{2} .+ napisał[\s\S]*/i,
+    // English
+    /\n*On .+ wrote:[\s\S]*/i,
+    /\n*On \d{4}-\d{2}-\d{2} .+ wrote:[\s\S]*/i,
+    // German
+    /\n*Am .+ schrieb .+:[\s\S]*/i,
+    // French
+    /\n*Le .+ a écrit\s*:[\s\S]*/i,
+    // Generic separators
+    /\n*[-_]{3,}[\s]*Original Message[\s]*[-_]{3,}[\s\S]*/i,
+    /\n*[-_]{3,}[\s]*Oryginalna wiadomość[\s]*[-_]{3,}[\s\S]*/i,
+    /\n*From:.*\nSent:.*\nTo:.*\nSubject:[\s\S]*/i,
+    // Gmail quote markers (lines starting with >)
+    /\n(?:>.*\n?){3,}[\s\S]*/,
+  ];
+
+  let cleanText = text;
+  for (const pattern of quotePatterns) {
+    cleanText = cleanText.replace(pattern, '');
+  }
+
+  return cleanText.trim();
+}
+
 // Extract plain text from HTML
 function htmlToPlainText(html) {
   if (!html) return '';
@@ -390,6 +422,9 @@ export function parseMessage(message) {
     if (!bodyText && bodyHtml) {
       bodyText = htmlToPlainText(bodyHtml);
     }
+
+    // Strip quoted reply content (previous messages in thread)
+    bodyText = stripQuotedReply(bodyText);
   }
 
   // Parse From header to get name and email
