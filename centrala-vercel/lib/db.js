@@ -456,6 +456,76 @@ export async function initDatabase() {
     await sql`INSERT INTO gmail_allepoduszki_sync_status (id) VALUES (1)`;
   }
 
+  // ========== GMAIL POOMFURNITURE (kontakt.poom@gmail.com) ==========
+
+  // Gmail Poomfurniture OAuth tokens
+  await sql`
+    CREATE TABLE IF NOT EXISTS gmail_poomfurniture_tokens (
+      id SERIAL PRIMARY KEY,
+      access_token TEXT,
+      refresh_token TEXT,
+      expires_at BIGINT,
+      email VARCHAR(255),
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )
+  `;
+
+  // Gmail Poomfurniture threads
+  await sql`
+    CREATE TABLE IF NOT EXISTS gmail_poomfurniture_threads (
+      id VARCHAR(100) PRIMARY KEY,
+      subject TEXT,
+      snippet TEXT,
+      from_email VARCHAR(255),
+      from_name VARCHAR(255),
+      last_message_at TIMESTAMP,
+      unread BOOLEAN DEFAULT true,
+      messages_count INTEGER DEFAULT 0,
+      labels JSONB,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )
+  `;
+
+  // Gmail Poomfurniture messages
+  await sql`
+    CREATE TABLE IF NOT EXISTS gmail_poomfurniture_messages (
+      id VARCHAR(100) PRIMARY KEY,
+      thread_id VARCHAR(100) REFERENCES gmail_poomfurniture_threads(id) ON DELETE CASCADE,
+      from_email VARCHAR(255),
+      from_name VARCHAR(255),
+      to_email VARCHAR(255),
+      subject TEXT,
+      body_text TEXT,
+      body_html TEXT,
+      sent_at TIMESTAMP,
+      is_outgoing BOOLEAN DEFAULT false,
+      has_attachments BOOLEAN DEFAULT false,
+      attachments JSONB,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )
+  `;
+
+  // Gmail Poomfurniture sync status
+  await sql`
+    CREATE TABLE IF NOT EXISTS gmail_poomfurniture_sync_status (
+      id SERIAL PRIMARY KEY,
+      last_sync_at TIMESTAMP,
+      sync_in_progress BOOLEAN DEFAULT false
+    )
+  `;
+
+  // Insert default Gmail Poomfurniture token row if not exists
+  const { rows: gmailPoomfurnitureTokenRows } = await sql`SELECT COUNT(*) as count FROM gmail_poomfurniture_tokens`;
+  if (gmailPoomfurnitureTokenRows[0].count === '0') {
+    await sql`INSERT INTO gmail_poomfurniture_tokens (id) VALUES (1)`;
+  }
+
+  // Insert default Gmail Poomfurniture sync status if not exists
+  const { rows: gmailPoomfurnitureSyncRows } = await sql`SELECT COUNT(*) as count FROM gmail_poomfurniture_sync_status`;
+  if (gmailPoomfurnitureSyncRows[0].count === '0') {
+    await sql`INSERT INTO gmail_poomfurniture_sync_status (id) VALUES (1)`;
+  }
+
   // ========== AMAZON DE (SP-API) ==========
 
   // Amazon DE OAuth tokens
@@ -2603,6 +2673,166 @@ export async function markGmailAllepoduszkiThreadAsRead(threadId) {
 // Get unread Gmail Allepoduszki threads count
 export async function getUnreadGmailAllepoduszkiThreadsCount() {
   const { rows } = await sql`SELECT COUNT(*) as count FROM gmail_allepoduszki_threads WHERE unread = true`;
+  return parseInt(rows[0].count);
+}
+
+// ========== GMAIL POOMFURNITURE (kontakt.poom@gmail.com) FUNCTIONS ==========
+
+// Get Gmail Poomfurniture tokens
+export async function getGmailPoomfurnitureTokens() {
+  const { rows } = await sql`SELECT * FROM gmail_poomfurniture_tokens WHERE id = 1`;
+  return rows[0] || null;
+}
+
+// Save Gmail Poomfurniture tokens
+export async function saveGmailPoomfurnitureTokens(accessToken, refreshToken, expiresAt, email = null) {
+  await sql`
+    UPDATE gmail_poomfurniture_tokens
+    SET access_token = ${accessToken},
+        refresh_token = ${refreshToken},
+        expires_at = ${expiresAt},
+        email = COALESCE(${email}, email),
+        updated_at = CURRENT_TIMESTAMP
+    WHERE id = 1
+  `;
+}
+
+// Get Gmail Poomfurniture sync status
+export async function getGmailPoomfurnitureSyncStatus() {
+  const { rows } = await sql`SELECT * FROM gmail_poomfurniture_sync_status WHERE id = 1`;
+  return rows[0] || null;
+}
+
+// Update Gmail Poomfurniture sync status
+export async function updateGmailPoomfurnitureSyncStatus() {
+  await sql`UPDATE gmail_poomfurniture_sync_status SET last_sync_at = CURRENT_TIMESTAMP WHERE id = 1`;
+}
+
+// Set Gmail Poomfurniture sync in progress
+export async function setGmailPoomfurnitureSyncInProgress(inProgress) {
+  await sql`UPDATE gmail_poomfurniture_sync_status SET sync_in_progress = ${inProgress} WHERE id = 1`;
+}
+
+// Save Gmail Poomfurniture thread
+export async function saveGmailPoomfurnitureThread(thread) {
+  await sql`
+    INSERT INTO gmail_poomfurniture_threads (
+      id, subject, snippet, from_email, from_name,
+      last_message_at, unread, messages_count, labels, updated_at
+    ) VALUES (
+      ${thread.id},
+      ${thread.subject},
+      ${thread.snippet},
+      ${thread.fromEmail},
+      ${thread.fromName},
+      ${thread.lastMessageAt ? new Date(parseInt(thread.lastMessageAt)) : null},
+      ${thread.unread},
+      ${thread.messagesCount},
+      ${JSON.stringify(thread.labels || [])},
+      CURRENT_TIMESTAMP
+    )
+    ON CONFLICT (id) DO UPDATE SET
+      subject = EXCLUDED.subject,
+      snippet = EXCLUDED.snippet,
+      from_email = EXCLUDED.from_email,
+      from_name = EXCLUDED.from_name,
+      last_message_at = EXCLUDED.last_message_at,
+      unread = EXCLUDED.unread,
+      messages_count = EXCLUDED.messages_count,
+      labels = EXCLUDED.labels,
+      updated_at = CURRENT_TIMESTAMP
+  `;
+}
+
+// Save Gmail Poomfurniture message
+export async function saveGmailPoomfurnitureMessage(message, threadId) {
+  await sql`
+    INSERT INTO gmail_poomfurniture_messages (
+      id, thread_id, from_email, from_name, to_email, subject,
+      body_text, body_html, sent_at, is_outgoing, has_attachments, attachments
+    ) VALUES (
+      ${message.id},
+      ${threadId},
+      ${message.fromEmail},
+      ${message.fromName},
+      ${message.to},
+      ${message.subject},
+      ${message.bodyText},
+      ${message.bodyHtml},
+      ${message.sentAt ? new Date(parseInt(message.sentAt)) : null},
+      ${message.isOutgoing},
+      ${message.hasAttachments || false},
+      ${JSON.stringify(message.attachments || [])}
+    )
+    ON CONFLICT (id) DO UPDATE SET
+      body_text = EXCLUDED.body_text,
+      body_html = EXCLUDED.body_html,
+      is_outgoing = EXCLUDED.is_outgoing
+  `;
+}
+
+// Get Gmail Poomfurniture threads with pagination
+export async function getGmailPoomfurnitureThreads(page = 1, perPage = 20, unreadOnly = false) {
+  const offset = (page - 1) * perPage;
+
+  let threads;
+  let countResult;
+
+  if (unreadOnly) {
+    threads = await sql`
+      SELECT * FROM gmail_poomfurniture_threads
+      WHERE unread = true
+      ORDER BY last_message_at DESC NULLS LAST
+      LIMIT ${perPage} OFFSET ${offset}
+    `;
+    countResult = await sql`SELECT COUNT(*) as total FROM gmail_poomfurniture_threads WHERE unread = true`;
+  } else {
+    threads = await sql`
+      SELECT * FROM gmail_poomfurniture_threads
+      ORDER BY last_message_at DESC NULLS LAST
+      LIMIT ${perPage} OFFSET ${offset}
+    `;
+    countResult = await sql`SELECT COUNT(*) as total FROM gmail_poomfurniture_threads`;
+  }
+
+  return {
+    threads: threads.rows,
+    total: parseInt(countResult.rows[0].total),
+    page,
+    perPage
+  };
+}
+
+// Get single Gmail Poomfurniture thread with messages
+export async function getGmailPoomfurnitureThread(threadId) {
+  const threadResult = await sql`
+    SELECT * FROM gmail_poomfurniture_threads WHERE id = ${threadId}
+  `;
+
+  if (threadResult.rows.length === 0) {
+    return null;
+  }
+
+  const messagesResult = await sql`
+    SELECT * FROM gmail_poomfurniture_messages
+    WHERE thread_id = ${threadId}
+    ORDER BY sent_at ASC
+  `;
+
+  return {
+    thread: threadResult.rows[0],
+    messages: messagesResult.rows
+  };
+}
+
+// Mark Gmail Poomfurniture thread as read
+export async function markGmailPoomfurnitureThreadAsRead(threadId) {
+  await sql`UPDATE gmail_poomfurniture_threads SET unread = false, updated_at = CURRENT_TIMESTAMP WHERE id = ${threadId}`;
+}
+
+// Get unread Gmail Poomfurniture threads count
+export async function getUnreadGmailPoomfurnitureThreadsCount() {
+  const { rows } = await sql`SELECT COUNT(*) as count FROM gmail_poomfurniture_threads WHERE unread = true`;
   return parseInt(rows[0].count);
 }
 

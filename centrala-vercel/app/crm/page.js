@@ -72,12 +72,26 @@ function CRMContent() {
   const [allepoduszkiSyncStatus, setAllepoduszkiSyncStatus] = useState(null);
   const [allepoduszkiUnreadCount, setAllepoduszkiUnreadCount] = useState(0);
 
+  // Gmail Poomfurniture (Shopify poom-furniture.com) state
+  const [poomfurnitureAuth, setPoomfurnitureAuth] = useState({ authenticated: false, user: null, loading: true });
+  const [poomfurnitureThreads, setPoomfurnitureThreads] = useState([]);
+  const [poomfurnitureThreadsLoading, setPoomfurnitureThreadsLoading] = useState(false);
+  const [poomfurnitureSelectedThread, setPoomfurnitureSelectedThread] = useState(null);
+  const [poomfurnitureThreadMessages, setPoomfurnitureThreadMessages] = useState([]);
+  const [poomfurnitureMessagesLoading, setPoomfurnitureMessagesLoading] = useState(false);
+  const [poomfurnitureReplyText, setPoomfurnitureReplyText] = useState('');
+  const [poomfurnitureSending, setPoomfurnitureSending] = useState(false);
+  const [poomfurnitureSyncing, setPoomfurnitureSyncing] = useState(false);
+  const [poomfurnitureSyncStatus, setPoomfurnitureSyncStatus] = useState(null);
+  const [poomfurnitureUnreadCount, setPoomfurnitureUnreadCount] = useState(0);
+
   const tabs = [
     { key: 'wiadomosci', label: 'Allegro Dobrelegowiska', icon: 'https://a.allegroimg.com/original/12c30c/0d4b068640de9b0daf22af9d97c5', overlayIcon: '/icons/dobrelegowiska.png', isImage: true, badge: unreadCount, color: 'orange', isConnected: allegroAuth.authenticated, isLoading: allegroAuth.loading },
     { key: 'meblebox', label: 'Allegro Meblebox', icon: 'https://a.allegroimg.com/original/12c30c/0d4b068640de9b0daf22af9d97c5', isImage: true, badge: mebleboxUnreadCount, color: 'orange', isConnected: mebleboxAuth.authenticated, isLoading: mebleboxAuth.loading },
     { key: 'shopify', label: 'Shopify Dobrelegowiska', icon: '/icons/dobrelegowiska.png', isImage: true, badge: gmailUnreadCount, color: 'green', isConnected: gmailAuth.authenticated, isLoading: gmailAuth.loading },
     { key: 'poomkids', label: 'Shopify POOMKIDS', icon: '/icons/poomkids.png', isImage: true, badge: poomkidsUnreadCount, color: 'blue', isConnected: poomkidsAuth.authenticated, isLoading: poomkidsAuth.loading },
     { key: 'allepoduszki', label: 'Shopify Allepoduszki', icon: '/icons/allepoduszki.png', isImage: true, badge: allepoduszkiUnreadCount, color: 'purple', isConnected: allepoduszkiAuth.authenticated, isLoading: allepoduszkiAuth.loading },
+    { key: 'poomfurniture', label: 'Shopify poom-furniture.com', icon: '/icons/poom-furniture.png', isImage: true, badge: poomfurnitureUnreadCount, color: 'teal', isConnected: poomfurnitureAuth.authenticated, isLoading: poomfurnitureAuth.loading },
   ];
 
   // Check for success/error from OAuth callback
@@ -140,6 +154,19 @@ function CRMContent() {
     }
     if (allepoduszkiGmailError) {
       alert(`Blad Gmail Allepoduszki: ${allepoduszkiGmailError}`);
+      window.history.replaceState({}, '', '/crm');
+    }
+
+    // POOMFURNITURE Gmail callback
+    const poomfurnitureGmailSuccess = searchParams.get('poomfurniture_gmail_success');
+    const poomfurnitureGmailError = searchParams.get('poomfurniture_gmail_error');
+    if (poomfurnitureGmailSuccess) {
+      alert('Pomyslnie polaczono z Gmail poom-furniture.com!');
+      window.history.replaceState({}, '', '/crm');
+      checkPoomfurnitureAuth();
+    }
+    if (poomfurnitureGmailError) {
+      alert(`Blad Gmail poom-furniture.com: ${poomfurnitureGmailError}`);
       window.history.replaceState({}, '', '/crm');
     }
   }, [searchParams]);
@@ -830,6 +857,144 @@ function CRMContent() {
     }
   };
 
+  // ========== POOMFURNITURE GMAIL (Shopify poom-furniture.com) FUNCTIONS ==========
+
+  // Check POOMFURNITURE authentication status
+  const checkPoomfurnitureAuth = useCallback(async () => {
+    try {
+      const res = await fetch('/api/gmail-poomfurniture/auth');
+      const data = await res.json();
+      setPoomfurnitureAuth({
+        authenticated: data.authenticated,
+        user: data.user,
+        loading: false
+      });
+
+      if (data.authenticated) {
+        fetchPoomfurnitureSyncStatus();
+        fetchPoomfurnitureThreads();
+      }
+    } catch (err) {
+      console.error('POOMFURNITURE auth check error:', err);
+      setPoomfurnitureAuth({ authenticated: false, user: null, loading: false });
+    }
+  }, []);
+
+  useEffect(() => {
+    checkPoomfurnitureAuth();
+  }, [checkPoomfurnitureAuth]);
+
+  // Fetch POOMFURNITURE sync status
+  const fetchPoomfurnitureSyncStatus = async () => {
+    try {
+      const res = await fetch('/api/gmail-poomfurniture/messages?action=status');
+      const data = await res.json();
+      if (data.success) {
+        setPoomfurnitureSyncStatus(data.status);
+        setPoomfurnitureUnreadCount(data.status.unreadCount || 0);
+      }
+    } catch (err) {
+      console.error('POOMFURNITURE sync status error:', err);
+    }
+  };
+
+  // Fetch POOMFURNITURE threads
+  const fetchPoomfurnitureThreads = async () => {
+    setPoomfurnitureThreadsLoading(true);
+    try {
+      const res = await fetch('/api/gmail-poomfurniture/messages');
+      const data = await res.json();
+      if (data.success) {
+        setPoomfurnitureThreads(data.threads || []);
+      }
+    } catch (err) {
+      console.error('POOMFURNITURE threads error:', err);
+    } finally {
+      setPoomfurnitureThreadsLoading(false);
+    }
+  };
+
+  // Sync POOMFURNITURE
+  const handlePoomfurnitureSync = async () => {
+    setPoomfurnitureSyncing(true);
+    try {
+      const res = await fetch('/api/gmail-poomfurniture/sync', { method: 'POST' });
+      const data = await res.json();
+      if (data.success) {
+        fetchPoomfurnitureThreads();
+        fetchPoomfurnitureSyncStatus();
+      } else {
+        alert('Blad synchronizacji: ' + data.error);
+      }
+    } catch (err) {
+      alert('Blad: ' + err.message);
+    } finally {
+      setPoomfurnitureSyncing(false);
+    }
+  };
+
+  // Open POOMFURNITURE thread
+  const openPoomfurnitureThread = async (thread) => {
+    setPoomfurnitureSelectedThread(thread);
+    setPoomfurnitureMessagesLoading(true);
+    setPoomfurnitureThreadMessages([]);
+
+    try {
+      const res = await fetch(`/api/gmail-poomfurniture/messages/${thread.id}?refresh=true`);
+      const data = await res.json();
+
+      if (data.success) {
+        setPoomfurnitureSelectedThread(data.thread);
+        setPoomfurnitureThreadMessages(data.messages || []);
+
+        // Mark as read
+        if (thread.unread) {
+          fetch(`/api/gmail-poomfurniture/messages/${thread.id}`, { method: 'PUT' });
+          fetchPoomfurnitureSyncStatus();
+          fetchPoomfurnitureThreads();
+        }
+      }
+    } catch (err) {
+      console.error('POOMFURNITURE open thread error:', err);
+    } finally {
+      setPoomfurnitureMessagesLoading(false);
+    }
+  };
+
+  // Send POOMFURNITURE reply
+  const handlePoomfurnitureSendReply = async () => {
+    if (!poomfurnitureReplyText.trim() || !poomfurnitureSelectedThread) return;
+
+    setPoomfurnitureSending(true);
+    try {
+      const res = await fetch(`/api/gmail-poomfurniture/messages/${poomfurnitureSelectedThread.id}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          text: poomfurnitureReplyText.trim(),
+          to: poomfurnitureSelectedThread.from_email,
+          subject: poomfurnitureSelectedThread.subject
+        })
+      });
+      const data = await res.json();
+
+      if (data.success) {
+        setPoomfurnitureReplyText('');
+        const msgRes = await fetch(`/api/gmail-poomfurniture/messages/${poomfurnitureSelectedThread.id}?refresh=true`);
+        const msgData = await msgRes.json();
+        if (msgData.success) {
+          setPoomfurnitureThreadMessages(msgData.messages || []);
+        }
+      } else {
+        alert('Blad wysylania: ' + data.error);
+      }
+    } catch (err) {
+      alert('Blad: ' + err.message);
+    } finally {
+      setPoomfurnitureSending(false);
+    }
+  };
+
   // Format date
   const formatDate = (dateStr) => {
     if (!dateStr) return '-';
@@ -868,9 +1033,9 @@ function CRMContent() {
                     : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
                 }`}
                 style={activeTab === tab.key ? {
-                  color: tab.color === 'orange' ? '#ea580c' : tab.color === 'green' ? '#16a34a' : tab.color === 'blue' ? '#2563eb' : tab.color === 'purple' ? '#9333ea' : undefined,
-                  borderColor: tab.color === 'orange' ? '#ea580c' : tab.color === 'green' ? '#16a34a' : tab.color === 'blue' ? '#2563eb' : tab.color === 'purple' ? '#9333ea' : undefined,
-                  backgroundColor: tab.color === 'orange' ? '#fff7ed' : tab.color === 'green' ? '#f0fdf4' : tab.color === 'blue' ? '#eff6ff' : tab.color === 'purple' ? '#faf5ff' : undefined
+                  color: tab.color === 'orange' ? '#ea580c' : tab.color === 'green' ? '#16a34a' : tab.color === 'blue' ? '#2563eb' : tab.color === 'purple' ? '#9333ea' : tab.color === 'teal' ? '#0d9488' : undefined,
+                  borderColor: tab.color === 'orange' ? '#ea580c' : tab.color === 'green' ? '#16a34a' : tab.color === 'blue' ? '#2563eb' : tab.color === 'purple' ? '#9333ea' : tab.color === 'teal' ? '#0d9488' : undefined,
+                  backgroundColor: tab.color === 'orange' ? '#fff7ed' : tab.color === 'green' ? '#f0fdf4' : tab.color === 'blue' ? '#eff6ff' : tab.color === 'purple' ? '#faf5ff' : tab.color === 'teal' ? '#f0fdfa' : undefined
                 } : {}}
               >
                 {tab.isImage ? (
@@ -2079,6 +2244,193 @@ function CRMContent() {
                               className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50"
                             >
                               {allepoduszkiSending ? '...' : 'Wyslij'}
+                            </button>
+                          </div>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Shopify poom-furniture.com (Gmail) */}
+          {activeTab === 'poomfurniture' && (
+            <div>
+              {poomfurnitureAuth.loading ? (
+                <div className="p-8 text-center text-gray-500 dark:text-gray-400">Ladowanie...</div>
+              ) : !poomfurnitureAuth.authenticated ? (
+                <div className="p-8 text-center">
+                  <div className="mb-4">
+                    <span className="text-6xl">📧</span>
+                  </div>
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Polacz z Gmail poom-furniture.com</h3>
+                  <p className="text-gray-500 dark:text-gray-400 mb-4">Aby zobaczyc wiadomosci, musisz polaczyc konto kontakt.poom@gmail.com</p>
+                  <a
+                    href="/api/gmail-poomfurniture/auth?action=login"
+                    className="inline-block px-6 py-3 bg-teal-500 text-white rounded-lg hover:bg-teal-600 font-medium"
+                  >
+                    Zaloguj przez Google
+                  </a>
+                </div>
+              ) : (
+                <div className="flex flex-col lg:flex-row h-[800px]">
+                  {/* Thread list */}
+                  <div className={`lg:w-1/3 border-r border-gray-200 dark:border-gray-700 flex flex-col ${poomfurnitureSelectedThread ? 'hidden lg:flex' : ''}`}>
+                    <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-700 dark:border-gray-700 flex items-center justify-between">
+                      <div>
+                        <h2 className="font-semibold text-gray-900 dark:text-white">Wiadomosci Email</h2>
+                        <p className="text-xs text-gray-500">
+                          {poomfurnitureSyncStatus?.lastSyncAt ? `Sync: ${formatDate(poomfurnitureSyncStatus.lastSyncAt)}` : 'Nie zsynchronizowano'}
+                        </p>
+                      </div>
+                      <button
+                        onClick={handlePoomfurnitureSync}
+                        disabled={poomfurnitureSyncing}
+                        className="px-3 py-1.5 text-sm bg-teal-600 text-white rounded-lg hover:bg-teal-700 disabled:opacity-50"
+                      >
+                        {poomfurnitureSyncing ? 'Sync...' : 'Synchronizuj'}
+                      </button>
+                    </div>
+
+                    <div className="flex-1 overflow-y-auto">
+                      {poomfurnitureThreadsLoading ? (
+                        <div className="p-4 text-center text-gray-500 dark:text-gray-400">Ladowanie...</div>
+                      ) : poomfurnitureThreads.length === 0 ? (
+                        <div className="p-4 text-center text-gray-500 dark:text-gray-400">
+                          Brak wiadomosci. Kliknij "Synchronizuj".
+                        </div>
+                      ) : (
+                        poomfurnitureThreads.map((thread) => (
+                          <button
+                            key={thread.id}
+                            onClick={() => openPoomfurnitureThread(thread)}
+                            className={`w-full text-left px-4 py-3 border-b border-gray-100 dark:border-gray-700 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 ${
+                              poomfurnitureSelectedThread?.id === thread.id ? 'bg-blue-50' : ''
+                            } ${thread.unread ? 'bg-teal-50' : ''}`}
+                          >
+                            <div className="flex items-start gap-3">
+                              <div className="w-10 h-10 rounded-full bg-teal-100 flex items-center justify-center text-teal-600 font-medium">
+                                {(thread.from_name || thread.from_email || '?')[0].toUpperCase()}
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center justify-between">
+                                  <span className={`font-medium truncate ${thread.unread ? 'text-gray-900' : 'text-gray-700'}`}>
+                                    {thread.from_name || thread.from_email || 'Nieznany'}
+                                  </span>
+                                  <span className="text-xs text-gray-400 dark:text-gray-500 ml-2 whitespace-nowrap">
+                                    {formatDate(thread.last_message_at)}
+                                  </span>
+                                </div>
+                                <p className={`text-sm truncate ${thread.unread ? 'font-medium text-gray-800' : 'text-gray-600'}`}>
+                                  {thread.subject || '(Brak tematu)'}
+                                </p>
+                                <p className="text-xs text-gray-500 truncate">{thread.snippet}</p>
+                                {thread.unread && (
+                                  <span className="inline-block mt-1 px-2 py-0.5 bg-teal-500 text-white text-xs rounded">
+                                    Nowa
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          </button>
+                        ))
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Message view */}
+                  <div className={`lg:w-2/3 flex flex-col ${!poomfurnitureSelectedThread ? 'hidden lg:flex' : ''}`}>
+                    {!poomfurnitureSelectedThread ? (
+                      <div className="flex-1 flex items-center justify-center text-gray-400 dark:text-gray-500">
+                        <div className="text-center">
+                          <span className="text-6xl">📧</span>
+                          <p className="mt-2">Wybierz watek z listy</p>
+                        </div>
+                      </div>
+                    ) : (
+                      <>
+                        {/* Thread header */}
+                        <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-700">
+                          <button
+                            onClick={() => setPoomfurnitureSelectedThread(null)}
+                            className="lg:hidden text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 mb-2"
+                          >
+                            ← Wstecz
+                          </button>
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-full bg-teal-100 flex items-center justify-center text-teal-600 font-medium">
+                              {(poomfurnitureSelectedThread.from_name || poomfurnitureSelectedThread.from_email || '?')[0].toUpperCase()}
+                            </div>
+                            <div className="flex-1">
+                              <h3 className="font-semibold text-gray-900 dark:text-white">
+                                {poomfurnitureSelectedThread.from_name || poomfurnitureSelectedThread.from_email || 'Nieznany'}
+                              </h3>
+                              <p className="text-sm text-gray-600 dark:text-gray-400">{poomfurnitureSelectedThread.from_email}</p>
+                            </div>
+                          </div>
+                          <h4 className="mt-2 font-medium text-gray-800 dark:text-gray-200">
+                            {poomfurnitureSelectedThread.subject || '(Brak tematu)'}
+                          </h4>
+                        </div>
+
+                        {/* Messages */}
+                        <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50 dark:bg-gray-900">
+                          {poomfurnitureMessagesLoading ? (
+                            <div className="text-center text-gray-500 dark:text-gray-400">Ladowanie wiadomosci...</div>
+                          ) : poomfurnitureThreadMessages.length === 0 ? (
+                            <div className="text-center text-gray-500 dark:text-gray-400">Brak wiadomosci</div>
+                          ) : (
+                            poomfurnitureThreadMessages.map((msg) => (
+                              <div
+                                key={msg.id}
+                                className={`flex ${msg.is_outgoing ? 'justify-end' : 'justify-start'}`}
+                              >
+                                <div
+                                  className={`max-w-[85%] px-4 py-3 rounded-lg ${
+                                    msg.is_outgoing
+                                      ? 'bg-teal-600 text-white'
+                                      : 'bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-900 dark:text-white'
+                                  }`}
+                                >
+                                  <div className={`text-xs mb-1 ${msg.is_outgoing ? 'text-teal-200' : 'text-gray-500'}`}>
+                                    {msg.from_name || msg.from_email}
+                                  </div>
+                                  <div className="whitespace-pre-wrap break-words text-sm">
+                                    {msg.body_text || '(Brak tresci tekstowej)'}
+                                  </div>
+                                  <p className={`text-xs mt-2 ${msg.is_outgoing ? 'text-teal-200' : 'text-gray-400'}`}>
+                                    {formatDate(msg.sent_at)}
+                                  </p>
+                                </div>
+                              </div>
+                            ))
+                          )}
+                        </div>
+
+                        {/* Reply input */}
+                        <div className="px-4 py-3 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
+                          <div className="flex gap-2">
+                            <textarea
+                              value={poomfurnitureReplyText}
+                              onChange={(e) => setPoomfurnitureReplyText(e.target.value)}
+                              placeholder="Napisz odpowiedz..."
+                              rows={3}
+                              className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 resize-none"
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter' && !e.shiftKey) {
+                                  e.preventDefault();
+                                  handlePoomfurnitureSendReply();
+                                }
+                              }}
+                            />
+                            <button
+                              onClick={handlePoomfurnitureSendReply}
+                              disabled={poomfurnitureSending || !poomfurnitureReplyText.trim()}
+                              className="px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 disabled:opacity-50"
+                            >
+                              {poomfurnitureSending ? '...' : 'Wyslij'}
                             </button>
                           </div>
                         </div>
