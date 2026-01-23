@@ -35,7 +35,8 @@ const publicRoutes = [
   '/api/integrations/status', // Integrations status (for dashboard)
   '/api/weather/sync',   // Weather sync cron
   '/api/dms/init',        // DMS table initialization
-  '/api/ecom/delivery-time' // ECOM delivery time check
+  '/api/ecom/delivery-time', // ECOM delivery time check
+  '/api/gmail/init-status',  // Gmail status column init
 ];
 
 export function middleware(request) {

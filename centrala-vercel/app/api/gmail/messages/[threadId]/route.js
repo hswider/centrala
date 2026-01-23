@@ -14,6 +14,8 @@ import {
   saveGmailMessage,
   saveGmailThread,
   markGmailThreadAsRead,
+  updateGmailThreadStatus,
+  deleteGmailMessages,
   getGmailTokens
 } from '../../../../../lib/db';
 
@@ -194,7 +196,7 @@ export async function POST(request, { params }) {
   }
 }
 
-// PUT - Mark thread as read
+// PUT - Mark thread as read or update status
 export async function PUT(request, { params }) {
   try {
     await initDatabase();
@@ -211,14 +213,34 @@ export async function PUT(request, { params }) {
       }, { status: 401 });
     }
 
-    // Mark as read in Gmail
+    const body = await request.json().catch(() => ({}));
+    const { status } = body;
+
+    // If status is provided, update it
+    if (status) {
+      const validStatuses = ['new', 'resolved', 'unresolved'];
+      if (!validStatuses.includes(status)) {
+        return NextResponse.json({
+          success: false,
+          error: 'Invalid status. Must be: new, resolved, or unresolved'
+        }, { status: 400 });
+      }
+
+      await updateGmailThreadStatus(threadId, status);
+
+      return NextResponse.json({
+        success: true,
+        status
+      });
+    }
+
+    // Otherwise, mark as read (legacy behavior)
     try {
       await markThreadAsReadGmail(threadId);
     } catch (e) {
       console.error('Failed to mark as read in Gmail:', e.message);
     }
 
-    // Mark as read in database
     await markGmailThreadAsRead(threadId);
 
     return NextResponse.json({
@@ -226,6 +248,38 @@ export async function PUT(request, { params }) {
     });
   } catch (error) {
     console.error('Mark as read error:', error);
+    return NextResponse.json(
+      { success: false, error: error.message },
+      { status: 500 }
+    );
+  }
+}
+
+// DELETE - Delete specific messages from thread
+export async function DELETE(request, { params }) {
+  try {
+    await initDatabase();
+
+    const { threadId } = await params;
+
+    const body = await request.json();
+    const { messageIds } = body;
+
+    if (!messageIds || !Array.isArray(messageIds) || messageIds.length === 0) {
+      return NextResponse.json({
+        success: false,
+        error: 'messageIds array is required'
+      }, { status: 400 });
+    }
+
+    const deleted = await deleteGmailMessages(threadId, messageIds);
+
+    return NextResponse.json({
+      success: true,
+      deletedCount: deleted
+    });
+  } catch (error) {
+    console.error('Delete messages error:', error);
     return NextResponse.json(
       { success: false, error: error.message },
       { status: 500 }

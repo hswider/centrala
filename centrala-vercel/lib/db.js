@@ -2172,6 +2172,21 @@ export async function markGmailThreadAsRead(threadId) {
   await sql`UPDATE gmail_threads SET unread = false, updated_at = CURRENT_TIMESTAMP WHERE id = ${threadId}`;
 }
 
+// Update Gmail thread status
+export async function updateGmailThreadStatus(threadId, status) {
+  await sql`UPDATE gmail_threads SET status = ${status}, updated_at = CURRENT_TIMESTAMP WHERE id = ${threadId}`;
+}
+
+// Delete Gmail messages by IDs
+export async function deleteGmailMessages(threadId, messageIds) {
+  const result = await sql`
+    DELETE FROM gmail_messages
+    WHERE thread_id = ${threadId} AND id = ANY(${messageIds}::text[])
+    RETURNING id
+  `;
+  return result.rows.length;
+}
+
 // Get unread Gmail threads count
 export async function getUnreadGmailThreadsCount() {
   const { rows } = await sql`SELECT COUNT(*) as count FROM gmail_threads WHERE unread = true`;

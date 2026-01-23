@@ -46,6 +46,8 @@ function CRMContent() {
   const [gmailSyncStatus, setGmailSyncStatus] = useState(null);
   const [gmailUnreadCount, setGmailUnreadCount] = useState(0);
   const [gmailAttachments, setGmailAttachments] = useState([]);
+  const [gmailSelectedMessages, setGmailSelectedMessages] = useState([]);
+  const [gmailDeleting, setGmailDeleting] = useState(false);
 
   // Gmail POOMKIDS (Shopify POOMKIDS) state
   const [poomkidsAuth, setPoomkidsAuth] = useState({ authenticated: false, user: null, loading: true });
@@ -569,6 +571,7 @@ function CRMContent() {
     setGmailSelectedThread(thread);
     setGmailMessagesLoading(true);
     setGmailThreadMessages([]);
+    setGmailSelectedMessages([]);
 
     try {
       const res = await fetch(`/api/gmail/messages/${thread.id}?refresh=true`);
@@ -639,6 +642,68 @@ function CRMContent() {
     } finally {
       setGmailSending(false);
     }
+  };
+
+  // Update Gmail thread status
+  const handleGmailStatusChange = async (status) => {
+    if (!gmailSelectedThread) return;
+
+    try {
+      const res = await fetch(`/api/gmail/messages/${gmailSelectedThread.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status })
+      });
+      const data = await res.json();
+
+      if (data.success) {
+        // Update local state
+        setGmailSelectedThread(prev => ({ ...prev, status }));
+        setGmailThreads(prev => prev.map(t =>
+          t.id === gmailSelectedThread.id ? { ...t, status } : t
+        ));
+      }
+    } catch (err) {
+      console.error('Status update error:', err);
+    }
+  };
+
+  // Delete selected Gmail messages
+  const handleGmailDeleteMessages = async () => {
+    if (gmailSelectedMessages.length === 0 || !gmailSelectedThread) return;
+
+    if (!confirm(`Usunac ${gmailSelectedMessages.length} wiadomosc(i)?`)) return;
+
+    setGmailDeleting(true);
+    try {
+      const res = await fetch(`/api/gmail/messages/${gmailSelectedThread.id}`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ messageIds: gmailSelectedMessages })
+      });
+      const data = await res.json();
+
+      if (data.success) {
+        // Remove deleted messages from local state
+        setGmailThreadMessages(prev => prev.filter(m => !gmailSelectedMessages.includes(m.id)));
+        setGmailSelectedMessages([]);
+      } else {
+        alert('Blad usuwania: ' + data.error);
+      }
+    } catch (err) {
+      alert('Blad: ' + err.message);
+    } finally {
+      setGmailDeleting(false);
+    }
+  };
+
+  // Toggle message selection
+  const toggleGmailMessageSelection = (messageId) => {
+    setGmailSelectedMessages(prev =>
+      prev.includes(messageId)
+        ? prev.filter(id => id !== messageId)
+        : [...prev, messageId]
+    );
   };
 
   // ========== POOMKIDS GMAIL (Shopify POOMKIDS) FUNCTIONS ==========
@@ -1967,11 +2032,21 @@ function CRMContent() {
                                   {thread.subject || '(Brak tematu)'}
                                 </p>
                                 <p className="text-xs text-gray-500 truncate">{thread.snippet}</p>
-                                {thread.unread && (
-                                  <span className="inline-block mt-1 px-2 py-0.5 bg-red-500 text-white text-xs rounded">
-                                    Nowa
-                                  </span>
-                                )}
+                                <div className="flex gap-1 mt-1">
+                                  {thread.status === 'new' || thread.unread ? (
+                                    <span className="inline-block px-2 py-0.5 bg-red-500 text-white text-xs rounded">
+                                      Nowe
+                                    </span>
+                                  ) : thread.status === 'resolved' ? (
+                                    <span className="inline-block px-2 py-0.5 bg-green-500 text-white text-xs rounded">
+                                      Rozwiazane
+                                    </span>
+                                  ) : thread.status === 'unresolved' ? (
+                                    <span className="inline-block px-2 py-0.5 bg-yellow-500 text-white text-xs rounded">
+                                      Nierozwiazane
+                                    </span>
+                                  ) : null}
+                                </div>
                               </div>
                             </div>
                           </button>
@@ -1993,12 +2068,40 @@ function CRMContent() {
                       <>
                         {/* Thread header */}
                         <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-700">
-                          <button
-                            onClick={() => setGmailSelectedThread(null)}
-                            className="lg:hidden text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 mb-2"
-                          >
-                            ← Wstecz
-                          </button>
+                          <div className="flex items-center justify-between mb-2">
+                            <button
+                              onClick={() => { setGmailSelectedThread(null); setGmailSelectedMessages([]); }}
+                              className="lg:hidden text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
+                            >
+                              ← Wstecz
+                            </button>
+                            <div className="flex items-center gap-2">
+                              {/* Status dropdown */}
+                              <select
+                                value={gmailSelectedThread.status || 'new'}
+                                onChange={(e) => handleGmailStatusChange(e.target.value)}
+                                className={`px-2 py-1 text-xs font-medium rounded border-0 cursor-pointer ${
+                                  gmailSelectedThread.status === 'resolved' ? 'bg-green-100 text-green-700' :
+                                  gmailSelectedThread.status === 'unresolved' ? 'bg-yellow-100 text-yellow-700' :
+                                  'bg-red-100 text-red-700'
+                                }`}
+                              >
+                                <option value="new">Nowe</option>
+                                <option value="resolved">Rozwiazane</option>
+                                <option value="unresolved">Nierozwiazane</option>
+                              </select>
+                              {/* Delete selected messages button */}
+                              {gmailSelectedMessages.length > 0 && (
+                                <button
+                                  onClick={handleGmailDeleteMessages}
+                                  disabled={gmailDeleting}
+                                  className="px-2 py-1 text-xs bg-red-600 text-white rounded hover:bg-red-700 disabled:opacity-50"
+                                >
+                                  {gmailDeleting ? '...' : `Usun (${gmailSelectedMessages.length})`}
+                                </button>
+                              )}
+                            </div>
+                          </div>
                           <div className="flex items-center gap-3">
                             <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center text-red-600 font-medium">
                               {(gmailSelectedThread.from_name || gmailSelectedThread.from_email || '?')[0].toUpperCase()}
@@ -2032,13 +2135,21 @@ function CRMContent() {
                               } catch (e) {
                                 console.error('Error parsing attachments:', e);
                               }
+                              const isSelected = gmailSelectedMessages.includes(msg.id);
                               return (
                               <div
                                 key={msg.id}
-                                className={`flex ${msg.is_outgoing ? 'justify-end' : 'justify-start'}`}
+                                className={`flex items-start gap-2 ${msg.is_outgoing ? 'justify-end' : 'justify-start'}`}
                               >
+                                {/* Checkbox for selection */}
+                                <input
+                                  type="checkbox"
+                                  checked={isSelected}
+                                  onChange={() => toggleGmailMessageSelection(msg.id)}
+                                  className={`mt-3 w-4 h-4 rounded cursor-pointer ${msg.is_outgoing ? 'order-last ml-2' : 'mr-0'}`}
+                                />
                                 <div
-                                  className={`max-w-[85%] px-4 py-3 rounded-lg ${
+                                  className={`max-w-[80%] px-4 py-3 rounded-lg ${isSelected ? 'ring-2 ring-red-500' : ''} ${
                                     msg.is_outgoing
                                       ? 'bg-red-600 text-white'
                                       : 'bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-900 dark:text-white'
