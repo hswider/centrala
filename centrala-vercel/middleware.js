@@ -34,6 +34,7 @@ const publicRoutes = [
   '/api/debug-apilo',    // Apilo detailed debug
   '/api/apilo-refresh',  // Force Apilo token refresh
   '/api/apilo-set-token', // Set new Apilo token
+  '/api/apilo-auth',     // Exchange auth code for tokens
   '/api/weather/sync',   // Weather sync cron
   '/api/dms/init'        // DMS table initialization
 ];
