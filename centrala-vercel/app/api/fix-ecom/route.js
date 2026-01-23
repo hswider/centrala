@@ -6,8 +6,8 @@ export async function GET() {
     // Update admin users to have ecom permission
     await sql`UPDATE users SET permissions = '["dashboard","oms","wms","mes","mts","dms","ecom","crm","crm-eu","rank","agent","admin"]'::jsonb WHERE role = 'admin'`;
 
-    // Add ecom to hswider
-    await sql`UPDATE users SET permissions = permissions || '["ecom"]'::jsonb WHERE username = 'hswider' AND NOT (permissions @> '["ecom"]'::jsonb)`;
+    // Add ecom to hswider and Hubert
+    await sql`UPDATE users SET permissions = permissions || '["ecom"]'::jsonb WHERE username IN ('hswider', 'Hubert') AND NOT (permissions @> '["ecom"]'::jsonb)`;
 
     // Get updated users
     const result = await sql`SELECT username, role, permissions FROM users ORDER BY role DESC, username`;
