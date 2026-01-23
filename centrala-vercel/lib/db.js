@@ -2010,14 +2010,19 @@ export async function saveGmailTokens(accessToken, refreshToken, expiresAt, emai
 
 // Clear Gmail tokens (logout)
 export async function clearGmailTokens() {
+  // Clear tokens
   await sql`
     UPDATE gmail_tokens
     SET access_token = NULL,
         refresh_token = NULL,
         expires_at = NULL,
+        email = NULL,
         updated_at = CURRENT_TIMESTAMP
     WHERE id = 1
   `;
+  // Clear messages and threads history
+  await sql`DELETE FROM gmail_messages`;
+  await sql`DELETE FROM gmail_threads`;
 }
 
 // Get Gmail sync status
