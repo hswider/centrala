@@ -1111,15 +1111,6 @@ function CRMContent() {
                   <span>{tab.icon}</span>
                 )}
                 <span className="hidden sm:inline">{tab.label}</span>
-                {/* Status integracji */}
-                {tab.isLoading ? (
-                  <span className="w-2 h-2 rounded-full bg-gray-300 dark:bg-gray-600 animate-pulse" title="Sprawdzanie..."></span>
-                ) : (
-                  <span
-                    className={`w-2 h-2 rounded-full ${tab.isConnected ? 'bg-green-500' : 'bg-red-500'}`}
-                    title={tab.isConnected ? 'Integracja dziala' : 'Integracja nie dziala'}
-                  ></span>
-                )}
                 {tab.badge > 0 && (
                   <span className="px-1.5 py-0.5 bg-red-500 text-white text-xs rounded-full">{tab.badge}</span>
                 )}
