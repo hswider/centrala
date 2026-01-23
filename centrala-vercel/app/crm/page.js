@@ -1013,10 +1013,60 @@ function CRMContent() {
     <div className="min-h-screen bg-gray-100 dark:bg-gray-900">
       <main className="w-full px-3 py-4 sm:px-6 sm:py-6 lg:px-8">
         {/* Header */}
-        <div className="flex justify-between items-center mb-6">
+        <div className="flex justify-between items-center mb-4">
           <div>
             <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">CRM</h1>
             <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">Zarzadzanie klientami i wiadomosciami</p>
+          </div>
+        </div>
+
+        {/* Status integracji */}
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow dark:shadow-gray-900 mb-4 p-3">
+          <div className="flex flex-wrap gap-3">
+            {tabs.map((tab) => {
+              const tabSyncStatus = tab.key === 'wiadomosci' ? syncStatus :
+                                 tab.key === 'meblebox' ? mebleboxSyncStatus :
+                                 tab.key === 'shopify' ? gmailSyncStatus :
+                                 tab.key === 'poomkids' ? poomkidsSyncStatus :
+                                 tab.key === 'allepoduszki' ? allepoduszkiSyncStatus :
+                                 tab.key === 'poomfurniture' ? poomfurnitureSyncStatus : null;
+
+              const lastSync = tabSyncStatus?.lastSyncAt ? new Date(tabSyncStatus.lastSyncAt) : null;
+              const now = new Date();
+              const syncAgeMinutes = lastSync ? Math.floor((now - lastSync) / 60000) : null;
+              const isSyncOld = syncAgeMinutes !== null && syncAgeMinutes > 35;
+              const isWorking = tab.isConnected && !isSyncOld;
+
+              return (
+                <div
+                  key={tab.key}
+                  className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium ${
+                    tab.isLoading ? 'bg-gray-100 dark:bg-gray-700 text-gray-500' :
+                    isWorking ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400' :
+                    tab.isConnected && isSyncOld ? 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400' :
+                    'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400'
+                  }`}
+                >
+                  {tab.isImage && <img src={tab.icon} alt="" className="w-4 h-4 rounded" />}
+                  <span className="hidden sm:inline">{tab.label.replace('Allegro ', '').replace('Shopify ', '')}</span>
+                  <span className="sm:hidden">{tab.label.split(' ').pop()}</span>
+                  {tab.isLoading ? (
+                    <span className="w-2 h-2 rounded-full bg-gray-400 animate-pulse"></span>
+                  ) : isWorking ? (
+                    <span className="w-2 h-2 rounded-full bg-green-500"></span>
+                  ) : tab.isConnected && isSyncOld ? (
+                    <span className="w-2 h-2 rounded-full bg-yellow-500" title={`Ostatnia sync: ${syncAgeMinutes} min temu`}></span>
+                  ) : (
+                    <span className="w-2 h-2 rounded-full bg-red-500"></span>
+                  )}
+                  {lastSync && (
+                    <span className="text-[10px] opacity-70">
+                      {syncAgeMinutes < 1 ? 'teraz' : syncAgeMinutes < 60 ? `${syncAgeMinutes}m` : `${Math.floor(syncAgeMinutes/60)}h`}
+                    </span>
+                  )}
+                </div>
+              );
+            })}
           </div>
         </div>
 
