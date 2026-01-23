@@ -1020,7 +1020,8 @@ function CRMContent() {
           </div>
         </div>
 
-        {/* Status integracji */}
+        {/* Status integracji - pokazuj dopiero po załadowaniu */}
+        {!tabs.some(t => t.isLoading) && (
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow dark:shadow-gray-900 mb-4 p-3">
           <h3 className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-2 uppercase tracking-wide">Status integracji</h3>
           <div className="flex flex-wrap gap-3">
@@ -1078,6 +1079,7 @@ function CRMContent() {
             })}
           </div>
         </div>
+        )}
 
         {/* Tabs */}
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow dark:shadow-gray-900 mb-4">
