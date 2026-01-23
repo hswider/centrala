@@ -26,14 +26,17 @@ export async function GET(request) {
     let baselinkerCount = 0;
 
     // Fetch from Apilo
+    let apiloError = null;
     try {
       const maxOrders = lastSyncDate ? 1000 : 2000;
+      console.log('[Sync] Fetching Apilo orders, maxOrders:', maxOrders);
       const apiloOrders = await fetchApiloOrders(null, maxOrders);
       apiloCount = apiloOrders.length;
       allOrders = allOrders.concat(apiloOrders);
       console.log('[Sync] Apilo orders:', apiloCount);
     } catch (error) {
-      console.error('[Sync] Apilo error:', error.message);
+      console.error('[Sync] Apilo error:', error.message, error.stack);
+      apiloError = error.message;
     }
 
     // Fetch from Baselinker (if configured)
@@ -95,6 +98,7 @@ export async function GET(request) {
       success: true,
       count: allOrders.length,
       apiloCount,
+      apiloError,
       baselinkerCount,
       baselinkerError,
       sendDatesUpdated,
