@@ -18,10 +18,13 @@ const publicRoutes = [
   '/api/gmail-amazon-de/sync',    // Gmail Amazon DE messages cron
   '/api/gmail-amazon-de/callback', // Gmail Amazon DE OAuth callback
   '/api/gmail-amazon-de/debug',   // Gmail Amazon DE debug
+  '/api/gmail-poomfurniture/auth',    // Gmail poom-furniture.com auth
   '/api/gmail-poomfurniture/sync',    // Gmail poom-furniture.com messages cron
   '/api/gmail-poomfurniture/callback', // Gmail poom-furniture.com OAuth callback
+  '/api/gmail-poomkids/auth',     // Gmail POOMKIDS auth
   '/api/gmail-poomkids/sync',     // Gmail POOMKIDS messages cron
   '/api/gmail-poomkids/callback', // Gmail POOMKIDS OAuth callback
+  '/api/gmail-allepoduszki/auth', // Gmail Allepoduszki auth
   '/api/gmail-allepoduszki/sync', // Gmail Allepoduszki messages cron
   '/api/gmail-allepoduszki/callback', // Gmail Allepoduszki OAuth callback
   '/api/kaufland/sync',  // Kaufland tickets cron

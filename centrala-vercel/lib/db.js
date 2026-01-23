@@ -2373,6 +2373,18 @@ export async function saveGmailPoomkidsTokens(accessToken, refreshToken, expires
   `;
 }
 
+// Clear Gmail POOMKIDS tokens (logout)
+export async function clearGmailPoomkidsTokens() {
+  await sql`
+    UPDATE gmail_poomkids_tokens
+    SET access_token = NULL,
+        refresh_token = NULL,
+        expires_at = NULL,
+        updated_at = CURRENT_TIMESTAMP
+    WHERE id = 1
+  `;
+}
+
 // Get Gmail POOMKIDS sync status
 export async function getGmailPoomkidsSyncStatus() {
   const { rows } = await sql`SELECT * FROM gmail_poomkids_sync_status WHERE id = 1`;

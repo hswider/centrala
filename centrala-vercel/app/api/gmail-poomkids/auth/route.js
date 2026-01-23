@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getAuthorizationUrl, isAuthenticated, getCurrentUser } from '../../../../lib/gmail-poomkids';
-import { initDatabase, getGmailPoomkidsTokens } from '../../../../lib/db';
+import { initDatabase, getGmailPoomkidsTokens, clearGmailPoomkidsTokens } from '../../../../lib/db';
 
 export async function GET(request) {
   try {
@@ -35,6 +35,26 @@ export async function GET(request) {
     console.error('Gmail POOMKIDS auth error:', error);
     return NextResponse.json(
       { authenticated: false, error: error.message },
+      { status: 500 }
+    );
+  }
+}
+
+// DELETE - Logout / clear tokens
+export async function DELETE() {
+  try {
+    await initDatabase();
+    await clearGmailPoomkidsTokens();
+
+    return NextResponse.json({
+      success: true,
+      message: 'Tokens cleared. Please re-authorize.',
+      authUrl: getAuthorizationUrl()
+    });
+  } catch (error) {
+    console.error('Gmail POOMKIDS logout error:', error);
+    return NextResponse.json(
+      { success: false, error: error.message },
       { status: 500 }
     );
   }
