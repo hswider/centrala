@@ -24,13 +24,13 @@ export async function POST(request) {
     // Try multiple approaches
     let tokenResponse;
 
-    // Approach 1: authorization_code with JSON body
+    // Approach 1: authorization_code with "token" field (per Apilo docs)
     try {
       tokenResponse = await axios.post(
         `${APILO_BASE_URL}/rest/auth/token/`,
         {
           grantType: 'authorization_code',
-          code: authCode
+          token: authCode  // Apilo uses "token" not "code"!
         },
         {
           headers: {
