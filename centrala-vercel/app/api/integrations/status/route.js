@@ -3,8 +3,8 @@ import { sql } from '@vercel/postgres';
 import { initDatabase } from '@/lib/db';
 
 // Helper to calculate sync status based on hours since last sync
-function getSyncStatus(lastSyncDate, hoursWarning = 5, hoursError = 24) {
-  if (!lastSyncDate) return { status: 'warning', hoursAgo: null, message: 'Brak danych sync' };
+function getSyncStatus(lastSyncDate, hoursWarning = 8, hoursError = 24) {
+  if (!lastSyncDate) return { status: 'error', hoursAgo: null, message: 'Brak synchronizacji' };
 
   const now = new Date();
   const lastSync = new Date(lastSyncDate);
