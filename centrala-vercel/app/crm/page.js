@@ -1035,7 +1035,8 @@ function CRMContent() {
               const now = new Date();
               const syncAgeMinutes = lastSync ? Math.floor((now - lastSync) / 60000) : null;
               const isSyncOld = syncAgeMinutes !== null && syncAgeMinutes > 35;
-              const isWorking = tab.isConnected && !isSyncOld;
+              const neverSynced = tab.isConnected && !lastSync;
+              const isWorking = tab.isConnected && lastSync && !isSyncOld;
 
               return (
                 <div
@@ -1043,6 +1044,7 @@ function CRMContent() {
                   className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium ${
                     tab.isLoading ? 'bg-gray-100 dark:bg-gray-700 text-gray-500' :
                     isWorking ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400' :
+                    neverSynced ? 'bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400' :
                     tab.isConnected && isSyncOld ? 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400' :
                     'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400'
                   }`}
@@ -1054,16 +1056,22 @@ function CRMContent() {
                     <span className="w-2 h-2 rounded-full bg-gray-400 animate-pulse"></span>
                   ) : isWorking ? (
                     <span className="w-2 h-2 rounded-full bg-green-500"></span>
+                  ) : neverSynced ? (
+                    <span className="w-2 h-2 rounded-full bg-orange-500" title="Nigdy nie zsynchronizowano"></span>
                   ) : tab.isConnected && isSyncOld ? (
                     <span className="w-2 h-2 rounded-full bg-yellow-500" title={`Ostatnia sync: ${syncAgeMinutes} min temu`}></span>
                   ) : (
                     <span className="w-2 h-2 rounded-full bg-red-500"></span>
                   )}
-                  {lastSync && (
+                  {lastSync ? (
                     <span className="text-[10px] opacity-70">
                       {syncAgeMinutes < 1 ? 'teraz' : syncAgeMinutes < 60 ? `${syncAgeMinutes}m` : `${Math.floor(syncAgeMinutes/60)}h`}
                     </span>
-                  )}
+                  ) : neverSynced ? (
+                    <span className="text-[10px] opacity-70">brak sync</span>
+                  ) : !tab.isConnected && !tab.isLoading ? (
+                    <span className="text-[10px] opacity-70">rozlaczono</span>
+                  ) : null}
                 </div>
               );
             })}
