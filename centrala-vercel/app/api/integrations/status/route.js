@@ -4,7 +4,7 @@ import { initDatabase } from '@/lib/db';
 
 // Helper to calculate sync status based on hours since last sync
 function getSyncStatus(lastSyncDate, hoursWarning = 5, hoursError = 24) {
-  if (!lastSyncDate) return { status: 'error', hoursAgo: null, message: 'Brak synchronizacji' };
+  if (!lastSyncDate) return { status: 'warning', hoursAgo: null, message: 'Brak danych sync' };
 
   const now = new Date();
   const lastSync = new Date(lastSyncDate);
@@ -16,6 +16,17 @@ function getSyncStatus(lastSyncDate, hoursWarning = 5, hoursError = 24) {
     return { status: 'warning', hoursAgo, message: `Ostatni sync ${hoursAgo}h temu` };
   } else {
     return { status: 'ok', hoursAgo, message: hoursAgo === 0 ? 'Zsynchronizowano' : `Sync ${hoursAgo}h temu` };
+  }
+}
+
+// Helper to safely query last sync from a table
+async function safeGetLastSync(tableName, columnName = 'synced_at') {
+  try {
+    const result = await sql.query(`SELECT MAX(${columnName}) as last_sync FROM ${tableName}`);
+    return result.rows[0]?.last_sync || null;
+  } catch (e) {
+    // Table doesn't exist or other error
+    return null;
   }
 }
 
@@ -66,10 +77,7 @@ export async function GET() {
       const gmailTokens = await sql`SELECT email, expires_at, updated_at FROM gmail_tokens WHERE id = 1`;
       const token = gmailTokens.rows[0];
       const tokenValid = token?.expires_at && parseInt(token.expires_at) > Date.now();
-
-      // Check last synced thread
-      const lastThread = await sql`SELECT MAX(synced_at) as last_sync FROM gmail_threads`;
-      const lastSync = lastThread.rows[0]?.last_sync;
+      const lastSync = await safeGetLastSync('gmail_threads');
       const syncStatus = getSyncStatus(lastSync);
 
       let status = 'error';
@@ -86,22 +94,9 @@ export async function GET() {
         message = syncStatus.message;
       }
 
-      integrations.push({
-        id: 'gmail-shopify',
-        name: 'Gmail Shopify',
-        category: 'crm-pl',
-        status,
-        message,
-        lastSync
-      });
+      integrations.push({ id: 'gmail-shopify', name: 'Gmail Shopify', category: 'crm-pl', status, message, lastSync });
     } catch (e) {
-      integrations.push({
-        id: 'gmail-shopify',
-        name: 'Gmail Shopify',
-        category: 'crm-pl',
-        status: 'error',
-        message: 'Błąd sprawdzania'
-      });
+      integrations.push({ id: 'gmail-shopify', name: 'Gmail Shopify', category: 'crm-pl', status: 'error', message: 'Nie połączono' });
     }
 
     // Check Gmail POOMKIDS
@@ -109,9 +104,7 @@ export async function GET() {
       const tokens = await sql`SELECT email, expires_at, updated_at FROM gmail_poomkids_tokens WHERE id = 1`;
       const token = tokens.rows[0];
       const tokenValid = token?.expires_at && parseInt(token.expires_at) > Date.now();
-
-      const lastThread = await sql`SELECT MAX(synced_at) as last_sync FROM gmail_poomkids_threads`;
-      const lastSync = lastThread.rows[0]?.last_sync;
+      const lastSync = await safeGetLastSync('gmail_poomkids_threads');
       const syncStatus = getSyncStatus(lastSync);
 
       let status = 'error';
@@ -128,22 +121,9 @@ export async function GET() {
         message = syncStatus.message;
       }
 
-      integrations.push({
-        id: 'gmail-poomkids',
-        name: 'Gmail POOMKIDS',
-        category: 'crm-pl',
-        status,
-        message,
-        lastSync
-      });
+      integrations.push({ id: 'gmail-poomkids', name: 'Gmail POOMKIDS', category: 'crm-pl', status, message, lastSync });
     } catch (e) {
-      integrations.push({
-        id: 'gmail-poomkids',
-        name: 'Gmail POOMKIDS',
-        category: 'crm-pl',
-        status: 'error',
-        message: 'Błąd sprawdzania'
-      });
+      integrations.push({ id: 'gmail-poomkids', name: 'Gmail POOMKIDS', category: 'crm-pl', status: 'error', message: 'Nie połączono' });
     }
 
     // Check Gmail Allepoduszki
@@ -151,9 +131,7 @@ export async function GET() {
       const tokens = await sql`SELECT email, expires_at, updated_at FROM gmail_allepoduszki_tokens WHERE id = 1`;
       const token = tokens.rows[0];
       const tokenValid = token?.expires_at && parseInt(token.expires_at) > Date.now();
-
-      const lastThread = await sql`SELECT MAX(synced_at) as last_sync FROM gmail_allepoduszki_threads`;
-      const lastSync = lastThread.rows[0]?.last_sync;
+      const lastSync = await safeGetLastSync('gmail_allepoduszki_threads');
       const syncStatus = getSyncStatus(lastSync);
 
       let status = 'error';
@@ -170,22 +148,9 @@ export async function GET() {
         message = syncStatus.message;
       }
 
-      integrations.push({
-        id: 'gmail-allepoduszki',
-        name: 'Gmail Allepoduszki',
-        category: 'crm-pl',
-        status,
-        message,
-        lastSync
-      });
+      integrations.push({ id: 'gmail-allepoduszki', name: 'Gmail Allepoduszki', category: 'crm-pl', status, message, lastSync });
     } catch (e) {
-      integrations.push({
-        id: 'gmail-allepoduszki',
-        name: 'Gmail Allepoduszki',
-        category: 'crm-pl',
-        status: 'error',
-        message: 'Błąd sprawdzania'
-      });
+      integrations.push({ id: 'gmail-allepoduszki', name: 'Gmail Allepoduszki', category: 'crm-pl', status: 'error', message: 'Nie połączono' });
     }
 
     // Check Gmail poom-furniture
@@ -193,9 +158,7 @@ export async function GET() {
       const tokens = await sql`SELECT email, expires_at, updated_at FROM gmail_poomfurniture_tokens WHERE id = 1`;
       const token = tokens.rows[0];
       const tokenValid = token?.expires_at && parseInt(token.expires_at) > Date.now();
-
-      const lastThread = await sql`SELECT MAX(synced_at) as last_sync FROM gmail_poomfurniture_threads`;
-      const lastSync = lastThread.rows[0]?.last_sync;
+      const lastSync = await safeGetLastSync('gmail_poomfurniture_threads');
       const syncStatus = getSyncStatus(lastSync);
 
       let status = 'error';
@@ -212,22 +175,9 @@ export async function GET() {
         message = syncStatus.message;
       }
 
-      integrations.push({
-        id: 'gmail-poomfurniture',
-        name: 'Gmail poom-furniture',
-        category: 'crm-pl',
-        status,
-        message,
-        lastSync
-      });
+      integrations.push({ id: 'gmail-poomfurniture', name: 'Gmail poom-furniture', category: 'crm-pl', status, message, lastSync });
     } catch (e) {
-      integrations.push({
-        id: 'gmail-poomfurniture',
-        name: 'Gmail poom-furniture',
-        category: 'crm-pl',
-        status: 'error',
-        message: 'Błąd sprawdzania'
-      });
+      integrations.push({ id: 'gmail-poomfurniture', name: 'Gmail poom-furniture', category: 'crm-pl', status: 'error', message: 'Nie połączono' });
     }
 
     // Check Allegro Dobrelegowiska
@@ -235,9 +185,7 @@ export async function GET() {
       const tokens = await sql`SELECT access_token, expires_at, updated_at FROM allegro_tokens WHERE id = 1`;
       const token = tokens.rows[0];
       const tokenValid = token?.expires_at && parseInt(token.expires_at) > Date.now();
-
-      const lastMsg = await sql`SELECT MAX(synced_at) as last_sync FROM allegro_messages`;
-      const lastSync = lastMsg.rows[0]?.last_sync;
+      const lastSync = await safeGetLastSync('allegro_messages');
       const syncStatus = getSyncStatus(lastSync);
 
       let status = 'error';
@@ -254,22 +202,9 @@ export async function GET() {
         message = syncStatus.message;
       }
 
-      integrations.push({
-        id: 'allegro-dobrelegowiska',
-        name: 'Allegro Dobrelegowiska',
-        category: 'crm-pl',
-        status,
-        message,
-        lastSync
-      });
+      integrations.push({ id: 'allegro-dobrelegowiska', name: 'Allegro Dobrelegowiska', category: 'crm-pl', status, message, lastSync });
     } catch (e) {
-      integrations.push({
-        id: 'allegro-dobrelegowiska',
-        name: 'Allegro Dobrelegowiska',
-        category: 'crm-pl',
-        status: 'error',
-        message: 'Błąd sprawdzania'
-      });
+      integrations.push({ id: 'allegro-dobrelegowiska', name: 'Allegro Dobrelegowiska', category: 'crm-pl', status: 'error', message: 'Nie połączono' });
     }
 
     // Check Gmail Amazon DE
@@ -277,9 +212,7 @@ export async function GET() {
       const tokens = await sql`SELECT email, expires_at, updated_at FROM gmail_amazon_de_tokens WHERE id = 1`;
       const token = tokens.rows[0];
       const tokenValid = token?.expires_at && parseInt(token.expires_at) > Date.now();
-
-      const lastThread = await sql`SELECT MAX(synced_at) as last_sync FROM gmail_amazon_de_threads`;
-      const lastSync = lastThread.rows[0]?.last_sync;
+      const lastSync = await safeGetLastSync('gmail_amazon_de_threads');
       const syncStatus = getSyncStatus(lastSync);
 
       let status = 'error';
@@ -296,22 +229,9 @@ export async function GET() {
         message = syncStatus.message;
       }
 
-      integrations.push({
-        id: 'gmail-amazon-de',
-        name: 'Gmail Amazon DE',
-        category: 'crm-eu',
-        status,
-        message,
-        lastSync
-      });
+      integrations.push({ id: 'gmail-amazon-de', name: 'Gmail Amazon DE', category: 'crm-eu', status, message, lastSync });
     } catch (e) {
-      integrations.push({
-        id: 'gmail-amazon-de',
-        name: 'Gmail Amazon DE',
-        category: 'crm-eu',
-        status: 'error',
-        message: 'Błąd sprawdzania'
-      });
+      integrations.push({ id: 'gmail-amazon-de', name: 'Gmail Amazon DE', category: 'crm-eu', status: 'error', message: 'Nie połączono' });
     }
 
     // Check Allegro Meblebox
@@ -319,9 +239,7 @@ export async function GET() {
       const tokens = await sql`SELECT access_token, expires_at, updated_at FROM allegro_meblebox_tokens WHERE id = 1`;
       const token = tokens.rows[0];
       const tokenValid = token?.expires_at && parseInt(token.expires_at) > Date.now();
-
-      const lastMsg = await sql`SELECT MAX(synced_at) as last_sync FROM allegro_meblebox_messages`;
-      const lastSync = lastMsg.rows[0]?.last_sync;
+      const lastSync = await safeGetLastSync('allegro_meblebox_messages');
       const syncStatus = getSyncStatus(lastSync);
 
       let status = 'error';
@@ -338,22 +256,9 @@ export async function GET() {
         message = syncStatus.message;
       }
 
-      integrations.push({
-        id: 'allegro-meblebox',
-        name: 'Allegro Meblebox',
-        category: 'crm-eu',
-        status,
-        message,
-        lastSync
-      });
+      integrations.push({ id: 'allegro-meblebox', name: 'Allegro Meblebox', category: 'crm-eu', status, message, lastSync });
     } catch (e) {
-      integrations.push({
-        id: 'allegro-meblebox',
-        name: 'Allegro Meblebox',
-        category: 'crm-eu',
-        status: 'error',
-        message: 'Błąd sprawdzania'
-      });
+      integrations.push({ id: 'allegro-meblebox', name: 'Allegro Meblebox', category: 'crm-eu', status: 'error', message: 'Nie połączono' });
     }
 
     // Check Kaufland
@@ -361,35 +266,14 @@ export async function GET() {
       const kauflandConfigured = !!process.env.KAUFLAND_CLIENT_KEY && !!process.env.KAUFLAND_SECRET_KEY;
 
       if (!kauflandConfigured) {
-        integrations.push({
-          id: 'kaufland',
-          name: 'Kaufland',
-          category: 'crm-eu',
-          status: 'disabled',
-          message: 'Nie skonfigurowany'
-        });
+        integrations.push({ id: 'kaufland', name: 'Kaufland', category: 'crm-eu', status: 'disabled', message: 'Nie skonfigurowany' });
       } else {
-        const lastTicket = await sql`SELECT MAX(synced_at) as last_sync FROM kaufland_tickets`;
-        const lastSync = lastTicket.rows[0]?.last_sync;
+        const lastSync = await safeGetLastSync('kaufland_tickets');
         const syncStatus = getSyncStatus(lastSync);
-
-        integrations.push({
-          id: 'kaufland',
-          name: 'Kaufland',
-          category: 'crm-eu',
-          status: syncStatus.status,
-          message: syncStatus.message,
-          lastSync
-        });
+        integrations.push({ id: 'kaufland', name: 'Kaufland', category: 'crm-eu', status: syncStatus.status, message: syncStatus.message, lastSync });
       }
     } catch (e) {
-      integrations.push({
-        id: 'kaufland',
-        name: 'Kaufland',
-        category: 'crm-eu',
-        status: 'error',
-        message: 'Błąd sprawdzania'
-      });
+      integrations.push({ id: 'kaufland', name: 'Kaufland', category: 'crm-eu', status: 'error', message: 'Błąd sprawdzania' });
     }
 
     // Calculate summary
