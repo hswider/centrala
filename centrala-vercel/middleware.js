@@ -33,6 +33,7 @@ const publicRoutes = [
   '/api/debug',          // Apilo debug
   '/api/debug-apilo',    // Apilo detailed debug
   '/api/apilo-refresh',  // Force Apilo token refresh
+  '/api/apilo-set-token', // Set new Apilo token
   '/api/weather/sync',   // Weather sync cron
   '/api/dms/init'        // DMS table initialization
 ];
