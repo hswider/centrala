@@ -19,9 +19,12 @@ export async function POST(request) {
     }
 
     const credentials = Buffer.from(`${APILO_CLIENT_ID}:${APILO_CLIENT_SECRET}`).toString('base64');
+    const errors = [];
 
-    // Try authorization_code grant type
+    // Try multiple approaches
     let tokenResponse;
+
+    // Approach 1: authorization_code with JSON body
     try {
       tokenResponse = await axios.post(
         `${APILO_BASE_URL}/rest/auth/token/`,
@@ -38,15 +41,17 @@ export async function POST(request) {
         }
       );
     } catch (e) {
-      // If authorization_code doesn't work, try other grant types
-      console.log('authorization_code failed:', e.response?.data);
+      errors.push({ approach: 'json_auth_code', error: e.response?.data || e.message });
+    }
 
-      // Try with client_credentials
+    // Approach 2: Use the auth code AS the token (maybe it's already a token?)
+    if (!tokenResponse) {
       try {
         tokenResponse = await axios.post(
           `${APILO_BASE_URL}/rest/auth/token/`,
           {
-            grantType: 'client_credentials'
+            grantType: 'refresh_token',
+            token: authCode
           },
           {
             headers: {
@@ -56,13 +61,40 @@ export async function POST(request) {
             }
           }
         );
-      } catch (e2) {
-        return NextResponse.json({
-          error: 'Both grant types failed',
-          authCodeError: e.response?.data || e.message,
-          clientCredentialsError: e2.response?.data || e2.message
-        }, { status: 500 });
+      } catch (e) {
+        errors.push({ approach: 'as_refresh_token', error: e.response?.data || e.message });
       }
+    }
+
+    // Approach 3: form-urlencoded format
+    if (!tokenResponse) {
+      try {
+        const params = new URLSearchParams();
+        params.append('grant_type', 'authorization_code');
+        params.append('code', authCode);
+        params.append('client_id', APILO_CLIENT_ID);
+        params.append('client_secret', APILO_CLIENT_SECRET);
+
+        tokenResponse = await axios.post(
+          `${APILO_BASE_URL}/rest/auth/token/`,
+          params,
+          {
+            headers: {
+              'Content-Type': 'application/x-www-form-urlencoded',
+              'Accept': 'application/json'
+            }
+          }
+        );
+      } catch (e) {
+        errors.push({ approach: 'form_urlencoded', error: e.response?.data || e.message });
+      }
+    }
+
+    if (!tokenResponse) {
+      return NextResponse.json({
+        error: 'All approaches failed',
+        attempts: errors
+      }, { status: 500 });
     }
 
     const { accessToken, refreshToken, accessTokenExpireAt } = tokenResponse.data;
