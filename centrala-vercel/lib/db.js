@@ -97,9 +97,16 @@ export async function initDatabase() {
     // Column might already exist
   }
 
-  // Update admin users to have all permissions
+  // Update admin users to have all permissions (including ecom)
   try {
-    await sql`UPDATE users SET permissions = '["dashboard","oms","wms","mes","mts","crm","crm-eu","rank","agent","admin"]'::jsonb WHERE role = 'admin' AND (permissions IS NULL OR NOT permissions @> '["mts"]'::jsonb)`;
+    await sql`UPDATE users SET permissions = '["dashboard","oms","wms","mes","mts","dms","ecom","crm","crm-eu","rank","agent","admin"]'::jsonb WHERE role = 'admin'`;
+  } catch (e) {
+    // Ignore errors
+  }
+
+  // Give hswider access to ecom
+  try {
+    await sql`UPDATE users SET permissions = permissions || '["ecom"]'::jsonb WHERE username = 'hswider' AND NOT (permissions @> '["ecom"]'::jsonb)`;
   } catch (e) {
     // Ignore errors
   }
