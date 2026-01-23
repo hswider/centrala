@@ -191,6 +191,11 @@ export async function markThreadAsRead(threadId) {
 
 // ========== MESSAGES API ==========
 
+// Get attachment data from Gmail
+export async function getAttachment(messageId, attachmentId) {
+  return gmailFetch(`/users/me/messages/${messageId}/attachments/${attachmentId}`);
+}
+
 // Send reply to thread
 export async function sendReply(threadId, to, subject, body) {
   const tokens = await getGmailTokens();
@@ -209,6 +214,54 @@ export async function sendReply(threadId, to, subject, body) {
   ];
 
   const rawEmail = emailLines.join('\r\n');
+  const encodedEmail = Buffer.from(rawEmail).toString('base64url');
+
+  return gmailFetch('/users/me/messages/send', {
+    method: 'POST',
+    body: JSON.stringify({
+      raw: encodedEmail,
+      threadId: threadId
+    })
+  });
+}
+
+// Send reply with attachments
+export async function sendReplyWithAttachments(threadId, to, subject, body, attachments = []) {
+  const tokens = await getGmailTokens();
+  const from = tokens?.email || 'me';
+
+  // Generate boundary for multipart message
+  const boundary = `boundary_${Date.now()}`;
+
+  // Build multipart email
+  const emailParts = [
+    `From: ${from}`,
+    `To: ${to}`,
+    `Subject: Re: ${subject}`,
+    `In-Reply-To: ${threadId}`,
+    `References: ${threadId}`,
+    'MIME-Version: 1.0',
+    `Content-Type: multipart/mixed; boundary="${boundary}"`,
+    '',
+    `--${boundary}`,
+    'Content-Type: text/plain; charset=utf-8',
+    '',
+    body
+  ];
+
+  // Add attachments
+  for (const attachment of attachments) {
+    emailParts.push(`--${boundary}`);
+    emailParts.push(`Content-Type: ${attachment.mimeType}; name="${attachment.filename}"`);
+    emailParts.push(`Content-Disposition: attachment; filename="${attachment.filename}"`);
+    emailParts.push('Content-Transfer-Encoding: base64');
+    emailParts.push('');
+    emailParts.push(attachment.data);
+  }
+
+  emailParts.push(`--${boundary}--`);
+
+  const rawEmail = emailParts.join('\r\n');
   const encodedEmail = Buffer.from(rawEmail).toString('base64url');
 
   return gmailFetch('/users/me/messages/send', {
@@ -245,24 +298,32 @@ export function parseMessage(message) {
   const headers = message.payload?.headers || [];
   const getHeader = (name) => headers.find(h => h.name.toLowerCase() === name.toLowerCase())?.value || '';
 
-  // Extract body
+  // Extract body and attachments
   let bodyText = '';
   let bodyHtml = '';
+  const attachments = [];
 
-  const extractBody = (part) => {
+  const extractBodyAndAttachments = (part) => {
     if (part.mimeType === 'text/plain' && part.body?.data) {
       bodyText = Buffer.from(part.body.data, 'base64').toString('utf-8');
-    }
-    if (part.mimeType === 'text/html' && part.body?.data) {
+    } else if (part.mimeType === 'text/html' && part.body?.data) {
       bodyHtml = Buffer.from(part.body.data, 'base64').toString('utf-8');
+    } else if (part.filename && part.body?.attachmentId) {
+      // This is an attachment
+      attachments.push({
+        id: part.body.attachmentId,
+        filename: part.filename,
+        mimeType: part.mimeType,
+        size: part.body.size || 0
+      });
     }
     if (part.parts) {
-      part.parts.forEach(extractBody);
+      part.parts.forEach(extractBodyAndAttachments);
     }
   };
 
   if (message.payload) {
-    extractBody(message.payload);
+    extractBodyAndAttachments(message.payload);
 
     // If no parts, check body directly
     if (!bodyText && !bodyHtml && message.payload.body?.data) {
@@ -272,6 +333,16 @@ export function parseMessage(message) {
       } else {
         bodyText = decoded;
       }
+    }
+
+    // Check for inline attachments at top level
+    if (message.payload.filename && message.payload.body?.attachmentId) {
+      attachments.push({
+        id: message.payload.body.attachmentId,
+        filename: message.payload.filename,
+        mimeType: message.payload.mimeType,
+        size: message.payload.body.size || 0
+      });
     }
   }
 
@@ -298,6 +369,8 @@ export function parseMessage(message) {
     snippet: message.snippet,
     bodyText,
     bodyHtml,
+    attachments,
+    hasAttachments: attachments.length > 0,
     internalDate: message.internalDate,
     labelIds: message.labelIds || []
   };
