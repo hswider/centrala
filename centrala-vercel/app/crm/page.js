@@ -2910,50 +2910,62 @@ function CRMContent() {
                           ) : (
                             allepoduszkiThreadMessages.map((msg) => {
                               const msgAttachments = Array.isArray(msg.attachments) ? msg.attachments : (typeof msg.attachments === 'string' ? JSON.parse(msg.attachments || '[]') : []);
+                              const senderInitial = (msg.from_email || '?')[0].toUpperCase();
                               return (
                               <div
                                 key={msg.id}
-                                className={`flex ${msg.is_outgoing ? 'justify-end' : 'justify-start'}`}
+                                className={`flex items-start gap-2 ${msg.is_outgoing ? 'justify-end' : 'justify-start'}`}
                               >
-                                <div
-                                  className={`max-w-[85%] px-4 py-3 rounded-lg ${
-                                    msg.is_outgoing
-                                      ? 'bg-purple-600 text-white'
-                                      : 'bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-900 dark:text-white'
-                                  }`}
-                                >
-                                  <div className={`text-xs mb-1 ${msg.is_outgoing ? 'text-purple-200' : 'text-gray-500'}`}>
-                                    {msg.from_name || msg.from_email}
-                                  </div>
-                                  <div className="whitespace-pre-wrap break-words text-sm">
-                                    {msg.body_text || '(Brak tresci tekstowej)'}
-                                  </div>
-                                  {msgAttachments.length > 0 && (
-                                    <div className="mt-2">
-                                      <p className={`text-[10px] mb-1 ${msg.is_outgoing ? 'text-purple-200' : 'text-gray-400'}`}>Zalaczniki:</p>
-                                      <div className="flex flex-wrap gap-1">
-                                        {msgAttachments.map((att, i) => (
-                                          <a
-                                            key={i}
-                                            href={`/api/gmail-allepoduszki/attachments/${msg.id}/${att.id}?filename=${encodeURIComponent(att.filename)}&mimeType=${encodeURIComponent(att.mimeType)}`}
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            className={`inline-flex items-center gap-1 px-2 py-1 rounded text-xs ${
-                                              msg.is_outgoing
-                                                ? 'bg-purple-700 hover:bg-purple-800 text-white'
-                                                : 'bg-gray-100 dark:bg-gray-600 hover:bg-gray-200 dark:hover:bg-gray-500 text-gray-700 dark:text-gray-200'
-                                            }`}
-                                          >
-                                            <span>{getAttachmentIcon(att.mimeType)}</span>
-                                            <span className="truncate max-w-[100px]">{att.filename}</span>
-                                          </a>
-                                        ))}
-                                      </div>
+                                <div className="relative">
+                                  {msg.is_outgoing ? (
+                                    <div className="absolute -bottom-2 -right-2 w-8 h-8 rounded-full bg-white dark:bg-gray-800 border-2 border-purple-600 flex items-center justify-center overflow-hidden z-10">
+                                      <img src="/icons/allepoduszki.png" alt="" className="w-5 h-5 object-contain" />
+                                    </div>
+                                  ) : (
+                                    <div className="absolute -bottom-2 -left-2 w-8 h-8 rounded-full bg-purple-100 border-2 border-white dark:border-gray-800 flex items-center justify-center text-purple-600 font-bold text-sm z-10">
+                                      {senderInitial}
                                     </div>
                                   )}
-                                  <p className={`text-xs mt-2 ${msg.is_outgoing ? 'text-purple-200' : 'text-gray-400'}`}>
-                                    {formatDate(msg.sent_at)}
-                                  </p>
+                                  <div
+                                    className={`max-w-[80%] min-w-[200px] px-4 py-3 rounded-lg ${
+                                      msg.is_outgoing
+                                        ? 'bg-purple-600 text-white'
+                                        : 'bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-900 dark:text-white'
+                                    }`}
+                                  >
+                                    <div className={`text-xs mb-1 ${msg.is_outgoing ? 'text-purple-200' : 'text-gray-500'}`}>
+                                      {msg.from_name || msg.from_email}
+                                    </div>
+                                    <div className="whitespace-pre-wrap break-words text-sm">
+                                      {msg.body_text || '(Brak tresci tekstowej)'}
+                                    </div>
+                                    {msgAttachments.length > 0 && (
+                                      <div className="mt-2">
+                                        <p className={`text-[10px] mb-1 ${msg.is_outgoing ? 'text-purple-200' : 'text-gray-400'}`}>Zalaczniki:</p>
+                                        <div className="flex flex-wrap gap-1">
+                                          {msgAttachments.map((att, i) => (
+                                            <a
+                                              key={i}
+                                              href={`/api/gmail-allepoduszki/attachments/${msg.id}/${att.id}?filename=${encodeURIComponent(att.filename)}&mimeType=${encodeURIComponent(att.mimeType)}`}
+                                              target="_blank"
+                                              rel="noopener noreferrer"
+                                              className={`inline-flex items-center gap-1 px-2 py-1 rounded text-xs ${
+                                                msg.is_outgoing
+                                                  ? 'bg-purple-700 hover:bg-purple-800 text-white'
+                                                  : 'bg-gray-100 dark:bg-gray-600 hover:bg-gray-200 dark:hover:bg-gray-500 text-gray-700 dark:text-gray-200'
+                                              }`}
+                                            >
+                                              <span>{getAttachmentIcon(att.mimeType)}</span>
+                                              <span className="truncate max-w-[100px]">{att.filename}</span>
+                                            </a>
+                                          ))}
+                                        </div>
+                                      </div>
+                                    )}
+                                    <p className={`text-xs mt-2 ${msg.is_outgoing ? 'text-purple-200' : 'text-gray-400'}`}>
+                                      {formatDate(msg.sent_at)}
+                                    </p>
+                                  </div>
                                 </div>
                               </div>
                             );})
@@ -3161,50 +3173,62 @@ function CRMContent() {
                           ) : (
                             poomfurnitureThreadMessages.map((msg) => {
                               const msgAttachments = Array.isArray(msg.attachments) ? msg.attachments : (typeof msg.attachments === 'string' ? JSON.parse(msg.attachments || '[]') : []);
+                              const senderInitial = (msg.from_email || '?')[0].toUpperCase();
                               return (
                               <div
                                 key={msg.id}
-                                className={`flex ${msg.is_outgoing ? 'justify-end' : 'justify-start'}`}
+                                className={`flex items-start gap-2 ${msg.is_outgoing ? 'justify-end' : 'justify-start'}`}
                               >
-                                <div
-                                  className={`max-w-[85%] px-4 py-3 rounded-lg ${
-                                    msg.is_outgoing
-                                      ? 'bg-teal-600 text-white'
-                                      : 'bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-900 dark:text-white'
-                                  }`}
-                                >
-                                  <div className={`text-xs mb-1 ${msg.is_outgoing ? 'text-teal-200' : 'text-gray-500'}`}>
-                                    {msg.from_name || msg.from_email}
-                                  </div>
-                                  <div className="whitespace-pre-wrap break-words text-sm">
-                                    {msg.body_text || '(Brak tresci tekstowej)'}
-                                  </div>
-                                  {msgAttachments.length > 0 && (
-                                    <div className="mt-2">
-                                      <p className={`text-[10px] mb-1 ${msg.is_outgoing ? 'text-teal-200' : 'text-gray-400'}`}>Zalaczniki:</p>
-                                      <div className="flex flex-wrap gap-1">
-                                        {msgAttachments.map((att, i) => (
-                                          <a
-                                            key={i}
-                                            href={`/api/gmail-poomfurniture/attachments/${msg.id}/${att.id}?filename=${encodeURIComponent(att.filename)}&mimeType=${encodeURIComponent(att.mimeType)}`}
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            className={`inline-flex items-center gap-1 px-2 py-1 rounded text-xs ${
-                                              msg.is_outgoing
-                                                ? 'bg-teal-700 hover:bg-teal-800 text-white'
-                                                : 'bg-gray-100 dark:bg-gray-600 hover:bg-gray-200 dark:hover:bg-gray-500 text-gray-700 dark:text-gray-200'
-                                            }`}
-                                          >
-                                            <span>{getAttachmentIcon(att.mimeType)}</span>
-                                            <span className="truncate max-w-[100px]">{att.filename}</span>
-                                          </a>
-                                        ))}
-                                      </div>
+                                <div className="relative">
+                                  {msg.is_outgoing ? (
+                                    <div className="absolute -bottom-2 -right-2 w-8 h-8 rounded-full bg-white dark:bg-gray-800 border-2 border-teal-600 flex items-center justify-center overflow-hidden z-10">
+                                      <img src="/icons/poom-furniture.png" alt="" className="w-5 h-5 object-contain" />
+                                    </div>
+                                  ) : (
+                                    <div className="absolute -bottom-2 -left-2 w-8 h-8 rounded-full bg-teal-100 border-2 border-white dark:border-gray-800 flex items-center justify-center text-teal-600 font-bold text-sm z-10">
+                                      {senderInitial}
                                     </div>
                                   )}
-                                  <p className={`text-xs mt-2 ${msg.is_outgoing ? 'text-teal-200' : 'text-gray-400'}`}>
-                                    {formatDate(msg.sent_at)}
-                                  </p>
+                                  <div
+                                    className={`max-w-[80%] min-w-[200px] px-4 py-3 rounded-lg ${
+                                      msg.is_outgoing
+                                        ? 'bg-teal-600 text-white'
+                                        : 'bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-900 dark:text-white'
+                                    }`}
+                                  >
+                                    <div className={`text-xs mb-1 ${msg.is_outgoing ? 'text-teal-200' : 'text-gray-500'}`}>
+                                      {msg.from_name || msg.from_email}
+                                    </div>
+                                    <div className="whitespace-pre-wrap break-words text-sm">
+                                      {msg.body_text || '(Brak tresci tekstowej)'}
+                                    </div>
+                                    {msgAttachments.length > 0 && (
+                                      <div className="mt-2">
+                                        <p className={`text-[10px] mb-1 ${msg.is_outgoing ? 'text-teal-200' : 'text-gray-400'}`}>Zalaczniki:</p>
+                                        <div className="flex flex-wrap gap-1">
+                                          {msgAttachments.map((att, i) => (
+                                            <a
+                                              key={i}
+                                              href={`/api/gmail-poomfurniture/attachments/${msg.id}/${att.id}?filename=${encodeURIComponent(att.filename)}&mimeType=${encodeURIComponent(att.mimeType)}`}
+                                              target="_blank"
+                                              rel="noopener noreferrer"
+                                              className={`inline-flex items-center gap-1 px-2 py-1 rounded text-xs ${
+                                                msg.is_outgoing
+                                                  ? 'bg-teal-700 hover:bg-teal-800 text-white'
+                                                  : 'bg-gray-100 dark:bg-gray-600 hover:bg-gray-200 dark:hover:bg-gray-500 text-gray-700 dark:text-gray-200'
+                                              }`}
+                                            >
+                                              <span>{getAttachmentIcon(att.mimeType)}</span>
+                                              <span className="truncate max-w-[100px]">{att.filename}</span>
+                                            </a>
+                                          ))}
+                                        </div>
+                                      </div>
+                                    )}
+                                    <p className={`text-xs mt-2 ${msg.is_outgoing ? 'text-teal-200' : 'text-gray-400'}`}>
+                                      {formatDate(msg.sent_at)}
+                                    </p>
+                                  </div>
                                 </div>
                               </div>
                             );
