@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import {
   getThread,
   sendReply,
+  sendReplyWithAttachments,
   markThreadAsRead as markThreadAsReadGmail,
   isAuthenticated,
   parseMessage
@@ -78,8 +79,8 @@ export async function GET(request, { params }) {
               bodyHtml: parsed.bodyHtml,
               sentAt: parsed.internalDate,
               isOutgoing,
-              hasAttachments: false,
-              attachments: []
+              hasAttachments: parsed.hasAttachments,
+              attachments: parsed.attachments
             }, threadId);
           }
         }
@@ -129,12 +130,12 @@ export async function POST(request, { params }) {
     }
 
     const body = await request.json();
-    const { text, to, subject } = body;
+    const { text, to, subject, attachments } = body;
 
-    if (!text || text.trim() === '') {
+    if ((!text || text.trim() === '') && (!attachments || attachments.length === 0)) {
       return NextResponse.json({
         success: false,
-        error: 'Message text is required'
+        error: 'Message text or attachments required'
       }, { status: 400 });
     }
 
@@ -145,8 +146,13 @@ export async function POST(request, { params }) {
       }, { status: 400 });
     }
 
-    // Send reply via Gmail API
-    const sentMessage = await sendReply(threadId, to, subject || '', text.trim());
+    // Send reply via Gmail API (with or without attachments)
+    let sentMessage;
+    if (attachments && attachments.length > 0) {
+      sentMessage = await sendReplyWithAttachments(threadId, to, subject || '', text?.trim() || '', attachments);
+    } else {
+      sentMessage = await sendReply(threadId, to, subject || '', text.trim());
+    }
 
     // Refresh thread to get the sent message
     const gmailThread = await getThread(threadId);
@@ -168,8 +174,8 @@ export async function POST(request, { params }) {
           bodyHtml: parsed.bodyHtml,
           sentAt: parsed.internalDate,
           isOutgoing,
-          hasAttachments: false,
-          attachments: []
+          hasAttachments: parsed.hasAttachments,
+          attachments: parsed.attachments
         }, threadId);
       }
     }

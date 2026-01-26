@@ -110,8 +110,8 @@ async function handleSync(request) {
               bodyHtml: parsed.bodyHtml,
               sentAt: parsed.internalDate,
               isOutgoing,
-              hasAttachments: false,
-              attachments: []
+              hasAttachments: parsed.hasAttachments,
+              attachments: parsed.attachments
             }, threadStub.id);
             syncedMessages++;
           }

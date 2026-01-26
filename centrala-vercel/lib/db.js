@@ -2109,7 +2109,9 @@ export async function saveGmailMessage(message, threadId) {
     ON CONFLICT (id) DO UPDATE SET
       body_text = EXCLUDED.body_text,
       body_html = EXCLUDED.body_html,
-      is_outgoing = EXCLUDED.is_outgoing
+      is_outgoing = EXCLUDED.is_outgoing,
+      has_attachments = EXCLUDED.has_attachments,
+      attachments = EXCLUDED.attachments
   `;
 }
 
@@ -2501,7 +2503,9 @@ export async function saveGmailPoomkidsMessage(message, threadId) {
     ON CONFLICT (id) DO UPDATE SET
       body_text = EXCLUDED.body_text,
       body_html = EXCLUDED.body_html,
-      is_outgoing = EXCLUDED.is_outgoing
+      is_outgoing = EXCLUDED.is_outgoing,
+      has_attachments = EXCLUDED.has_attachments,
+      attachments = EXCLUDED.attachments
   `;
 }
 
@@ -2676,7 +2680,9 @@ export async function saveGmailAllepoduszkiMessage(message, threadId) {
     ON CONFLICT (id) DO UPDATE SET
       body_text = EXCLUDED.body_text,
       body_html = EXCLUDED.body_html,
-      is_outgoing = EXCLUDED.is_outgoing
+      is_outgoing = EXCLUDED.is_outgoing,
+      has_attachments = EXCLUDED.has_attachments,
+      attachments = EXCLUDED.attachments
   `;
 }
 
