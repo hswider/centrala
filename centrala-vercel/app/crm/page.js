@@ -1616,8 +1616,13 @@ function CRMContent() {
       .replace(/\n*On .+ wrote:[\s\S]*/i, '')
       .replace(/\n*W dniu .+ napisał:[\s\S]*/i, '')
       .replace(/\n*Dnia .+ napisał:[\s\S]*/i, '')
+      // Polish format with napisał(a): - matches "niedziela, 25 stycznia 2026 22:53, email napisał(a):"
+      .replace(/\n*.+\d{4}.+napisał\(a\):[\s\S]*/i, '')
       .replace(/\n(?:>.*\n?){2,}[\s\S]*/, '')
       .replace(/\n*\[image:[^\]]*\]\s*Zamówienie\s*#\d+[\s\S]*/i, '')
+      // Proton Mail signature
+      .replace(/\n*Wysłana przez bezpieczną pocztę \[Proton Mail\].*$/im, '')
+      .replace(/\n*Sent with Proton Mail.*$/im, '')
       // Remove excessive whitespace on each line
       .replace(/[ \t]+$/gm, '')
       .replace(/^[ \t]+/gm, '')

@@ -308,6 +308,11 @@ function stripQuotedReply(text) {
     /\n*W dniu \d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2} użytkownik .+ napisał:[\s\S]*/i,
     /\n*Dnia \d{4}-\d{2}-\d{2} .+ napisał[\s\S]*/i,
     /\n*Dnia .+ napisał:[\s\S]*/i,
+    // Polish format with napisał(a): - matches "niedziela, 25 stycznia 2026 22:53, email napisał(a):"
+    /\n*.+\d{4}.+napisał\(a\):[\s\S]*/i,
+    // Proton Mail signatures
+    /\n*Wysłana przez bezpieczną pocztę \[Proton Mail\].*$/im,
+    /\n*Sent with Proton Mail.*$/im,
     // English
     /\n*On .+ wrote:[\s\S]*/i,
     /\n*On \d{4}-\d{2}-\d{2} .+ wrote:[\s\S]*/i,
