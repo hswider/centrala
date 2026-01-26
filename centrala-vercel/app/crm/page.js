@@ -724,24 +724,25 @@ function CRMContent() {
     );
   };
 
-  // Toggle message checked status (mark as read/processed)
-  const toggleGmailMessageChecked = async (messageId, currentChecked) => {
+  // Toggle thread checked status (mark thread as processed)
+  const toggleGmailThreadChecked = async (e, threadId, currentChecked) => {
+    e.stopPropagation();
     const newChecked = !currentChecked;
     try {
-      const res = await fetch('/api/gmail/messages/check', {
+      const res = await fetch('/api/gmail/threads/check', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messageIds: [messageId], checked: newChecked })
+        body: JSON.stringify({ threadId, checked: newChecked })
       });
       const data = await res.json();
 
       if (data.success) {
-        setGmailThreadMessages(prev => prev.map(m =>
-          m.id === messageId ? { ...m, checked: newChecked } : m
+        setGmailThreads(prev => prev.map(t =>
+          t.id === threadId ? { ...t, checked: newChecked } : t
         ));
       }
     } catch (err) {
-      console.error('Toggle checked error:', err);
+      console.error('Toggle thread checked error:', err);
     }
   };
 
@@ -999,24 +1000,25 @@ function CRMContent() {
     setPoomkidsSelectedMessages(prev => prev.includes(messageId) ? prev.filter(id => id !== messageId) : [...prev, messageId]);
   };
 
-  // Toggle POOMKIDS message checked status
-  const togglePoomkidsMessageChecked = async (messageId, currentChecked) => {
+  // Toggle POOMKIDS thread checked status
+  const togglePoomkidsThreadChecked = async (e, threadId, currentChecked) => {
+    e.stopPropagation();
     const newChecked = !currentChecked;
     try {
-      const res = await fetch('/api/gmail-poomkids/messages/check', {
+      const res = await fetch('/api/gmail-poomkids/threads/check', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messageIds: [messageId], checked: newChecked })
+        body: JSON.stringify({ threadId, checked: newChecked })
       });
       const data = await res.json();
 
       if (data.success) {
-        setPoomkidsThreadMessages(prev => prev.map(m =>
-          m.id === messageId ? { ...m, checked: newChecked } : m
+        setPoomkidsThreads(prev => prev.map(t =>
+          t.id === threadId ? { ...t, checked: newChecked } : t
         ));
       }
     } catch (err) {
-      console.error('Toggle checked error:', err);
+      console.error('Toggle thread checked error:', err);
     }
   };
 
@@ -1274,24 +1276,25 @@ function CRMContent() {
     setAllepoduszkiSelectedMessages(prev => prev.includes(messageId) ? prev.filter(id => id !== messageId) : [...prev, messageId]);
   };
 
-  // Toggle ALLEPODUSZKI message checked status
-  const toggleAllepoduszkiMessageChecked = async (messageId, currentChecked) => {
+  // Toggle ALLEPODUSZKI thread checked status
+  const toggleAllepoduszkiThreadChecked = async (e, threadId, currentChecked) => {
+    e.stopPropagation();
     const newChecked = !currentChecked;
     try {
-      const res = await fetch('/api/gmail-allepoduszki/messages/check', {
+      const res = await fetch('/api/gmail-allepoduszki/threads/check', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messageIds: [messageId], checked: newChecked })
+        body: JSON.stringify({ threadId, checked: newChecked })
       });
       const data = await res.json();
 
       if (data.success) {
-        setAllepoduszkiThreadMessages(prev => prev.map(m =>
-          m.id === messageId ? { ...m, checked: newChecked } : m
+        setAllepoduszkiThreads(prev => prev.map(t =>
+          t.id === threadId ? { ...t, checked: newChecked } : t
         ));
       }
     } catch (err) {
-      console.error('Toggle checked error:', err);
+      console.error('Toggle thread checked error:', err);
     }
   };
 
@@ -1549,24 +1552,25 @@ function CRMContent() {
     setPoomfurnitureSelectedMessages(prev => prev.includes(messageId) ? prev.filter(id => id !== messageId) : [...prev, messageId]);
   };
 
-  // Toggle POOMFURNITURE message checked status
-  const togglePoomfurnitureMessageChecked = async (messageId, currentChecked) => {
+  // Toggle POOMFURNITURE thread checked status
+  const togglePoomfurnitureThreadChecked = async (e, threadId, currentChecked) => {
+    e.stopPropagation();
     const newChecked = !currentChecked;
     try {
-      const res = await fetch('/api/gmail-poomfurniture/messages/check', {
+      const res = await fetch('/api/gmail-poomfurniture/threads/check', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messageIds: [messageId], checked: newChecked })
+        body: JSON.stringify({ threadId, checked: newChecked })
       });
       const data = await res.json();
 
       if (data.success) {
-        setPoomfurnitureThreadMessages(prev => prev.map(m =>
-          m.id === messageId ? { ...m, checked: newChecked } : m
+        setPoomfurnitureThreads(prev => prev.map(t =>
+          t.id === threadId ? { ...t, checked: newChecked } : t
         ));
       }
     } catch (err) {
-      console.error('Toggle checked error:', err);
+      console.error('Toggle thread checked error:', err);
     }
   };
 
@@ -2517,9 +2521,20 @@ function CRMContent() {
                             onClick={() => openGmailThread(thread)}
                             className={`w-full text-left px-4 py-3 border-b border-gray-100 dark:border-gray-700 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 ${
                               gmailSelectedThread?.id === thread.id ? 'bg-blue-50' : ''
-                            } ${thread.unread ? 'bg-red-50' : ''}`}
+                            } ${thread.unread ? 'bg-red-50' : ''} ${thread.checked ? 'bg-green-50' : ''}`}
                           >
                             <div className="flex items-start gap-3">
+                              <button
+                                onClick={(e) => toggleGmailThreadChecked(e, thread.id, thread.checked)}
+                                className={`w-5 h-5 mt-2.5 flex-shrink-0 rounded border-2 flex items-center justify-center transition-colors ${
+                                  thread.checked
+                                    ? 'bg-green-500 border-green-500 text-white'
+                                    : 'border-gray-300 hover:border-green-400'
+                                }`}
+                                title={thread.checked ? 'Oznaczone' : 'Oznacz jako przetworzone'}
+                              >
+                                {thread.checked && <span className="text-xs">✓</span>}
+                              </button>
                               <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center text-red-600 font-medium">
                                 {(thread.from_name || thread.from_email || '?')[0].toUpperCase()}
                               </div>
@@ -2851,9 +2866,20 @@ function CRMContent() {
                             onClick={() => openPoomkidsThread(thread)}
                             className={`w-full text-left px-4 py-3 border-b border-gray-100 dark:border-gray-700 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 ${
                               poomkidsSelectedThread?.id === thread.id ? 'bg-blue-50' : ''
-                            } ${thread.unread ? 'bg-green-50' : ''}`}
+                            } ${thread.unread ? 'bg-green-50' : ''} ${thread.checked ? 'bg-green-50' : ''}`}
                           >
                             <div className="flex items-start gap-3">
+                              <button
+                                onClick={(e) => togglePoomkidsThreadChecked(e, thread.id, thread.checked)}
+                                className={`w-5 h-5 mt-2.5 flex-shrink-0 rounded border-2 flex items-center justify-center transition-colors ${
+                                  thread.checked
+                                    ? 'bg-green-500 border-green-500 text-white'
+                                    : 'border-gray-300 hover:border-green-400'
+                                }`}
+                                title={thread.checked ? 'Oznaczone' : 'Oznacz jako przetworzone'}
+                              >
+                                {thread.checked && <span className="text-xs">✓</span>}
+                              </button>
                               <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center text-green-600 font-medium">
                                 {(thread.from_name || thread.from_email || '?')[0].toUpperCase()}
                               </div>
@@ -3166,9 +3192,20 @@ function CRMContent() {
                             onClick={() => openAllepoduszkiThread(thread)}
                             className={`w-full text-left px-4 py-3 border-b border-gray-100 dark:border-gray-700 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 ${
                               allepoduszkiSelectedThread?.id === thread.id ? 'bg-blue-50' : ''
-                            } ${thread.unread ? 'bg-purple-50' : ''}`}
+                            } ${thread.unread ? 'bg-purple-50' : ''} ${thread.checked ? 'bg-green-50' : ''}`}
                           >
                             <div className="flex items-start gap-3">
+                              <button
+                                onClick={(e) => toggleAllepoduszkiThreadChecked(e, thread.id, thread.checked)}
+                                className={`w-5 h-5 mt-2.5 flex-shrink-0 rounded border-2 flex items-center justify-center transition-colors ${
+                                  thread.checked
+                                    ? 'bg-green-500 border-green-500 text-white'
+                                    : 'border-gray-300 hover:border-green-400'
+                                }`}
+                                title={thread.checked ? 'Oznaczone' : 'Oznacz jako przetworzone'}
+                              >
+                                {thread.checked && <span className="text-xs">✓</span>}
+                              </button>
                               <div className="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center text-purple-600 font-medium">
                                 {(thread.from_name || thread.from_email || '?')[0].toUpperCase()}
                               </div>
@@ -3442,9 +3479,20 @@ function CRMContent() {
                             onClick={() => openPoomfurnitureThread(thread)}
                             className={`w-full text-left px-4 py-3 border-b border-gray-100 dark:border-gray-700 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 ${
                               poomfurnitureSelectedThread?.id === thread.id ? 'bg-blue-50' : ''
-                            } ${thread.unread ? 'bg-teal-50' : ''}`}
+                            } ${thread.unread ? 'bg-teal-50' : ''} ${thread.checked ? 'bg-green-50' : ''}`}
                           >
                             <div className="flex items-start gap-3">
+                              <button
+                                onClick={(e) => togglePoomfurnitureThreadChecked(e, thread.id, thread.checked)}
+                                className={`w-5 h-5 mt-2.5 flex-shrink-0 rounded border-2 flex items-center justify-center transition-colors ${
+                                  thread.checked
+                                    ? 'bg-green-500 border-green-500 text-white'
+                                    : 'border-gray-300 hover:border-green-400'
+                                }`}
+                                title={thread.checked ? 'Oznaczone' : 'Oznacz jako przetworzone'}
+                              >
+                                {thread.checked && <span className="text-xs">✓</span>}
+                              </button>
                               <div className="w-10 h-10 rounded-full bg-teal-100 flex items-center justify-center text-teal-600 font-medium">
                                 {(thread.from_name || thread.from_email || '?')[0].toUpperCase()}
                               </div>

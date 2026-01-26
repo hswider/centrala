@@ -539,11 +539,11 @@ export async function initDatabase() {
   await sql`ALTER TABLE gmail_allepoduszki_threads ADD COLUMN IF NOT EXISTS status VARCHAR(20) DEFAULT 'new'`;
   await sql`ALTER TABLE gmail_poomfurniture_threads ADD COLUMN IF NOT EXISTS status VARCHAR(20) DEFAULT 'new'`;
 
-  // Add checked column to all Gmail messages tables (for marking individual messages as read/processed)
-  await sql`ALTER TABLE gmail_messages ADD COLUMN IF NOT EXISTS checked BOOLEAN DEFAULT false`;
-  await sql`ALTER TABLE gmail_poomkids_messages ADD COLUMN IF NOT EXISTS checked BOOLEAN DEFAULT false`;
-  await sql`ALTER TABLE gmail_allepoduszki_messages ADD COLUMN IF NOT EXISTS checked BOOLEAN DEFAULT false`;
-  await sql`ALTER TABLE gmail_poomfurniture_messages ADD COLUMN IF NOT EXISTS checked BOOLEAN DEFAULT false`;
+  // Add checked column to all Gmail thread tables (for marking threads as processed)
+  await sql`ALTER TABLE gmail_threads ADD COLUMN IF NOT EXISTS checked BOOLEAN DEFAULT false`;
+  await sql`ALTER TABLE gmail_poomkids_threads ADD COLUMN IF NOT EXISTS checked BOOLEAN DEFAULT false`;
+  await sql`ALTER TABLE gmail_allepoduszki_threads ADD COLUMN IF NOT EXISTS checked BOOLEAN DEFAULT false`;
+  await sql`ALTER TABLE gmail_poomfurniture_threads ADD COLUMN IF NOT EXISTS checked BOOLEAN DEFAULT false`;
 
   // ========== AMAZON DE (SP-API) ==========
 
@@ -2210,6 +2210,15 @@ export async function setGmailMessagesChecked(messageIds, checked) {
   `;
 }
 
+// Mark Gmail thread as checked/unchecked
+export async function setGmailThreadChecked(threadId, checked) {
+  await sql`
+    UPDATE gmail_threads
+    SET checked = ${checked}, updated_at = CURRENT_TIMESTAMP
+    WHERE id = ${threadId}
+  `;
+}
+
 // Get unread Gmail threads count
 export async function getUnreadGmailThreadsCount() {
   const { rows } = await sql`SELECT COUNT(*) as count FROM gmail_threads WHERE unread = true`;
@@ -2603,6 +2612,15 @@ export async function setGmailPoomkidsMessagesChecked(messageIds, checked) {
   `;
 }
 
+// Mark Gmail POOMKIDS thread as checked/unchecked
+export async function setGmailPoomkidsThreadChecked(threadId, checked) {
+  await sql`
+    UPDATE gmail_poomkids_threads
+    SET checked = ${checked}, updated_at = CURRENT_TIMESTAMP
+    WHERE id = ${threadId}
+  `;
+}
+
 // Get unread Gmail POOMKIDS threads count
 export async function getUnreadGmailPoomkidsThreadsCount() {
   const { rows } = await sql`SELECT COUNT(*) as count FROM gmail_poomkids_threads WHERE unread = true`;
@@ -2794,6 +2812,15 @@ export async function setGmailAllepoduszkiMessagesChecked(messageIds, checked) {
   `;
 }
 
+// Mark Gmail Allepoduszki thread as checked/unchecked
+export async function setGmailAllepoduszkiThreadChecked(threadId, checked) {
+  await sql`
+    UPDATE gmail_allepoduszki_threads
+    SET checked = ${checked}, updated_at = CURRENT_TIMESTAMP
+    WHERE id = ${threadId}
+  `;
+}
+
 // Get unread Gmail Allepoduszki threads count
 export async function getUnreadGmailAllepoduszkiThreadsCount() {
   const { rows } = await sql`SELECT COUNT(*) as count FROM gmail_allepoduszki_threads WHERE unread = true`;
@@ -2980,6 +3007,15 @@ export async function setGmailPoomfurnitureMessagesChecked(messageIds, checked) 
     UPDATE gmail_poomfurniture_messages
     SET checked = ${checked}
     WHERE id = ANY(${messageIds}::text[])
+  `;
+}
+
+// Mark Gmail Poomfurniture thread as checked/unchecked
+export async function setGmailPoomfurnitureThreadChecked(threadId, checked) {
+  await sql`
+    UPDATE gmail_poomfurniture_threads
+    SET checked = ${checked}, updated_at = CURRENT_TIMESTAMP
+    WHERE id = ${threadId}
   `;
 }
 
