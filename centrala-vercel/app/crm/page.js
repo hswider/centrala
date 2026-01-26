@@ -62,6 +62,8 @@ function CRMContent() {
   const [poomkidsSyncStatus, setPoomkidsSyncStatus] = useState(null);
   const [poomkidsUnreadCount, setPoomkidsUnreadCount] = useState(0);
   const [poomkidsAttachments, setPoomkidsAttachments] = useState([]);
+  const [poomkidsSelectedMessages, setPoomkidsSelectedMessages] = useState([]);
+  const [poomkidsDeleting, setPoomkidsDeleting] = useState(false);
 
   // Gmail Allepoduszki (Shopify Allepoduszki) state
   const [allepoduszkiAuth, setAllepoduszkiAuth] = useState({ authenticated: false, user: null, loading: true });
@@ -76,6 +78,8 @@ function CRMContent() {
   const [allepoduszkiSyncStatus, setAllepoduszkiSyncStatus] = useState(null);
   const [allepoduszkiUnreadCount, setAllepoduszkiUnreadCount] = useState(0);
   const [allepoduszkiAttachments, setAllepoduszkiAttachments] = useState([]);
+  const [allepoduszkiSelectedMessages, setAllepoduszkiSelectedMessages] = useState([]);
+  const [allepoduszkiDeleting, setAllepoduszkiDeleting] = useState(false);
 
   // Gmail Poomfurniture (Shopify poom-furniture.com) state
   const [poomfurnitureAuth, setPoomfurnitureAuth] = useState({ authenticated: false, user: null, loading: true });
@@ -90,6 +94,8 @@ function CRMContent() {
   const [poomfurnitureSyncStatus, setPoomfurnitureSyncStatus] = useState(null);
   const [poomfurnitureUnreadCount, setPoomfurnitureUnreadCount] = useState(0);
   const [poomfurnitureAttachments, setPoomfurnitureAttachments] = useState([]);
+  const [poomfurnitureSelectedMessages, setPoomfurnitureSelectedMessages] = useState([]);
+  const [poomfurnitureDeleting, setPoomfurnitureDeleting] = useState(false);
 
   const tabs = [
     { key: 'wiadomosci', label: 'Allegro Dobrelegowiska', icon: 'https://a.allegroimg.com/original/12c30c/0d4b068640de9b0daf22af9d97c5', overlayIcon: '/icons/dobrelegowiska.png', isImage: true, badge: unreadCount, color: 'orange', isConnected: allegroAuth.authenticated, isLoading: allegroAuth.loading },
@@ -808,6 +814,7 @@ function CRMContent() {
     setPoomkidsSelectedThread(thread);
     setPoomkidsMessagesLoading(true);
     setPoomkidsThreadMessages([]);
+    setPoomkidsSelectedMessages([]);
 
     try {
       const res = await fetch(`/api/gmail-poomkids/messages/${thread.id}?refresh=true`);
@@ -863,6 +870,54 @@ function CRMContent() {
     } finally {
       setPoomkidsSending(false);
     }
+  };
+
+  // Update POOMKIDS thread status
+  const handlePoomkidsStatusChange = async (status) => {
+    if (!poomkidsSelectedThread) return;
+    try {
+      const res = await fetch(`/api/gmail-poomkids/messages/${poomkidsSelectedThread.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status })
+      });
+      const data = await res.json();
+      if (data.success) {
+        setPoomkidsSelectedThread(prev => ({ ...prev, status }));
+        setPoomkidsThreads(prev => prev.map(t => t.id === poomkidsSelectedThread.id ? { ...t, status } : t));
+      }
+    } catch (err) {
+      console.error('Status update error:', err);
+    }
+  };
+
+  // Delete selected POOMKIDS messages
+  const handlePoomkidsDeleteMessages = async () => {
+    if (poomkidsSelectedMessages.length === 0 || !poomkidsSelectedThread) return;
+    if (!confirm(`Usunac ${poomkidsSelectedMessages.length} wiadomosc(i)?`)) return;
+    setPoomkidsDeleting(true);
+    try {
+      const res = await fetch(`/api/gmail-poomkids/messages/${poomkidsSelectedThread.id}`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ messageIds: poomkidsSelectedMessages })
+      });
+      const data = await res.json();
+      if (data.success) {
+        setPoomkidsThreadMessages(prev => prev.filter(m => !poomkidsSelectedMessages.includes(m.id)));
+        setPoomkidsSelectedMessages([]);
+      } else {
+        alert('Blad usuwania: ' + data.error);
+      }
+    } catch (err) {
+      alert('Blad: ' + err.message);
+    } finally {
+      setPoomkidsDeleting(false);
+    }
+  };
+
+  const togglePoomkidsMessageSelection = (messageId) => {
+    setPoomkidsSelectedMessages(prev => prev.includes(messageId) ? prev.filter(id => id !== messageId) : [...prev, messageId]);
   };
 
   // ========== ALLEPODUSZKI GMAIL (Shopify Allepoduszki) FUNCTIONS ==========
@@ -967,6 +1022,7 @@ function CRMContent() {
     setAllepoduszkiSelectedThread(thread);
     setAllepoduszkiMessagesLoading(true);
     setAllepoduszkiThreadMessages([]);
+    setAllepoduszkiSelectedMessages([]);
 
     try {
       const res = await fetch(`/api/gmail-allepoduszki/messages/${thread.id}?refresh=true`);
@@ -1022,6 +1078,54 @@ function CRMContent() {
     } finally {
       setAllepoduszkiSending(false);
     }
+  };
+
+  // Update Allepoduszki thread status
+  const handleAllepoduszkiStatusChange = async (status) => {
+    if (!allepoduszkiSelectedThread) return;
+    try {
+      const res = await fetch(`/api/gmail-allepoduszki/messages/${allepoduszkiSelectedThread.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status })
+      });
+      const data = await res.json();
+      if (data.success) {
+        setAllepoduszkiSelectedThread(prev => ({ ...prev, status }));
+        setAllepoduszkiThreads(prev => prev.map(t => t.id === allepoduszkiSelectedThread.id ? { ...t, status } : t));
+      }
+    } catch (err) {
+      console.error('Status update error:', err);
+    }
+  };
+
+  // Delete selected Allepoduszki messages
+  const handleAllepoduszkiDeleteMessages = async () => {
+    if (allepoduszkiSelectedMessages.length === 0 || !allepoduszkiSelectedThread) return;
+    if (!confirm(`Usunac ${allepoduszkiSelectedMessages.length} wiadomosc(i)?`)) return;
+    setAllepoduszkiDeleting(true);
+    try {
+      const res = await fetch(`/api/gmail-allepoduszki/messages/${allepoduszkiSelectedThread.id}`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ messageIds: allepoduszkiSelectedMessages })
+      });
+      const data = await res.json();
+      if (data.success) {
+        setAllepoduszkiThreadMessages(prev => prev.filter(m => !allepoduszkiSelectedMessages.includes(m.id)));
+        setAllepoduszkiSelectedMessages([]);
+      } else {
+        alert('Blad usuwania: ' + data.error);
+      }
+    } catch (err) {
+      alert('Blad: ' + err.message);
+    } finally {
+      setAllepoduszkiDeleting(false);
+    }
+  };
+
+  const toggleAllepoduszkiMessageSelection = (messageId) => {
+    setAllepoduszkiSelectedMessages(prev => prev.includes(messageId) ? prev.filter(id => id !== messageId) : [...prev, messageId]);
   };
 
   // ========== POOMFURNITURE GMAIL (Shopify poom-furniture.com) FUNCTIONS ==========
@@ -1126,6 +1230,7 @@ function CRMContent() {
     setPoomfurnitureSelectedThread(thread);
     setPoomfurnitureMessagesLoading(true);
     setPoomfurnitureThreadMessages([]);
+    setPoomfurnitureSelectedMessages([]);
 
     try {
       const res = await fetch(`/api/gmail-poomfurniture/messages/${thread.id}?refresh=true`);
@@ -1151,23 +1256,38 @@ function CRMContent() {
 
   // Send POOMFURNITURE reply
   const handlePoomfurnitureSendReply = async () => {
-    if (!poomfurnitureReplyText.trim() || !poomfurnitureSelectedThread) return;
+    if ((!poomfurnitureReplyText.trim() && poomfurnitureAttachments.length === 0) || !poomfurnitureSelectedThread) return;
 
     setPoomfurnitureSending(true);
     try {
+      // Convert attachments to base64
+      const attachmentData = await Promise.all(poomfurnitureAttachments.map(file => {
+        return new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => {
+            const base64 = reader.result.split(',')[1];
+            resolve({ filename: file.name, mimeType: file.type, data: base64 });
+          };
+          reader.onerror = reject;
+          reader.readAsDataURL(file);
+        });
+      }));
+
       const res = await fetch(`/api/gmail-poomfurniture/messages/${poomfurnitureSelectedThread.id}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           text: poomfurnitureReplyText.trim(),
           to: poomfurnitureSelectedThread.from_email,
-          subject: poomfurnitureSelectedThread.subject
+          subject: poomfurnitureSelectedThread.subject,
+          attachments: attachmentData
         })
       });
       const data = await res.json();
 
       if (data.success) {
         setPoomfurnitureReplyText('');
+        setPoomfurnitureAttachments([]);
         const msgRes = await fetch(`/api/gmail-poomfurniture/messages/${poomfurnitureSelectedThread.id}?refresh=true`);
         const msgData = await msgRes.json();
         if (msgData.success) {
@@ -1181,6 +1301,54 @@ function CRMContent() {
     } finally {
       setPoomfurnitureSending(false);
     }
+  };
+
+  // Update Poomfurniture thread status
+  const handlePoomfurnitureStatusChange = async (status) => {
+    if (!poomfurnitureSelectedThread) return;
+    try {
+      const res = await fetch(`/api/gmail-poomfurniture/messages/${poomfurnitureSelectedThread.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status })
+      });
+      const data = await res.json();
+      if (data.success) {
+        setPoomfurnitureSelectedThread(prev => ({ ...prev, status }));
+        setPoomfurnitureThreads(prev => prev.map(t => t.id === poomfurnitureSelectedThread.id ? { ...t, status } : t));
+      }
+    } catch (err) {
+      console.error('Status update error:', err);
+    }
+  };
+
+  // Delete selected Poomfurniture messages
+  const handlePoomfurnitureDeleteMessages = async () => {
+    if (poomfurnitureSelectedMessages.length === 0 || !poomfurnitureSelectedThread) return;
+    if (!confirm(`Usunac ${poomfurnitureSelectedMessages.length} wiadomosc(i)?`)) return;
+    setPoomfurnitureDeleting(true);
+    try {
+      const res = await fetch(`/api/gmail-poomfurniture/messages/${poomfurnitureSelectedThread.id}`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ messageIds: poomfurnitureSelectedMessages })
+      });
+      const data = await res.json();
+      if (data.success) {
+        setPoomfurnitureThreadMessages(prev => prev.filter(m => !poomfurnitureSelectedMessages.includes(m.id)));
+        setPoomfurnitureSelectedMessages([]);
+      } else {
+        alert('Blad usuwania: ' + data.error);
+      }
+    } catch (err) {
+      alert('Blad: ' + err.message);
+    } finally {
+      setPoomfurnitureDeleting(false);
+    }
+  };
+
+  const togglePoomfurnitureMessageSelection = (messageId) => {
+    setPoomfurnitureSelectedMessages(prev => prev.includes(messageId) ? prev.filter(id => id !== messageId) : [...prev, messageId]);
   };
 
   // Get attachment icon based on mime type
@@ -2353,11 +2521,15 @@ function CRMContent() {
                                   {thread.subject || '(Brak tematu)'}
                                 </p>
                                 <p className="text-xs text-gray-500 truncate">{thread.snippet}</p>
-                                {thread.unread && (
-                                  <span className="inline-block mt-1 px-2 py-0.5 bg-green-500 text-white text-xs rounded">
-                                    Nowa
-                                  </span>
-                                )}
+                                <div className="flex gap-1 mt-1">
+                                  {thread.status === 'new' || thread.unread ? (
+                                    <span className="inline-block px-2 py-0.5 bg-blue-500 text-white text-xs rounded">Nowe</span>
+                                  ) : thread.status === 'resolved' ? (
+                                    <span className="inline-block px-2 py-0.5 bg-green-500 text-white text-xs rounded">Rozwiazane</span>
+                                  ) : thread.status === 'unresolved' ? (
+                                    <span className="inline-block px-2 py-0.5 bg-yellow-500 text-white text-xs rounded">Nierozwiazane</span>
+                                  ) : null}
+                                </div>
                               </div>
                             </div>
                           </button>
@@ -2379,14 +2551,40 @@ function CRMContent() {
                       <>
                         {/* Thread header */}
                         <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-700">
-                          <button
-                            onClick={() => setPoomkidsSelectedThread(null)}
-                            className="lg:hidden text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 mb-2"
-                          >
-                            ← Wstecz
-                          </button>
+                          <div className="flex items-center justify-between mb-2">
+                            <button
+                              onClick={() => { setPoomkidsSelectedThread(null); setPoomkidsSelectedMessages([]); }}
+                              className="lg:hidden text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
+                            >
+                              ← Wstecz
+                            </button>
+                            <div className="flex items-center gap-2">
+                              <select
+                                value={poomkidsSelectedThread.status || 'new'}
+                                onChange={(e) => handlePoomkidsStatusChange(e.target.value)}
+                                className={`px-2 py-1 text-xs font-medium rounded border-0 cursor-pointer ${
+                                  poomkidsSelectedThread.status === 'resolved' ? 'bg-green-100 text-green-700' :
+                                  poomkidsSelectedThread.status === 'unresolved' ? 'bg-yellow-100 text-yellow-700' :
+                                  'bg-blue-100 text-blue-700'
+                                }`}
+                              >
+                                <option value="new">Nowe</option>
+                                <option value="resolved">Rozwiazane</option>
+                                <option value="unresolved">Nierozwiazane</option>
+                              </select>
+                              {poomkidsSelectedMessages.length > 0 && (
+                                <button
+                                  onClick={handlePoomkidsDeleteMessages}
+                                  disabled={poomkidsDeleting}
+                                  className="px-2 py-1 text-xs bg-red-600 text-white rounded hover:bg-red-700 disabled:opacity-50"
+                                >
+                                  {poomkidsDeleting ? '...' : `Usun (${poomkidsSelectedMessages.length})`}
+                                </button>
+                              )}
+                            </div>
+                          </div>
                           <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center text-green-600 font-medium">
+                            <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-medium">
                               {(poomkidsSelectedThread.from_name || poomkidsSelectedThread.from_email || '?')[0].toUpperCase()}
                             </div>
                             <div className="flex-1">
@@ -2408,30 +2606,50 @@ function CRMContent() {
                           ) : poomkidsThreadMessages.length === 0 ? (
                             <div className="text-center text-gray-500 dark:text-gray-400">Brak wiadomosci</div>
                           ) : (
-                            poomkidsThreadMessages.map((msg) => (
+                            poomkidsThreadMessages.map((msg) => {
+                              const isSelected = poomkidsSelectedMessages.includes(msg.id);
+                              const senderInitial = (msg.from_email || '?')[0].toUpperCase();
+                              return (
                               <div
                                 key={msg.id}
-                                className={`flex ${msg.is_outgoing ? 'justify-end' : 'justify-start'}`}
+                                className={`flex items-start gap-2 ${msg.is_outgoing ? 'justify-end' : 'justify-start'}`}
                               >
-                                <div
-                                  className={`max-w-[85%] px-4 py-3 rounded-lg ${
-                                    msg.is_outgoing
-                                      ? 'bg-green-600 text-white'
-                                      : 'bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-900 dark:text-white'
-                                  }`}
-                                >
-                                  <div className={`text-xs mb-1 ${msg.is_outgoing ? 'text-green-200' : 'text-gray-500'}`}>
-                                    {msg.from_name || msg.from_email}
+                                <input
+                                  type="checkbox"
+                                  checked={isSelected}
+                                  onChange={() => togglePoomkidsMessageSelection(msg.id)}
+                                  className={`mt-3 w-4 h-4 rounded cursor-pointer ${msg.is_outgoing ? 'order-last ml-2' : 'mr-0'}`}
+                                />
+                                <div className="relative">
+                                  {msg.is_outgoing ? (
+                                    <div className="absolute -bottom-2 -right-2 w-8 h-8 rounded-full bg-white dark:bg-gray-800 border-2 border-blue-600 flex items-center justify-center overflow-hidden z-10">
+                                      <img src="/icons/poomkids.png" alt="" className="w-5 h-5 object-contain" />
+                                    </div>
+                                  ) : (
+                                    <div className="absolute -bottom-2 -left-2 w-8 h-8 rounded-full bg-blue-100 border-2 border-white dark:border-gray-800 flex items-center justify-center text-blue-600 font-bold text-sm z-10">
+                                      {senderInitial}
+                                    </div>
+                                  )}
+                                  <div
+                                    className={`max-w-[80%] min-w-[200px] px-4 py-3 rounded-lg ${isSelected ? 'ring-2 ring-blue-500' : ''} ${
+                                      msg.is_outgoing
+                                        ? 'bg-blue-600 text-white'
+                                        : 'bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-900 dark:text-white'
+                                    }`}
+                                  >
+                                    <div className={`text-xs mb-1 ${msg.is_outgoing ? 'text-blue-200' : 'text-gray-500'}`}>
+                                      {msg.from_name || msg.from_email}
+                                    </div>
+                                    <div className="whitespace-pre-wrap break-words text-sm">
+                                      {msg.body_text || '(Brak tresci tekstowej)'}
+                                    </div>
+                                    <p className={`text-xs mt-2 ${msg.is_outgoing ? 'text-blue-200' : 'text-gray-400'}`}>
+                                      {formatDate(msg.sent_at)}
+                                    </p>
                                   </div>
-                                  <div className="whitespace-pre-wrap break-words text-sm">
-                                    {msg.body_text || '(Brak tresci tekstowej)'}
-                                  </div>
-                                  <p className={`text-xs mt-2 ${msg.is_outgoing ? 'text-green-200' : 'text-gray-400'}`}>
-                                    {formatDate(msg.sent_at)}
-                                  </p>
                                 </div>
                               </div>
-                            ))
+                            );})
                           )}
                         </div>
 
@@ -2804,7 +3022,9 @@ function CRMContent() {
                           ) : poomfurnitureThreadMessages.length === 0 ? (
                             <div className="text-center text-gray-500 dark:text-gray-400">Brak wiadomosci</div>
                           ) : (
-                            poomfurnitureThreadMessages.map((msg) => (
+                            poomfurnitureThreadMessages.map((msg) => {
+                              const msgAttachments = Array.isArray(msg.attachments) ? msg.attachments : (typeof msg.attachments === 'string' ? JSON.parse(msg.attachments || '[]') : []);
+                              return (
                               <div
                                 key={msg.id}
                                 className={`flex ${msg.is_outgoing ? 'justify-end' : 'justify-start'}`}
@@ -2822,23 +3042,75 @@ function CRMContent() {
                                   <div className="whitespace-pre-wrap break-words text-sm">
                                     {msg.body_text || '(Brak tresci tekstowej)'}
                                   </div>
+                                  {msgAttachments.length > 0 && (
+                                    <div className="mt-2">
+                                      <p className={`text-[10px] mb-1 ${msg.is_outgoing ? 'text-teal-200' : 'text-gray-400'}`}>Zalaczniki:</p>
+                                      <div className="flex flex-wrap gap-1">
+                                        {msgAttachments.map((att, i) => (
+                                          <a
+                                            key={i}
+                                            href={`/api/gmail-poomfurniture/attachments/${msg.id}/${att.id}?filename=${encodeURIComponent(att.filename)}&mimeType=${encodeURIComponent(att.mimeType)}`}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className={`inline-flex items-center gap-1 px-2 py-1 rounded text-xs ${
+                                              msg.is_outgoing
+                                                ? 'bg-teal-700 hover:bg-teal-800 text-white'
+                                                : 'bg-gray-100 dark:bg-gray-600 hover:bg-gray-200 dark:hover:bg-gray-500 text-gray-700 dark:text-gray-200'
+                                            }`}
+                                          >
+                                            <span>{getAttachmentIcon(att.mimeType)}</span>
+                                            <span className="truncate max-w-[100px]">{att.filename}</span>
+                                          </a>
+                                        ))}
+                                      </div>
+                                    </div>
+                                  )}
                                   <p className={`text-xs mt-2 ${msg.is_outgoing ? 'text-teal-200' : 'text-gray-400'}`}>
                                     {formatDate(msg.sent_at)}
                                   </p>
                                 </div>
                               </div>
-                            ))
+                            );
+                            })
                           )}
                         </div>
 
                         {/* Reply input */}
                         <div className="px-4 py-3 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
+                          {/* Attachment preview */}
+                          {poomfurnitureAttachments.length > 0 && (
+                            <div className="flex flex-wrap gap-2 mb-2">
+                              {poomfurnitureAttachments.map((file, index) => (
+                                <div key={index} className="flex items-center gap-1 px-2 py-1 bg-gray-100 dark:bg-gray-700 rounded text-xs">
+                                  <span>{getAttachmentIcon(file.type, file.name)}</span>
+                                  <span className="truncate max-w-[100px]">{file.name}</span>
+                                  <button
+                                    onClick={() => setPoomfurnitureAttachments(prev => prev.filter((_, i) => i !== index))}
+                                    className="text-gray-500 hover:text-red-500 ml-1"
+                                  >×</button>
+                                </div>
+                              ))}
+                            </div>
+                          )}
                           <div className="flex gap-2">
+                            <label className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer flex items-center" title="Dodaj zalacznik">
+                              <span>📎</span>
+                              <input
+                                type="file"
+                                multiple
+                                className="hidden"
+                                onChange={(e) => {
+                                  const files = Array.from(e.target.files || []);
+                                  setPoomfurnitureAttachments(prev => [...prev, ...files]);
+                                  e.target.value = '';
+                                }}
+                              />
+                            </label>
                             <textarea
                               value={poomfurnitureReplyText}
                               onChange={(e) => setPoomfurnitureReplyText(e.target.value)}
                               placeholder="Napisz odpowiedz..."
-                              rows={3}
+                              rows={2}
                               className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 resize-none"
                               onKeyDown={(e) => {
                                 if (e.key === 'Enter' && !e.shiftKey) {
@@ -2849,7 +3121,7 @@ function CRMContent() {
                             />
                             <button
                               onClick={handlePoomfurnitureSendReply}
-                              disabled={poomfurnitureSending || !poomfurnitureReplyText.trim()}
+                              disabled={poomfurnitureSending || (!poomfurnitureReplyText.trim() && poomfurnitureAttachments.length === 0)}
                               className="px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 disabled:opacity-50"
                             >
                               {poomfurnitureSending ? '...' : 'Wyslij'}
