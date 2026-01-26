@@ -724,25 +724,39 @@ function CRMContent() {
     );
   };
 
-  // Toggle thread checked status (mark thread as processed)
-  const toggleGmailThreadChecked = async (e, threadId, currentChecked) => {
+  // Quick change thread status from thread list (optimistic update)
+  const quickChangeGmailThreadStatus = async (e, threadId, newStatus) => {
     e.stopPropagation();
-    const newChecked = !currentChecked;
+
+    // Optimistic update - immediately update UI
+    const previousThreads = gmailThreads;
+    setGmailThreads(prev => prev.map(t =>
+      t.id === threadId ? { ...t, status: newStatus, unread: newStatus === 'new' } : t
+    ));
+
+    // Also update selected thread if it's the same one
+    if (gmailSelectedThread?.id === threadId) {
+      setGmailSelectedThread(prev => prev ? { ...prev, status: newStatus, unread: newStatus === 'new' } : prev);
+    }
+
+    // API call in background
     try {
-      const res = await fetch('/api/gmail/threads/check', {
+      const res = await fetch(`/api/gmail/messages/${threadId}/status`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ threadId, checked: newChecked })
+        body: JSON.stringify({ status: newStatus })
       });
       const data = await res.json();
 
-      if (data.success) {
-        setGmailThreads(prev => prev.map(t =>
-          t.id === threadId ? { ...t, checked: newChecked } : t
-        ));
+      if (!data.success) {
+        // Rollback on failure
+        setGmailThreads(previousThreads);
+        console.error('Status update failed:', data.error);
       }
     } catch (err) {
-      console.error('Toggle thread checked error:', err);
+      // Rollback on error
+      setGmailThreads(previousThreads);
+      console.error('Status update error:', err);
     }
   };
 
@@ -981,25 +995,35 @@ function CRMContent() {
     setPoomkidsSelectedMessages(prev => prev.includes(messageId) ? prev.filter(id => id !== messageId) : [...prev, messageId]);
   };
 
-  // Toggle POOMKIDS thread checked status
-  const togglePoomkidsThreadChecked = async (e, threadId, currentChecked) => {
+  // Quick change Poomkids thread status (optimistic update)
+  const quickChangePoomkidsThreadStatus = async (e, threadId, newStatus) => {
     e.stopPropagation();
-    const newChecked = !currentChecked;
+
+    // Optimistic update
+    const previousThreads = poomkidsThreads;
+    setPoomkidsThreads(prev => prev.map(t =>
+      t.id === threadId ? { ...t, status: newStatus, unread: newStatus === 'new' } : t
+    ));
+
+    if (poomkidsSelectedThread?.id === threadId) {
+      setPoomkidsSelectedThread(prev => prev ? { ...prev, status: newStatus, unread: newStatus === 'new' } : prev);
+    }
+
     try {
-      const res = await fetch('/api/gmail-poomkids/threads/check', {
+      const res = await fetch(`/api/gmail-poomkids/messages/${threadId}/status`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ threadId, checked: newChecked })
+        body: JSON.stringify({ status: newStatus })
       });
       const data = await res.json();
 
-      if (data.success) {
-        setPoomkidsThreads(prev => prev.map(t =>
-          t.id === threadId ? { ...t, checked: newChecked } : t
-        ));
+      if (!data.success) {
+        setPoomkidsThreads(previousThreads);
+        console.error('Status update failed:', data.error);
       }
     } catch (err) {
-      console.error('Toggle thread checked error:', err);
+      setPoomkidsThreads(previousThreads);
+      console.error('Status update error:', err);
     }
   };
 
@@ -1238,25 +1262,34 @@ function CRMContent() {
     setAllepoduszkiSelectedMessages(prev => prev.includes(messageId) ? prev.filter(id => id !== messageId) : [...prev, messageId]);
   };
 
-  // Toggle ALLEPODUSZKI thread checked status
-  const toggleAllepoduszkiThreadChecked = async (e, threadId, currentChecked) => {
+  // Quick change Allepoduszki thread status (optimistic update)
+  const quickChangeAllepoduszkiThreadStatus = async (e, threadId, newStatus) => {
     e.stopPropagation();
-    const newChecked = !currentChecked;
+
+    const previousThreads = allepoduszkiThreads;
+    setAllepoduszkiThreads(prev => prev.map(t =>
+      t.id === threadId ? { ...t, status: newStatus, unread: newStatus === 'new' } : t
+    ));
+
+    if (allepoduszkiSelectedThread?.id === threadId) {
+      setAllepoduszkiSelectedThread(prev => prev ? { ...prev, status: newStatus, unread: newStatus === 'new' } : prev);
+    }
+
     try {
-      const res = await fetch('/api/gmail-allepoduszki/threads/check', {
+      const res = await fetch(`/api/gmail-allepoduszki/messages/${threadId}/status`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ threadId, checked: newChecked })
+        body: JSON.stringify({ status: newStatus })
       });
       const data = await res.json();
 
-      if (data.success) {
-        setAllepoduszkiThreads(prev => prev.map(t =>
-          t.id === threadId ? { ...t, checked: newChecked } : t
-        ));
+      if (!data.success) {
+        setAllepoduszkiThreads(previousThreads);
+        console.error('Status update failed:', data.error);
       }
     } catch (err) {
-      console.error('Toggle thread checked error:', err);
+      setAllepoduszkiThreads(previousThreads);
+      console.error('Status update error:', err);
     }
   };
 
@@ -1495,25 +1528,34 @@ function CRMContent() {
     setPoomfurnitureSelectedMessages(prev => prev.includes(messageId) ? prev.filter(id => id !== messageId) : [...prev, messageId]);
   };
 
-  // Toggle POOMFURNITURE thread checked status
-  const togglePoomfurnitureThreadChecked = async (e, threadId, currentChecked) => {
+  // Quick change Poomfurniture thread status (optimistic update)
+  const quickChangePoomfurnitureThreadStatus = async (e, threadId, newStatus) => {
     e.stopPropagation();
-    const newChecked = !currentChecked;
+
+    const previousThreads = poomfurnitureThreads;
+    setPoomfurnitureThreads(prev => prev.map(t =>
+      t.id === threadId ? { ...t, status: newStatus, unread: newStatus === 'new' } : t
+    ));
+
+    if (poomfurnitureSelectedThread?.id === threadId) {
+      setPoomfurnitureSelectedThread(prev => prev ? { ...prev, status: newStatus, unread: newStatus === 'new' } : prev);
+    }
+
     try {
-      const res = await fetch('/api/gmail-poomfurniture/threads/check', {
+      const res = await fetch(`/api/gmail-poomfurniture/messages/${threadId}/status`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ threadId, checked: newChecked })
+        body: JSON.stringify({ status: newStatus })
       });
       const data = await res.json();
 
-      if (data.success) {
-        setPoomfurnitureThreads(prev => prev.map(t =>
-          t.id === threadId ? { ...t, checked: newChecked } : t
-        ));
+      if (!data.success) {
+        setPoomfurnitureThreads(previousThreads);
+        console.error('Status update failed:', data.error);
       }
     } catch (err) {
-      console.error('Toggle thread checked error:', err);
+      setPoomfurnitureThreads(previousThreads);
+      console.error('Status update error:', err);
     }
   };
 
@@ -2459,59 +2501,62 @@ function CRMContent() {
                             return true;
                           })
                           .map((thread) => (
-                          <button
+                          <div
                             key={thread.id}
                             onClick={() => openGmailThread(thread)}
-                            className={`w-full text-left px-4 py-3 border-b border-gray-100 dark:border-gray-700 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 ${
+                            className={`w-full text-left px-4 py-3 border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer ${
                               gmailSelectedThread?.id === thread.id ? 'bg-blue-50' : ''
-                            } ${thread.unread ? 'bg-red-50' : ''} ${thread.checked ? 'bg-green-50' : ''}`}
+                            } ${thread.status === 'new' || (!thread.status && thread.unread) ? 'bg-red-50' : ''} ${thread.status === 'resolved' ? 'bg-green-50' : ''}`}
                           >
                             <div className="flex items-start gap-3">
-                              <button
-                                onClick={(e) => toggleGmailThreadChecked(e, thread.id, thread.checked)}
-                                className={`w-5 h-5 mt-2.5 flex-shrink-0 rounded border-2 flex items-center justify-center transition-colors ${
-                                  thread.checked
-                                    ? 'bg-green-500 border-green-500 text-white'
-                                    : 'border-gray-300 hover:border-green-400'
-                                }`}
-                                title={thread.checked ? 'Oznaczone' : 'Oznacz jako przetworzone'}
-                              >
-                                {thread.checked && <span className="text-xs">✓</span>}
-                              </button>
+                              <div className="flex flex-col gap-1 mt-1">
+                                <button
+                                  onClick={(e) => quickChangeGmailThreadStatus(e, thread.id, 'new')}
+                                  className={`w-6 h-6 flex-shrink-0 rounded flex items-center justify-center transition-all text-xs font-bold ${
+                                    thread.status === 'new' || (!thread.status && thread.unread)
+                                      ? 'bg-red-500 text-white ring-2 ring-red-300'
+                                      : 'bg-red-100 text-red-600 hover:bg-red-200'
+                                  }`}
+                                  title="Nowe"
+                                >N</button>
+                                <button
+                                  onClick={(e) => quickChangeGmailThreadStatus(e, thread.id, 'read')}
+                                  className={`w-6 h-6 flex-shrink-0 rounded flex items-center justify-center transition-all text-xs font-bold ${
+                                    thread.status === 'read' || (!thread.status && !thread.unread && thread.status !== 'resolved')
+                                      ? 'bg-blue-500 text-white ring-2 ring-blue-300'
+                                      : 'bg-blue-100 text-blue-600 hover:bg-blue-200'
+                                  }`}
+                                  title="Przeczytane"
+                                >P</button>
+                                <button
+                                  onClick={(e) => quickChangeGmailThreadStatus(e, thread.id, 'resolved')}
+                                  className={`w-6 h-6 flex-shrink-0 rounded flex items-center justify-center transition-all text-xs font-bold ${
+                                    thread.status === 'resolved'
+                                      ? 'bg-green-500 text-white ring-2 ring-green-300'
+                                      : 'bg-green-100 text-green-600 hover:bg-green-200'
+                                  }`}
+                                  title="Rozwiazane"
+                                >R</button>
+                              </div>
                               <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center text-red-600 font-medium">
                                 {(thread.from_name || thread.from_email || '?')[0].toUpperCase()}
                               </div>
                               <div className="flex-1 min-w-0">
                                 <div className="flex items-center justify-between">
-                                  <span className={`font-medium truncate ${thread.unread ? 'text-gray-900' : 'text-gray-700'}`}>
+                                  <span className={`font-medium truncate ${thread.status === 'new' || (!thread.status && thread.unread) ? 'text-gray-900' : 'text-gray-700'}`}>
                                     {thread.from_name || thread.from_email || 'Nieznany'}
                                   </span>
                                   <span className="text-xs text-gray-400 dark:text-gray-500 ml-2 whitespace-nowrap">
                                     {formatDate(thread.last_message_at)}
                                   </span>
                                 </div>
-                                <p className={`text-sm truncate ${thread.unread ? 'font-medium text-gray-800' : 'text-gray-600'}`}>
+                                <p className={`text-sm truncate ${thread.status === 'new' || (!thread.status && thread.unread) ? 'font-medium text-gray-800' : 'text-gray-600'}`}>
                                   {thread.subject || '(Brak tematu)'}
                                 </p>
                                 <p className="text-xs text-gray-500 truncate">{thread.snippet}</p>
-                                <div className="flex gap-1 mt-1">
-                                  {thread.status === 'new' || (!thread.status && thread.unread) ? (
-                                    <span className="inline-block px-2 py-0.5 bg-red-500 text-white text-xs rounded">
-                                      Nowe
-                                    </span>
-                                  ) : thread.status === 'resolved' ? (
-                                    <span className="inline-block px-2 py-0.5 bg-green-500 text-white text-xs rounded">
-                                      Rozwiazane
-                                    </span>
-                                  ) : thread.status === 'read' ? (
-                                    <span className="inline-block px-2 py-0.5 bg-blue-500 text-white text-xs rounded">
-                                      Przeczytane
-                                    </span>
-                                  ) : null}
-                                </div>
                               </div>
                             </div>
-                          </button>
+                          </div>
                         ))
                       )}
                     </div>
@@ -2791,53 +2836,62 @@ function CRMContent() {
                         </div>
                       ) : (
                         poomkidsThreads.map((thread) => (
-                          <button
+                          <div
                             key={thread.id}
                             onClick={() => openPoomkidsThread(thread)}
-                            className={`w-full text-left px-4 py-3 border-b border-gray-100 dark:border-gray-700 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 ${
+                            className={`w-full text-left px-4 py-3 border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer ${
                               poomkidsSelectedThread?.id === thread.id ? 'bg-blue-50' : ''
-                            } ${thread.unread ? 'bg-green-50' : ''} ${thread.checked ? 'bg-green-50' : ''}`}
+                            } ${thread.status === 'new' || thread.unread ? 'bg-blue-50' : ''} ${thread.status === 'resolved' ? 'bg-green-50' : ''}`}
                           >
                             <div className="flex items-start gap-3">
-                              <button
-                                onClick={(e) => togglePoomkidsThreadChecked(e, thread.id, thread.checked)}
-                                className={`w-5 h-5 mt-2.5 flex-shrink-0 rounded border-2 flex items-center justify-center transition-colors ${
-                                  thread.checked
-                                    ? 'bg-green-500 border-green-500 text-white'
-                                    : 'border-gray-300 hover:border-green-400'
-                                }`}
-                                title={thread.checked ? 'Oznaczone' : 'Oznacz jako przetworzone'}
-                              >
-                                {thread.checked && <span className="text-xs">✓</span>}
-                              </button>
+                              <div className="flex flex-col gap-1 mt-1">
+                                <button
+                                  onClick={(e) => quickChangePoomkidsThreadStatus(e, thread.id, 'new')}
+                                  className={`w-6 h-6 flex-shrink-0 rounded flex items-center justify-center transition-all text-xs font-bold ${
+                                    thread.status === 'new' || (!thread.status && thread.unread)
+                                      ? 'bg-blue-500 text-white ring-2 ring-blue-300'
+                                      : 'bg-blue-100 text-blue-600 hover:bg-blue-200'
+                                  }`}
+                                  title="Nowe"
+                                >N</button>
+                                <button
+                                  onClick={(e) => quickChangePoomkidsThreadStatus(e, thread.id, 'read')}
+                                  className={`w-6 h-6 flex-shrink-0 rounded flex items-center justify-center transition-all text-xs font-bold ${
+                                    thread.status === 'read' || (!thread.status && !thread.unread && thread.status !== 'resolved')
+                                      ? 'bg-gray-500 text-white ring-2 ring-gray-300'
+                                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                                  }`}
+                                  title="Przeczytane"
+                                >P</button>
+                                <button
+                                  onClick={(e) => quickChangePoomkidsThreadStatus(e, thread.id, 'resolved')}
+                                  className={`w-6 h-6 flex-shrink-0 rounded flex items-center justify-center transition-all text-xs font-bold ${
+                                    thread.status === 'resolved'
+                                      ? 'bg-green-500 text-white ring-2 ring-green-300'
+                                      : 'bg-green-100 text-green-600 hover:bg-green-200'
+                                  }`}
+                                  title="Rozwiazane"
+                                >R</button>
+                              </div>
                               <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center text-green-600 font-medium">
                                 {(thread.from_name || thread.from_email || '?')[0].toUpperCase()}
                               </div>
                               <div className="flex-1 min-w-0">
                                 <div className="flex items-center justify-between">
-                                  <span className={`font-medium truncate ${thread.unread ? 'text-gray-900' : 'text-gray-700'}`}>
+                                  <span className={`font-medium truncate ${thread.status === 'new' || thread.unread ? 'text-gray-900' : 'text-gray-700'}`}>
                                     {thread.from_name || thread.from_email || 'Nieznany'}
                                   </span>
                                   <span className="text-xs text-gray-400 dark:text-gray-500 ml-2 whitespace-nowrap">
                                     {formatDate(thread.last_message_at)}
                                   </span>
                                 </div>
-                                <p className={`text-sm truncate ${thread.unread ? 'font-medium text-gray-800' : 'text-gray-600'}`}>
+                                <p className={`text-sm truncate ${thread.status === 'new' || thread.unread ? 'font-medium text-gray-800' : 'text-gray-600'}`}>
                                   {thread.subject || '(Brak tematu)'}
                                 </p>
                                 <p className="text-xs text-gray-500 truncate">{thread.snippet}</p>
-                                <div className="flex gap-1 mt-1">
-                                  {thread.status === 'new' || thread.unread ? (
-                                    <span className="inline-block px-2 py-0.5 bg-blue-500 text-white text-xs rounded">Nowe</span>
-                                  ) : thread.status === 'resolved' ? (
-                                    <span className="inline-block px-2 py-0.5 bg-green-500 text-white text-xs rounded">Rozwiazane</span>
-                                  ) : thread.status === 'unresolved' ? (
-                                    <span className="inline-block px-2 py-0.5 bg-yellow-500 text-white text-xs rounded">Nierozwiazane</span>
-                                  ) : null}
-                                </div>
                               </div>
                             </div>
-                          </button>
+                          </div>
                         ))
                       )}
                     </div>
@@ -3104,49 +3158,62 @@ function CRMContent() {
                         </div>
                       ) : (
                         allepoduszkiThreads.map((thread) => (
-                          <button
+                          <div
                             key={thread.id}
                             onClick={() => openAllepoduszkiThread(thread)}
-                            className={`w-full text-left px-4 py-3 border-b border-gray-100 dark:border-gray-700 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 ${
+                            className={`w-full text-left px-4 py-3 border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer ${
                               allepoduszkiSelectedThread?.id === thread.id ? 'bg-blue-50' : ''
-                            } ${thread.unread ? 'bg-purple-50' : ''} ${thread.checked ? 'bg-green-50' : ''}`}
+                            } ${thread.status === 'new' || thread.unread ? 'bg-purple-50' : ''} ${thread.status === 'resolved' ? 'bg-green-50' : ''}`}
                           >
                             <div className="flex items-start gap-3">
-                              <button
-                                onClick={(e) => toggleAllepoduszkiThreadChecked(e, thread.id, thread.checked)}
-                                className={`w-5 h-5 mt-2.5 flex-shrink-0 rounded border-2 flex items-center justify-center transition-colors ${
-                                  thread.checked
-                                    ? 'bg-green-500 border-green-500 text-white'
-                                    : 'border-gray-300 hover:border-green-400'
-                                }`}
-                                title={thread.checked ? 'Oznaczone' : 'Oznacz jako przetworzone'}
-                              >
-                                {thread.checked && <span className="text-xs">✓</span>}
-                              </button>
+                              <div className="flex flex-col gap-1 mt-1">
+                                <button
+                                  onClick={(e) => quickChangeAllepoduszkiThreadStatus(e, thread.id, 'new')}
+                                  className={`w-6 h-6 flex-shrink-0 rounded flex items-center justify-center transition-all text-xs font-bold ${
+                                    thread.status === 'new' || (!thread.status && thread.unread)
+                                      ? 'bg-purple-500 text-white ring-2 ring-purple-300'
+                                      : 'bg-purple-100 text-purple-600 hover:bg-purple-200'
+                                  }`}
+                                  title="Nowe"
+                                >N</button>
+                                <button
+                                  onClick={(e) => quickChangeAllepoduszkiThreadStatus(e, thread.id, 'read')}
+                                  className={`w-6 h-6 flex-shrink-0 rounded flex items-center justify-center transition-all text-xs font-bold ${
+                                    thread.status === 'read' || (!thread.status && !thread.unread && thread.status !== 'resolved')
+                                      ? 'bg-gray-500 text-white ring-2 ring-gray-300'
+                                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                                  }`}
+                                  title="Przeczytane"
+                                >P</button>
+                                <button
+                                  onClick={(e) => quickChangeAllepoduszkiThreadStatus(e, thread.id, 'resolved')}
+                                  className={`w-6 h-6 flex-shrink-0 rounded flex items-center justify-center transition-all text-xs font-bold ${
+                                    thread.status === 'resolved'
+                                      ? 'bg-green-500 text-white ring-2 ring-green-300'
+                                      : 'bg-green-100 text-green-600 hover:bg-green-200'
+                                  }`}
+                                  title="Rozwiazane"
+                                >R</button>
+                              </div>
                               <div className="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center text-purple-600 font-medium">
                                 {(thread.from_name || thread.from_email || '?')[0].toUpperCase()}
                               </div>
                               <div className="flex-1 min-w-0">
                                 <div className="flex items-center justify-between">
-                                  <span className={`font-medium truncate ${thread.unread ? 'text-gray-900' : 'text-gray-700'}`}>
+                                  <span className={`font-medium truncate ${thread.status === 'new' || thread.unread ? 'text-gray-900' : 'text-gray-700'}`}>
                                     {thread.from_name || thread.from_email || 'Nieznany'}
                                   </span>
                                   <span className="text-xs text-gray-400 dark:text-gray-500 ml-2 whitespace-nowrap">
                                     {formatDate(thread.last_message_at)}
                                   </span>
                                 </div>
-                                <p className={`text-sm truncate ${thread.unread ? 'font-medium text-gray-800' : 'text-gray-600'}`}>
+                                <p className={`text-sm truncate ${thread.status === 'new' || thread.unread ? 'font-medium text-gray-800' : 'text-gray-600'}`}>
                                   {thread.subject || '(Brak tematu)'}
                                 </p>
                                 <p className="text-xs text-gray-500 truncate">{thread.snippet}</p>
-                                {thread.unread && (
-                                  <span className="inline-block mt-1 px-2 py-0.5 bg-purple-500 text-white text-xs rounded">
-                                    Nowa
-                                  </span>
-                                )}
                               </div>
                             </div>
-                          </button>
+                          </div>
                         ))
                       )}
                     </div>
@@ -3378,49 +3445,62 @@ function CRMContent() {
                         </div>
                       ) : (
                         poomfurnitureThreads.map((thread) => (
-                          <button
+                          <div
                             key={thread.id}
                             onClick={() => openPoomfurnitureThread(thread)}
-                            className={`w-full text-left px-4 py-3 border-b border-gray-100 dark:border-gray-700 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 ${
+                            className={`w-full text-left px-4 py-3 border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer ${
                               poomfurnitureSelectedThread?.id === thread.id ? 'bg-blue-50' : ''
-                            } ${thread.unread ? 'bg-teal-50' : ''} ${thread.checked ? 'bg-green-50' : ''}`}
+                            } ${thread.status === 'new' || thread.unread ? 'bg-teal-50' : ''} ${thread.status === 'resolved' ? 'bg-green-50' : ''}`}
                           >
                             <div className="flex items-start gap-3">
-                              <button
-                                onClick={(e) => togglePoomfurnitureThreadChecked(e, thread.id, thread.checked)}
-                                className={`w-5 h-5 mt-2.5 flex-shrink-0 rounded border-2 flex items-center justify-center transition-colors ${
-                                  thread.checked
-                                    ? 'bg-green-500 border-green-500 text-white'
-                                    : 'border-gray-300 hover:border-green-400'
-                                }`}
-                                title={thread.checked ? 'Oznaczone' : 'Oznacz jako przetworzone'}
-                              >
-                                {thread.checked && <span className="text-xs">✓</span>}
-                              </button>
+                              <div className="flex flex-col gap-1 mt-1">
+                                <button
+                                  onClick={(e) => quickChangePoomfurnitureThreadStatus(e, thread.id, 'new')}
+                                  className={`w-6 h-6 flex-shrink-0 rounded flex items-center justify-center transition-all text-xs font-bold ${
+                                    thread.status === 'new' || (!thread.status && thread.unread)
+                                      ? 'bg-teal-500 text-white ring-2 ring-teal-300'
+                                      : 'bg-teal-100 text-teal-600 hover:bg-teal-200'
+                                  }`}
+                                  title="Nowe"
+                                >N</button>
+                                <button
+                                  onClick={(e) => quickChangePoomfurnitureThreadStatus(e, thread.id, 'read')}
+                                  className={`w-6 h-6 flex-shrink-0 rounded flex items-center justify-center transition-all text-xs font-bold ${
+                                    thread.status === 'read' || (!thread.status && !thread.unread && thread.status !== 'resolved')
+                                      ? 'bg-gray-500 text-white ring-2 ring-gray-300'
+                                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                                  }`}
+                                  title="Przeczytane"
+                                >P</button>
+                                <button
+                                  onClick={(e) => quickChangePoomfurnitureThreadStatus(e, thread.id, 'resolved')}
+                                  className={`w-6 h-6 flex-shrink-0 rounded flex items-center justify-center transition-all text-xs font-bold ${
+                                    thread.status === 'resolved'
+                                      ? 'bg-green-500 text-white ring-2 ring-green-300'
+                                      : 'bg-green-100 text-green-600 hover:bg-green-200'
+                                  }`}
+                                  title="Rozwiazane"
+                                >R</button>
+                              </div>
                               <div className="w-10 h-10 rounded-full bg-teal-100 flex items-center justify-center text-teal-600 font-medium">
                                 {(thread.from_name || thread.from_email || '?')[0].toUpperCase()}
                               </div>
                               <div className="flex-1 min-w-0">
                                 <div className="flex items-center justify-between">
-                                  <span className={`font-medium truncate ${thread.unread ? 'text-gray-900' : 'text-gray-700'}`}>
+                                  <span className={`font-medium truncate ${thread.status === 'new' || thread.unread ? 'text-gray-900' : 'text-gray-700'}`}>
                                     {thread.from_name || thread.from_email || 'Nieznany'}
                                   </span>
                                   <span className="text-xs text-gray-400 dark:text-gray-500 ml-2 whitespace-nowrap">
                                     {formatDate(thread.last_message_at)}
                                   </span>
                                 </div>
-                                <p className={`text-sm truncate ${thread.unread ? 'font-medium text-gray-800' : 'text-gray-600'}`}>
+                                <p className={`text-sm truncate ${thread.status === 'new' || thread.unread ? 'font-medium text-gray-800' : 'text-gray-600'}`}>
                                   {thread.subject || '(Brak tematu)'}
                                 </p>
                                 <p className="text-xs text-gray-500 truncate">{thread.snippet}</p>
-                                {thread.unread && (
-                                  <span className="inline-block mt-1 px-2 py-0.5 bg-teal-500 text-white text-xs rounded">
-                                    Nowa
-                                  </span>
-                                )}
                               </div>
                             </div>
-                          </button>
+                          </div>
                         ))
                       )}
                     </div>
