@@ -1608,6 +1608,16 @@ function CRMContent() {
       .replace(/\uFEFF/g, '')
       // Remove HTML comments
       .replace(/<!--[\s\S]*?-->/g, '')
+      // Strip quoted reply content (backup in case DB has full content)
+      .replace(/>\s*пише:\s*[\s\S]*/i, '')
+      .replace(/>\s*написав:\s*[\s\S]*/i, '')
+      .replace(/>\s*написал:\s*[\s\S]*/i, '')
+      .replace(/>\s*пишет:\s*[\s\S]*/i, '')
+      .replace(/\n*On .+ wrote:[\s\S]*/i, '')
+      .replace(/\n*W dniu .+ napisał:[\s\S]*/i, '')
+      .replace(/\n*Dnia .+ napisał:[\s\S]*/i, '')
+      .replace(/\n(?:>.*\n?){2,}[\s\S]*/, '')
+      .replace(/\n*\[image:[^\]]*\]\s*Zamówienie\s*#\d+[\s\S]*/i, '')
       // Remove excessive whitespace on each line
       .replace(/[ \t]+$/gm, '')
       .replace(/^[ \t]+/gm, '')
