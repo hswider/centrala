@@ -50,6 +50,9 @@ function CRMContent() {
   const [gmailDeleting, setGmailDeleting] = useState(false);
   const [gmailFilter, setGmailFilter] = useState('all'); // all, new, read, resolved
 
+  // Status dropdown state (shared across all modules - only one can be open)
+  const [openStatusDropdown, setOpenStatusDropdown] = useState(null); // { module: 'gmail', threadId: '123' }
+
   // Gmail POOMKIDS (Shopify POOMKIDS) state
   const [poomkidsAuth, setPoomkidsAuth] = useState({ authenticated: false, user: null, loading: true });
   const [poomkidsThreads, setPoomkidsThreads] = useState([]);
@@ -2509,34 +2512,51 @@ function CRMContent() {
                             } ${thread.status === 'new' || (!thread.status && thread.unread) ? 'bg-red-50' : ''} ${thread.status === 'resolved' ? 'bg-green-50' : ''}`}
                           >
                             <div className="flex items-start gap-3">
-                              <div className="flex flex-col gap-1 mt-1">
+                              <div className="relative mt-2">
                                 <button
-                                  onClick={(e) => quickChangeGmailThreadStatus(e, thread.id, 'new')}
-                                  className={`w-6 h-6 flex-shrink-0 rounded flex items-center justify-center transition-all text-xs font-bold ${
-                                    thread.status === 'new' || (!thread.status && thread.unread)
-                                      ? 'bg-red-500 text-white ring-2 ring-red-300'
-                                      : 'bg-red-100 text-red-600 hover:bg-red-200'
-                                  }`}
-                                  title="Nowe"
-                                >N</button>
-                                <button
-                                  onClick={(e) => quickChangeGmailThreadStatus(e, thread.id, 'read')}
-                                  className={`w-6 h-6 flex-shrink-0 rounded flex items-center justify-center transition-all text-xs font-bold ${
-                                    thread.status === 'read' || (!thread.status && !thread.unread && thread.status !== 'resolved')
-                                      ? 'bg-blue-500 text-white ring-2 ring-blue-300'
-                                      : 'bg-blue-100 text-blue-600 hover:bg-blue-200'
-                                  }`}
-                                  title="Przeczytane"
-                                >P</button>
-                                <button
-                                  onClick={(e) => quickChangeGmailThreadStatus(e, thread.id, 'resolved')}
-                                  className={`w-6 h-6 flex-shrink-0 rounded flex items-center justify-center transition-all text-xs font-bold ${
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setOpenStatusDropdown(
+                                      openStatusDropdown?.module === 'gmail' && openStatusDropdown?.threadId === thread.id
+                                        ? null
+                                        : { module: 'gmail', threadId: thread.id }
+                                    );
+                                  }}
+                                  className={`w-7 h-7 flex-shrink-0 rounded border-2 flex items-center justify-center transition-all ${
                                     thread.status === 'resolved'
-                                      ? 'bg-green-500 text-white ring-2 ring-green-300'
-                                      : 'bg-green-100 text-green-600 hover:bg-green-200'
+                                      ? 'bg-green-500 border-green-500 text-white'
+                                      : thread.status === 'read'
+                                        ? 'bg-blue-500 border-blue-500 text-white'
+                                        : thread.status === 'new' || thread.unread
+                                          ? 'bg-red-500 border-red-500 text-white'
+                                          : 'border-gray-300 hover:border-gray-400'
                                   }`}
-                                  title="Rozwiazane"
-                                >R</button>
+                                  title="Zmien status"
+                                >
+                                  {thread.status === 'resolved' ? '✓' : thread.status === 'read' ? '●' : thread.status === 'new' || thread.unread ? '!' : ''}
+                                </button>
+                                {openStatusDropdown?.module === 'gmail' && openStatusDropdown?.threadId === thread.id && (
+                                  <div className="absolute left-0 top-8 z-50 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-600 py-1 min-w-[140px]">
+                                    <button
+                                      onClick={(e) => { quickChangeGmailThreadStatus(e, thread.id, 'new'); setOpenStatusDropdown(null); }}
+                                      className="w-full px-3 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
+                                    >
+                                      <span className="w-3 h-3 rounded-full bg-red-500"></span> Nowe
+                                    </button>
+                                    <button
+                                      onClick={(e) => { quickChangeGmailThreadStatus(e, thread.id, 'read'); setOpenStatusDropdown(null); }}
+                                      className="w-full px-3 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
+                                    >
+                                      <span className="w-3 h-3 rounded-full bg-blue-500"></span> Przeczytane
+                                    </button>
+                                    <button
+                                      onClick={(e) => { quickChangeGmailThreadStatus(e, thread.id, 'resolved'); setOpenStatusDropdown(null); }}
+                                      className="w-full px-3 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
+                                    >
+                                      <span className="w-3 h-3 rounded-full bg-green-500"></span> Rozwiazane
+                                    </button>
+                                  </div>
+                                )}
                               </div>
                               <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center text-red-600 font-medium">
                                 {(thread.from_name || thread.from_email || '?')[0].toUpperCase()}
@@ -2841,37 +2861,54 @@ function CRMContent() {
                             onClick={() => openPoomkidsThread(thread)}
                             className={`w-full text-left px-4 py-3 border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer ${
                               poomkidsSelectedThread?.id === thread.id ? 'bg-blue-50' : ''
-                            } ${thread.status === 'new' || thread.unread ? 'bg-blue-50' : ''} ${thread.status === 'resolved' ? 'bg-green-50' : ''}`}
+                            } ${thread.status === 'new' || thread.unread ? 'bg-green-50' : ''} ${thread.status === 'resolved' ? 'bg-green-100' : ''}`}
                           >
                             <div className="flex items-start gap-3">
-                              <div className="flex flex-col gap-1 mt-1">
+                              <div className="relative mt-2">
                                 <button
-                                  onClick={(e) => quickChangePoomkidsThreadStatus(e, thread.id, 'new')}
-                                  className={`w-6 h-6 flex-shrink-0 rounded flex items-center justify-center transition-all text-xs font-bold ${
-                                    thread.status === 'new' || (!thread.status && thread.unread)
-                                      ? 'bg-blue-500 text-white ring-2 ring-blue-300'
-                                      : 'bg-blue-100 text-blue-600 hover:bg-blue-200'
-                                  }`}
-                                  title="Nowe"
-                                >N</button>
-                                <button
-                                  onClick={(e) => quickChangePoomkidsThreadStatus(e, thread.id, 'read')}
-                                  className={`w-6 h-6 flex-shrink-0 rounded flex items-center justify-center transition-all text-xs font-bold ${
-                                    thread.status === 'read' || (!thread.status && !thread.unread && thread.status !== 'resolved')
-                                      ? 'bg-gray-500 text-white ring-2 ring-gray-300'
-                                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                                  }`}
-                                  title="Przeczytane"
-                                >P</button>
-                                <button
-                                  onClick={(e) => quickChangePoomkidsThreadStatus(e, thread.id, 'resolved')}
-                                  className={`w-6 h-6 flex-shrink-0 rounded flex items-center justify-center transition-all text-xs font-bold ${
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setOpenStatusDropdown(
+                                      openStatusDropdown?.module === 'poomkids' && openStatusDropdown?.threadId === thread.id
+                                        ? null
+                                        : { module: 'poomkids', threadId: thread.id }
+                                    );
+                                  }}
+                                  className={`w-7 h-7 flex-shrink-0 rounded border-2 flex items-center justify-center transition-all ${
                                     thread.status === 'resolved'
-                                      ? 'bg-green-500 text-white ring-2 ring-green-300'
-                                      : 'bg-green-100 text-green-600 hover:bg-green-200'
+                                      ? 'bg-green-500 border-green-500 text-white'
+                                      : thread.status === 'read'
+                                        ? 'bg-blue-500 border-blue-500 text-white'
+                                        : thread.status === 'new' || thread.unread
+                                          ? 'bg-green-600 border-green-600 text-white'
+                                          : 'border-gray-300 hover:border-gray-400'
                                   }`}
-                                  title="Rozwiazane"
-                                >R</button>
+                                  title="Zmien status"
+                                >
+                                  {thread.status === 'resolved' ? '✓' : thread.status === 'read' ? '●' : thread.status === 'new' || thread.unread ? '!' : ''}
+                                </button>
+                                {openStatusDropdown?.module === 'poomkids' && openStatusDropdown?.threadId === thread.id && (
+                                  <div className="absolute left-0 top-8 z-50 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-600 py-1 min-w-[140px]">
+                                    <button
+                                      onClick={(e) => { quickChangePoomkidsThreadStatus(e, thread.id, 'new'); setOpenStatusDropdown(null); }}
+                                      className="w-full px-3 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
+                                    >
+                                      <span className="w-3 h-3 rounded-full bg-green-600"></span> Nowe
+                                    </button>
+                                    <button
+                                      onClick={(e) => { quickChangePoomkidsThreadStatus(e, thread.id, 'read'); setOpenStatusDropdown(null); }}
+                                      className="w-full px-3 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
+                                    >
+                                      <span className="w-3 h-3 rounded-full bg-blue-500"></span> Przeczytane
+                                    </button>
+                                    <button
+                                      onClick={(e) => { quickChangePoomkidsThreadStatus(e, thread.id, 'resolved'); setOpenStatusDropdown(null); }}
+                                      className="w-full px-3 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
+                                    >
+                                      <span className="w-3 h-3 rounded-full bg-green-500"></span> Rozwiazane
+                                    </button>
+                                  </div>
+                                )}
                               </div>
                               <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center text-green-600 font-medium">
                                 {(thread.from_name || thread.from_email || '?')[0].toUpperCase()}
@@ -3166,34 +3203,51 @@ function CRMContent() {
                             } ${thread.status === 'new' || thread.unread ? 'bg-purple-50' : ''} ${thread.status === 'resolved' ? 'bg-green-50' : ''}`}
                           >
                             <div className="flex items-start gap-3">
-                              <div className="flex flex-col gap-1 mt-1">
+                              <div className="relative mt-2">
                                 <button
-                                  onClick={(e) => quickChangeAllepoduszkiThreadStatus(e, thread.id, 'new')}
-                                  className={`w-6 h-6 flex-shrink-0 rounded flex items-center justify-center transition-all text-xs font-bold ${
-                                    thread.status === 'new' || (!thread.status && thread.unread)
-                                      ? 'bg-purple-500 text-white ring-2 ring-purple-300'
-                                      : 'bg-purple-100 text-purple-600 hover:bg-purple-200'
-                                  }`}
-                                  title="Nowe"
-                                >N</button>
-                                <button
-                                  onClick={(e) => quickChangeAllepoduszkiThreadStatus(e, thread.id, 'read')}
-                                  className={`w-6 h-6 flex-shrink-0 rounded flex items-center justify-center transition-all text-xs font-bold ${
-                                    thread.status === 'read' || (!thread.status && !thread.unread && thread.status !== 'resolved')
-                                      ? 'bg-gray-500 text-white ring-2 ring-gray-300'
-                                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                                  }`}
-                                  title="Przeczytane"
-                                >P</button>
-                                <button
-                                  onClick={(e) => quickChangeAllepoduszkiThreadStatus(e, thread.id, 'resolved')}
-                                  className={`w-6 h-6 flex-shrink-0 rounded flex items-center justify-center transition-all text-xs font-bold ${
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setOpenStatusDropdown(
+                                      openStatusDropdown?.module === 'allepoduszki' && openStatusDropdown?.threadId === thread.id
+                                        ? null
+                                        : { module: 'allepoduszki', threadId: thread.id }
+                                    );
+                                  }}
+                                  className={`w-7 h-7 flex-shrink-0 rounded border-2 flex items-center justify-center transition-all ${
                                     thread.status === 'resolved'
-                                      ? 'bg-green-500 text-white ring-2 ring-green-300'
-                                      : 'bg-green-100 text-green-600 hover:bg-green-200'
+                                      ? 'bg-green-500 border-green-500 text-white'
+                                      : thread.status === 'read'
+                                        ? 'bg-blue-500 border-blue-500 text-white'
+                                        : thread.status === 'new' || thread.unread
+                                          ? 'bg-purple-500 border-purple-500 text-white'
+                                          : 'border-gray-300 hover:border-gray-400'
                                   }`}
-                                  title="Rozwiazane"
-                                >R</button>
+                                  title="Zmien status"
+                                >
+                                  {thread.status === 'resolved' ? '✓' : thread.status === 'read' ? '●' : thread.status === 'new' || thread.unread ? '!' : ''}
+                                </button>
+                                {openStatusDropdown?.module === 'allepoduszki' && openStatusDropdown?.threadId === thread.id && (
+                                  <div className="absolute left-0 top-8 z-50 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-600 py-1 min-w-[140px]">
+                                    <button
+                                      onClick={(e) => { quickChangeAllepoduszkiThreadStatus(e, thread.id, 'new'); setOpenStatusDropdown(null); }}
+                                      className="w-full px-3 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
+                                    >
+                                      <span className="w-3 h-3 rounded-full bg-purple-500"></span> Nowe
+                                    </button>
+                                    <button
+                                      onClick={(e) => { quickChangeAllepoduszkiThreadStatus(e, thread.id, 'read'); setOpenStatusDropdown(null); }}
+                                      className="w-full px-3 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
+                                    >
+                                      <span className="w-3 h-3 rounded-full bg-blue-500"></span> Przeczytane
+                                    </button>
+                                    <button
+                                      onClick={(e) => { quickChangeAllepoduszkiThreadStatus(e, thread.id, 'resolved'); setOpenStatusDropdown(null); }}
+                                      className="w-full px-3 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
+                                    >
+                                      <span className="w-3 h-3 rounded-full bg-green-500"></span> Rozwiazane
+                                    </button>
+                                  </div>
+                                )}
                               </div>
                               <div className="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center text-purple-600 font-medium">
                                 {(thread.from_name || thread.from_email || '?')[0].toUpperCase()}
@@ -3453,34 +3507,51 @@ function CRMContent() {
                             } ${thread.status === 'new' || thread.unread ? 'bg-teal-50' : ''} ${thread.status === 'resolved' ? 'bg-green-50' : ''}`}
                           >
                             <div className="flex items-start gap-3">
-                              <div className="flex flex-col gap-1 mt-1">
+                              <div className="relative mt-2">
                                 <button
-                                  onClick={(e) => quickChangePoomfurnitureThreadStatus(e, thread.id, 'new')}
-                                  className={`w-6 h-6 flex-shrink-0 rounded flex items-center justify-center transition-all text-xs font-bold ${
-                                    thread.status === 'new' || (!thread.status && thread.unread)
-                                      ? 'bg-teal-500 text-white ring-2 ring-teal-300'
-                                      : 'bg-teal-100 text-teal-600 hover:bg-teal-200'
-                                  }`}
-                                  title="Nowe"
-                                >N</button>
-                                <button
-                                  onClick={(e) => quickChangePoomfurnitureThreadStatus(e, thread.id, 'read')}
-                                  className={`w-6 h-6 flex-shrink-0 rounded flex items-center justify-center transition-all text-xs font-bold ${
-                                    thread.status === 'read' || (!thread.status && !thread.unread && thread.status !== 'resolved')
-                                      ? 'bg-gray-500 text-white ring-2 ring-gray-300'
-                                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                                  }`}
-                                  title="Przeczytane"
-                                >P</button>
-                                <button
-                                  onClick={(e) => quickChangePoomfurnitureThreadStatus(e, thread.id, 'resolved')}
-                                  className={`w-6 h-6 flex-shrink-0 rounded flex items-center justify-center transition-all text-xs font-bold ${
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setOpenStatusDropdown(
+                                      openStatusDropdown?.module === 'poomfurniture' && openStatusDropdown?.threadId === thread.id
+                                        ? null
+                                        : { module: 'poomfurniture', threadId: thread.id }
+                                    );
+                                  }}
+                                  className={`w-7 h-7 flex-shrink-0 rounded border-2 flex items-center justify-center transition-all ${
                                     thread.status === 'resolved'
-                                      ? 'bg-green-500 text-white ring-2 ring-green-300'
-                                      : 'bg-green-100 text-green-600 hover:bg-green-200'
+                                      ? 'bg-green-500 border-green-500 text-white'
+                                      : thread.status === 'read'
+                                        ? 'bg-blue-500 border-blue-500 text-white'
+                                        : thread.status === 'new' || thread.unread
+                                          ? 'bg-teal-500 border-teal-500 text-white'
+                                          : 'border-gray-300 hover:border-gray-400'
                                   }`}
-                                  title="Rozwiazane"
-                                >R</button>
+                                  title="Zmien status"
+                                >
+                                  {thread.status === 'resolved' ? '✓' : thread.status === 'read' ? '●' : thread.status === 'new' || thread.unread ? '!' : ''}
+                                </button>
+                                {openStatusDropdown?.module === 'poomfurniture' && openStatusDropdown?.threadId === thread.id && (
+                                  <div className="absolute left-0 top-8 z-50 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-600 py-1 min-w-[140px]">
+                                    <button
+                                      onClick={(e) => { quickChangePoomfurnitureThreadStatus(e, thread.id, 'new'); setOpenStatusDropdown(null); }}
+                                      className="w-full px-3 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
+                                    >
+                                      <span className="w-3 h-3 rounded-full bg-teal-500"></span> Nowe
+                                    </button>
+                                    <button
+                                      onClick={(e) => { quickChangePoomfurnitureThreadStatus(e, thread.id, 'read'); setOpenStatusDropdown(null); }}
+                                      className="w-full px-3 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
+                                    >
+                                      <span className="w-3 h-3 rounded-full bg-blue-500"></span> Przeczytane
+                                    </button>
+                                    <button
+                                      onClick={(e) => { quickChangePoomfurnitureThreadStatus(e, thread.id, 'resolved'); setOpenStatusDropdown(null); }}
+                                      className="w-full px-3 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
+                                    >
+                                      <span className="w-3 h-3 rounded-full bg-green-500"></span> Rozwiazane
+                                    </button>
+                                  </div>
+                                )}
                               </div>
                               <div className="w-10 h-10 rounded-full bg-teal-100 flex items-center justify-center text-teal-600 font-medium">
                                 {(thread.from_name || thread.from_email || '?')[0].toUpperCase()}
