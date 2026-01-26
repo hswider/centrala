@@ -1405,9 +1405,33 @@ function CRMContent() {
     return date.toLocaleDateString('pl-PL', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
   };
 
-  // Parse message body to convert URLs to clickable links
+  // Parse message body to convert URLs to clickable links and clean up formatting
   const parseMessageBody = (text, isOutgoing = false) => {
     if (!text) return '(Brak tresci tekstowej)';
+
+    // Clean up the text first
+    let cleanedText = text
+      // Remove zero-width spaces and other invisible characters
+      .replace(/&#8203;/g, '')
+      .replace(/\u200B/g, '')
+      .replace(/\u200C/g, '')
+      .replace(/\u200D/g, '')
+      .replace(/\uFEFF/g, '')
+      // Remove HTML comments
+      .replace(/<!--[\s\S]*?-->/g, '')
+      // Remove excessive whitespace on each line
+      .replace(/[ \t]+$/gm, '')
+      .replace(/^[ \t]+/gm, '')
+      // Collapse multiple empty lines (more than 2) into max 2
+      .replace(/\n{3,}/g, '\n\n')
+      // Remove lines that only contain whitespace
+      .replace(/^\s*$/gm, '')
+      // Collapse multiple newlines again after removing empty lines
+      .replace(/\n{3,}/g, '\n\n')
+      // Trim the whole text
+      .trim();
+
+    if (!cleanedText) return '(Brak tresci tekstowej)';
 
     const linkClass = isOutgoing
       ? 'text-blue-200 hover:text-white underline'
@@ -1421,10 +1445,10 @@ function CRMContent() {
     let match;
     let keyIndex = 0;
 
-    while ((match = urlPattern.exec(text)) !== null) {
+    while ((match = urlPattern.exec(cleanedText)) !== null) {
       // Add text before the URL
       if (match.index > lastIndex) {
-        parts.push(text.slice(lastIndex, match.index));
+        parts.push(cleanedText.slice(lastIndex, match.index));
       }
 
       const url = match[1] || match[2];
@@ -1446,11 +1470,11 @@ function CRMContent() {
     }
 
     // Add remaining text
-    if (lastIndex < text.length) {
-      parts.push(text.slice(lastIndex));
+    if (lastIndex < cleanedText.length) {
+      parts.push(cleanedText.slice(lastIndex));
     }
 
-    return parts.length > 0 ? parts : text;
+    return parts.length > 0 ? parts : cleanedText;
   };
 
   return (
