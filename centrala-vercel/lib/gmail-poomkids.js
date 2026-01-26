@@ -295,6 +295,8 @@ function stripQuotedReply(text) {
   if (!text) return '';
 
   const quotePatterns = [
+    // Ukrainian date format with email in angle brackets (can span multiple lines)
+    /\n*[а-яА-Яa-zA-Z]{2,3},\s*\d{1,2}\s+[а-яА-Яa-zA-Z]+\.?\s*\d{4}\s*р?\.?\s*о\s*\d{1,2}:\d{2}[\s\S]*?пише:[\s\S]*/i,
     // Polish
     /\n*W dniu \d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2} użytkownik .+ napisał:[\s\S]*/i,
     /\n*Dnia \d{4}-\d{2}-\d{2} .+ napisał[\s\S]*/i,
@@ -306,20 +308,18 @@ function stripQuotedReply(text) {
     /\n*Am .+ schrieb .+:[\s\S]*/i,
     // French
     /\n*Le .+ a écrit\s*:[\s\S]*/i,
-    // Ukrainian
-    /\n*.+пише:[\s\S]*/i,
-    /\n*.+написав:[\s\S]*/i,
+    // Ukrainian (simple patterns)
+    /\n*[\s\S]*?>\s*пише:[\s\S]*/i,
+    /\n*[\s\S]*?>\s*написав:[\s\S]*/i,
     // Russian
-    /\n*.+написал:[\s\S]*/i,
-    /\n*.+пишет:[\s\S]*/i,
+    /\n*[\s\S]*?>\s*написал:[\s\S]*/i,
+    /\n*[\s\S]*?>\s*пишет:[\s\S]*/i,
     // Spanish
     /\n*El .+ escribió:[\s\S]*/i,
     // Italian
     /\n*Il .+ ha scritto:[\s\S]*/i,
     // Dutch
     /\n*Op .+ schreef .+:[\s\S]*/i,
-    // Generic - email in angle brackets followed by content
-    /\n*[а-яА-Яa-zA-Z]+,\s*\d{1,2}\s+[а-яА-Яa-zA-Z]+\.?\s*\d{4}\s*р?\.?\s*о?\s*\d{1,2}:\d{2}\s+.+<[^>]+>\s*(пише|napisał|wrote|schrieb):?[\s\S]*/i,
     // Generic separators
     /\n*[-_]{3,}[\s]*Original Message[\s]*[-_]{3,}[\s\S]*/i,
     /\n*[-_]{3,}[\s]*Oryginalna wiadomość[\s]*[-_]{3,}[\s\S]*/i,
