@@ -724,6 +724,27 @@ function CRMContent() {
     );
   };
 
+  // Toggle message checked status (mark as read/processed)
+  const toggleGmailMessageChecked = async (messageId, currentChecked) => {
+    const newChecked = !currentChecked;
+    try {
+      const res = await fetch('/api/gmail/messages/check', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ messageIds: [messageId], checked: newChecked })
+      });
+      const data = await res.json();
+
+      if (data.success) {
+        setGmailThreadMessages(prev => prev.map(m =>
+          m.id === messageId ? { ...m, checked: newChecked } : m
+        ));
+      }
+    } catch (err) {
+      console.error('Toggle checked error:', err);
+    }
+  };
+
   // ========== POOMKIDS GMAIL (Shopify POOMKIDS) FUNCTIONS ==========
 
   // Check POOMKIDS authentication status
@@ -976,6 +997,27 @@ function CRMContent() {
 
   const togglePoomkidsMessageSelection = (messageId) => {
     setPoomkidsSelectedMessages(prev => prev.includes(messageId) ? prev.filter(id => id !== messageId) : [...prev, messageId]);
+  };
+
+  // Toggle POOMKIDS message checked status
+  const togglePoomkidsMessageChecked = async (messageId, currentChecked) => {
+    const newChecked = !currentChecked;
+    try {
+      const res = await fetch('/api/gmail-poomkids/messages/check', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ messageIds: [messageId], checked: newChecked })
+      });
+      const data = await res.json();
+
+      if (data.success) {
+        setPoomkidsThreadMessages(prev => prev.map(m =>
+          m.id === messageId ? { ...m, checked: newChecked } : m
+        ));
+      }
+    } catch (err) {
+      console.error('Toggle checked error:', err);
+    }
   };
 
   // ========== ALLEPODUSZKI GMAIL (Shopify Allepoduszki) FUNCTIONS ==========
@@ -1232,6 +1274,27 @@ function CRMContent() {
     setAllepoduszkiSelectedMessages(prev => prev.includes(messageId) ? prev.filter(id => id !== messageId) : [...prev, messageId]);
   };
 
+  // Toggle ALLEPODUSZKI message checked status
+  const toggleAllepoduszkiMessageChecked = async (messageId, currentChecked) => {
+    const newChecked = !currentChecked;
+    try {
+      const res = await fetch('/api/gmail-allepoduszki/messages/check', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ messageIds: [messageId], checked: newChecked })
+      });
+      const data = await res.json();
+
+      if (data.success) {
+        setAllepoduszkiThreadMessages(prev => prev.map(m =>
+          m.id === messageId ? { ...m, checked: newChecked } : m
+        ));
+      }
+    } catch (err) {
+      console.error('Toggle checked error:', err);
+    }
+  };
+
   // ========== POOMFURNITURE GMAIL (Shopify poom-furniture.com) FUNCTIONS ==========
 
   // Check POOMFURNITURE authentication status
@@ -1484,6 +1547,27 @@ function CRMContent() {
 
   const togglePoomfurnitureMessageSelection = (messageId) => {
     setPoomfurnitureSelectedMessages(prev => prev.includes(messageId) ? prev.filter(id => id !== messageId) : [...prev, messageId]);
+  };
+
+  // Toggle POOMFURNITURE message checked status
+  const togglePoomfurnitureMessageChecked = async (messageId, currentChecked) => {
+    const newChecked = !currentChecked;
+    try {
+      const res = await fetch('/api/gmail-poomfurniture/messages/check', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ messageIds: [messageId], checked: newChecked })
+      });
+      const data = await res.json();
+
+      if (data.success) {
+        setPoomfurnitureThreadMessages(prev => prev.map(m =>
+          m.id === messageId ? { ...m, checked: newChecked } : m
+        ));
+      }
+    } catch (err) {
+      console.error('Toggle checked error:', err);
+    }
   };
 
   // Get attachment icon based on mime type
@@ -2603,9 +2687,22 @@ function CRMContent() {
                                         </div>
                                       </div>
                                     )}
-                                    <p className={`text-xs mt-2 ${msg.is_outgoing ? 'text-red-200' : 'text-gray-400'}`}>
-                                      {formatDate(msg.sent_at)}
-                                    </p>
+                                    <div className={`flex items-center justify-between mt-2 text-xs ${msg.is_outgoing ? 'text-red-200' : 'text-gray-400'}`}>
+                                      <span>{formatDate(msg.sent_at)}</span>
+                                      <button
+                                        onClick={() => toggleGmailMessageChecked(msg.id, msg.checked)}
+                                        className={`ml-2 px-2 py-0.5 rounded transition-colors ${
+                                          msg.checked
+                                            ? 'bg-green-500 text-white'
+                                            : msg.is_outgoing
+                                              ? 'bg-red-700 hover:bg-red-800 text-red-200'
+                                              : 'bg-gray-200 dark:bg-gray-600 hover:bg-gray-300 dark:hover:bg-gray-500 text-gray-600 dark:text-gray-300'
+                                        }`}
+                                        title={msg.checked ? 'Oznaczone jako przeczytane' : 'Oznacz jako przeczytane'}
+                                      >
+                                        {msg.checked ? '✓ Przeczytane' : 'Oznacz'}
+                                      </button>
+                                    </div>
                                   </div>
                                 </div>
                               </div>
@@ -2906,9 +3003,22 @@ function CRMContent() {
                                         </div>
                                       );
                                     })()}
-                                    <p className={`text-xs mt-2 ${msg.is_outgoing ? 'text-blue-200' : 'text-gray-400'}`}>
-                                      {formatDate(msg.sent_at)}
-                                    </p>
+                                    <div className={`flex items-center justify-between mt-2 text-xs ${msg.is_outgoing ? 'text-blue-200' : 'text-gray-400'}`}>
+                                      <span>{formatDate(msg.sent_at)}</span>
+                                      <button
+                                        onClick={() => togglePoomkidsMessageChecked(msg.id, msg.checked)}
+                                        className={`ml-2 px-2 py-0.5 rounded transition-colors ${
+                                          msg.checked
+                                            ? 'bg-green-500 text-white'
+                                            : msg.is_outgoing
+                                              ? 'bg-blue-700 hover:bg-blue-800 text-blue-200'
+                                              : 'bg-gray-200 dark:bg-gray-600 hover:bg-gray-300 dark:hover:bg-gray-500 text-gray-600 dark:text-gray-300'
+                                        }`}
+                                        title={msg.checked ? 'Oznaczone jako przeczytane' : 'Oznacz jako przeczytane'}
+                                      >
+                                        {msg.checked ? '✓ Przeczytane' : 'Oznacz'}
+                                      </button>
+                                    </div>
                                   </div>
                                 </div>
                               </div>
@@ -3169,9 +3279,22 @@ function CRMContent() {
                                         </div>
                                       </div>
                                     )}
-                                    <p className={`text-xs mt-2 ${msg.is_outgoing ? 'text-purple-200' : 'text-gray-400'}`}>
-                                      {formatDate(msg.sent_at)}
-                                    </p>
+                                    <div className={`flex items-center justify-between mt-2 text-xs ${msg.is_outgoing ? 'text-purple-200' : 'text-gray-400'}`}>
+                                      <span>{formatDate(msg.sent_at)}</span>
+                                      <button
+                                        onClick={() => toggleAllepoduszkiMessageChecked(msg.id, msg.checked)}
+                                        className={`ml-2 px-2 py-0.5 rounded transition-colors ${
+                                          msg.checked
+                                            ? 'bg-green-500 text-white'
+                                            : msg.is_outgoing
+                                              ? 'bg-purple-700 hover:bg-purple-800 text-purple-200'
+                                              : 'bg-gray-200 dark:bg-gray-600 hover:bg-gray-300 dark:hover:bg-gray-500 text-gray-600 dark:text-gray-300'
+                                        }`}
+                                        title={msg.checked ? 'Oznaczone jako przeczytane' : 'Oznacz jako przeczytane'}
+                                      >
+                                        {msg.checked ? '✓ Przeczytane' : 'Oznacz'}
+                                      </button>
+                                    </div>
                                   </div>
                                 </div>
                               </div>
@@ -3432,9 +3555,22 @@ function CRMContent() {
                                         </div>
                                       </div>
                                     )}
-                                    <p className={`text-xs mt-2 ${msg.is_outgoing ? 'text-teal-200' : 'text-gray-400'}`}>
-                                      {formatDate(msg.sent_at)}
-                                    </p>
+                                    <div className={`flex items-center justify-between mt-2 text-xs ${msg.is_outgoing ? 'text-teal-200' : 'text-gray-400'}`}>
+                                      <span>{formatDate(msg.sent_at)}</span>
+                                      <button
+                                        onClick={() => togglePoomfurnitureMessageChecked(msg.id, msg.checked)}
+                                        className={`ml-2 px-2 py-0.5 rounded transition-colors ${
+                                          msg.checked
+                                            ? 'bg-green-500 text-white'
+                                            : msg.is_outgoing
+                                              ? 'bg-teal-700 hover:bg-teal-800 text-teal-200'
+                                              : 'bg-gray-200 dark:bg-gray-600 hover:bg-gray-300 dark:hover:bg-gray-500 text-gray-600 dark:text-gray-300'
+                                        }`}
+                                        title={msg.checked ? 'Oznaczone jako przeczytane' : 'Oznacz jako przeczytane'}
+                                      >
+                                        {msg.checked ? '✓ Przeczytane' : 'Oznacz'}
+                                      </button>
+                                    </div>
                                   </div>
                                 </div>
                               </div>
