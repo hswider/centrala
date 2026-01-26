@@ -1409,19 +1409,12 @@ function CRMContent() {
   const parseMessageBody = (text, isOutgoing = false) => {
     if (!text) return '(Brak tresci tekstowej)';
 
-    // Pattern 1: "text <URL>" - named link (e.g., "Google Terms of Service <https://...>")
-    // Pattern 2: "<URL>" - just URL in angle brackets
-    // Pattern 3: standalone URL (http/https)
-
     const linkClass = isOutgoing
       ? 'text-blue-200 hover:text-white underline'
       : 'text-blue-600 hover:text-blue-800 underline';
 
-    // Combined regex to match all patterns
-    // Group 1: text before <URL> (optional)
-    // Group 2: URL in angle brackets
-    // Group 3: standalone URL
-    const urlPattern = /([^\s<>]+(?:\s+[^\s<>]+)*?)\s*<(https?:\/\/[^>]+)>|<(https?:\/\/[^>]+)>|(https?:\/\/[^\s<>]+)/g;
+    // Match URLs in angle brackets <URL> or standalone URLs
+    const urlPattern = /<(https?:\/\/[^>]+)>|(https?:\/\/[^\s<>\])}]+)/g;
 
     const parts = [];
     let lastIndex = 0;
@@ -1429,42 +1422,24 @@ function CRMContent() {
     let keyIndex = 0;
 
     while ((match = urlPattern.exec(text)) !== null) {
-      // Add text before match
+      // Add text before the URL
       if (match.index > lastIndex) {
         parts.push(text.slice(lastIndex, match.index));
       }
 
-      if (match[1] && match[2]) {
-        // Pattern 1: "text <URL>" - use text as link label
-        const linkText = match[1].trim();
-        const url = match[2];
-        parts.push(
-          <a key={keyIndex++} href={url} target="_blank" rel="noopener noreferrer" className={linkClass}>
-            {linkText}
-          </a>
-        );
-      } else if (match[3]) {
-        // Pattern 2: "<URL>" - just URL in angle brackets
-        const url = match[3];
+      const url = match[1] || match[2];
+
+      // Create clickable link with domain as label
+      try {
         const domain = new URL(url).hostname.replace('www.', '');
         parts.push(
           <a key={keyIndex++} href={url} target="_blank" rel="noopener noreferrer" className={linkClass}>
             [{domain}]
           </a>
         );
-      } else if (match[4]) {
-        // Pattern 3: standalone URL
-        const url = match[4];
-        try {
-          const domain = new URL(url).hostname.replace('www.', '');
-          parts.push(
-            <a key={keyIndex++} href={url} target="_blank" rel="noopener noreferrer" className={linkClass}>
-              [{domain}]
-            </a>
-          );
-        } catch {
-          parts.push(match[4]);
-        }
+      } catch {
+        // Invalid URL, show as-is
+        parts.push(match[0]);
       }
 
       lastIndex = match.index + match[0].length;
