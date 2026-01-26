@@ -170,17 +170,20 @@ export async function markThreadAsRead(threadId) {
 }
 
 // Send reply
-export async function sendReply(threadId, to, subject, body) {
+export async function sendReply(threadId, to, subject, body, messageId = null) {
   const tokens = await getGmailAmazonDeTokens();
   const from = tokens?.email || 'me';
+
+  // Use provided Message-ID for proper threading, fallback to threadId
+  const replyToId = messageId || threadId;
 
   // Create email with proper headers for reply
   const emailLines = [
     `From: ${from}`,
     `To: ${to}`,
-    `Subject: Re: ${subject}`,
-    `In-Reply-To: ${threadId}`,
-    `References: ${threadId}`,
+    `Subject: Re: ${subject.replace(/^Re:\s*/i, '')}`,
+    `In-Reply-To: ${replyToId}`,
+    `References: ${replyToId}`,
     'Content-Type: text/plain; charset=utf-8',
     '',
     body
@@ -207,9 +210,12 @@ export async function getAttachment(messageId, attachmentId) {
 }
 
 // Send reply with attachments
-export async function sendReplyWithAttachments(threadId, to, subject, body, attachments = []) {
+export async function sendReplyWithAttachments(threadId, to, subject, body, attachments = [], messageId = null) {
   const tokens = await getGmailAmazonDeTokens();
   const from = tokens?.email || 'me';
+
+  // Use provided Message-ID for proper threading, fallback to threadId
+  const replyToId = messageId || threadId;
 
   // Generate boundary for multipart message
   const boundary = `boundary_${Date.now()}`;
@@ -217,9 +223,9 @@ export async function sendReplyWithAttachments(threadId, to, subject, body, atta
   let emailParts = [
     `From: ${from}`,
     `To: ${to}`,
-    `Subject: Re: ${subject}`,
-    `In-Reply-To: ${threadId}`,
-    `References: ${threadId}`,
+    `Subject: Re: ${subject.replace(/^Re:\s*/i, '')}`,
+    `In-Reply-To: ${replyToId}`,
+    `References: ${replyToId}`,
     `MIME-Version: 1.0`,
     `Content-Type: multipart/mixed; boundary="${boundary}"`,
     '',

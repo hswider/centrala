@@ -103,6 +103,16 @@ export async function POST(request, { params }) {
       }, { status: 400 });
     }
 
+    // Get thread first to find the last message's Message-ID for proper threading
+    const threadForReply = await getThread(threadId);
+    let lastMessageId = null;
+    if (threadForReply && threadForReply.messages && threadForReply.messages.length > 0) {
+      const lastMsg = threadForReply.messages[threadForReply.messages.length - 1];
+      const headers = lastMsg.payload?.headers || [];
+      const msgIdHeader = headers.find(h => h.name.toLowerCase() === 'message-id');
+      lastMessageId = msgIdHeader?.value || null;
+    }
+
     // Send reply via Gmail API (with or without attachments)
     let result;
     if (attachments && attachments.length > 0) {
@@ -111,10 +121,11 @@ export async function POST(request, { params }) {
         to,
         subject || 'Re: Your Amazon Order',
         text.trim(),
-        attachments
+        attachments,
+        lastMessageId
       );
     } else {
-      result = await sendReply(threadId, to, subject || 'Re: Your Amazon Order', text.trim());
+      result = await sendReply(threadId, to, subject || 'Re: Your Amazon Order', text.trim(), lastMessageId);
     }
 
     // Save the sent message to database

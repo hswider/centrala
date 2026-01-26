@@ -149,12 +149,22 @@ export async function POST(request, { params }) {
       }, { status: 400 });
     }
 
+    // Get thread first to find the last message's Message-ID for proper threading
+    const threadForReply = await getThread(threadId);
+    let lastMessageId = null;
+    if (threadForReply && threadForReply.messages && threadForReply.messages.length > 0) {
+      const lastMsg = threadForReply.messages[threadForReply.messages.length - 1];
+      const headers = lastMsg.payload?.headers || [];
+      const msgIdHeader = headers.find(h => h.name.toLowerCase() === 'message-id');
+      lastMessageId = msgIdHeader?.value || null;
+    }
+
     // Send reply via Gmail API (with or without attachments)
     let sentMessage;
     if (attachments && attachments.length > 0) {
-      sentMessage = await sendReplyWithAttachments(threadId, to, subject || '', text?.trim() || '', attachments);
+      sentMessage = await sendReplyWithAttachments(threadId, to, subject || '', text?.trim() || '', attachments, lastMessageId);
     } else {
-      sentMessage = await sendReply(threadId, to, subject || '', text.trim());
+      sentMessage = await sendReply(threadId, to, subject || '', text.trim(), lastMessageId);
     }
 
     // Refresh thread to get the sent message

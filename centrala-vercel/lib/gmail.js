@@ -197,17 +197,20 @@ export async function getAttachment(messageId, attachmentId) {
 }
 
 // Send reply to thread
-export async function sendReply(threadId, to, subject, body) {
+export async function sendReply(threadId, to, subject, body, messageId = null) {
   const tokens = await getGmailTokens();
   const fromEmail = tokens.email;
+
+  // Use provided Message-ID for proper threading, fallback to threadId
+  const replyToId = messageId || threadId;
 
   // Build email in RFC 2822 format
   const emailLines = [
     `From: ${fromEmail}`,
     `To: ${to}`,
-    `Subject: Re: ${subject}`,
-    `In-Reply-To: ${threadId}`,
-    `References: ${threadId}`,
+    `Subject: Re: ${subject.replace(/^Re:\s*/i, '')}`,
+    `In-Reply-To: ${replyToId}`,
+    `References: ${replyToId}`,
     'Content-Type: text/plain; charset=utf-8',
     '',
     body
@@ -226,9 +229,12 @@ export async function sendReply(threadId, to, subject, body) {
 }
 
 // Send reply with attachments
-export async function sendReplyWithAttachments(threadId, to, subject, body, attachments = []) {
+export async function sendReplyWithAttachments(threadId, to, subject, body, attachments = [], messageId = null) {
   const tokens = await getGmailTokens();
   const from = tokens?.email || 'me';
+
+  // Use provided Message-ID for proper threading, fallback to threadId
+  const replyToId = messageId || threadId;
 
   // Generate boundary for multipart message
   const boundary = `boundary_${Date.now()}`;
@@ -237,9 +243,9 @@ export async function sendReplyWithAttachments(threadId, to, subject, body, atta
   const emailParts = [
     `From: ${from}`,
     `To: ${to}`,
-    `Subject: Re: ${subject}`,
-    `In-Reply-To: ${threadId}`,
-    `References: ${threadId}`,
+    `Subject: Re: ${subject.replace(/^Re:\s*/i, '')}`,
+    `In-Reply-To: ${replyToId}`,
+    `References: ${replyToId}`,
     'MIME-Version: 1.0',
     `Content-Type: multipart/mixed; boundary="${boundary}"`,
     '',
