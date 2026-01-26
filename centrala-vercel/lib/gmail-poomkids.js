@@ -377,10 +377,39 @@ function htmlToPlainText(html) {
   return text;
 }
 
+// Decode MIME encoded-word (RFC 2047) in headers like Subject
+function decodeMimeHeader(text) {
+  if (!text) return '';
+
+  // Pattern for encoded-word: =?charset?encoding?encoded_text?=
+  const encodedWordPattern = /=\?([^?]+)\?([BbQq])\?([^?]*)\?=/g;
+
+  return text.replace(encodedWordPattern, (match, charset, encoding, encodedText) => {
+    try {
+      if (encoding.toUpperCase() === 'B') {
+        // Base64 encoding
+        const decoded = Buffer.from(encodedText, 'base64');
+        return decoded.toString('utf-8');
+      } else if (encoding.toUpperCase() === 'Q') {
+        // Quoted-Printable encoding
+        const decoded = encodedText
+          .replace(/_/g, ' ')
+          .replace(/=([0-9A-Fa-f]{2})/g, (m, hex) => String.fromCharCode(parseInt(hex, 16)));
+        // Convert to proper UTF-8 if needed
+        return Buffer.from(decoded, 'latin1').toString('utf-8');
+      }
+    } catch (e) {
+      // If decoding fails, return original
+      return match;
+    }
+    return match;
+  });
+}
+
 // Parse email message to extract useful data
 export function parseMessage(message) {
   const headers = message.payload?.headers || [];
-  const getHeader = (name) => headers.find(h => h.name.toLowerCase() === name.toLowerCase())?.value || '';
+  const getHeader = (name) => decodeMimeHeader(headers.find(h => h.name.toLowerCase() === name.toLowerCase())?.value || '');
 
   // Extract body and attachments
   let bodyText = '';
