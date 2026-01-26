@@ -1405,6 +1405,79 @@ function CRMContent() {
     return date.toLocaleDateString('pl-PL', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
   };
 
+  // Parse message body to convert URLs to clickable links
+  const parseMessageBody = (text, isOutgoing = false) => {
+    if (!text) return '(Brak tresci tekstowej)';
+
+    // Pattern 1: "text <URL>" - named link (e.g., "Google Terms of Service <https://...>")
+    // Pattern 2: "<URL>" - just URL in angle brackets
+    // Pattern 3: standalone URL (http/https)
+
+    const linkClass = isOutgoing
+      ? 'text-blue-200 hover:text-white underline'
+      : 'text-blue-600 hover:text-blue-800 underline';
+
+    // Combined regex to match all patterns
+    // Group 1: text before <URL> (optional)
+    // Group 2: URL in angle brackets
+    // Group 3: standalone URL
+    const urlPattern = /([^\s<>]+(?:\s+[^\s<>]+)*?)\s*<(https?:\/\/[^>]+)>|<(https?:\/\/[^>]+)>|(https?:\/\/[^\s<>]+)/g;
+
+    const parts = [];
+    let lastIndex = 0;
+    let match;
+    let keyIndex = 0;
+
+    while ((match = urlPattern.exec(text)) !== null) {
+      // Add text before match
+      if (match.index > lastIndex) {
+        parts.push(text.slice(lastIndex, match.index));
+      }
+
+      if (match[1] && match[2]) {
+        // Pattern 1: "text <URL>" - use text as link label
+        const linkText = match[1].trim();
+        const url = match[2];
+        parts.push(
+          <a key={keyIndex++} href={url} target="_blank" rel="noopener noreferrer" className={linkClass}>
+            {linkText}
+          </a>
+        );
+      } else if (match[3]) {
+        // Pattern 2: "<URL>" - just URL in angle brackets
+        const url = match[3];
+        const domain = new URL(url).hostname.replace('www.', '');
+        parts.push(
+          <a key={keyIndex++} href={url} target="_blank" rel="noopener noreferrer" className={linkClass}>
+            [{domain}]
+          </a>
+        );
+      } else if (match[4]) {
+        // Pattern 3: standalone URL
+        const url = match[4];
+        try {
+          const domain = new URL(url).hostname.replace('www.', '');
+          parts.push(
+            <a key={keyIndex++} href={url} target="_blank" rel="noopener noreferrer" className={linkClass}>
+              [{domain}]
+            </a>
+          );
+        } catch {
+          parts.push(match[4]);
+        }
+      }
+
+      lastIndex = match.index + match[0].length;
+    }
+
+    // Add remaining text
+    if (lastIndex < text.length) {
+      parts.push(text.slice(lastIndex));
+    }
+
+    return parts.length > 0 ? parts : text;
+  };
+
   return (
     <div className="min-h-screen bg-gray-100 dark:bg-gray-900">
       <main className="w-full px-3 py-4 sm:px-6 sm:py-6 lg:px-8">
@@ -2370,7 +2443,7 @@ function CRMContent() {
                                       {msg.from_name || msg.from_email}
                                     </div>
                                     <div className="whitespace-pre-wrap break-words text-sm">
-                                      {msg.body_text || '(Brak tresci tekstowej)'}
+                                      {parseMessageBody(msg.body_text, msg.is_outgoing)}
                                     </div>
                                     {/* Attachments */}
                                     {msgAttachments.length > 0 && (
@@ -2671,7 +2744,7 @@ function CRMContent() {
                                       {msg.from_name || msg.from_email}
                                     </div>
                                     <div className="whitespace-pre-wrap break-words text-sm">
-                                      {msg.body_text || '(Brak tresci tekstowej)'}
+                                      {parseMessageBody(msg.body_text, msg.is_outgoing)}
                                     </div>
                                     {(() => {
                                       const msgAttachments = Array.isArray(msg.attachments) ? msg.attachments : (typeof msg.attachments === 'string' ? JSON.parse(msg.attachments || '[]') : []);
@@ -2937,7 +3010,7 @@ function CRMContent() {
                                       {msg.from_name || msg.from_email}
                                     </div>
                                     <div className="whitespace-pre-wrap break-words text-sm">
-                                      {msg.body_text || '(Brak tresci tekstowej)'}
+                                      {parseMessageBody(msg.body_text, msg.is_outgoing)}
                                     </div>
                                     {msgAttachments.length > 0 && (
                                       <div className="mt-2">
@@ -3200,7 +3273,7 @@ function CRMContent() {
                                       {msg.from_name || msg.from_email}
                                     </div>
                                     <div className="whitespace-pre-wrap break-words text-sm">
-                                      {msg.body_text || '(Brak tresci tekstowej)'}
+                                      {parseMessageBody(msg.body_text, msg.is_outgoing)}
                                     </div>
                                     {msgAttachments.length > 0 && (
                                       <div className="mt-2">
