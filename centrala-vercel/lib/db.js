@@ -533,6 +533,12 @@ export async function initDatabase() {
     await sql`INSERT INTO gmail_poomfurniture_sync_status (id) VALUES (1)`;
   }
 
+  // Add status column to all Gmail thread tables (for filtering: new, read, resolved)
+  await sql`ALTER TABLE gmail_threads ADD COLUMN IF NOT EXISTS status VARCHAR(20) DEFAULT 'new'`;
+  await sql`ALTER TABLE gmail_poomkids_threads ADD COLUMN IF NOT EXISTS status VARCHAR(20) DEFAULT 'new'`;
+  await sql`ALTER TABLE gmail_allepoduszki_threads ADD COLUMN IF NOT EXISTS status VARCHAR(20) DEFAULT 'new'`;
+  await sql`ALTER TABLE gmail_poomfurniture_threads ADD COLUMN IF NOT EXISTS status VARCHAR(20) DEFAULT 'new'`;
+
   // ========== AMAZON DE (SP-API) ==========
 
   // Amazon DE OAuth tokens
@@ -2568,6 +2574,11 @@ export async function markGmailPoomkidsThreadAsRead(threadId) {
   await sql`UPDATE gmail_poomkids_threads SET unread = false, updated_at = CURRENT_TIMESTAMP WHERE id = ${threadId}`;
 }
 
+// Update Gmail POOMKIDS thread status
+export async function updateGmailPoomkidsThreadStatus(threadId, status) {
+  await sql`UPDATE gmail_poomkids_threads SET status = ${status}, updated_at = CURRENT_TIMESTAMP WHERE id = ${threadId}`;
+}
+
 // Get unread Gmail POOMKIDS threads count
 export async function getUnreadGmailPoomkidsThreadsCount() {
   const { rows } = await sql`SELECT COUNT(*) as count FROM gmail_poomkids_threads WHERE unread = true`;
@@ -2745,6 +2756,11 @@ export async function markGmailAllepoduszkiThreadAsRead(threadId) {
   await sql`UPDATE gmail_allepoduszki_threads SET unread = false, updated_at = CURRENT_TIMESTAMP WHERE id = ${threadId}`;
 }
 
+// Update Gmail Allepoduszki thread status
+export async function updateGmailAllepoduszkiThreadStatus(threadId, status) {
+  await sql`UPDATE gmail_allepoduszki_threads SET status = ${status}, updated_at = CURRENT_TIMESTAMP WHERE id = ${threadId}`;
+}
+
 // Get unread Gmail Allepoduszki threads count
 export async function getUnreadGmailAllepoduszkiThreadsCount() {
   const { rows } = await sql`SELECT COUNT(*) as count FROM gmail_allepoduszki_threads WHERE unread = true`;
@@ -2918,6 +2934,11 @@ export async function getGmailPoomfurnitureThread(threadId) {
 // Mark Gmail Poomfurniture thread as read
 export async function markGmailPoomfurnitureThreadAsRead(threadId) {
   await sql`UPDATE gmail_poomfurniture_threads SET unread = false, updated_at = CURRENT_TIMESTAMP WHERE id = ${threadId}`;
+}
+
+// Update Gmail Poomfurniture thread status
+export async function updateGmailPoomfurnitureThreadStatus(threadId, status) {
+  await sql`UPDATE gmail_poomfurniture_threads SET status = ${status}, updated_at = CURRENT_TIMESTAMP WHERE id = ${threadId}`;
 }
 
 // Get unread Gmail Poomfurniture threads count

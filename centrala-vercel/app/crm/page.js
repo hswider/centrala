@@ -48,6 +48,7 @@ function CRMContent() {
   const [gmailAttachments, setGmailAttachments] = useState([]);
   const [gmailSelectedMessages, setGmailSelectedMessages] = useState([]);
   const [gmailDeleting, setGmailDeleting] = useState(false);
+  const [gmailFilter, setGmailFilter] = useState('all'); // all, new, read, resolved
 
   // Gmail POOMKIDS (Shopify POOMKIDS) state
   const [poomkidsAuth, setPoomkidsAuth] = useState({ authenticated: false, user: null, loading: true });
@@ -64,6 +65,7 @@ function CRMContent() {
   const [poomkidsAttachments, setPoomkidsAttachments] = useState([]);
   const [poomkidsSelectedMessages, setPoomkidsSelectedMessages] = useState([]);
   const [poomkidsDeleting, setPoomkidsDeleting] = useState(false);
+  const [poomkidsFilter, setPoomkidsFilter] = useState('all'); // all, new, read, resolved
 
   // Gmail Allepoduszki (Shopify Allepoduszki) state
   const [allepoduszkiAuth, setAllepoduszkiAuth] = useState({ authenticated: false, user: null, loading: true });
@@ -80,6 +82,7 @@ function CRMContent() {
   const [allepoduszkiAttachments, setAllepoduszkiAttachments] = useState([]);
   const [allepoduszkiSelectedMessages, setAllepoduszkiSelectedMessages] = useState([]);
   const [allepoduszkiDeleting, setAllepoduszkiDeleting] = useState(false);
+  const [allepoduszkiFilter, setAllepoduszkiFilter] = useState('all'); // all, new, read, resolved
 
   // Gmail Poomfurniture (Shopify poom-furniture.com) state
   const [poomfurnitureAuth, setPoomfurnitureAuth] = useState({ authenticated: false, user: null, loading: true });
@@ -96,6 +99,7 @@ function CRMContent() {
   const [poomfurnitureAttachments, setPoomfurnitureAttachments] = useState([]);
   const [poomfurnitureSelectedMessages, setPoomfurnitureSelectedMessages] = useState([]);
   const [poomfurnitureDeleting, setPoomfurnitureDeleting] = useState(false);
+  const [poomfurnitureFilter, setPoomfurnitureFilter] = useState('all'); // all, new, read, resolved
 
   const tabs = [
     { key: 'wiadomosci', label: 'Allegro Dobrelegowiska', icon: 'https://a.allegroimg.com/original/12c30c/0d4b068640de9b0daf22af9d97c5', overlayIcon: '/icons/dobrelegowiska.png', isImage: true, badge: unreadCount, color: 'orange', isConnected: allegroAuth.authenticated, isLoading: allegroAuth.loading },
@@ -587,9 +591,17 @@ function CRMContent() {
         setGmailSelectedThread(data.thread);
         setGmailThreadMessages(data.messages || []);
 
-        // Mark as read
-        if (thread.unread) {
+        // Mark as read and update status to 'read' if it was 'new'
+        if (thread.unread || thread.status === 'new') {
           fetch(`/api/gmail/messages/${thread.id}`, { method: 'PUT' });
+          // Update status from 'new' to 'read'
+          if (thread.status === 'new' || !thread.status) {
+            fetch(`/api/gmail/messages/${thread.id}/status`, {
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ status: 'read' })
+            });
+          }
           fetchGmailSyncStatus();
           fetchGmailThreads();
         }
@@ -655,7 +667,7 @@ function CRMContent() {
     if (!gmailSelectedThread) return;
 
     try {
-      const res = await fetch(`/api/gmail/messages/${gmailSelectedThread.id}`, {
+      const res = await fetch(`/api/gmail/messages/${gmailSelectedThread.id}/status`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status })
@@ -664,9 +676,9 @@ function CRMContent() {
 
       if (data.success) {
         // Update local state
-        setGmailSelectedThread(prev => ({ ...prev, status }));
+        setGmailSelectedThread(prev => ({ ...prev, status, unread: status === 'new' }));
         setGmailThreads(prev => prev.map(t =>
-          t.id === gmailSelectedThread.id ? { ...t, status } : t
+          t.id === gmailSelectedThread.id ? { ...t, status, unread: status === 'new' } : t
         ));
       }
     } catch (err) {
@@ -824,9 +836,17 @@ function CRMContent() {
         setPoomkidsSelectedThread(data.thread);
         setPoomkidsThreadMessages(data.messages || []);
 
-        // Mark as read
-        if (thread.unread) {
+        // Mark as read and update status to 'read' if it was 'new'
+        if (thread.unread || thread.status === 'new') {
           fetch(`/api/gmail-poomkids/messages/${thread.id}`, { method: 'PUT' });
+          // Update status from 'new' to 'read'
+          if (thread.status === 'new' || !thread.status) {
+            fetch(`/api/gmail-poomkids/messages/${thread.id}/status`, {
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ status: 'read' })
+            });
+          }
           fetchPoomkidsSyncStatus();
           fetchPoomkidsThreads();
         }
@@ -835,6 +855,29 @@ function CRMContent() {
       console.error('POOMKIDS open thread error:', err);
     } finally {
       setPoomkidsMessagesLoading(false);
+    }
+  };
+
+  // Update POOMKIDS thread status
+  const handlePoomkidsStatusChange = async (status) => {
+    if (!poomkidsSelectedThread) return;
+
+    try {
+      const res = await fetch(`/api/gmail-poomkids/messages/${poomkidsSelectedThread.id}/status`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status })
+      });
+      const data = await res.json();
+
+      if (data.success) {
+        setPoomkidsSelectedThread(prev => ({ ...prev, status, unread: status === 'new' }));
+        setPoomkidsThreads(prev => prev.map(t =>
+          t.id === poomkidsSelectedThread.id ? { ...t, status, unread: status === 'new' } : t
+        ));
+      }
+    } catch (err) {
+      console.error('POOMKIDS status update error:', err);
     }
   };
 
@@ -1047,9 +1090,17 @@ function CRMContent() {
         setAllepoduszkiSelectedThread(data.thread);
         setAllepoduszkiThreadMessages(data.messages || []);
 
-        // Mark as read
-        if (thread.unread) {
+        // Mark as read and update status to 'read' if it was 'new'
+        if (thread.unread || thread.status === 'new') {
           fetch(`/api/gmail-allepoduszki/messages/${thread.id}`, { method: 'PUT' });
+          // Update status from 'new' to 'read'
+          if (thread.status === 'new' || !thread.status) {
+            fetch(`/api/gmail-allepoduszki/messages/${thread.id}/status`, {
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ status: 'read' })
+            });
+          }
           fetchAllepoduszkiSyncStatus();
           fetchAllepoduszkiThreads();
         }
@@ -1058,6 +1109,29 @@ function CRMContent() {
       console.error('ALLEPODUSZKI open thread error:', err);
     } finally {
       setAllepoduszkiMessagesLoading(false);
+    }
+  };
+
+  // Update ALLEPODUSZKI thread status
+  const handleAllepoduszkiStatusChange = async (status) => {
+    if (!allepoduszkiSelectedThread) return;
+
+    try {
+      const res = await fetch(`/api/gmail-allepoduszki/messages/${allepoduszkiSelectedThread.id}/status`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status })
+      });
+      const data = await res.json();
+
+      if (data.success) {
+        setAllepoduszkiSelectedThread(prev => ({ ...prev, status, unread: status === 'new' }));
+        setAllepoduszkiThreads(prev => prev.map(t =>
+          t.id === allepoduszkiSelectedThread.id ? { ...t, status, unread: status === 'new' } : t
+        ));
+      }
+    } catch (err) {
+      console.error('ALLEPODUSZKI status update error:', err);
     }
   };
 
@@ -1270,9 +1344,17 @@ function CRMContent() {
         setPoomfurnitureSelectedThread(data.thread);
         setPoomfurnitureThreadMessages(data.messages || []);
 
-        // Mark as read
-        if (thread.unread) {
+        // Mark as read and update status to 'read' if it was 'new'
+        if (thread.unread || thread.status === 'new') {
           fetch(`/api/gmail-poomfurniture/messages/${thread.id}`, { method: 'PUT' });
+          // Update status from 'new' to 'read'
+          if (thread.status === 'new' || !thread.status) {
+            fetch(`/api/gmail-poomfurniture/messages/${thread.id}/status`, {
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ status: 'read' })
+            });
+          }
           fetchPoomfurnitureSyncStatus();
           fetchPoomfurnitureThreads();
         }
@@ -1281,6 +1363,29 @@ function CRMContent() {
       console.error('POOMFURNITURE open thread error:', err);
     } finally {
       setPoomfurnitureMessagesLoading(false);
+    }
+  };
+
+  // Update POOMFURNITURE thread status
+  const handlePoomfurnitureStatusChange = async (status) => {
+    if (!poomfurnitureSelectedThread) return;
+
+    try {
+      const res = await fetch(`/api/gmail-poomfurniture/messages/${poomfurnitureSelectedThread.id}/status`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status })
+      });
+      const data = await res.json();
+
+      if (data.success) {
+        setPoomfurnitureSelectedThread(prev => ({ ...prev, status, unread: status === 'new' }));
+        setPoomfurnitureThreads(prev => prev.map(t =>
+          t.id === poomfurnitureSelectedThread.id ? { ...t, status, unread: status === 'new' } : t
+        ));
+      }
+    } catch (err) {
+      console.error('POOMFURNITURE status update error:', err);
     }
   };
 
@@ -2269,6 +2374,28 @@ function CRMContent() {
                       </div>
                     </div>
 
+                    {/* Status Filter Tabs */}
+                    <div className="px-3 py-2 border-b border-gray-100 dark:border-gray-700 flex gap-1 flex-wrap bg-gray-50 dark:bg-gray-800/50">
+                      {[
+                        { key: 'all', label: 'Wszystkie', count: gmailThreads.length },
+                        { key: 'new', label: 'Nowe', count: gmailThreads.filter(t => t.status === 'new' || t.unread).length },
+                        { key: 'read', label: 'Przeczytane', count: gmailThreads.filter(t => t.status === 'read' || (!t.unread && t.status !== 'resolved')).length },
+                        { key: 'resolved', label: 'Rozwiazane', count: gmailThreads.filter(t => t.status === 'resolved').length },
+                      ].map((tab) => (
+                        <button
+                          key={tab.key}
+                          onClick={() => setGmailFilter(tab.key)}
+                          className={`px-2 py-1 text-xs rounded-full transition-colors ${
+                            gmailFilter === tab.key
+                              ? 'bg-green-600 text-white'
+                              : 'bg-white dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600 border border-gray-200 dark:border-gray-600'
+                          }`}
+                        >
+                          {tab.label} ({tab.count})
+                        </button>
+                      ))}
+                    </div>
+
                     <div className="flex-1 overflow-y-auto">
                       {gmailThreadsLoading ? (
                         <div className="p-4 text-center text-gray-500 dark:text-gray-400">Ladowanie...</div>
@@ -2277,7 +2404,15 @@ function CRMContent() {
                           Brak wiadomosci. Kliknij "Synchronizuj".
                         </div>
                       ) : (
-                        gmailThreads.map((thread) => (
+                        gmailThreads
+                          .filter(thread => {
+                            if (gmailFilter === 'all') return true;
+                            if (gmailFilter === 'new') return thread.status === 'new' || thread.unread;
+                            if (gmailFilter === 'read') return thread.status === 'read' || (!thread.unread && thread.status !== 'resolved' && thread.status !== 'new');
+                            if (gmailFilter === 'resolved') return thread.status === 'resolved';
+                            return true;
+                          })
+                          .map((thread) => (
                           <button
                             key={thread.id}
                             onClick={() => openGmailThread(thread)}
@@ -2303,7 +2438,7 @@ function CRMContent() {
                                 </p>
                                 <p className="text-xs text-gray-500 truncate">{thread.snippet}</p>
                                 <div className="flex gap-1 mt-1">
-                                  {thread.status === 'new' || thread.unread ? (
+                                  {thread.status === 'new' || (!thread.status && thread.unread) ? (
                                     <span className="inline-block px-2 py-0.5 bg-red-500 text-white text-xs rounded">
                                       Nowe
                                     </span>
@@ -2311,9 +2446,9 @@ function CRMContent() {
                                     <span className="inline-block px-2 py-0.5 bg-green-500 text-white text-xs rounded">
                                       Rozwiazane
                                     </span>
-                                  ) : thread.status === 'unresolved' ? (
-                                    <span className="inline-block px-2 py-0.5 bg-yellow-500 text-white text-xs rounded">
-                                      Nierozwiazane
+                                  ) : thread.status === 'read' ? (
+                                    <span className="inline-block px-2 py-0.5 bg-blue-500 text-white text-xs rounded">
+                                      Przeczytane
                                     </span>
                                   ) : null}
                                 </div>
@@ -2352,13 +2487,13 @@ function CRMContent() {
                                 onChange={(e) => handleGmailStatusChange(e.target.value)}
                                 className={`px-2 py-1 text-xs font-medium rounded border-0 cursor-pointer ${
                                   gmailSelectedThread.status === 'resolved' ? 'bg-green-100 text-green-700' :
-                                  gmailSelectedThread.status === 'unresolved' ? 'bg-yellow-100 text-yellow-700' :
+                                  gmailSelectedThread.status === 'read' ? 'bg-blue-100 text-blue-700' :
                                   'bg-red-100 text-red-700'
                                 }`}
                               >
                                 <option value="new">Nowe</option>
+                                <option value="read">Przeczytane</option>
                                 <option value="resolved">Rozwiazane</option>
-                                <option value="unresolved">Nierozwiazane</option>
                               </select>
                               {/* Delete selected messages button */}
                               {gmailSelectedMessages.length > 0 && (
