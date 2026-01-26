@@ -295,16 +295,39 @@ function stripQuotedReply(text) {
   if (!text) return '';
 
   const quotePatterns = [
+    // Polish
     /\n*W dniu \d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2} użytkownik .+ napisał:[\s\S]*/i,
     /\n*Dnia \d{4}-\d{2}-\d{2} .+ napisał[\s\S]*/i,
+    /\n*Dnia .+ napisał[\s\S]*/i,
+    // English
     /\n*On .+ wrote:[\s\S]*/i,
     /\n*On \d{4}-\d{2}-\d{2} .+ wrote:[\s\S]*/i,
+    // German
     /\n*Am .+ schrieb .+:[\s\S]*/i,
+    // French
     /\n*Le .+ a écrit\s*:[\s\S]*/i,
+    // Ukrainian
+    /\n*.+пише:[\s\S]*/i,
+    /\n*.+написав:[\s\S]*/i,
+    // Russian
+    /\n*.+написал:[\s\S]*/i,
+    /\n*.+пишет:[\s\S]*/i,
+    // Spanish
+    /\n*El .+ escribió:[\s\S]*/i,
+    // Italian
+    /\n*Il .+ ha scritto:[\s\S]*/i,
+    // Dutch
+    /\n*Op .+ schreef .+:[\s\S]*/i,
+    // Generic - email in angle brackets followed by content
+    /\n*[а-яА-Яa-zA-Z]+,\s*\d{1,2}\s+[а-яА-Яa-zA-Z]+\.?\s*\d{4}\s*р?\.?\s*о?\s*\d{1,2}:\d{2}\s+.+<[^>]+>\s*(пише|napisał|wrote|schrieb):?[\s\S]*/i,
+    // Generic separators
     /\n*[-_]{3,}[\s]*Original Message[\s]*[-_]{3,}[\s\S]*/i,
     /\n*[-_]{3,}[\s]*Oryginalna wiadomość[\s]*[-_]{3,}[\s\S]*/i,
     /\n*From:.*\nSent:.*\nTo:.*\nSubject:[\s\S]*/i,
+    // Gmail quote markers (lines starting with >)
     /\n(?:>.*\n?){3,}[\s\S]*/,
+    // Shopify-style image markers followed by order content
+    /\n*\[image:[^\]]*\]\s*Zamówienie\s*#\d+[\s\S]*/i,
   ];
 
   let cleanText = text;
