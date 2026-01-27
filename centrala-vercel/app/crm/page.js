@@ -19,6 +19,7 @@ function CRMContent() {
   const [syncing, setSyncing] = useState(false);
   const [syncStatus, setSyncStatus] = useState(null);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [allegroSearch, setAllegroSearch] = useState('');
 
   // Allegro Meblebox state
   const [mebleboxAuth, setMebleboxAuth] = useState({ authenticated: false, user: null, loading: true });
@@ -32,6 +33,7 @@ function CRMContent() {
   const [mebleboxSyncing, setMebleboxSyncing] = useState(false);
   const [mebleboxSyncStatus, setMebleboxSyncStatus] = useState(null);
   const [mebleboxUnreadCount, setMebleboxUnreadCount] = useState(0);
+  const [mebleboxSearch, setMebleboxSearch] = useState('');
 
   // Gmail (Shopify Dobrelegowiska) state
   const [gmailAuth, setGmailAuth] = useState({ authenticated: false, user: null, loading: true });
@@ -88,6 +90,7 @@ function CRMContent() {
   const [allepoduszkiSelectedMessages, setAllepoduszkiSelectedMessages] = useState([]);
   const [allepoduszkiDeleting, setAllepoduszkiDeleting] = useState(false);
   const [allepoduszkiFilter, setAllepoduszkiFilter] = useState('all'); // all, new, read, resolved
+  const [allepoduszkiSearch, setAllepoduszkiSearch] = useState('');
 
   // Gmail Poomfurniture (Shopify poom-furniture.com) state
   const [poomfurnitureAuth, setPoomfurnitureAuth] = useState({ authenticated: false, user: null, loading: true });
@@ -105,6 +108,7 @@ function CRMContent() {
   const [poomfurnitureSelectedMessages, setPoomfurnitureSelectedMessages] = useState([]);
   const [poomfurnitureDeleting, setPoomfurnitureDeleting] = useState(false);
   const [poomfurnitureFilter, setPoomfurnitureFilter] = useState('all'); // all, new, read, resolved
+  const [poomfurnitureSearch, setPoomfurnitureSearch] = useState('');
 
   const tabs = [
     { key: 'wiadomosci', label: 'Allegro Dobrelegowiska', icon: 'https://a.allegroimg.com/original/12c30c/0d4b068640de9b0daf22af9d97c5', overlayIcon: '/icons/dobrelegowiska.png', isImage: true, badge: unreadCount, color: 'orange', isConnected: allegroAuth.authenticated, isLoading: allegroAuth.loading },
@@ -1833,6 +1837,17 @@ function CRMContent() {
                       </button>
                     </div>
 
+                    {/* Search Input */}
+                    <div className="px-3 py-2 border-b border-gray-100 dark:border-gray-700">
+                      <input
+                        type="text"
+                        placeholder="Szukaj po nazwie, temacie..."
+                        value={allegroSearch}
+                        onChange={(e) => setAllegroSearch(e.target.value)}
+                        className="w-full px-3 py-2 text-sm border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400"
+                      />
+                    </div>
+
                     <div className="flex-1 overflow-y-auto">
                       {threadsLoading ? (
                         <div className="p-4 text-center text-gray-500 dark:text-gray-400">Ladowanie...</div>
@@ -1841,7 +1856,17 @@ function CRMContent() {
                           Brak wiadomosci. Kliknij "Synchronizuj".
                         </div>
                       ) : (
-                        threads.map((thread) => (
+                        threads
+                          .filter(thread => {
+                            if (!allegroSearch.trim()) return true;
+                            const search = allegroSearch.toLowerCase();
+                            return (
+                              (thread.interlocutor_login || '').toLowerCase().includes(search) ||
+                              (thread.subject || '').toLowerCase().includes(search) ||
+                              (thread.last_message_summary || '').toLowerCase().includes(search)
+                            );
+                          })
+                          .map((thread) => (
                           <button
                             key={thread.id}
                             onClick={() => openThread(thread)}
@@ -2146,6 +2171,17 @@ function CRMContent() {
                       </button>
                     </div>
 
+                    {/* Search Input */}
+                    <div className="px-3 py-2 border-b border-gray-100 dark:border-gray-700">
+                      <input
+                        type="text"
+                        placeholder="Szukaj po nazwie, temacie..."
+                        value={mebleboxSearch}
+                        onChange={(e) => setMebleboxSearch(e.target.value)}
+                        className="w-full px-3 py-2 text-sm border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400"
+                      />
+                    </div>
+
                     <div className="flex-1 overflow-y-auto">
                       {mebleboxThreadsLoading ? (
                         <div className="p-4 text-center text-gray-500 dark:text-gray-400">Ladowanie...</div>
@@ -2154,7 +2190,17 @@ function CRMContent() {
                           Brak wiadomosci. Kliknij "Synchronizuj".
                         </div>
                       ) : (
-                        mebleboxThreads.map((thread) => (
+                        mebleboxThreads
+                          .filter(thread => {
+                            if (!mebleboxSearch.trim()) return true;
+                            const search = mebleboxSearch.toLowerCase();
+                            return (
+                              (thread.interlocutor_login || '').toLowerCase().includes(search) ||
+                              (thread.subject || '').toLowerCase().includes(search) ||
+                              (thread.last_message_summary || '').toLowerCase().includes(search)
+                            );
+                          })
+                          .map((thread) => (
                           <button
                             key={thread.id}
                             onClick={() => openMebleboxThread(thread)}
@@ -3220,6 +3266,17 @@ function CRMContent() {
                       </div>
                     </div>
 
+                    {/* Search Input */}
+                    <div className="px-3 py-2 border-b border-gray-100 dark:border-gray-700">
+                      <input
+                        type="text"
+                        placeholder="Szukaj po nazwisku, emailu, temacie..."
+                        value={allepoduszkiSearch}
+                        onChange={(e) => setAllepoduszkiSearch(e.target.value)}
+                        className="w-full px-3 py-2 text-sm border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400"
+                      />
+                    </div>
+
                     <div className="flex-1 overflow-y-auto">
                       {allepoduszkiThreadsLoading ? (
                         <div className="p-4 text-center text-gray-500 dark:text-gray-400">Ladowanie...</div>
@@ -3228,7 +3285,18 @@ function CRMContent() {
                           Brak wiadomosci. Kliknij "Synchronizuj".
                         </div>
                       ) : (
-                        allepoduszkiThreads.map((thread) => (
+                        allepoduszkiThreads
+                          .filter(thread => {
+                            if (!allepoduszkiSearch.trim()) return true;
+                            const search = allepoduszkiSearch.toLowerCase();
+                            return (
+                              (thread.from_name || '').toLowerCase().includes(search) ||
+                              (thread.from_email || '').toLowerCase().includes(search) ||
+                              (thread.subject || '').toLowerCase().includes(search) ||
+                              (thread.snippet || '').toLowerCase().includes(search)
+                            );
+                          })
+                          .map((thread) => (
                           <div
                             key={thread.id}
                             onClick={() => openAllepoduszkiThread(thread)}
@@ -3524,6 +3592,17 @@ function CRMContent() {
                       </div>
                     </div>
 
+                    {/* Search Input */}
+                    <div className="px-3 py-2 border-b border-gray-100 dark:border-gray-700">
+                      <input
+                        type="text"
+                        placeholder="Szukaj po nazwisku, emailu, temacie..."
+                        value={poomfurnitureSearch}
+                        onChange={(e) => setPoomfurnitureSearch(e.target.value)}
+                        className="w-full px-3 py-2 text-sm border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400"
+                      />
+                    </div>
+
                     <div className="flex-1 overflow-y-auto">
                       {poomfurnitureThreadsLoading ? (
                         <div className="p-4 text-center text-gray-500 dark:text-gray-400">Ladowanie...</div>
@@ -3532,7 +3611,18 @@ function CRMContent() {
                           Brak wiadomosci. Kliknij "Synchronizuj".
                         </div>
                       ) : (
-                        poomfurnitureThreads.map((thread) => (
+                        poomfurnitureThreads
+                          .filter(thread => {
+                            if (!poomfurnitureSearch.trim()) return true;
+                            const search = poomfurnitureSearch.toLowerCase();
+                            return (
+                              (thread.from_name || '').toLowerCase().includes(search) ||
+                              (thread.from_email || '').toLowerCase().includes(search) ||
+                              (thread.subject || '').toLowerCase().includes(search) ||
+                              (thread.snippet || '').toLowerCase().includes(search)
+                            );
+                          })
+                          .map((thread) => (
                           <div
                             key={thread.id}
                             onClick={() => openPoomfurnitureThread(thread)}
