@@ -1767,14 +1767,9 @@ function CRMContent() {
                 onClick={() => setActiveTab(tab.key)}
                 className={`flex-1 flex items-center justify-center gap-2 py-3 text-sm font-medium transition-colors whitespace-nowrap px-4 ${
                   activeTab === tab.key
-                    ? 'border-b-2'
+                    ? 'border-b-2 border-gray-900 dark:border-white text-gray-900 dark:text-white bg-gray-50 dark:bg-gray-700'
                     : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
                 }`}
-                style={activeTab === tab.key ? {
-                  color: tab.color === 'orange' ? '#ea580c' : tab.color === 'green' ? '#16a34a' : tab.color === 'blue' ? '#2563eb' : tab.color === 'purple' ? '#9333ea' : tab.color === 'teal' ? '#0d9488' : undefined,
-                  borderColor: tab.color === 'orange' ? '#ea580c' : tab.color === 'green' ? '#16a34a' : tab.color === 'blue' ? '#2563eb' : tab.color === 'purple' ? '#9333ea' : tab.color === 'teal' ? '#0d9488' : undefined,
-                  backgroundColor: tab.color === 'orange' ? '#fff7ed' : tab.color === 'green' ? '#f0fdf4' : tab.color === 'blue' ? '#eff6ff' : tab.color === 'purple' ? '#faf5ff' : tab.color === 'teal' ? '#f0fdfa' : undefined
-                } : {}}
               >
                 {tab.isImage ? (
                   <div className="relative">
@@ -2680,22 +2675,22 @@ function CRMContent() {
                                 <div className="relative">
                                   {/* Avatar overlapping corner */}
                                   {msg.is_outgoing ? (
-                                    <div className="absolute -bottom-2 -right-2 w-8 h-8 rounded-full bg-white dark:bg-gray-800 border-2 border-red-600 flex items-center justify-center overflow-hidden z-10">
+                                    <div className="absolute -bottom-2 -right-2 w-8 h-8 rounded-full bg-white dark:bg-gray-800 border-2 border-gray-900 dark:border-gray-300 flex items-center justify-center overflow-hidden z-10">
                                       <img src="/icons/dobrelegowiska.png" alt="" className="w-5 h-5 object-contain" />
                                     </div>
                                   ) : (
-                                    <div className="absolute -bottom-2 -left-2 w-8 h-8 rounded-full bg-red-100 border-2 border-white dark:border-gray-800 flex items-center justify-center text-red-600 font-bold text-sm z-10">
+                                    <div className="absolute -bottom-2 -left-2 w-8 h-8 rounded-full bg-gray-100 border-2 border-white dark:border-gray-800 flex items-center justify-center text-gray-600 font-bold text-sm z-10">
                                       {senderInitial}
                                     </div>
                                   )}
                                   <div
                                     className={`max-w-[80%] min-w-[200px] px-4 py-3 rounded-lg ${
                                       msg.is_outgoing
-                                        ? 'bg-red-600 text-white'
+                                        ? 'bg-gray-900 text-white'
                                         : 'bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-900 dark:text-white'
                                     }`}
                                   >
-                                    <div className={`text-xs mb-1 ${msg.is_outgoing ? 'text-red-200' : 'text-gray-500'}`}>
+                                    <div className={`text-xs mb-1 ${msg.is_outgoing ? 'text-gray-400' : 'text-gray-500'}`}>
                                       {msg.from_name || msg.from_email}
                                     </div>
                                     <div className="whitespace-pre-wrap break-words text-sm">
@@ -2704,7 +2699,7 @@ function CRMContent() {
                                     {/* Attachments */}
                                     {msgAttachments.length > 0 && (
                                       <div className="mt-2">
-                                        <p className={`text-[10px] mb-1 ${msg.is_outgoing ? 'text-red-200' : 'text-gray-400'}`}>Zalaczniki:</p>
+                                        <p className={`text-[10px] mb-1 ${msg.is_outgoing ? 'text-gray-400' : 'text-gray-400'}`}>Zalaczniki:</p>
                                         <div className="flex flex-wrap gap-1">
                                           {msgAttachments.map((att, i) => (
                                             <a
@@ -2714,7 +2709,7 @@ function CRMContent() {
                                               rel="noopener noreferrer"
                                               className={`inline-flex items-center gap-1 px-2 py-1 rounded text-xs ${
                                                 msg.is_outgoing
-                                                  ? 'bg-red-700 hover:bg-red-800 text-white'
+                                                  ? 'bg-gray-700 hover:bg-gray-600 text-white'
                                                   : 'bg-gray-100 dark:bg-gray-600 hover:bg-gray-200 dark:hover:bg-gray-500 text-gray-700 dark:text-gray-200'
                                               }`}
                                             >
@@ -2725,7 +2720,7 @@ function CRMContent() {
                                         </div>
                                       </div>
                                     )}
-                                    <div className={`mt-2 text-xs ${msg.is_outgoing ? 'text-red-200' : 'text-gray-400'}`}>
+                                    <div className={`mt-2 text-xs ${msg.is_outgoing ? 'text-gray-400' : 'text-gray-400'}`}>
                                       <span>{formatDate(msg.sent_at)}</span>
                                     </div>
                                   </div>
@@ -3011,22 +3006,22 @@ function CRMContent() {
                               >
                                 <div className="relative">
                                   {msg.is_outgoing ? (
-                                    <div className="absolute -bottom-2 -right-2 w-8 h-8 rounded-full bg-white dark:bg-gray-800 border-2 border-blue-600 flex items-center justify-center overflow-hidden z-10">
+                                    <div className="absolute -bottom-2 -right-2 w-8 h-8 rounded-full bg-white dark:bg-gray-800 border-2 border-gray-900 dark:border-gray-300 flex items-center justify-center overflow-hidden z-10">
                                       <img src="/icons/poomkids.png" alt="" className="w-5 h-5 object-contain" />
                                     </div>
                                   ) : (
-                                    <div className="absolute -bottom-2 -left-2 w-8 h-8 rounded-full bg-blue-100 border-2 border-white dark:border-gray-800 flex items-center justify-center text-blue-600 font-bold text-sm z-10">
+                                    <div className="absolute -bottom-2 -left-2 w-8 h-8 rounded-full bg-gray-100 border-2 border-white dark:border-gray-800 flex items-center justify-center text-gray-600 font-bold text-sm z-10">
                                       {senderInitial}
                                     </div>
                                   )}
                                   <div
                                     className={`max-w-[80%] min-w-[200px] px-4 py-3 rounded-lg ${
                                       msg.is_outgoing
-                                        ? 'bg-blue-600 text-white'
+                                        ? 'bg-gray-900 text-white'
                                         : 'bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-900 dark:text-white'
                                     }`}
                                   >
-                                    <div className={`text-xs mb-1 ${msg.is_outgoing ? 'text-blue-200' : 'text-gray-500'}`}>
+                                    <div className={`text-xs mb-1 ${msg.is_outgoing ? 'text-gray-400' : 'text-gray-500'}`}>
                                       {msg.from_name || msg.from_email}
                                     </div>
                                     <div className="whitespace-pre-wrap break-words text-sm">
@@ -3036,7 +3031,7 @@ function CRMContent() {
                                       const msgAttachments = Array.isArray(msg.attachments) ? msg.attachments : (typeof msg.attachments === 'string' ? JSON.parse(msg.attachments || '[]') : []);
                                       return msgAttachments.length > 0 && (
                                         <div className="mt-2">
-                                          <p className={`text-[10px] mb-1 ${msg.is_outgoing ? 'text-blue-200' : 'text-gray-400'}`}>Zalaczniki:</p>
+                                          <p className={`text-[10px] mb-1 ${msg.is_outgoing ? 'text-gray-400' : 'text-gray-400'}`}>Zalaczniki:</p>
                                           <div className="flex flex-wrap gap-1">
                                             {msgAttachments.map((att, i) => (
                                               <a
@@ -3046,7 +3041,7 @@ function CRMContent() {
                                                 rel="noopener noreferrer"
                                                 className={`inline-flex items-center gap-1 px-2 py-1 rounded text-xs ${
                                                   msg.is_outgoing
-                                                    ? 'bg-blue-700 hover:bg-blue-800 text-white'
+                                                    ? 'bg-gray-700 hover:bg-gray-600 text-white'
                                                     : 'bg-gray-100 dark:bg-gray-600 hover:bg-gray-200 dark:hover:bg-gray-500 text-gray-700 dark:text-gray-200'
                                                 }`}
                                               >
@@ -3058,7 +3053,7 @@ function CRMContent() {
                                         </div>
                                       );
                                     })()}
-                                    <div className={`mt-2 text-xs ${msg.is_outgoing ? 'text-blue-200' : 'text-gray-400'}`}>
+                                    <div className={`mt-2 text-xs ${msg.is_outgoing ? 'text-gray-400' : 'text-gray-400'}`}>
                                       <span>{formatDate(msg.sent_at)}</span>
                                     </div>
                                   </div>
