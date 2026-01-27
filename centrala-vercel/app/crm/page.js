@@ -583,30 +583,34 @@ function CRMContent() {
   const openGmailThread = async (thread) => {
     setGmailSelectedThread(thread);
     setGmailMessagesLoading(true);
-    setGmailThreadMessages([]);
     setGmailSelectedMessages([]);
 
     try {
-      const res = await fetch(`/api/gmail/messages/${thread.id}?refresh=true`);
+      // Load from DB first (fast), no refresh=true
+      const res = await fetch(`/api/gmail/messages/${thread.id}`);
       const data = await res.json();
 
       if (data.success) {
         setGmailSelectedThread(data.thread);
         setGmailThreadMessages(data.messages || []);
 
-        // Mark as read and update status to 'read' if it was 'new'
+        // Mark as read in background (non-blocking)
         if (thread.unread || thread.status === 'new') {
-          fetch(`/api/gmail/messages/${thread.id}`, { method: 'PUT' });
-          // Update status from 'new' to 'read'
+          // Update local state immediately for instant feedback
+          setGmailThreads(prev => prev.map(t =>
+            t.id === thread.id ? { ...t, unread: false, status: thread.status === 'new' ? 'read' : t.status } : t
+          ));
+          setGmailUnreadCount(prev => Math.max(0, prev - 1));
+
+          // Background API calls - fire and forget
+          fetch(`/api/gmail/messages/${thread.id}`, { method: 'PUT' }).catch(() => {});
           if (thread.status === 'new' || !thread.status) {
             fetch(`/api/gmail/messages/${thread.id}/status`, {
               method: 'PUT',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ status: 'read' })
-            });
+            }).catch(() => {});
           }
-          fetchGmailSyncStatus();
-          fetchGmailThreads();
         }
       }
     } catch (err) {
@@ -864,30 +868,34 @@ function CRMContent() {
   const openPoomkidsThread = async (thread) => {
     setPoomkidsSelectedThread(thread);
     setPoomkidsMessagesLoading(true);
-    setPoomkidsThreadMessages([]);
     setPoomkidsSelectedMessages([]);
 
     try {
-      const res = await fetch(`/api/gmail-poomkids/messages/${thread.id}?refresh=true`);
+      // Load from DB first (fast), no refresh=true
+      const res = await fetch(`/api/gmail-poomkids/messages/${thread.id}`);
       const data = await res.json();
 
       if (data.success) {
         setPoomkidsSelectedThread(data.thread);
         setPoomkidsThreadMessages(data.messages || []);
 
-        // Mark as read and update status to 'read' if it was 'new'
+        // Mark as read in background (non-blocking)
         if (thread.unread || thread.status === 'new') {
-          fetch(`/api/gmail-poomkids/messages/${thread.id}`, { method: 'PUT' });
-          // Update status from 'new' to 'read'
+          // Update local state immediately for instant feedback
+          setPoomkidsThreads(prev => prev.map(t =>
+            t.id === thread.id ? { ...t, unread: false, status: thread.status === 'new' ? 'read' : t.status } : t
+          ));
+          setPoomkidsUnreadCount(prev => Math.max(0, prev - 1));
+
+          // Background API calls - fire and forget
+          fetch(`/api/gmail-poomkids/messages/${thread.id}`, { method: 'PUT' }).catch(() => {});
           if (thread.status === 'new' || !thread.status) {
             fetch(`/api/gmail-poomkids/messages/${thread.id}/status`, {
               method: 'PUT',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ status: 'read' })
-            });
+            }).catch(() => {});
           }
-          fetchPoomkidsSyncStatus();
-          fetchPoomkidsThreads();
         }
       }
     } catch (err) {
