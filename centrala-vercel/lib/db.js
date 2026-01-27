@@ -2605,6 +2605,14 @@ export async function updateGmailPoomkidsThreadStatus(threadId, status) {
   await sql`UPDATE gmail_poomkids_threads SET status = ${status}, updated_at = CURRENT_TIMESTAMP WHERE id = ${threadId}`;
 }
 
+// Delete Gmail POOMKIDS thread and its messages
+export async function deleteGmailPoomkidsThread(threadId) {
+  // First delete messages
+  await sql`DELETE FROM gmail_poomkids_messages WHERE thread_id = ${threadId}`;
+  // Then delete thread
+  await sql`DELETE FROM gmail_poomkids_threads WHERE id = ${threadId}`;
+}
+
 // Mark Gmail POOMKIDS messages as checked/unchecked
 export async function setGmailPoomkidsMessagesChecked(messageIds, checked) {
   await sql`

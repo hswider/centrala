@@ -78,6 +78,8 @@ function CRMContent() {
   const [poomkidsDeleting, setPoomkidsDeleting] = useState(false);
   const [poomkidsFilter, setPoomkidsFilter] = useState('all'); // all, new, read, resolved
   const [poomkidsSearch, setPoomkidsSearch] = useState('');
+  const [poomkidsSelectedThreads, setPoomkidsSelectedThreads] = useState([]);
+  const [poomkidsDeletingThreads, setPoomkidsDeletingThreads] = useState(false);
   const [poomkidsComposeMode, setPoomkidsComposeMode] = useState(false);
   const [poomkidsComposeTo, setPoomkidsComposeTo] = useState('');
   const [poomkidsComposeSubject, setPoomkidsComposeSubject] = useState('');
@@ -1080,6 +1082,46 @@ function CRMContent() {
 
   const togglePoomkidsMessageSelection = (messageId) => {
     setPoomkidsSelectedMessages(prev => prev.includes(messageId) ? prev.filter(id => id !== messageId) : [...prev, messageId]);
+  };
+
+  // Toggle thread selection for deletion
+  const togglePoomkidsThreadSelection = (e, threadId) => {
+    e.stopPropagation();
+    setPoomkidsSelectedThreads(prev => prev.includes(threadId) ? prev.filter(id => id !== threadId) : [...prev, threadId]);
+  };
+
+  // Delete selected threads
+  const handlePoomkidsDeleteThreads = async () => {
+    if (poomkidsSelectedThreads.length === 0) return;
+    if (!confirm(`Usunac ${poomkidsSelectedThreads.length} watek(ow)? Wiadomosci zostana przeniesione do kosza.`)) return;
+
+    setPoomkidsDeletingThreads(true);
+    try {
+      const res = await fetch('/api/gmail-poomkids/threads', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ threadIds: poomkidsSelectedThreads })
+      });
+      const data = await res.json();
+
+      if (data.success) {
+        // Remove deleted threads from state
+        setPoomkidsThreads(prev => prev.filter(t => !poomkidsSelectedThreads.includes(t.id)));
+        // Clear selection
+        setPoomkidsSelectedThreads([]);
+        // If currently selected thread was deleted, clear it
+        if (poomkidsSelectedThread && poomkidsSelectedThreads.includes(poomkidsSelectedThread.id)) {
+          setPoomkidsSelectedThread(null);
+          setPoomkidsThreadMessages([]);
+        }
+      } else {
+        alert('Blad usuwania: ' + data.error);
+      }
+    } catch (err) {
+      alert('Blad: ' + err.message);
+    } finally {
+      setPoomkidsDeletingThreads(false);
+    }
   };
 
   // Quick change Poomkids thread status (optimistic update)
@@ -2969,6 +3011,16 @@ function CRMContent() {
                         </p>
                       </div>
                       <div className="flex gap-2">
+                        {poomkidsSelectedThreads.length > 0 && (
+                          <button
+                            onClick={handlePoomkidsDeleteThreads}
+                            disabled={poomkidsDeletingThreads}
+                            className="px-3 py-1.5 text-sm bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 font-medium"
+                            title="Usun zaznaczone watki"
+                          >
+                            {poomkidsDeletingThreads ? '...' : `Usun (${poomkidsSelectedThreads.length})`}
+                          </button>
+                        )}
                         <button
                           onClick={() => {
                             setPoomkidsComposeMode(true);
@@ -3070,7 +3122,17 @@ function CRMContent() {
                               poomkidsSelectedThread?.id === thread.id ? 'bg-blue-50' : ''
                             } ${thread.status === 'new' || thread.unread ? 'bg-green-50' : ''} ${thread.status === 'resolved' ? 'bg-green-100' : ''} ${thread.status === 'sent' ? 'bg-purple-50' : ''}`}
                           >
-                            <div className="flex items-start gap-3">
+                            <div className="flex items-start gap-2">
+                              {/* Checkbox for thread selection */}
+                              <div className="mt-2">
+                                <input
+                                  type="checkbox"
+                                  checked={poomkidsSelectedThreads.includes(thread.id)}
+                                  onChange={(e) => togglePoomkidsThreadSelection(e, thread.id)}
+                                  onClick={(e) => e.stopPropagation()}
+                                  className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                                />
+                              </div>
                               <div className="relative mt-2">
                                 <button
                                   onClick={(e) => {

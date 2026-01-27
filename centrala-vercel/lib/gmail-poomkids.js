@@ -189,6 +189,13 @@ export async function markThreadAsRead(threadId) {
   });
 }
 
+// Trash a thread (move to trash)
+export async function trashThread(threadId) {
+  return gmailFetch(`/users/me/threads/${threadId}/trash`, {
+    method: 'POST'
+  });
+}
+
 // ========== MESSAGES API ==========
 
 // Get attachment data from Gmail
