@@ -2919,7 +2919,8 @@ function CRMContent() {
                       {[
                         { key: 'all', label: 'Wszystkie', count: gmailThreads.length, color: 'gray' },
                         { key: 'new', label: 'Nowe', count: gmailThreads.filter(t => t.status === 'new' || t.unread).length, color: 'red' },
-                        { key: 'read', label: 'Przeczytane', count: gmailThreads.filter(t => t.status === 'read' || (!t.unread && t.status !== 'resolved')).length, color: 'blue' },
+                        { key: 'read', label: 'Przeczytane', count: gmailThreads.filter(t => t.status === 'read').length, color: 'blue' },
+                        { key: 'attention', label: 'Wymaga uwagi', count: gmailThreads.filter(t => t.status === 'attention').length, color: 'yellow' },
                         { key: 'resolved', label: 'Rozwiazane', count: gmailThreads.filter(t => t.status === 'resolved').length, color: 'green' },
                         { key: 'sent', label: 'Wyslane', count: gmailThreads.filter(t => t.status === 'sent').length, color: 'purple' },
                       ].map((tab) => (
@@ -2930,6 +2931,7 @@ function CRMContent() {
                             gmailFilter === tab.key
                               ? tab.color === 'red' ? 'bg-red-500 text-white'
                                 : tab.color === 'blue' ? 'bg-blue-500 text-white'
+                                : tab.color === 'yellow' ? 'bg-yellow-500 text-white'
                                 : tab.color === 'green' ? 'bg-green-500 text-white'
                                 : 'bg-gray-900 dark:bg-white text-white dark:text-gray-900'
                               : 'bg-white dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600 border border-gray-200 dark:border-gray-600'
@@ -2963,7 +2965,8 @@ function CRMContent() {
                             // Status filter
                             if (gmailFilter === 'all') return true;
                             if (gmailFilter === 'new') return thread.status === 'new' || thread.unread;
-                            if (gmailFilter === 'read') return thread.status === 'read' || (!thread.unread && thread.status !== 'resolved' && thread.status !== 'new' && thread.status !== 'sent');
+                            if (gmailFilter === 'read') return thread.status === 'read';
+                            if (gmailFilter === 'attention') return thread.status === 'attention';
                             if (gmailFilter === 'resolved') return thread.status === 'resolved';
                             if (gmailFilter === 'sent') return thread.status === 'sent';
                             return true;
@@ -2974,7 +2977,7 @@ function CRMContent() {
                             onClick={() => openGmailThread(thread)}
                             className={`w-full text-left px-4 py-3 border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer ${
                               gmailSelectedThread?.id === thread.id ? 'bg-blue-50' : ''
-                            } ${thread.status === 'new' || (!thread.status && thread.unread) ? 'bg-red-50' : ''} ${thread.status === 'resolved' ? 'bg-green-50' : ''} ${thread.status === 'sent' ? 'bg-purple-50' : ''}`}
+                            } ${thread.status === 'new' || (!thread.status && thread.unread) ? 'bg-red-50' : ''} ${thread.status === 'attention' ? 'bg-yellow-50' : ''} ${thread.status === 'resolved' ? 'bg-green-50' : ''} ${thread.status === 'sent' ? 'bg-purple-50' : ''}`}
                           >
                             <div className="flex items-start gap-2">
                               {/* Checkbox for thread selection */}
@@ -3000,15 +3003,17 @@ function CRMContent() {
                                   className={`w-7 h-7 flex-shrink-0 rounded border-2 flex items-center justify-center transition-all ${
                                     thread.status === 'resolved'
                                       ? 'bg-green-500 border-green-500 text-white'
-                                      : thread.status === 'read'
-                                        ? 'bg-blue-500 border-blue-500 text-white'
-                                        : thread.status === 'new' || thread.unread
-                                          ? 'bg-red-500 border-red-500 text-white'
-                                          : 'border-gray-300 hover:border-gray-400'
+                                      : thread.status === 'attention'
+                                        ? 'bg-yellow-500 border-yellow-500 text-white'
+                                        : thread.status === 'read'
+                                          ? 'bg-blue-500 border-blue-500 text-white'
+                                          : thread.status === 'new' || thread.unread
+                                            ? 'bg-red-500 border-red-500 text-white'
+                                            : 'border-gray-300 hover:border-gray-400'
                                   }`}
                                   title="Zmien status"
                                 >
-                                  {thread.status === 'resolved' ? '✓' : thread.status === 'read' ? '●' : thread.status === 'new' || thread.unread ? '!' : ''}
+                                  {thread.status === 'resolved' ? '✓' : thread.status === 'attention' ? '⚠' : thread.status === 'read' ? '●' : thread.status === 'new' || thread.unread ? '!' : ''}
                                 </button>
                                 {openStatusDropdown?.module === 'gmail' && openStatusDropdown?.threadId === thread.id && (
                                   <div className="absolute left-0 top-8 z-50 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-600 py-1 min-w-[140px]">
@@ -3023,6 +3028,12 @@ function CRMContent() {
                                       className="w-full px-3 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
                                     >
                                       <span className="w-3 h-3 rounded-full bg-blue-500"></span> Przeczytane
+                                    </button>
+                                    <button
+                                      onClick={(e) => { quickChangeGmailThreadStatus(e, thread.id, 'attention'); setOpenStatusDropdown(null); }}
+                                      className="w-full px-3 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
+                                    >
+                                      <span className="w-3 h-3 rounded-full bg-yellow-500"></span> Wymaga uwagi
                                     </button>
                                     <button
                                       onClick={(e) => { quickChangeGmailThreadStatus(e, thread.id, 'resolved'); setOpenStatusDropdown(null); }}
@@ -3351,7 +3362,8 @@ function CRMContent() {
                       {[
                         { key: 'all', label: 'Wszystkie', count: poomkidsThreads.length, color: 'gray' },
                         { key: 'new', label: 'Nowe', count: poomkidsThreads.filter(t => t.status === 'new' || t.unread).length, color: 'red' },
-                        { key: 'read', label: 'Przeczytane', count: poomkidsThreads.filter(t => t.status === 'read' || (!t.unread && t.status !== 'resolved')).length, color: 'blue' },
+                        { key: 'read', label: 'Przeczytane', count: poomkidsThreads.filter(t => t.status === 'read').length, color: 'blue' },
+                        { key: 'attention', label: 'Wymaga uwagi', count: poomkidsThreads.filter(t => t.status === 'attention').length, color: 'yellow' },
                         { key: 'resolved', label: 'Rozwiazane', count: poomkidsThreads.filter(t => t.status === 'resolved').length, color: 'green' },
                         { key: 'sent', label: 'Wyslane', count: poomkidsThreads.filter(t => t.status === 'sent').length, color: 'purple' },
                       ].map((tab) => (
@@ -3362,6 +3374,7 @@ function CRMContent() {
                             poomkidsFilter === tab.key
                               ? tab.color === 'red' ? 'bg-red-500 text-white'
                                 : tab.color === 'blue' ? 'bg-blue-500 text-white'
+                                : tab.color === 'yellow' ? 'bg-yellow-500 text-white'
                                 : tab.color === 'green' ? 'bg-green-500 text-white'
                                 : 'bg-gray-900 dark:bg-white text-white dark:text-gray-900'
                               : 'bg-white dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600 border border-gray-200 dark:border-gray-600'
@@ -3395,7 +3408,8 @@ function CRMContent() {
                             // Status filter
                             if (poomkidsFilter === 'all') return true;
                             if (poomkidsFilter === 'new') return thread.status === 'new' || thread.unread;
-                            if (poomkidsFilter === 'read') return thread.status === 'read' || (!thread.unread && thread.status !== 'resolved' && thread.status !== 'new' && thread.status !== 'sent');
+                            if (poomkidsFilter === 'read') return thread.status === 'read';
+                            if (poomkidsFilter === 'attention') return thread.status === 'attention';
                             if (poomkidsFilter === 'resolved') return thread.status === 'resolved';
                             if (poomkidsFilter === 'sent') return thread.status === 'sent';
                             return true;
@@ -3406,7 +3420,7 @@ function CRMContent() {
                             onClick={() => openPoomkidsThread(thread)}
                             className={`w-full text-left px-4 py-3 border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer ${
                               poomkidsSelectedThread?.id === thread.id ? 'bg-blue-50' : ''
-                            } ${thread.status === 'new' || thread.unread ? 'bg-green-50' : ''} ${thread.status === 'resolved' ? 'bg-green-100' : ''} ${thread.status === 'sent' ? 'bg-purple-50' : ''}`}
+                            } ${thread.status === 'new' || thread.unread ? 'bg-green-50' : ''} ${thread.status === 'attention' ? 'bg-yellow-50' : ''} ${thread.status === 'resolved' ? 'bg-green-100' : ''} ${thread.status === 'sent' ? 'bg-purple-50' : ''}`}
                           >
                             <div className="flex items-start gap-2">
                               {/* Checkbox for thread selection */}
@@ -3432,15 +3446,17 @@ function CRMContent() {
                                   className={`w-7 h-7 flex-shrink-0 rounded border-2 flex items-center justify-center transition-all ${
                                     thread.status === 'resolved'
                                       ? 'bg-green-500 border-green-500 text-white'
-                                      : thread.status === 'read'
-                                        ? 'bg-blue-500 border-blue-500 text-white'
-                                        : thread.status === 'new' || thread.unread
-                                          ? 'bg-red-500 border-red-500 text-white'
-                                          : 'border-gray-300 hover:border-gray-400'
+                                      : thread.status === 'attention'
+                                        ? 'bg-yellow-500 border-yellow-500 text-white'
+                                        : thread.status === 'read'
+                                          ? 'bg-blue-500 border-blue-500 text-white'
+                                          : thread.status === 'new' || thread.unread
+                                            ? 'bg-red-500 border-red-500 text-white'
+                                            : 'border-gray-300 hover:border-gray-400'
                                   }`}
                                   title="Zmien status"
                                 >
-                                  {thread.status === 'resolved' ? '✓' : thread.status === 'read' ? '●' : thread.status === 'new' || thread.unread ? '!' : ''}
+                                  {thread.status === 'resolved' ? '✓' : thread.status === 'attention' ? '⚠' : thread.status === 'read' ? '●' : thread.status === 'new' || thread.unread ? '!' : ''}
                                 </button>
                                 {openStatusDropdown?.module === 'poomkids' && openStatusDropdown?.threadId === thread.id && (
                                   <div className="absolute left-0 top-8 z-50 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-600 py-1 min-w-[140px]">
@@ -3455,6 +3471,12 @@ function CRMContent() {
                                       className="w-full px-3 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
                                     >
                                       <span className="w-3 h-3 rounded-full bg-blue-500"></span> Przeczytane
+                                    </button>
+                                    <button
+                                      onClick={(e) => { quickChangePoomkidsThreadStatus(e, thread.id, 'attention'); setOpenStatusDropdown(null); }}
+                                      className="w-full px-3 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
+                                    >
+                                      <span className="w-3 h-3 rounded-full bg-yellow-500"></span> Wymaga uwagi
                                     </button>
                                     <button
                                       onClick={(e) => { quickChangePoomkidsThreadStatus(e, thread.id, 'resolved'); setOpenStatusDropdown(null); }}
@@ -3873,7 +3895,8 @@ function CRMContent() {
                       {[
                         { key: 'all', label: 'Wszystkie', count: allepoduszkiThreads.length, color: 'gray' },
                         { key: 'new', label: 'Nowe', count: allepoduszkiThreads.filter(t => t.status === 'new' || t.unread).length, color: 'red' },
-                        { key: 'read', label: 'Przeczytane', count: allepoduszkiThreads.filter(t => t.status === 'read' || (!t.unread && t.status !== 'resolved')).length, color: 'blue' },
+                        { key: 'read', label: 'Przeczytane', count: allepoduszkiThreads.filter(t => t.status === 'read').length, color: 'blue' },
+                        { key: 'attention', label: 'Wymaga uwagi', count: allepoduszkiThreads.filter(t => t.status === 'attention').length, color: 'yellow' },
                         { key: 'resolved', label: 'Rozwiazane', count: allepoduszkiThreads.filter(t => t.status === 'resolved').length, color: 'green' },
                         { key: 'sent', label: 'Wyslane', count: allepoduszkiThreads.filter(t => t.status === 'sent').length, color: 'purple' },
                       ].map((tab) => (
@@ -3884,6 +3907,7 @@ function CRMContent() {
                             allepoduszkiFilter === tab.key
                               ? tab.color === 'red' ? 'bg-red-500 text-white'
                                 : tab.color === 'blue' ? 'bg-blue-500 text-white'
+                                : tab.color === 'yellow' ? 'bg-yellow-500 text-white'
                                 : tab.color === 'green' ? 'bg-green-500 text-white'
                                 : 'bg-gray-900 dark:bg-white text-white dark:text-gray-900'
                               : 'bg-white dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600 border border-gray-200 dark:border-gray-600'
@@ -3917,7 +3941,8 @@ function CRMContent() {
                             // Status filter
                             if (allepoduszkiFilter === 'all') return true;
                             if (allepoduszkiFilter === 'new') return thread.status === 'new' || thread.unread;
-                            if (allepoduszkiFilter === 'read') return thread.status === 'read' || (!thread.unread && thread.status !== 'resolved' && thread.status !== 'new' && thread.status !== 'sent');
+                            if (allepoduszkiFilter === 'read') return thread.status === 'read';
+                            if (allepoduszkiFilter === 'attention') return thread.status === 'attention';
                             if (allepoduszkiFilter === 'resolved') return thread.status === 'resolved';
                             if (allepoduszkiFilter === 'sent') return thread.status === 'sent';
                             return true;
@@ -3928,7 +3953,7 @@ function CRMContent() {
                             onClick={() => openAllepoduszkiThread(thread)}
                             className={`w-full text-left px-4 py-3 border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer ${
                               allepoduszkiSelectedThread?.id === thread.id ? 'bg-blue-50' : ''
-                            } ${thread.status === 'new' || thread.unread ? 'bg-purple-50' : ''} ${thread.status === 'resolved' ? 'bg-green-50' : ''} ${thread.status === 'sent' ? 'bg-purple-100' : ''}`}
+                            } ${thread.status === 'new' || thread.unread ? 'bg-purple-50' : ''} ${thread.status === 'attention' ? 'bg-yellow-50' : ''} ${thread.status === 'resolved' ? 'bg-green-50' : ''} ${thread.status === 'sent' ? 'bg-purple-100' : ''}`}
                           >
                             <div className="flex items-start gap-2">
                               {/* Checkbox for thread selection */}
@@ -3954,15 +3979,17 @@ function CRMContent() {
                                   className={`w-7 h-7 flex-shrink-0 rounded border-2 flex items-center justify-center transition-all ${
                                     thread.status === 'resolved'
                                       ? 'bg-green-500 border-green-500 text-white'
-                                      : thread.status === 'read'
-                                        ? 'bg-blue-500 border-blue-500 text-white'
-                                        : thread.status === 'new' || thread.unread
-                                          ? 'bg-red-500 border-red-500 text-white'
-                                          : 'border-gray-300 hover:border-gray-400'
+                                      : thread.status === 'attention'
+                                        ? 'bg-yellow-500 border-yellow-500 text-white'
+                                        : thread.status === 'read'
+                                          ? 'bg-blue-500 border-blue-500 text-white'
+                                          : thread.status === 'new' || thread.unread
+                                            ? 'bg-red-500 border-red-500 text-white'
+                                            : 'border-gray-300 hover:border-gray-400'
                                   }`}
                                   title="Zmien status"
                                 >
-                                  {thread.status === 'resolved' ? '✓' : thread.status === 'read' ? '●' : thread.status === 'new' || thread.unread ? '!' : ''}
+                                  {thread.status === 'resolved' ? '✓' : thread.status === 'attention' ? '⚠' : thread.status === 'read' ? '●' : thread.status === 'new' || thread.unread ? '!' : ''}
                                 </button>
                                 {openStatusDropdown?.module === 'allepoduszki' && openStatusDropdown?.threadId === thread.id && (
                                   <div className="absolute left-0 top-8 z-50 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-600 py-1 min-w-[140px]">
@@ -3977,6 +4004,12 @@ function CRMContent() {
                                       className="w-full px-3 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
                                     >
                                       <span className="w-3 h-3 rounded-full bg-blue-500"></span> Przeczytane
+                                    </button>
+                                    <button
+                                      onClick={(e) => { quickChangeAllepoduszkiThreadStatus(e, thread.id, 'attention'); setOpenStatusDropdown(null); }}
+                                      className="w-full px-3 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
+                                    >
+                                      <span className="w-3 h-3 rounded-full bg-yellow-500"></span> Wymaga uwagi
                                     </button>
                                     <button
                                       onClick={(e) => { quickChangeAllepoduszkiThreadStatus(e, thread.id, 'resolved'); setOpenStatusDropdown(null); }}
@@ -4265,7 +4298,8 @@ function CRMContent() {
                       {[
                         { key: 'all', label: 'Wszystkie', count: poomfurnitureThreads.length, color: 'gray' },
                         { key: 'new', label: 'Nowe', count: poomfurnitureThreads.filter(t => t.status === 'new' || t.unread).length, color: 'red' },
-                        { key: 'read', label: 'Przeczytane', count: poomfurnitureThreads.filter(t => t.status === 'read' || (!t.unread && t.status !== 'resolved')).length, color: 'blue' },
+                        { key: 'read', label: 'Przeczytane', count: poomfurnitureThreads.filter(t => t.status === 'read').length, color: 'blue' },
+                        { key: 'attention', label: 'Wymaga uwagi', count: poomfurnitureThreads.filter(t => t.status === 'attention').length, color: 'yellow' },
                         { key: 'resolved', label: 'Rozwiazane', count: poomfurnitureThreads.filter(t => t.status === 'resolved').length, color: 'green' },
                         { key: 'sent', label: 'Wyslane', count: poomfurnitureThreads.filter(t => t.status === 'sent').length, color: 'purple' },
                       ].map((tab) => (
@@ -4276,6 +4310,7 @@ function CRMContent() {
                             poomfurnitureFilter === tab.key
                               ? tab.color === 'red' ? 'bg-red-500 text-white'
                                 : tab.color === 'blue' ? 'bg-blue-500 text-white'
+                                : tab.color === 'yellow' ? 'bg-yellow-500 text-white'
                                 : tab.color === 'green' ? 'bg-green-500 text-white'
                                 : 'bg-gray-900 dark:bg-white text-white dark:text-gray-900'
                               : 'bg-white dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600 border border-gray-200 dark:border-gray-600'
@@ -4309,7 +4344,8 @@ function CRMContent() {
                             // Status filter
                             if (poomfurnitureFilter === 'all') return true;
                             if (poomfurnitureFilter === 'new') return thread.status === 'new' || thread.unread;
-                            if (poomfurnitureFilter === 'read') return thread.status === 'read' || (!thread.unread && thread.status !== 'resolved' && thread.status !== 'new' && thread.status !== 'sent');
+                            if (poomfurnitureFilter === 'read') return thread.status === 'read';
+                            if (poomfurnitureFilter === 'attention') return thread.status === 'attention';
                             if (poomfurnitureFilter === 'resolved') return thread.status === 'resolved';
                             if (poomfurnitureFilter === 'sent') return thread.status === 'sent';
                             return true;
@@ -4320,7 +4356,7 @@ function CRMContent() {
                             onClick={() => openPoomfurnitureThread(thread)}
                             className={`w-full text-left px-4 py-3 border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer ${
                               poomfurnitureSelectedThread?.id === thread.id ? 'bg-blue-50' : ''
-                            } ${thread.status === 'new' || thread.unread ? 'bg-teal-50' : ''} ${thread.status === 'resolved' ? 'bg-green-50' : ''} ${thread.status === 'sent' ? 'bg-purple-50' : ''}`}
+                            } ${thread.status === 'new' || thread.unread ? 'bg-teal-50' : ''} ${thread.status === 'attention' ? 'bg-yellow-50' : ''} ${thread.status === 'resolved' ? 'bg-green-50' : ''} ${thread.status === 'sent' ? 'bg-purple-50' : ''}`}
                           >
                             <div className="flex items-start gap-2">
                               {/* Checkbox for thread selection */}
@@ -4346,15 +4382,17 @@ function CRMContent() {
                                   className={`w-7 h-7 flex-shrink-0 rounded border-2 flex items-center justify-center transition-all ${
                                     thread.status === 'resolved'
                                       ? 'bg-green-500 border-green-500 text-white'
-                                      : thread.status === 'read'
-                                        ? 'bg-blue-500 border-blue-500 text-white'
-                                        : thread.status === 'new' || thread.unread
-                                          ? 'bg-red-500 border-red-500 text-white'
-                                          : 'border-gray-300 hover:border-gray-400'
+                                      : thread.status === 'attention'
+                                        ? 'bg-yellow-500 border-yellow-500 text-white'
+                                        : thread.status === 'read'
+                                          ? 'bg-blue-500 border-blue-500 text-white'
+                                          : thread.status === 'new' || thread.unread
+                                            ? 'bg-red-500 border-red-500 text-white'
+                                            : 'border-gray-300 hover:border-gray-400'
                                   }`}
                                   title="Zmien status"
                                 >
-                                  {thread.status === 'resolved' ? '✓' : thread.status === 'read' ? '●' : thread.status === 'new' || thread.unread ? '!' : ''}
+                                  {thread.status === 'resolved' ? '✓' : thread.status === 'attention' ? '⚠' : thread.status === 'read' ? '●' : thread.status === 'new' || thread.unread ? '!' : ''}
                                 </button>
                                 {openStatusDropdown?.module === 'poomfurniture' && openStatusDropdown?.threadId === thread.id && (
                                   <div className="absolute left-0 top-8 z-50 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-600 py-1 min-w-[140px]">
@@ -4369,6 +4407,12 @@ function CRMContent() {
                                       className="w-full px-3 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
                                     >
                                       <span className="w-3 h-3 rounded-full bg-blue-500"></span> Przeczytane
+                                    </button>
+                                    <button
+                                      onClick={(e) => { quickChangePoomfurnitureThreadStatus(e, thread.id, 'attention'); setOpenStatusDropdown(null); }}
+                                      className="w-full px-3 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
+                                    >
+                                      <span className="w-3 h-3 rounded-full bg-yellow-500"></span> Wymaga uwagi
                                     </button>
                                     <button
                                       onClick={(e) => { quickChangePoomfurnitureThreadStatus(e, thread.id, 'resolved'); setOpenStatusDropdown(null); }}
