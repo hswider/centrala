@@ -2602,7 +2602,9 @@ export async function markGmailPoomkidsThreadAsRead(threadId) {
 
 // Update Gmail POOMKIDS thread status
 export async function updateGmailPoomkidsThreadStatus(threadId, status) {
-  await sql`UPDATE gmail_poomkids_threads SET status = ${status}, updated_at = CURRENT_TIMESTAMP WHERE id = ${threadId}`;
+  // Also update unread field: only 'new' status means unread
+  const unread = status === 'new';
+  await sql`UPDATE gmail_poomkids_threads SET status = ${status}, unread = ${unread}, updated_at = CURRENT_TIMESTAMP WHERE id = ${threadId}`;
 }
 
 // Delete Gmail POOMKIDS thread and its messages
