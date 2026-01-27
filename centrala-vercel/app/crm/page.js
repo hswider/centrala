@@ -2531,17 +2531,20 @@ function CRMContent() {
                     {/* Status Filter Tabs */}
                     <div className="px-3 py-2 border-b border-gray-100 dark:border-gray-700 flex gap-1 flex-wrap bg-gray-50 dark:bg-gray-800/50">
                       {[
-                        { key: 'all', label: 'Wszystkie', count: gmailThreads.length },
-                        { key: 'new', label: 'Nowe', count: gmailThreads.filter(t => t.status === 'new' || t.unread).length },
-                        { key: 'read', label: 'Przeczytane', count: gmailThreads.filter(t => t.status === 'read' || (!t.unread && t.status !== 'resolved')).length },
-                        { key: 'resolved', label: 'Rozwiazane', count: gmailThreads.filter(t => t.status === 'resolved').length },
+                        { key: 'all', label: 'Wszystkie', count: gmailThreads.length, color: 'gray' },
+                        { key: 'new', label: 'Nowe', count: gmailThreads.filter(t => t.status === 'new' || t.unread).length, color: 'red' },
+                        { key: 'read', label: 'Przeczytane', count: gmailThreads.filter(t => t.status === 'read' || (!t.unread && t.status !== 'resolved')).length, color: 'blue' },
+                        { key: 'resolved', label: 'Rozwiazane', count: gmailThreads.filter(t => t.status === 'resolved').length, color: 'green' },
                       ].map((tab) => (
                         <button
                           key={tab.key}
                           onClick={() => setGmailFilter(tab.key)}
                           className={`px-2 py-1 text-xs rounded-full transition-colors ${
                             gmailFilter === tab.key
-                              ? 'bg-gray-900 dark:bg-white text-white dark:text-gray-900'
+                              ? tab.color === 'red' ? 'bg-red-500 text-white'
+                                : tab.color === 'blue' ? 'bg-blue-500 text-white'
+                                : tab.color === 'green' ? 'bg-green-500 text-white'
+                                : 'bg-gray-900 dark:bg-white text-white dark:text-gray-900'
                               : 'bg-white dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600 border border-gray-200 dark:border-gray-600'
                           }`}
                         >
@@ -2928,17 +2931,20 @@ function CRMContent() {
                     {/* Status Filter Tabs */}
                     <div className="px-3 py-2 border-b border-gray-100 dark:border-gray-700 flex gap-1 flex-wrap bg-gray-50 dark:bg-gray-800/50">
                       {[
-                        { key: 'all', label: 'Wszystkie', count: poomkidsThreads.length },
-                        { key: 'new', label: 'Nowe', count: poomkidsThreads.filter(t => t.status === 'new' || t.unread).length },
-                        { key: 'read', label: 'Przeczytane', count: poomkidsThreads.filter(t => t.status === 'read' || (!t.unread && t.status !== 'resolved')).length },
-                        { key: 'resolved', label: 'Rozwiazane', count: poomkidsThreads.filter(t => t.status === 'resolved').length },
+                        { key: 'all', label: 'Wszystkie', count: poomkidsThreads.length, color: 'gray' },
+                        { key: 'new', label: 'Nowe', count: poomkidsThreads.filter(t => t.status === 'new' || t.unread).length, color: 'red' },
+                        { key: 'read', label: 'Przeczytane', count: poomkidsThreads.filter(t => t.status === 'read' || (!t.unread && t.status !== 'resolved')).length, color: 'blue' },
+                        { key: 'resolved', label: 'Rozwiazane', count: poomkidsThreads.filter(t => t.status === 'resolved').length, color: 'green' },
                       ].map((tab) => (
                         <button
                           key={tab.key}
                           onClick={() => setPoomkidsFilter(tab.key)}
                           className={`px-2 py-1 text-xs rounded-full transition-colors ${
                             poomkidsFilter === tab.key
-                              ? 'bg-gray-900 dark:bg-white text-white dark:text-gray-900'
+                              ? tab.color === 'red' ? 'bg-red-500 text-white'
+                                : tab.color === 'blue' ? 'bg-blue-500 text-white'
+                                : tab.color === 'green' ? 'bg-green-500 text-white'
+                                : 'bg-gray-900 dark:bg-white text-white dark:text-gray-900'
                               : 'bg-white dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600 border border-gray-200 dark:border-gray-600'
                           }`}
                         >
@@ -3313,17 +3319,20 @@ function CRMContent() {
                     {/* Status Filter Tabs */}
                     <div className="px-3 py-2 border-b border-gray-100 dark:border-gray-700 flex gap-1 flex-wrap bg-gray-50 dark:bg-gray-800/50">
                       {[
-                        { key: 'all', label: 'Wszystkie', count: allepoduszkiThreads.length },
-                        { key: 'new', label: 'Nowe', count: allepoduszkiThreads.filter(t => t.status === 'new' || t.unread).length },
-                        { key: 'read', label: 'Przeczytane', count: allepoduszkiThreads.filter(t => t.status === 'read' || (!t.unread && t.status !== 'resolved')).length },
-                        { key: 'resolved', label: 'Rozwiazane', count: allepoduszkiThreads.filter(t => t.status === 'resolved').length },
+                        { key: 'all', label: 'Wszystkie', count: allepoduszkiThreads.length, color: 'gray' },
+                        { key: 'new', label: 'Nowe', count: allepoduszkiThreads.filter(t => t.status === 'new' || t.unread).length, color: 'red' },
+                        { key: 'read', label: 'Przeczytane', count: allepoduszkiThreads.filter(t => t.status === 'read' || (!t.unread && t.status !== 'resolved')).length, color: 'blue' },
+                        { key: 'resolved', label: 'Rozwiazane', count: allepoduszkiThreads.filter(t => t.status === 'resolved').length, color: 'green' },
                       ].map((tab) => (
                         <button
                           key={tab.key}
                           onClick={() => setAllepoduszkiFilter(tab.key)}
                           className={`px-2 py-1 text-xs rounded-full transition-colors ${
                             allepoduszkiFilter === tab.key
-                              ? 'bg-gray-900 dark:bg-white text-white dark:text-gray-900'
+                              ? tab.color === 'red' ? 'bg-red-500 text-white'
+                                : tab.color === 'blue' ? 'bg-blue-500 text-white'
+                                : tab.color === 'green' ? 'bg-green-500 text-white'
+                                : 'bg-gray-900 dark:bg-white text-white dark:text-gray-900'
                               : 'bg-white dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600 border border-gray-200 dark:border-gray-600'
                           }`}
                         >
@@ -3670,17 +3679,20 @@ function CRMContent() {
                     {/* Status Filter Tabs */}
                     <div className="px-3 py-2 border-b border-gray-100 dark:border-gray-700 flex gap-1 flex-wrap bg-gray-50 dark:bg-gray-800/50">
                       {[
-                        { key: 'all', label: 'Wszystkie', count: poomfurnitureThreads.length },
-                        { key: 'new', label: 'Nowe', count: poomfurnitureThreads.filter(t => t.status === 'new' || t.unread).length },
-                        { key: 'read', label: 'Przeczytane', count: poomfurnitureThreads.filter(t => t.status === 'read' || (!t.unread && t.status !== 'resolved')).length },
-                        { key: 'resolved', label: 'Rozwiazane', count: poomfurnitureThreads.filter(t => t.status === 'resolved').length },
+                        { key: 'all', label: 'Wszystkie', count: poomfurnitureThreads.length, color: 'gray' },
+                        { key: 'new', label: 'Nowe', count: poomfurnitureThreads.filter(t => t.status === 'new' || t.unread).length, color: 'red' },
+                        { key: 'read', label: 'Przeczytane', count: poomfurnitureThreads.filter(t => t.status === 'read' || (!t.unread && t.status !== 'resolved')).length, color: 'blue' },
+                        { key: 'resolved', label: 'Rozwiazane', count: poomfurnitureThreads.filter(t => t.status === 'resolved').length, color: 'green' },
                       ].map((tab) => (
                         <button
                           key={tab.key}
                           onClick={() => setPoomfurnitureFilter(tab.key)}
                           className={`px-2 py-1 text-xs rounded-full transition-colors ${
                             poomfurnitureFilter === tab.key
-                              ? 'bg-gray-900 dark:bg-white text-white dark:text-gray-900'
+                              ? tab.color === 'red' ? 'bg-red-500 text-white'
+                                : tab.color === 'blue' ? 'bg-blue-500 text-white'
+                                : tab.color === 'green' ? 'bg-green-500 text-white'
+                                : 'bg-gray-900 dark:bg-white text-white dark:text-gray-900'
                               : 'bg-white dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600 border border-gray-200 dark:border-gray-600'
                           }`}
                         >
