@@ -2662,20 +2662,12 @@ function CRMContent() {
                               } catch (e) {
                                 console.error('Error parsing attachments:', e);
                               }
-                              const isSelected = gmailSelectedMessages.includes(msg.id);
                               const senderInitial = (msg.from_email || '?')[0].toUpperCase();
                               return (
                               <div
                                 key={msg.id}
                                 className={`flex items-start gap-2 ${msg.is_outgoing ? 'justify-end' : 'justify-start'}`}
                               >
-                                {/* Checkbox for selection */}
-                                <input
-                                  type="checkbox"
-                                  checked={isSelected}
-                                  onChange={() => toggleGmailMessageSelection(msg.id)}
-                                  className={`mt-3 w-4 h-4 rounded cursor-pointer ${msg.is_outgoing ? 'order-last ml-2' : 'mr-0'}`}
-                                />
                                 {/* Message with avatar */}
                                 <div className="relative">
                                   {/* Avatar overlapping corner */}
@@ -2689,7 +2681,7 @@ function CRMContent() {
                                     </div>
                                   )}
                                   <div
-                                    className={`max-w-[80%] min-w-[200px] px-4 py-3 rounded-lg ${isSelected ? 'ring-2 ring-red-500' : ''} ${
+                                    className={`max-w-[80%] min-w-[200px] px-4 py-3 rounded-lg ${
                                       msg.is_outgoing
                                         ? 'bg-red-600 text-white'
                                         : 'bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-900 dark:text-white'
@@ -3003,19 +2995,12 @@ function CRMContent() {
                             <div className="text-center text-gray-500 dark:text-gray-400">Brak wiadomosci</div>
                           ) : (
                             poomkidsThreadMessages.map((msg) => {
-                              const isSelected = poomkidsSelectedMessages.includes(msg.id);
                               const senderInitial = (msg.from_email || '?')[0].toUpperCase();
                               return (
                               <div
                                 key={msg.id}
                                 className={`flex items-start gap-2 ${msg.is_outgoing ? 'justify-end' : 'justify-start'}`}
                               >
-                                <input
-                                  type="checkbox"
-                                  checked={isSelected}
-                                  onChange={() => togglePoomkidsMessageSelection(msg.id)}
-                                  className={`mt-3 w-4 h-4 rounded cursor-pointer ${msg.is_outgoing ? 'order-last ml-2' : 'mr-0'}`}
-                                />
                                 <div className="relative">
                                   {msg.is_outgoing ? (
                                     <div className="absolute -bottom-2 -right-2 w-8 h-8 rounded-full bg-white dark:bg-gray-800 border-2 border-blue-600 flex items-center justify-center overflow-hidden z-10">
@@ -3027,7 +3012,7 @@ function CRMContent() {
                                     </div>
                                   )}
                                   <div
-                                    className={`max-w-[80%] min-w-[200px] px-4 py-3 rounded-lg ${isSelected ? 'ring-2 ring-blue-500' : ''} ${
+                                    className={`max-w-[80%] min-w-[200px] px-4 py-3 rounded-lg ${
                                       msg.is_outgoing
                                         ? 'bg-blue-600 text-white'
                                         : 'bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-900 dark:text-white'
