@@ -37,6 +37,7 @@ const publicRoutes = [
   '/api/dms/init',        // DMS table initialization
   '/api/ecom/delivery-time', // ECOM delivery time check
   '/api/gmail/init-status',  // Gmail status column init
+  '/api/add-ola',             // Add Ola user
 ];
 
 export function middleware(request) {
