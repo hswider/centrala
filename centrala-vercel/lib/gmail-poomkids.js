@@ -296,6 +296,44 @@ export async function isAuthenticated() {
 
 // ========== HELPERS ==========
 
+// Strip HTML tags from plain text that may contain them (e.g., Judge.me notifications)
+function stripHtmlFromPlainText(text) {
+  if (!text) return '';
+
+  // Check if text contains HTML tags
+  if (!/<[^>]+>/.test(text)) {
+    return text;
+  }
+
+  // Remove HTML tags but preserve structure
+  let result = text;
+
+  // Replace <br>, <p>, <div> with newlines first
+  result = result.replace(/<br\s*\/?>/gi, '\n');
+  result = result.replace(/<\/p>/gi, '\n\n');
+  result = result.replace(/<\/div>/gi, '\n');
+  result = result.replace(/<\/li>/gi, '\n');
+
+  // Remove all remaining HTML tags
+  result = result.replace(/<[^>]+>/g, '');
+
+  // Decode common HTML entities
+  result = result.replace(/&nbsp;/gi, ' ');
+  result = result.replace(/&amp;/gi, '&');
+  result = result.replace(/&lt;/gi, '<');
+  result = result.replace(/&gt;/gi, '>');
+  result = result.replace(/&quot;/gi, '"');
+  result = result.replace(/&#39;/gi, "'");
+  result = result.replace(/&apos;/gi, "'");
+
+  // Clean up whitespace
+  result = result.replace(/\n{3,}/g, '\n\n');
+  result = result.replace(/[ \t]+/g, ' ');
+  result = result.split('\n').map(line => line.trim()).join('\n');
+
+  return result.trim();
+}
+
 // Strip quoted reply content from email body
 function stripQuotedReply(text) {
   if (!text) return '';
@@ -469,6 +507,9 @@ export function parseMessage(message) {
     if (!bodyText && bodyHtml) {
       bodyText = htmlToPlainText(bodyHtml);
     }
+
+    // Strip HTML tags from plain text (e.g., Judge.me notifications sent as text/plain with HTML)
+    bodyText = stripHtmlFromPlainText(bodyText);
 
     // Strip quoted reply content (previous messages in thread)
     bodyText = stripQuotedReply(bodyText);
