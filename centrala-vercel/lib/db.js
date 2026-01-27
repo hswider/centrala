@@ -2093,7 +2093,6 @@ export async function saveGmailThread(thread) {
       unread = EXCLUDED.unread,
       messages_count = EXCLUDED.messages_count,
       labels = EXCLUDED.labels,
-      status = COALESCE(EXCLUDED.status, gmail_threads.status),
       updated_at = CURRENT_TIMESTAMP
   `;
 }
@@ -2507,7 +2506,6 @@ export async function saveGmailPoomkidsThread(thread) {
       unread = EXCLUDED.unread,
       messages_count = EXCLUDED.messages_count,
       labels = EXCLUDED.labels,
-      status = COALESCE(EXCLUDED.status, gmail_poomkids_threads.status),
       updated_at = CURRENT_TIMESTAMP
   `;
 }
@@ -2709,7 +2707,6 @@ export async function saveGmailAllepoduszkiThread(thread) {
       unread = EXCLUDED.unread,
       messages_count = EXCLUDED.messages_count,
       labels = EXCLUDED.labels,
-      status = COALESCE(EXCLUDED.status, gmail_allepoduszki_threads.status),
       updated_at = CURRENT_TIMESTAMP
   `;
 }
@@ -2911,7 +2908,6 @@ export async function saveGmailPoomfurnitureThread(thread) {
       unread = EXCLUDED.unread,
       messages_count = EXCLUDED.messages_count,
       labels = EXCLUDED.labels,
-      status = COALESCE(EXCLUDED.status, gmail_poomfurniture_threads.status),
       updated_at = CURRENT_TIMESTAMP
   `;
 }
