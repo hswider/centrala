@@ -20,6 +20,8 @@ function CRMContent() {
   const [syncStatus, setSyncStatus] = useState(null);
   const [unreadCount, setUnreadCount] = useState(0);
   const [allegroSearch, setAllegroSearch] = useState('');
+  const [allegroSelectedThreads, setAllegroSelectedThreads] = useState([]);
+  const [allegroDeletingThreads, setAllegroDeletingThreads] = useState(false);
 
   // Allegro Meblebox state
   const [mebleboxAuth, setMebleboxAuth] = useState({ authenticated: false, user: null, loading: true });
@@ -34,6 +36,8 @@ function CRMContent() {
   const [mebleboxSyncStatus, setMebleboxSyncStatus] = useState(null);
   const [mebleboxUnreadCount, setMebleboxUnreadCount] = useState(0);
   const [mebleboxSearch, setMebleboxSearch] = useState('');
+  const [mebleboxSelectedThreads, setMebleboxSelectedThreads] = useState([]);
+  const [mebleboxDeletingThreads, setMebleboxDeletingThreads] = useState(false);
 
   // Gmail (Shopify Dobrelegowiska) state
   const [gmailAuth, setGmailAuth] = useState({ authenticated: false, user: null, loading: true });
@@ -361,6 +365,46 @@ function CRMContent() {
     }
   };
 
+  // Toggle Allegro thread selection for deletion
+  const toggleAllegroThreadSelection = (e, threadId) => {
+    e.stopPropagation();
+    setAllegroSelectedThreads(prev => prev.includes(threadId) ? prev.filter(id => id !== threadId) : [...prev, threadId]);
+  };
+
+  // Delete selected Allegro threads
+  const handleAllegroDeleteThreads = async () => {
+    if (allegroSelectedThreads.length === 0) return;
+    if (!confirm(`Usunac ${allegroSelectedThreads.length} watek(ow)?`)) return;
+
+    setAllegroDeletingThreads(true);
+    try {
+      const res = await fetch('/api/allegro/threads', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ threadIds: allegroSelectedThreads })
+      });
+      const data = await res.json();
+
+      if (data.success) {
+        // Remove deleted threads from state
+        setThreads(prev => prev.filter(t => !allegroSelectedThreads.includes(t.id)));
+        // Clear selection
+        setAllegroSelectedThreads([]);
+        // If currently selected thread was deleted, clear it
+        if (selectedThread && allegroSelectedThreads.includes(selectedThread.id)) {
+          setSelectedThread(null);
+          setThreadMessages([]);
+        }
+      } else {
+        alert('Blad usuwania: ' + data.error);
+      }
+    } catch (err) {
+      alert('Blad: ' + err.message);
+    } finally {
+      setAllegroDeletingThreads(false);
+    }
+  };
+
   // ========== MEBLEBOX FUNCTIONS ==========
 
   // Check Meblebox authentication status
@@ -493,6 +537,46 @@ function CRMContent() {
       alert('Blad: ' + err.message);
     } finally {
       setMebleboxSending(false);
+    }
+  };
+
+  // Toggle Meblebox thread selection for deletion
+  const toggleMebleboxThreadSelection = (e, threadId) => {
+    e.stopPropagation();
+    setMebleboxSelectedThreads(prev => prev.includes(threadId) ? prev.filter(id => id !== threadId) : [...prev, threadId]);
+  };
+
+  // Delete selected Meblebox threads
+  const handleMebleboxDeleteThreads = async () => {
+    if (mebleboxSelectedThreads.length === 0) return;
+    if (!confirm(`Usunac ${mebleboxSelectedThreads.length} watek(ow)?`)) return;
+
+    setMebleboxDeletingThreads(true);
+    try {
+      const res = await fetch('/api/allegro-meblebox/threads', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ threadIds: mebleboxSelectedThreads })
+      });
+      const data = await res.json();
+
+      if (data.success) {
+        // Remove deleted threads from state
+        setMebleboxThreads(prev => prev.filter(t => !mebleboxSelectedThreads.includes(t.id)));
+        // Clear selection
+        setMebleboxSelectedThreads([]);
+        // If currently selected thread was deleted, clear it
+        if (mebleboxSelectedThread && mebleboxSelectedThreads.includes(mebleboxSelectedThread.id)) {
+          setMebleboxSelectedThread(null);
+          setMebleboxThreadMessages([]);
+        }
+      } else {
+        alert('Blad usuwania: ' + data.error);
+      }
+    } catch (err) {
+      alert('Blad: ' + err.message);
+    } finally {
+      setMebleboxDeletingThreads(false);
     }
   };
 
@@ -2066,13 +2150,25 @@ function CRMContent() {
                           {syncStatus?.lastSyncAt ? `Sync: ${formatDate(syncStatus.lastSyncAt)}` : 'Nie zsynchronizowano'}
                         </p>
                       </div>
-                      <button
-                        onClick={handleSync}
-                        disabled={syncing}
-                        className="px-3 py-1.5 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
-                      >
-                        {syncing ? 'Sync...' : 'Synchronizuj'}
-                      </button>
+                      <div className="flex gap-2">
+                        {allegroSelectedThreads.length > 0 && (
+                          <button
+                            onClick={handleAllegroDeleteThreads}
+                            disabled={allegroDeletingThreads}
+                            className="px-3 py-1.5 text-sm bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 font-medium"
+                            title="Usun zaznaczone watki"
+                          >
+                            {allegroDeletingThreads ? '...' : `Usun (${allegroSelectedThreads.length})`}
+                          </button>
+                        )}
+                        <button
+                          onClick={handleSync}
+                          disabled={syncing}
+                          className="px-3 py-1.5 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
+                        >
+                          {syncing ? 'Sync...' : 'Synchronizuj'}
+                        </button>
+                      </div>
                     </div>
 
                     {/* Search Input */}
@@ -2105,14 +2201,24 @@ function CRMContent() {
                             );
                           })
                           .map((thread) => (
-                          <button
+                          <div
                             key={thread.id}
                             onClick={() => openThread(thread)}
-                            className={`w-full text-left px-4 py-3 border-b border-gray-100 dark:border-gray-700 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 ${
+                            className={`w-full text-left px-4 py-3 border-b border-gray-100 dark:border-gray-700 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer ${
                               selectedThread?.id === thread.id ? 'bg-blue-50' : ''
                             } ${!thread.read ? 'bg-orange-50' : ''}`}
                           >
-                            <div className="flex items-start gap-3">
+                            <div className="flex items-start gap-2">
+                              {/* Checkbox for thread selection */}
+                              <div className="mt-2">
+                                <input
+                                  type="checkbox"
+                                  checked={allegroSelectedThreads.includes(thread.id)}
+                                  onChange={(e) => toggleAllegroThreadSelection(e, thread.id)}
+                                  onClick={(e) => e.stopPropagation()}
+                                  className="w-4 h-4 rounded border-gray-300 text-orange-600 focus:ring-orange-500 cursor-pointer"
+                                />
+                              </div>
                               {thread.interlocutor_avatar ? (
                                 <img
                                   src={thread.interlocutor_avatar}
@@ -2155,7 +2261,7 @@ function CRMContent() {
                                 </div>
                               </div>
                             </div>
-                          </button>
+                          </div>
                         ))
                       )}
                     </div>
@@ -2400,13 +2506,25 @@ function CRMContent() {
                           {mebleboxSyncStatus?.lastSyncAt ? `Sync: ${formatDate(mebleboxSyncStatus.lastSyncAt)}` : 'Nie zsynchronizowano'}
                         </p>
                       </div>
-                      <button
-                        onClick={handleMebleboxSync}
-                        disabled={mebleboxSyncing}
-                        className="px-3 py-1.5 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
-                      >
-                        {mebleboxSyncing ? 'Sync...' : 'Synchronizuj'}
-                      </button>
+                      <div className="flex gap-2">
+                        {mebleboxSelectedThreads.length > 0 && (
+                          <button
+                            onClick={handleMebleboxDeleteThreads}
+                            disabled={mebleboxDeletingThreads}
+                            className="px-3 py-1.5 text-sm bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 font-medium"
+                            title="Usun zaznaczone watki"
+                          >
+                            {mebleboxDeletingThreads ? '...' : `Usun (${mebleboxSelectedThreads.length})`}
+                          </button>
+                        )}
+                        <button
+                          onClick={handleMebleboxSync}
+                          disabled={mebleboxSyncing}
+                          className="px-3 py-1.5 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
+                        >
+                          {mebleboxSyncing ? 'Sync...' : 'Synchronizuj'}
+                        </button>
+                      </div>
                     </div>
 
                     {/* Search Input */}
@@ -2439,14 +2557,24 @@ function CRMContent() {
                             );
                           })
                           .map((thread) => (
-                          <button
+                          <div
                             key={thread.id}
                             onClick={() => openMebleboxThread(thread)}
-                            className={`w-full text-left px-4 py-3 border-b border-gray-100 dark:border-gray-700 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 ${
+                            className={`w-full text-left px-4 py-3 border-b border-gray-100 dark:border-gray-700 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer ${
                               mebleboxSelectedThread?.id === thread.id ? 'bg-blue-50' : ''
                             } ${!thread.read ? 'bg-orange-50' : ''}`}
                           >
-                            <div className="flex items-start gap-3">
+                            <div className="flex items-start gap-2">
+                              {/* Checkbox for thread selection */}
+                              <div className="mt-2">
+                                <input
+                                  type="checkbox"
+                                  checked={mebleboxSelectedThreads.includes(thread.id)}
+                                  onChange={(e) => toggleMebleboxThreadSelection(e, thread.id)}
+                                  onClick={(e) => e.stopPropagation()}
+                                  className="w-4 h-4 rounded border-gray-300 text-orange-600 focus:ring-orange-500 cursor-pointer"
+                                />
+                              </div>
                               {thread.interlocutor_avatar ? (
                                 <img
                                   src={thread.interlocutor_avatar}
@@ -2489,7 +2617,7 @@ function CRMContent() {
                                 </div>
                               </div>
                             </div>
-                          </button>
+                          </div>
                         ))
                       )}
                     </div>

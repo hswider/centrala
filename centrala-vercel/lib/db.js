@@ -1794,6 +1794,12 @@ export async function getUnreadAllegroThreadsCount() {
   return parseInt(rows[0].count);
 }
 
+// Delete Allegro thread and its messages
+export async function deleteAllegroThread(threadId) {
+  // Messages will be deleted by CASCADE
+  await sql`DELETE FROM allegro_threads WHERE id = ${threadId}`;
+}
+
 // ========== ALLEGRO MEBLEBOX FUNCTIONS ==========
 
 // Get Allegro Meblebox tokens
@@ -2004,6 +2010,12 @@ export async function markAllegroMebleboxThreadAsRead(threadId) {
 export async function getUnreadAllegroMebleboxThreadsCount() {
   const { rows } = await sql`SELECT COUNT(*) as count FROM allegro_meblebox_threads WHERE read = false`;
   return parseInt(rows[0].count);
+}
+
+// Delete Allegro Meblebox thread and its messages
+export async function deleteAllegroMebleboxThread(threadId) {
+  // Messages will be deleted by CASCADE
+  await sql`DELETE FROM allegro_meblebox_threads WHERE id = ${threadId}`;
 }
 
 // ========== GMAIL (Shopify Dobrelegowiska) FUNCTIONS ==========
