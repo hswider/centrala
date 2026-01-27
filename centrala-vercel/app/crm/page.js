@@ -3262,10 +3262,14 @@ function CRMContent() {
                               </button>
                               <button
                                 onClick={() => {
+                                  // Get original message content for forwarding
+                                  const originalMsg = poomkidsThreadMessages.length > 0 ? poomkidsThreadMessages[poomkidsThreadMessages.length - 1] : null;
+                                  const forwardBody = originalMsg ? `\n\n---------- Przekazana wiadomosc ----------\nOd: ${poomkidsSelectedThread.from_email}\nData: ${originalMsg.sent_at ? new Date(originalMsg.sent_at).toLocaleString('pl-PL') : ''}\nTemat: ${poomkidsSelectedThread.subject}\n\n${originalMsg.body_text || ''}` : '';
+
                                   setPoomkidsComposeMode(true);
-                                  setPoomkidsComposeTo(poomkidsSelectedThread.from_email || '');
+                                  setPoomkidsComposeTo('');
                                   setPoomkidsComposeSubject('Fwd: ' + (poomkidsSelectedThread.subject || '').replace(/^Fwd:\s*/i, ''));
-                                  setPoomkidsComposeBody('');
+                                  setPoomkidsComposeBody(forwardBody);
                                   setPoomkidsSelectedThread(null);
                                 }}
                                 className="px-2 py-1 text-xs font-medium bg-gray-100 text-gray-700 rounded hover:bg-gray-200"
