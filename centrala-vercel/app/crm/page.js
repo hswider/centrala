@@ -2923,6 +2923,28 @@ function CRMContent() {
                       />
                     </div>
 
+                    {/* Status Filter Tabs */}
+                    <div className="px-3 py-2 border-b border-gray-100 dark:border-gray-700 flex gap-1 flex-wrap bg-gray-50 dark:bg-gray-800/50">
+                      {[
+                        { key: 'all', label: 'Wszystkie', count: poomkidsThreads.length },
+                        { key: 'new', label: 'Nowe', count: poomkidsThreads.filter(t => t.status === 'new' || t.unread).length },
+                        { key: 'read', label: 'Przeczytane', count: poomkidsThreads.filter(t => t.status === 'read' || (!t.unread && t.status !== 'resolved')).length },
+                        { key: 'resolved', label: 'Rozwiazane', count: poomkidsThreads.filter(t => t.status === 'resolved').length },
+                      ].map((tab) => (
+                        <button
+                          key={tab.key}
+                          onClick={() => setPoomkidsFilter(tab.key)}
+                          className={`px-2 py-1 text-xs rounded-full transition-colors ${
+                            poomkidsFilter === tab.key
+                              ? 'bg-gray-900 dark:bg-white text-white dark:text-gray-900'
+                              : 'bg-white dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600 border border-gray-200 dark:border-gray-600'
+                          }`}
+                        >
+                          {tab.label} ({tab.count})
+                        </button>
+                      ))}
+                    </div>
+
                     <div className="flex-1 overflow-y-auto">
                       {poomkidsThreadsLoading ? (
                         <div className="p-4 text-center text-gray-500 dark:text-gray-400">Ladowanie...</div>
@@ -2933,14 +2955,22 @@ function CRMContent() {
                       ) : (
                         poomkidsThreads
                           .filter(thread => {
-                            if (!poomkidsSearch.trim()) return true;
-                            const search = poomkidsSearch.toLowerCase();
-                            return (
-                              (thread.from_name || '').toLowerCase().includes(search) ||
-                              (thread.from_email || '').toLowerCase().includes(search) ||
-                              (thread.subject || '').toLowerCase().includes(search) ||
-                              (thread.snippet || '').toLowerCase().includes(search)
-                            );
+                            // Search filter
+                            if (poomkidsSearch.trim()) {
+                              const search = poomkidsSearch.toLowerCase();
+                              const matchesSearch =
+                                (thread.from_name || '').toLowerCase().includes(search) ||
+                                (thread.from_email || '').toLowerCase().includes(search) ||
+                                (thread.subject || '').toLowerCase().includes(search) ||
+                                (thread.snippet || '').toLowerCase().includes(search);
+                              if (!matchesSearch) return false;
+                            }
+                            // Status filter
+                            if (poomkidsFilter === 'all') return true;
+                            if (poomkidsFilter === 'new') return thread.status === 'new' || thread.unread;
+                            if (poomkidsFilter === 'read') return thread.status === 'read' || (!thread.unread && thread.status !== 'resolved' && thread.status !== 'new');
+                            if (poomkidsFilter === 'resolved') return thread.status === 'resolved';
+                            return true;
                           })
                           .map((thread) => (
                           <div
@@ -3277,6 +3307,28 @@ function CRMContent() {
                       />
                     </div>
 
+                    {/* Status Filter Tabs */}
+                    <div className="px-3 py-2 border-b border-gray-100 dark:border-gray-700 flex gap-1 flex-wrap bg-gray-50 dark:bg-gray-800/50">
+                      {[
+                        { key: 'all', label: 'Wszystkie', count: allepoduszkiThreads.length },
+                        { key: 'new', label: 'Nowe', count: allepoduszkiThreads.filter(t => t.status === 'new' || t.unread).length },
+                        { key: 'read', label: 'Przeczytane', count: allepoduszkiThreads.filter(t => t.status === 'read' || (!t.unread && t.status !== 'resolved')).length },
+                        { key: 'resolved', label: 'Rozwiazane', count: allepoduszkiThreads.filter(t => t.status === 'resolved').length },
+                      ].map((tab) => (
+                        <button
+                          key={tab.key}
+                          onClick={() => setAllepoduszkiFilter(tab.key)}
+                          className={`px-2 py-1 text-xs rounded-full transition-colors ${
+                            allepoduszkiFilter === tab.key
+                              ? 'bg-gray-900 dark:bg-white text-white dark:text-gray-900'
+                              : 'bg-white dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600 border border-gray-200 dark:border-gray-600'
+                          }`}
+                        >
+                          {tab.label} ({tab.count})
+                        </button>
+                      ))}
+                    </div>
+
                     <div className="flex-1 overflow-y-auto">
                       {allepoduszkiThreadsLoading ? (
                         <div className="p-4 text-center text-gray-500 dark:text-gray-400">Ladowanie...</div>
@@ -3287,14 +3339,22 @@ function CRMContent() {
                       ) : (
                         allepoduszkiThreads
                           .filter(thread => {
-                            if (!allepoduszkiSearch.trim()) return true;
-                            const search = allepoduszkiSearch.toLowerCase();
-                            return (
-                              (thread.from_name || '').toLowerCase().includes(search) ||
-                              (thread.from_email || '').toLowerCase().includes(search) ||
-                              (thread.subject || '').toLowerCase().includes(search) ||
-                              (thread.snippet || '').toLowerCase().includes(search)
-                            );
+                            // Search filter
+                            if (allepoduszkiSearch.trim()) {
+                              const search = allepoduszkiSearch.toLowerCase();
+                              const matchesSearch =
+                                (thread.from_name || '').toLowerCase().includes(search) ||
+                                (thread.from_email || '').toLowerCase().includes(search) ||
+                                (thread.subject || '').toLowerCase().includes(search) ||
+                                (thread.snippet || '').toLowerCase().includes(search);
+                              if (!matchesSearch) return false;
+                            }
+                            // Status filter
+                            if (allepoduszkiFilter === 'all') return true;
+                            if (allepoduszkiFilter === 'new') return thread.status === 'new' || thread.unread;
+                            if (allepoduszkiFilter === 'read') return thread.status === 'read' || (!thread.unread && thread.status !== 'resolved' && thread.status !== 'new');
+                            if (allepoduszkiFilter === 'resolved') return thread.status === 'resolved';
+                            return true;
                           })
                           .map((thread) => (
                           <div
@@ -3603,6 +3663,28 @@ function CRMContent() {
                       />
                     </div>
 
+                    {/* Status Filter Tabs */}
+                    <div className="px-3 py-2 border-b border-gray-100 dark:border-gray-700 flex gap-1 flex-wrap bg-gray-50 dark:bg-gray-800/50">
+                      {[
+                        { key: 'all', label: 'Wszystkie', count: poomfurnitureThreads.length },
+                        { key: 'new', label: 'Nowe', count: poomfurnitureThreads.filter(t => t.status === 'new' || t.unread).length },
+                        { key: 'read', label: 'Przeczytane', count: poomfurnitureThreads.filter(t => t.status === 'read' || (!t.unread && t.status !== 'resolved')).length },
+                        { key: 'resolved', label: 'Rozwiazane', count: poomfurnitureThreads.filter(t => t.status === 'resolved').length },
+                      ].map((tab) => (
+                        <button
+                          key={tab.key}
+                          onClick={() => setPoomfurnitureFilter(tab.key)}
+                          className={`px-2 py-1 text-xs rounded-full transition-colors ${
+                            poomfurnitureFilter === tab.key
+                              ? 'bg-gray-900 dark:bg-white text-white dark:text-gray-900'
+                              : 'bg-white dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600 border border-gray-200 dark:border-gray-600'
+                          }`}
+                        >
+                          {tab.label} ({tab.count})
+                        </button>
+                      ))}
+                    </div>
+
                     <div className="flex-1 overflow-y-auto">
                       {poomfurnitureThreadsLoading ? (
                         <div className="p-4 text-center text-gray-500 dark:text-gray-400">Ladowanie...</div>
@@ -3613,14 +3695,22 @@ function CRMContent() {
                       ) : (
                         poomfurnitureThreads
                           .filter(thread => {
-                            if (!poomfurnitureSearch.trim()) return true;
-                            const search = poomfurnitureSearch.toLowerCase();
-                            return (
-                              (thread.from_name || '').toLowerCase().includes(search) ||
-                              (thread.from_email || '').toLowerCase().includes(search) ||
-                              (thread.subject || '').toLowerCase().includes(search) ||
-                              (thread.snippet || '').toLowerCase().includes(search)
-                            );
+                            // Search filter
+                            if (poomfurnitureSearch.trim()) {
+                              const search = poomfurnitureSearch.toLowerCase();
+                              const matchesSearch =
+                                (thread.from_name || '').toLowerCase().includes(search) ||
+                                (thread.from_email || '').toLowerCase().includes(search) ||
+                                (thread.subject || '').toLowerCase().includes(search) ||
+                                (thread.snippet || '').toLowerCase().includes(search);
+                              if (!matchesSearch) return false;
+                            }
+                            // Status filter
+                            if (poomfurnitureFilter === 'all') return true;
+                            if (poomfurnitureFilter === 'new') return thread.status === 'new' || thread.unread;
+                            if (poomfurnitureFilter === 'read') return thread.status === 'read' || (!thread.unread && thread.status !== 'resolved' && thread.status !== 'new');
+                            if (poomfurnitureFilter === 'resolved') return thread.status === 'resolved';
+                            return true;
                           })
                           .map((thread) => (
                           <div
