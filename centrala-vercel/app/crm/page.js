@@ -52,6 +52,11 @@ function CRMContent() {
   const [gmailDeleting, setGmailDeleting] = useState(false);
   const [gmailFilter, setGmailFilter] = useState('all'); // all, new, read, resolved
   const [gmailSearch, setGmailSearch] = useState('');
+  const [gmailComposeMode, setGmailComposeMode] = useState(false);
+  const [gmailComposeTo, setGmailComposeTo] = useState('');
+  const [gmailComposeSubject, setGmailComposeSubject] = useState('');
+  const [gmailComposeBody, setGmailComposeBody] = useState('');
+  const [gmailComposeAttachments, setGmailComposeAttachments] = useState([]);
 
   // Status dropdown state (shared across all modules - only one can be open)
   const [openStatusDropdown, setOpenStatusDropdown] = useState(null); // { module: 'gmail', threadId: '123' }
@@ -73,6 +78,11 @@ function CRMContent() {
   const [poomkidsDeleting, setPoomkidsDeleting] = useState(false);
   const [poomkidsFilter, setPoomkidsFilter] = useState('all'); // all, new, read, resolved
   const [poomkidsSearch, setPoomkidsSearch] = useState('');
+  const [poomkidsComposeMode, setPoomkidsComposeMode] = useState(false);
+  const [poomkidsComposeTo, setPoomkidsComposeTo] = useState('');
+  const [poomkidsComposeSubject, setPoomkidsComposeSubject] = useState('');
+  const [poomkidsComposeBody, setPoomkidsComposeBody] = useState('');
+  const [poomkidsComposeAttachments, setPoomkidsComposeAttachments] = useState([]);
 
   // Gmail Allepoduszki (Shopify Allepoduszki) state
   const [allepoduszkiAuth, setAllepoduszkiAuth] = useState({ authenticated: false, user: null, loading: true });
@@ -91,6 +101,11 @@ function CRMContent() {
   const [allepoduszkiDeleting, setAllepoduszkiDeleting] = useState(false);
   const [allepoduszkiFilter, setAllepoduszkiFilter] = useState('all'); // all, new, read, resolved
   const [allepoduszkiSearch, setAllepoduszkiSearch] = useState('');
+  const [allepoduszkiComposeMode, setAllepoduszkiComposeMode] = useState(false);
+  const [allepoduszkiComposeTo, setAllepoduszkiComposeTo] = useState('');
+  const [allepoduszkiComposeSubject, setAllepoduszkiComposeSubject] = useState('');
+  const [allepoduszkiComposeBody, setAllepoduszkiComposeBody] = useState('');
+  const [allepoduszkiComposeAttachments, setAllepoduszkiComposeAttachments] = useState([]);
 
   // Gmail Poomfurniture (Shopify poom-furniture.com) state
   const [poomfurnitureAuth, setPoomfurnitureAuth] = useState({ authenticated: false, user: null, loading: true });
@@ -109,6 +124,11 @@ function CRMContent() {
   const [poomfurnitureDeleting, setPoomfurnitureDeleting] = useState(false);
   const [poomfurnitureFilter, setPoomfurnitureFilter] = useState('all'); // all, new, read, resolved
   const [poomfurnitureSearch, setPoomfurnitureSearch] = useState('');
+  const [poomfurnitureComposeMode, setPoomfurnitureComposeMode] = useState(false);
+  const [poomfurnitureComposeTo, setPoomfurnitureComposeTo] = useState('');
+  const [poomfurnitureComposeSubject, setPoomfurnitureComposeSubject] = useState('');
+  const [poomfurnitureComposeBody, setPoomfurnitureComposeBody] = useState('');
+  const [poomfurnitureComposeAttachments, setPoomfurnitureComposeAttachments] = useState([]);
 
   const tabs = [
     { key: 'wiadomosci', label: 'Allegro Dobrelegowiska', icon: 'https://a.allegroimg.com/original/12c30c/0d4b068640de9b0daf22af9d97c5', overlayIcon: '/icons/dobrelegowiska.png', isImage: true, badge: unreadCount, color: 'orange', isConnected: allegroAuth.authenticated, isLoading: allegroAuth.loading },
@@ -1005,6 +1025,56 @@ function CRMContent() {
       alert('Blad: ' + err.message);
     } finally {
       setPoomkidsDeleting(false);
+    }
+  };
+
+  // Send new composed email for POOMKIDS
+  const handlePoomkidsSendCompose = async () => {
+    if (!poomkidsComposeTo.trim() || !poomkidsComposeSubject.trim() || (!poomkidsComposeBody.trim() && poomkidsComposeAttachments.length === 0)) return;
+
+    setPoomkidsSending(true);
+    try {
+      // Convert attachments to base64
+      const attachmentData = await Promise.all(poomkidsComposeAttachments.map(file => {
+        return new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => {
+            const base64 = reader.result.split(',')[1];
+            resolve({ filename: file.name, mimeType: file.type, data: base64 });
+          };
+          reader.onerror = reject;
+          reader.readAsDataURL(file);
+        });
+      }));
+
+      const res = await fetch('/api/gmail-poomkids/compose', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          to: poomkidsComposeTo.trim(),
+          subject: poomkidsComposeSubject.trim(),
+          text: poomkidsComposeBody.trim(),
+          attachments: attachmentData
+        })
+      });
+      const data = await res.json();
+
+      if (data.success) {
+        // Clear compose form and exit compose mode
+        setPoomkidsComposeTo('');
+        setPoomkidsComposeSubject('');
+        setPoomkidsComposeBody('');
+        setPoomkidsComposeAttachments([]);
+        setPoomkidsComposeMode(false);
+        // Refresh threads to show the new sent email
+        await handlePoomkidsSync();
+      } else {
+        alert('Blad wysylania: ' + data.error);
+      }
+    } catch (err) {
+      alert('Blad: ' + err.message);
+    } finally {
+      setPoomkidsSending(false);
     }
   };
 
@@ -2900,6 +2970,16 @@ function CRMContent() {
                       </div>
                       <div className="flex gap-2">
                         <button
+                          onClick={() => {
+                            setPoomkidsComposeMode(true);
+                            setPoomkidsSelectedThread(null);
+                          }}
+                          className="px-3 py-1.5 text-sm bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium"
+                          title="Nowa wiadomosc"
+                        >
+                          + Nowa
+                        </button>
+                        <button
                           onClick={handlePoomkidsSync}
                           disabled={poomkidsSyncing}
                           className="w-9 h-9 flex items-center justify-center bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
@@ -2935,6 +3015,7 @@ function CRMContent() {
                         { key: 'new', label: 'Nowe', count: poomkidsThreads.filter(t => t.status === 'new' || t.unread).length, color: 'red' },
                         { key: 'read', label: 'Przeczytane', count: poomkidsThreads.filter(t => t.status === 'read' || (!t.unread && t.status !== 'resolved')).length, color: 'blue' },
                         { key: 'resolved', label: 'Rozwiazane', count: poomkidsThreads.filter(t => t.status === 'resolved').length, color: 'green' },
+                        { key: 'sent', label: 'Wyslane', count: poomkidsThreads.filter(t => t.status === 'sent').length, color: 'purple' },
                       ].map((tab) => (
                         <button
                           key={tab.key}
@@ -2976,8 +3057,9 @@ function CRMContent() {
                             // Status filter
                             if (poomkidsFilter === 'all') return true;
                             if (poomkidsFilter === 'new') return thread.status === 'new' || thread.unread;
-                            if (poomkidsFilter === 'read') return thread.status === 'read' || (!thread.unread && thread.status !== 'resolved' && thread.status !== 'new');
+                            if (poomkidsFilter === 'read') return thread.status === 'read' || (!thread.unread && thread.status !== 'resolved' && thread.status !== 'new' && thread.status !== 'sent');
                             if (poomkidsFilter === 'resolved') return thread.status === 'resolved';
+                            if (poomkidsFilter === 'sent') return thread.status === 'sent';
                             return true;
                           })
                           .map((thread) => (
@@ -2986,7 +3068,7 @@ function CRMContent() {
                             onClick={() => openPoomkidsThread(thread)}
                             className={`w-full text-left px-4 py-3 border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer ${
                               poomkidsSelectedThread?.id === thread.id ? 'bg-blue-50' : ''
-                            } ${thread.status === 'new' || thread.unread ? 'bg-green-50' : ''} ${thread.status === 'resolved' ? 'bg-green-100' : ''}`}
+                            } ${thread.status === 'new' || thread.unread ? 'bg-green-50' : ''} ${thread.status === 'resolved' ? 'bg-green-100' : ''} ${thread.status === 'sent' ? 'bg-purple-50' : ''}`}
                           >
                             <div className="flex items-start gap-3">
                               <div className="relative mt-2">
@@ -3060,8 +3142,97 @@ function CRMContent() {
                   </div>
 
                   {/* Message view */}
-                  <div className={`lg:w-2/3 flex flex-col ${!poomkidsSelectedThread ? 'hidden lg:flex' : ''}`}>
-                    {!poomkidsSelectedThread ? (
+                  <div className={`lg:w-2/3 flex flex-col ${!poomkidsSelectedThread && !poomkidsComposeMode ? 'hidden lg:flex' : ''}`}>
+                    {poomkidsComposeMode ? (
+                      /* Compose new email form */
+                      <div className="flex-1 flex flex-col">
+                        <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-700">
+                          <div className="flex items-center justify-between mb-2">
+                            <button
+                              onClick={() => {
+                                setPoomkidsComposeMode(false);
+                                setPoomkidsComposeTo('');
+                                setPoomkidsComposeSubject('');
+                                setPoomkidsComposeBody('');
+                                setPoomkidsComposeAttachments([]);
+                              }}
+                              className="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
+                            >
+                              ← Anuluj
+                            </button>
+                            <h3 className="font-semibold text-gray-900 dark:text-white">Nowa wiadomosc</h3>
+                          </div>
+                        </div>
+                        <div className="flex-1 p-4 space-y-4 overflow-y-auto">
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Do:</label>
+                            <input
+                              type="email"
+                              value={poomkidsComposeTo}
+                              onChange={(e) => setPoomkidsComposeTo(e.target.value)}
+                              placeholder="adres@email.com"
+                              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Temat:</label>
+                            <input
+                              type="text"
+                              value={poomkidsComposeSubject}
+                              onChange={(e) => setPoomkidsComposeSubject(e.target.value)}
+                              placeholder="Temat wiadomosci"
+                              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Tresc:</label>
+                            <textarea
+                              value={poomkidsComposeBody}
+                              onChange={(e) => setPoomkidsComposeBody(e.target.value)}
+                              placeholder="Napisz wiadomosc..."
+                              rows={10}
+                              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 resize-none"
+                            />
+                          </div>
+                          {poomkidsComposeAttachments.length > 0 && (
+                            <div className="flex flex-wrap gap-2">
+                              {poomkidsComposeAttachments.map((file, index) => (
+                                <div key={index} className="flex items-center gap-1 px-2 py-1 bg-gray-100 dark:bg-gray-700 rounded text-xs">
+                                  <span className="truncate max-w-[100px]">{file.name}</span>
+                                  <button
+                                    onClick={() => setPoomkidsComposeAttachments(prev => prev.filter((_, i) => i !== index))}
+                                    className="text-gray-500 hover:text-red-500 ml-1"
+                                  >×</button>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                        <div className="px-4 py-3 border-t border-gray-100 dark:border-gray-700 flex gap-2">
+                          <label className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer flex items-center" title="Dodaj zalacznik">
+                            <span>📎</span>
+                            <input
+                              type="file"
+                              multiple
+                              className="hidden"
+                              onChange={(e) => {
+                                const files = Array.from(e.target.files || []);
+                                setPoomkidsComposeAttachments(prev => [...prev, ...files]);
+                                e.target.value = '';
+                              }}
+                            />
+                          </label>
+                          <div className="flex-1"></div>
+                          <button
+                            onClick={handlePoomkidsSendCompose}
+                            disabled={poomkidsSending || !poomkidsComposeTo.trim() || !poomkidsComposeSubject.trim() || (!poomkidsComposeBody.trim() && poomkidsComposeAttachments.length === 0)}
+                            className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 font-medium"
+                          >
+                            {poomkidsSending ? 'Wysylanie...' : 'Wyslij'}
+                          </button>
+                        </div>
+                      </div>
+                    ) : !poomkidsSelectedThread ? (
                       <div className="flex-1 flex items-center justify-center text-gray-400 dark:text-gray-500">
                         <div className="text-center">
                           <span className="text-6xl">📧</span>
@@ -3080,19 +3251,27 @@ function CRMContent() {
                               ← Wstecz
                             </button>
                             <div className="flex items-center gap-2">
-                              <select
-                                value={poomkidsSelectedThread.status || 'new'}
-                                onChange={(e) => handlePoomkidsStatusChange(e.target.value)}
-                                className={`px-2 py-1 text-xs font-medium rounded border-0 cursor-pointer ${
-                                  poomkidsSelectedThread.status === 'resolved' ? 'bg-green-100 text-green-700' :
-                                  poomkidsSelectedThread.status === 'unresolved' ? 'bg-yellow-100 text-yellow-700' :
-                                  'bg-blue-100 text-blue-700'
-                                }`}
+                              <button
+                                onClick={() => {
+                                  setPoomkidsReplyText('');
+                                  document.querySelector('#poomkids-reply-textarea')?.focus();
+                                }}
+                                className="px-2 py-1 text-xs font-medium bg-blue-100 text-blue-700 rounded hover:bg-blue-200"
                               >
-                                <option value="new">Nowe</option>
-                                <option value="resolved">Rozwiazane</option>
-                                <option value="unresolved">Nierozwiazane</option>
-                              </select>
+                                Odpowiedz
+                              </button>
+                              <button
+                                onClick={() => {
+                                  setPoomkidsComposeMode(true);
+                                  setPoomkidsComposeTo(poomkidsSelectedThread.from_email || '');
+                                  setPoomkidsComposeSubject('Fwd: ' + (poomkidsSelectedThread.subject || '').replace(/^Fwd:\s*/i, ''));
+                                  setPoomkidsComposeBody('');
+                                  setPoomkidsSelectedThread(null);
+                                }}
+                                className="px-2 py-1 text-xs font-medium bg-gray-100 text-gray-700 rounded hover:bg-gray-200"
+                              >
+                                Przekaz dalej
+                              </button>
                               {poomkidsSelectedMessages.length > 0 && (
                                 <button
                                   onClick={handlePoomkidsDeleteMessages}
@@ -3225,6 +3404,7 @@ function CRMContent() {
                               />
                             </label>
                             <textarea
+                              id="poomkids-reply-textarea"
                               value={poomkidsReplyText}
                               onChange={(e) => setPoomkidsReplyText(e.target.value)}
                               placeholder="Napisz odpowiedz..."

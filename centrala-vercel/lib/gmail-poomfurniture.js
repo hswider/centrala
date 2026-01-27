@@ -276,6 +276,73 @@ export async function sendReplyWithAttachments(threadId, to, subject, body, atta
   });
 }
 
+// Send new email (not a reply - creates new thread)
+export async function sendNewEmail(to, subject, body) {
+  const tokens = await getGmailPoomfurnitureTokens();
+  const fromEmail = tokens.email;
+
+  const emailLines = [
+    `From: ${fromEmail}`,
+    `To: ${to}`,
+    `Subject: ${subject}`,
+    'Content-Type: text/plain; charset=utf-8',
+    '',
+    body
+  ];
+
+  const rawEmail = emailLines.join('\r\n');
+  const encodedEmail = Buffer.from(rawEmail).toString('base64url');
+
+  return gmailFetch('/users/me/messages/send', {
+    method: 'POST',
+    body: JSON.stringify({
+      raw: encodedEmail
+    })
+  });
+}
+
+// Send new email with attachments (not a reply - creates new thread)
+export async function sendNewEmailWithAttachments(to, subject, body, attachments = []) {
+  const tokens = await getGmailPoomfurnitureTokens();
+  const from = tokens?.email || 'me';
+
+  const boundary = `boundary_${Date.now()}`;
+
+  const emailParts = [
+    `From: ${from}`,
+    `To: ${to}`,
+    `Subject: ${subject}`,
+    'MIME-Version: 1.0',
+    `Content-Type: multipart/mixed; boundary="${boundary}"`,
+    '',
+    `--${boundary}`,
+    'Content-Type: text/plain; charset=utf-8',
+    '',
+    body
+  ];
+
+  for (const attachment of attachments) {
+    emailParts.push(`--${boundary}`);
+    emailParts.push(`Content-Type: ${attachment.mimeType}; name="${attachment.filename}"`);
+    emailParts.push(`Content-Disposition: attachment; filename="${attachment.filename}"`);
+    emailParts.push('Content-Transfer-Encoding: base64');
+    emailParts.push('');
+    emailParts.push(attachment.data);
+  }
+
+  emailParts.push(`--${boundary}--`);
+
+  const rawEmail = emailParts.join('\r\n');
+  const encodedEmail = Buffer.from(rawEmail).toString('base64url');
+
+  return gmailFetch('/users/me/messages/send', {
+    method: 'POST',
+    body: JSON.stringify({
+      raw: encodedEmail
+    })
+  });
+}
+
 // ========== USER API ==========
 
 // Get current user info

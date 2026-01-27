@@ -2070,7 +2070,7 @@ export async function saveGmailThread(thread) {
   await sql`
     INSERT INTO gmail_threads (
       id, subject, snippet, from_email, from_name,
-      last_message_at, unread, messages_count, labels, updated_at
+      last_message_at, unread, messages_count, labels, status, updated_at
     ) VALUES (
       ${thread.id},
       ${thread.subject || ''},
@@ -2081,6 +2081,7 @@ export async function saveGmailThread(thread) {
       ${thread.unread ?? true},
       ${thread.messagesCount || 0},
       ${JSON.stringify(thread.labels || [])},
+      ${thread.status || 'new'},
       CURRENT_TIMESTAMP
     )
     ON CONFLICT (id) DO UPDATE SET
@@ -2092,6 +2093,7 @@ export async function saveGmailThread(thread) {
       unread = EXCLUDED.unread,
       messages_count = EXCLUDED.messages_count,
       labels = EXCLUDED.labels,
+      status = COALESCE(EXCLUDED.status, gmail_threads.status),
       updated_at = CURRENT_TIMESTAMP
   `;
 }
@@ -2482,7 +2484,7 @@ export async function saveGmailPoomkidsThread(thread) {
   await sql`
     INSERT INTO gmail_poomkids_threads (
       id, subject, snippet, from_email, from_name,
-      last_message_at, unread, messages_count, labels, updated_at
+      last_message_at, unread, messages_count, labels, status, updated_at
     ) VALUES (
       ${thread.id},
       ${thread.subject || ''},
@@ -2493,6 +2495,7 @@ export async function saveGmailPoomkidsThread(thread) {
       ${thread.unread ?? true},
       ${thread.messagesCount || 0},
       ${JSON.stringify(thread.labels || [])},
+      ${thread.status || 'new'},
       CURRENT_TIMESTAMP
     )
     ON CONFLICT (id) DO UPDATE SET
@@ -2504,6 +2507,7 @@ export async function saveGmailPoomkidsThread(thread) {
       unread = EXCLUDED.unread,
       messages_count = EXCLUDED.messages_count,
       labels = EXCLUDED.labels,
+      status = COALESCE(EXCLUDED.status, gmail_poomkids_threads.status),
       updated_at = CURRENT_TIMESTAMP
   `;
 }
@@ -2682,7 +2686,7 @@ export async function saveGmailAllepoduszkiThread(thread) {
   await sql`
     INSERT INTO gmail_allepoduszki_threads (
       id, subject, snippet, from_email, from_name,
-      last_message_at, unread, messages_count, labels, updated_at
+      last_message_at, unread, messages_count, labels, status, updated_at
     ) VALUES (
       ${thread.id},
       ${thread.subject || ''},
@@ -2693,6 +2697,7 @@ export async function saveGmailAllepoduszkiThread(thread) {
       ${thread.unread ?? true},
       ${thread.messagesCount || 0},
       ${JSON.stringify(thread.labels || [])},
+      ${thread.status || 'new'},
       CURRENT_TIMESTAMP
     )
     ON CONFLICT (id) DO UPDATE SET
@@ -2704,6 +2709,7 @@ export async function saveGmailAllepoduszkiThread(thread) {
       unread = EXCLUDED.unread,
       messages_count = EXCLUDED.messages_count,
       labels = EXCLUDED.labels,
+      status = COALESCE(EXCLUDED.status, gmail_allepoduszki_threads.status),
       updated_at = CURRENT_TIMESTAMP
   `;
 }
@@ -2882,7 +2888,7 @@ export async function saveGmailPoomfurnitureThread(thread) {
   await sql`
     INSERT INTO gmail_poomfurniture_threads (
       id, subject, snippet, from_email, from_name,
-      last_message_at, unread, messages_count, labels, updated_at
+      last_message_at, unread, messages_count, labels, status, updated_at
     ) VALUES (
       ${thread.id},
       ${thread.subject},
@@ -2893,6 +2899,7 @@ export async function saveGmailPoomfurnitureThread(thread) {
       ${thread.unread},
       ${thread.messagesCount},
       ${JSON.stringify(thread.labels || [])},
+      ${thread.status || 'new'},
       CURRENT_TIMESTAMP
     )
     ON CONFLICT (id) DO UPDATE SET
@@ -2904,6 +2911,7 @@ export async function saveGmailPoomfurnitureThread(thread) {
       unread = EXCLUDED.unread,
       messages_count = EXCLUDED.messages_count,
       labels = EXCLUDED.labels,
+      status = COALESCE(EXCLUDED.status, gmail_poomfurniture_threads.status),
       updated_at = CURRENT_TIMESTAMP
   `;
 }
