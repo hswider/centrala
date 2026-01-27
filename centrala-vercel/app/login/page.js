@@ -46,10 +46,10 @@ export default function LoginPage() {
           <div className="text-center mb-8">
             {/* Logo */}
             <div className="flex justify-center mb-3">
-              <div className="relative w-14 h-14">
+              <div className="relative w-48 h-16">
                 <Image
-                  src="/poom-logo.png"
-                  alt="POOM Logo"
+                  src="/poom-wood-logo.webp"
+                  alt="POOM Wood Logo"
                   fill
                   className="object-contain"
                   priority
