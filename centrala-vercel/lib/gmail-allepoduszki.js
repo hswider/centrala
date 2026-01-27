@@ -196,24 +196,34 @@ export async function getAttachment(messageId, attachmentId) {
   return gmailFetch(`/users/me/messages/${messageId}/attachments/${attachmentId}`);
 }
 
+// Encode subject for non-ASCII characters (RFC 2047 MIME encoded-word)
+function encodeEmailSubject(subject) {
+  if (!/[^\x00-\x7F]/.test(subject)) {
+    return subject;
+  }
+  const encoded = Buffer.from(subject, 'utf-8').toString('base64');
+  return `=?UTF-8?B?${encoded}?=`;
+}
+
 // Send reply to thread
 export async function sendReply(threadId, to, subject, body, messageId = null) {
   const tokens = await getGmailAllepoduszkiTokens();
   const fromEmail = tokens.email;
 
-  // Use provided Message-ID for proper threading, fallback to threadId
   const replyToId = messageId || threadId;
+  const replySubject = 'Re: ' + subject.replace(/^Re:\s*/i, '');
 
-  // Build email in RFC 2822 format
   const emailLines = [
     `From: ${fromEmail}`,
     `To: ${to}`,
-    `Subject: Re: ${subject.replace(/^Re:\s*/i, '')}`,
+    `Subject: ${encodeEmailSubject(replySubject)}`,
     `In-Reply-To: ${replyToId}`,
     `References: ${replyToId}`,
+    'MIME-Version: 1.0',
     'Content-Type: text/plain; charset=utf-8',
+    'Content-Transfer-Encoding: base64',
     '',
-    body
+    Buffer.from(body, 'utf-8').toString('base64')
   ];
 
   const rawEmail = emailLines.join('\r\n');
@@ -233,15 +243,14 @@ export async function sendReplyWithAttachments(threadId, to, subject, body, atta
   const tokens = await getGmailAllepoduszkiTokens();
   const from = tokens?.email || 'me';
 
-  // Use provided Message-ID for proper threading, fallback to threadId
   const replyToId = messageId || threadId;
-
+  const replySubject = 'Re: ' + subject.replace(/^Re:\s*/i, '');
   const boundary = `boundary_${Date.now()}`;
 
   const emailParts = [
     `From: ${from}`,
     `To: ${to}`,
-    `Subject: Re: ${subject.replace(/^Re:\s*/i, '')}`,
+    `Subject: ${encodeEmailSubject(replySubject)}`,
     `In-Reply-To: ${replyToId}`,
     `References: ${replyToId}`,
     'MIME-Version: 1.0',
@@ -249,8 +258,9 @@ export async function sendReplyWithAttachments(threadId, to, subject, body, atta
     '',
     `--${boundary}`,
     'Content-Type: text/plain; charset=utf-8',
+    'Content-Transfer-Encoding: base64',
     '',
-    body
+    Buffer.from(body, 'utf-8').toString('base64')
   ];
 
   for (const attachment of attachments) {
@@ -284,10 +294,12 @@ export async function sendNewEmail(to, subject, body) {
   const emailLines = [
     `From: ${fromEmail}`,
     `To: ${to}`,
-    `Subject: ${subject}`,
+    `Subject: ${encodeEmailSubject(subject)}`,
+    'MIME-Version: 1.0',
     'Content-Type: text/plain; charset=utf-8',
+    'Content-Transfer-Encoding: base64',
     '',
-    body
+    Buffer.from(body, 'utf-8').toString('base64')
   ];
 
   const rawEmail = emailLines.join('\r\n');
@@ -311,14 +323,15 @@ export async function sendNewEmailWithAttachments(to, subject, body, attachments
   const emailParts = [
     `From: ${from}`,
     `To: ${to}`,
-    `Subject: ${subject}`,
+    `Subject: ${encodeEmailSubject(subject)}`,
     'MIME-Version: 1.0',
     `Content-Type: multipart/mixed; boundary="${boundary}"`,
     '',
     `--${boundary}`,
     'Content-Type: text/plain; charset=utf-8',
+    'Content-Transfer-Encoding: base64',
     '',
-    body
+    Buffer.from(body, 'utf-8').toString('base64')
   ];
 
   for (const attachment of attachments) {
