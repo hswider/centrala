@@ -49,6 +49,7 @@ function CRMContent() {
   const [gmailSelectedMessages, setGmailSelectedMessages] = useState([]);
   const [gmailDeleting, setGmailDeleting] = useState(false);
   const [gmailFilter, setGmailFilter] = useState('all'); // all, new, read, resolved
+  const [gmailSearch, setGmailSearch] = useState('');
 
   // Status dropdown state (shared across all modules - only one can be open)
   const [openStatusDropdown, setOpenStatusDropdown] = useState(null); // { module: 'gmail', threadId: '123' }
@@ -69,6 +70,7 @@ function CRMContent() {
   const [poomkidsSelectedMessages, setPoomkidsSelectedMessages] = useState([]);
   const [poomkidsDeleting, setPoomkidsDeleting] = useState(false);
   const [poomkidsFilter, setPoomkidsFilter] = useState('all'); // all, new, read, resolved
+  const [poomkidsSearch, setPoomkidsSearch] = useState('');
 
   // Gmail Allepoduszki (Shopify Allepoduszki) state
   const [allepoduszkiAuth, setAllepoduszkiAuth] = useState({ authenticated: false, user: null, loading: true });
@@ -2468,6 +2470,17 @@ function CRMContent() {
                       </div>
                     </div>
 
+                    {/* Search Input */}
+                    <div className="px-3 py-2 border-b border-gray-100 dark:border-gray-700">
+                      <input
+                        type="text"
+                        placeholder="Szukaj po nazwisku, emailu, temacie..."
+                        value={gmailSearch}
+                        onChange={(e) => setGmailSearch(e.target.value)}
+                        className="w-full px-3 py-2 text-sm border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400"
+                      />
+                    </div>
+
                     {/* Status Filter Tabs */}
                     <div className="px-3 py-2 border-b border-gray-100 dark:border-gray-700 flex gap-1 flex-wrap bg-gray-50 dark:bg-gray-800/50">
                       {[
@@ -2481,7 +2494,7 @@ function CRMContent() {
                           onClick={() => setGmailFilter(tab.key)}
                           className={`px-2 py-1 text-xs rounded-full transition-colors ${
                             gmailFilter === tab.key
-                              ? 'bg-green-600 text-white'
+                              ? 'bg-gray-900 dark:bg-white text-white dark:text-gray-900'
                               : 'bg-white dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600 border border-gray-200 dark:border-gray-600'
                           }`}
                         >
@@ -2500,6 +2513,17 @@ function CRMContent() {
                       ) : (
                         gmailThreads
                           .filter(thread => {
+                            // Search filter
+                            if (gmailSearch.trim()) {
+                              const search = gmailSearch.toLowerCase();
+                              const matchesSearch =
+                                (thread.from_name || '').toLowerCase().includes(search) ||
+                                (thread.from_email || '').toLowerCase().includes(search) ||
+                                (thread.subject || '').toLowerCase().includes(search) ||
+                                (thread.snippet || '').toLowerCase().includes(search);
+                              if (!matchesSearch) return false;
+                            }
+                            // Status filter
                             if (gmailFilter === 'all') return true;
                             if (gmailFilter === 'new') return thread.status === 'new' || thread.unread;
                             if (gmailFilter === 'read') return thread.status === 'read' || (!thread.unread && thread.status !== 'resolved' && thread.status !== 'new');
@@ -2842,6 +2866,17 @@ function CRMContent() {
                       </div>
                     </div>
 
+                    {/* Search Input */}
+                    <div className="px-3 py-2 border-b border-gray-100 dark:border-gray-700">
+                      <input
+                        type="text"
+                        placeholder="Szukaj po nazwisku, emailu, temacie..."
+                        value={poomkidsSearch}
+                        onChange={(e) => setPoomkidsSearch(e.target.value)}
+                        className="w-full px-3 py-2 text-sm border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400"
+                      />
+                    </div>
+
                     <div className="flex-1 overflow-y-auto">
                       {poomkidsThreadsLoading ? (
                         <div className="p-4 text-center text-gray-500 dark:text-gray-400">Ladowanie...</div>
@@ -2850,7 +2885,18 @@ function CRMContent() {
                           Brak wiadomosci. Kliknij "Synchronizuj".
                         </div>
                       ) : (
-                        poomkidsThreads.map((thread) => (
+                        poomkidsThreads
+                          .filter(thread => {
+                            if (!poomkidsSearch.trim()) return true;
+                            const search = poomkidsSearch.toLowerCase();
+                            return (
+                              (thread.from_name || '').toLowerCase().includes(search) ||
+                              (thread.from_email || '').toLowerCase().includes(search) ||
+                              (thread.subject || '').toLowerCase().includes(search) ||
+                              (thread.snippet || '').toLowerCase().includes(search)
+                            );
+                          })
+                          .map((thread) => (
                           <div
                             key={thread.id}
                             onClick={() => openPoomkidsThread(thread)}
