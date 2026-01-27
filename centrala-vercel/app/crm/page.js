@@ -2502,9 +2502,10 @@ function CRMContent() {
                         <button
                           onClick={handleGmailSync}
                           disabled={gmailSyncing}
-                          className="px-3 py-1.5 text-sm bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50"
+                          className="w-9 h-9 flex items-center justify-center bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
+                          title="Synchronizuj"
                         >
-                          {gmailSyncing ? 'Sync...' : 'Synchronizuj'}
+                          {gmailSyncing ? '⏳' : '🔄'}
                         </button>
                         <button
                           onClick={handleGmailLogout}
@@ -2898,9 +2899,10 @@ function CRMContent() {
                         <button
                           onClick={handlePoomkidsSync}
                           disabled={poomkidsSyncing}
-                          className="px-3 py-1.5 text-sm bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50"
+                          className="w-9 h-9 flex items-center justify-center bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
+                          title="Synchronizuj"
                         >
-                          {poomkidsSyncing ? 'Sync...' : 'Synchronizuj'}
+                          {poomkidsSyncing ? '⏳' : '🔄'}
                         </button>
                         <button
                           onClick={handlePoomkidsLogout}
@@ -2997,7 +2999,7 @@ function CRMContent() {
                                       : thread.status === 'read'
                                         ? 'bg-blue-500 border-blue-500 text-white'
                                         : thread.status === 'new' || thread.unread
-                                          ? 'bg-green-600 border-green-600 text-white'
+                                          ? 'bg-red-500 border-red-500 text-white'
                                           : 'border-gray-300 hover:border-gray-400'
                                   }`}
                                   title="Zmien status"
@@ -3010,7 +3012,7 @@ function CRMContent() {
                                       onClick={(e) => { quickChangePoomkidsThreadStatus(e, thread.id, 'new'); setOpenStatusDropdown(null); }}
                                       className="w-full px-3 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
                                     >
-                                      <span className="w-3 h-3 rounded-full bg-green-600"></span> Nowe
+                                      <span className="w-3 h-3 rounded-full bg-red-500"></span> Nowe
                                     </button>
                                     <button
                                       onClick={(e) => { quickChangePoomkidsThreadStatus(e, thread.id, 'read'); setOpenStatusDropdown(null); }}
@@ -3282,9 +3284,10 @@ function CRMContent() {
                         <button
                           onClick={handleAllepoduszkiSync}
                           disabled={allepoduszkiSyncing}
-                          className="px-3 py-1.5 text-sm bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50"
+                          className="w-9 h-9 flex items-center justify-center bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
+                          title="Synchronizuj"
                         >
-                          {allepoduszkiSyncing ? 'Sync...' : 'Synchronizuj'}
+                          {allepoduszkiSyncing ? '⏳' : '🔄'}
                         </button>
                         <button
                           onClick={handleAllepoduszkiLogout}
@@ -3381,7 +3384,7 @@ function CRMContent() {
                                       : thread.status === 'read'
                                         ? 'bg-blue-500 border-blue-500 text-white'
                                         : thread.status === 'new' || thread.unread
-                                          ? 'bg-purple-500 border-purple-500 text-white'
+                                          ? 'bg-red-500 border-red-500 text-white'
                                           : 'border-gray-300 hover:border-gray-400'
                                   }`}
                                   title="Zmien status"
@@ -3394,7 +3397,7 @@ function CRMContent() {
                                       onClick={(e) => { quickChangeAllepoduszkiThreadStatus(e, thread.id, 'new'); setOpenStatusDropdown(null); }}
                                       className="w-full px-3 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
                                     >
-                                      <span className="w-3 h-3 rounded-full bg-purple-500"></span> Nowe
+                                      <span className="w-3 h-3 rounded-full bg-red-500"></span> Nowe
                                     </button>
                                     <button
                                       onClick={(e) => { quickChangeAllepoduszkiThreadStatus(e, thread.id, 'read'); setOpenStatusDropdown(null); }}
@@ -3638,9 +3641,10 @@ function CRMContent() {
                         <button
                           onClick={handlePoomfurnitureSync}
                           disabled={poomfurnitureSyncing}
-                          className="px-3 py-1.5 text-sm bg-teal-600 text-white rounded-lg hover:bg-teal-700 disabled:opacity-50"
+                          className="w-9 h-9 flex items-center justify-center bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
+                          title="Synchronizuj"
                         >
-                          {poomfurnitureSyncing ? 'Sync...' : 'Synchronizuj'}
+                          {poomfurnitureSyncing ? '⏳' : '🔄'}
                         </button>
                         <button
                           onClick={handlePoomfurnitureLogout}
@@ -3737,7 +3741,7 @@ function CRMContent() {
                                       : thread.status === 'read'
                                         ? 'bg-blue-500 border-blue-500 text-white'
                                         : thread.status === 'new' || thread.unread
-                                          ? 'bg-teal-500 border-teal-500 text-white'
+                                          ? 'bg-red-500 border-red-500 text-white'
                                           : 'border-gray-300 hover:border-gray-400'
                                   }`}
                                   title="Zmien status"
@@ -3750,7 +3754,7 @@ function CRMContent() {
                                       onClick={(e) => { quickChangePoomfurnitureThreadStatus(e, thread.id, 'new'); setOpenStatusDropdown(null); }}
                                       className="w-full px-3 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
                                     >
-                                      <span className="w-3 h-3 rounded-full bg-teal-500"></span> Nowe
+                                      <span className="w-3 h-3 rounded-full bg-red-500"></span> Nowe
                                     </button>
                                     <button
                                       onClick={(e) => { quickChangePoomfurnitureThreadStatus(e, thread.id, 'read'); setOpenStatusDropdown(null); }}
