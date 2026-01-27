@@ -356,6 +356,13 @@ export async function sendNewEmailWithAttachments(to, subject, body, attachments
   });
 }
 
+// Trash a thread (move to trash)
+export async function trashThread(threadId) {
+  return gmailFetch(`/users/me/threads/${threadId}/trash`, {
+    method: 'POST'
+  });
+}
+
 // ========== USER API ==========
 
 // Get current user info

@@ -2189,7 +2189,17 @@ export async function markGmailThreadAsRead(threadId) {
 
 // Update Gmail thread status
 export async function updateGmailThreadStatus(threadId, status) {
-  await sql`UPDATE gmail_threads SET status = ${status}, updated_at = CURRENT_TIMESTAMP WHERE id = ${threadId}`;
+  // Also update unread field: only 'new' status means unread
+  const unread = status === 'new';
+  await sql`UPDATE gmail_threads SET status = ${status}, unread = ${unread}, updated_at = CURRENT_TIMESTAMP WHERE id = ${threadId}`;
+}
+
+// Delete Gmail thread and its messages
+export async function deleteGmailThread(threadId) {
+  // First delete messages
+  await sql`DELETE FROM gmail_messages WHERE thread_id = ${threadId}`;
+  // Then delete thread
+  await sql`DELETE FROM gmail_threads WHERE id = ${threadId}`;
 }
 
 // Delete Gmail messages by IDs
@@ -2813,7 +2823,17 @@ export async function markGmailAllepoduszkiThreadAsRead(threadId) {
 
 // Update Gmail Allepoduszki thread status
 export async function updateGmailAllepoduszkiThreadStatus(threadId, status) {
-  await sql`UPDATE gmail_allepoduszki_threads SET status = ${status}, updated_at = CURRENT_TIMESTAMP WHERE id = ${threadId}`;
+  // Also update unread field: only 'new' status means unread
+  const unread = status === 'new';
+  await sql`UPDATE gmail_allepoduszki_threads SET status = ${status}, unread = ${unread}, updated_at = CURRENT_TIMESTAMP WHERE id = ${threadId}`;
+}
+
+// Delete Gmail Allepoduszki thread and its messages
+export async function deleteGmailAllepoduszkiThread(threadId) {
+  // First delete messages
+  await sql`DELETE FROM gmail_allepoduszki_messages WHERE thread_id = ${threadId}`;
+  // Then delete thread
+  await sql`DELETE FROM gmail_allepoduszki_threads WHERE id = ${threadId}`;
 }
 
 // Mark Gmail Allepoduszki messages as checked/unchecked
@@ -3012,7 +3032,17 @@ export async function markGmailPoomfurnitureThreadAsRead(threadId) {
 
 // Update Gmail Poomfurniture thread status
 export async function updateGmailPoomfurnitureThreadStatus(threadId, status) {
-  await sql`UPDATE gmail_poomfurniture_threads SET status = ${status}, updated_at = CURRENT_TIMESTAMP WHERE id = ${threadId}`;
+  // Also update unread field: only 'new' status means unread
+  const unread = status === 'new';
+  await sql`UPDATE gmail_poomfurniture_threads SET status = ${status}, unread = ${unread}, updated_at = CURRENT_TIMESTAMP WHERE id = ${threadId}`;
+}
+
+// Delete Gmail Poomfurniture thread and its messages
+export async function deleteGmailPoomfurnitureThread(threadId) {
+  // First delete messages
+  await sql`DELETE FROM gmail_poomfurniture_messages WHERE thread_id = ${threadId}`;
+  // Then delete thread
+  await sql`DELETE FROM gmail_poomfurniture_threads WHERE id = ${threadId}`;
 }
 
 // Mark Gmail Poomfurniture messages as checked/unchecked

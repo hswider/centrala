@@ -22,10 +22,10 @@ export async function PUT(request, { params }) {
     const body = await request.json();
     const { status } = body;
 
-    if (!status || !['new', 'read', 'resolved'].includes(status)) {
+    if (!status || !['new', 'read', 'resolved', 'sent'].includes(status)) {
       return NextResponse.json({
         success: false,
-        error: 'Invalid status. Must be "new", "read" or "resolved"'
+        error: 'Invalid status. Must be "new", "read", "resolved" or "sent"'
       }, { status: 400 });
     }
 

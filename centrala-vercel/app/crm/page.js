@@ -52,6 +52,8 @@ function CRMContent() {
   const [gmailDeleting, setGmailDeleting] = useState(false);
   const [gmailFilter, setGmailFilter] = useState('all'); // all, new, read, resolved
   const [gmailSearch, setGmailSearch] = useState('');
+  const [gmailSelectedThreads, setGmailSelectedThreads] = useState([]);
+  const [gmailDeletingThreads, setGmailDeletingThreads] = useState(false);
   const [gmailComposeMode, setGmailComposeMode] = useState(false);
   const [gmailComposeTo, setGmailComposeTo] = useState('');
   const [gmailComposeSubject, setGmailComposeSubject] = useState('');
@@ -103,6 +105,8 @@ function CRMContent() {
   const [allepoduszkiDeleting, setAllepoduszkiDeleting] = useState(false);
   const [allepoduszkiFilter, setAllepoduszkiFilter] = useState('all'); // all, new, read, resolved
   const [allepoduszkiSearch, setAllepoduszkiSearch] = useState('');
+  const [allepoduszkiSelectedThreads, setAllepoduszkiSelectedThreads] = useState([]);
+  const [allepoduszkiDeletingThreads, setAllepoduszkiDeletingThreads] = useState(false);
   const [allepoduszkiComposeMode, setAllepoduszkiComposeMode] = useState(false);
   const [allepoduszkiComposeTo, setAllepoduszkiComposeTo] = useState('');
   const [allepoduszkiComposeSubject, setAllepoduszkiComposeSubject] = useState('');
@@ -126,6 +130,8 @@ function CRMContent() {
   const [poomfurnitureDeleting, setPoomfurnitureDeleting] = useState(false);
   const [poomfurnitureFilter, setPoomfurnitureFilter] = useState('all'); // all, new, read, resolved
   const [poomfurnitureSearch, setPoomfurnitureSearch] = useState('');
+  const [poomfurnitureSelectedThreads, setPoomfurnitureSelectedThreads] = useState([]);
+  const [poomfurnitureDeletingThreads, setPoomfurnitureDeletingThreads] = useState(false);
   const [poomfurnitureComposeMode, setPoomfurnitureComposeMode] = useState(false);
   const [poomfurnitureComposeTo, setPoomfurnitureComposeTo] = useState('');
   const [poomfurnitureComposeSubject, setPoomfurnitureComposeSubject] = useState('');
@@ -757,6 +763,46 @@ function CRMContent() {
         ? prev.filter(id => id !== messageId)
         : [...prev, messageId]
     );
+  };
+
+  // Toggle thread selection for deletion
+  const toggleGmailThreadSelection = (e, threadId) => {
+    e.stopPropagation();
+    setGmailSelectedThreads(prev => prev.includes(threadId) ? prev.filter(id => id !== threadId) : [...prev, threadId]);
+  };
+
+  // Delete selected threads
+  const handleGmailDeleteThreads = async () => {
+    if (gmailSelectedThreads.length === 0) return;
+    if (!confirm(`Usunac ${gmailSelectedThreads.length} watek(ow)? Wiadomosci zostana przeniesione do kosza.`)) return;
+
+    setGmailDeletingThreads(true);
+    try {
+      const res = await fetch('/api/gmail/threads', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ threadIds: gmailSelectedThreads })
+      });
+      const data = await res.json();
+
+      if (data.success) {
+        // Remove deleted threads from state
+        setGmailThreads(prev => prev.filter(t => !gmailSelectedThreads.includes(t.id)));
+        // Clear selection
+        setGmailSelectedThreads([]);
+        // If currently selected thread was deleted, clear it
+        if (gmailSelectedThread && gmailSelectedThreads.includes(gmailSelectedThread.id)) {
+          setGmailSelectedThread(null);
+          setGmailThreadMessages([]);
+        }
+      } else {
+        alert('Blad usuwania: ' + data.error);
+      }
+    } catch (err) {
+      alert('Blad: ' + err.message);
+    } finally {
+      setGmailDeletingThreads(false);
+    }
   };
 
   // Quick change thread status from thread list (optimistic update)
@@ -1391,6 +1437,46 @@ function CRMContent() {
     setAllepoduszkiSelectedMessages(prev => prev.includes(messageId) ? prev.filter(id => id !== messageId) : [...prev, messageId]);
   };
 
+  // Toggle thread selection for deletion
+  const toggleAllepoduszkiThreadSelection = (e, threadId) => {
+    e.stopPropagation();
+    setAllepoduszkiSelectedThreads(prev => prev.includes(threadId) ? prev.filter(id => id !== threadId) : [...prev, threadId]);
+  };
+
+  // Delete selected threads
+  const handleAllepoduszkiDeleteThreads = async () => {
+    if (allepoduszkiSelectedThreads.length === 0) return;
+    if (!confirm(`Usunac ${allepoduszkiSelectedThreads.length} watek(ow)? Wiadomosci zostana przeniesione do kosza.`)) return;
+
+    setAllepoduszkiDeletingThreads(true);
+    try {
+      const res = await fetch('/api/gmail-allepoduszki/threads', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ threadIds: allepoduszkiSelectedThreads })
+      });
+      const data = await res.json();
+
+      if (data.success) {
+        // Remove deleted threads from state
+        setAllepoduszkiThreads(prev => prev.filter(t => !allepoduszkiSelectedThreads.includes(t.id)));
+        // Clear selection
+        setAllepoduszkiSelectedThreads([]);
+        // If currently selected thread was deleted, clear it
+        if (allepoduszkiSelectedThread && allepoduszkiSelectedThreads.includes(allepoduszkiSelectedThread.id)) {
+          setAllepoduszkiSelectedThread(null);
+          setAllepoduszkiThreadMessages([]);
+        }
+      } else {
+        alert('Blad usuwania: ' + data.error);
+      }
+    } catch (err) {
+      alert('Blad: ' + err.message);
+    } finally {
+      setAllepoduszkiDeletingThreads(false);
+    }
+  };
+
   // Quick change Allepoduszki thread status (optimistic update)
   const quickChangeAllepoduszkiThreadStatus = async (e, threadId, newStatus) => {
     e.stopPropagation();
@@ -1655,6 +1741,46 @@ function CRMContent() {
 
   const togglePoomfurnitureMessageSelection = (messageId) => {
     setPoomfurnitureSelectedMessages(prev => prev.includes(messageId) ? prev.filter(id => id !== messageId) : [...prev, messageId]);
+  };
+
+  // Toggle thread selection for deletion
+  const togglePoomfurnitureThreadSelection = (e, threadId) => {
+    e.stopPropagation();
+    setPoomfurnitureSelectedThreads(prev => prev.includes(threadId) ? prev.filter(id => id !== threadId) : [...prev, threadId]);
+  };
+
+  // Delete selected threads
+  const handlePoomfurnitureDeleteThreads = async () => {
+    if (poomfurnitureSelectedThreads.length === 0) return;
+    if (!confirm(`Usunac ${poomfurnitureSelectedThreads.length} watek(ow)? Wiadomosci zostana przeniesione do kosza.`)) return;
+
+    setPoomfurnitureDeletingThreads(true);
+    try {
+      const res = await fetch('/api/gmail-poomfurniture/threads', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ threadIds: poomfurnitureSelectedThreads })
+      });
+      const data = await res.json();
+
+      if (data.success) {
+        // Remove deleted threads from state
+        setPoomfurnitureThreads(prev => prev.filter(t => !poomfurnitureSelectedThreads.includes(t.id)));
+        // Clear selection
+        setPoomfurnitureSelectedThreads([]);
+        // If currently selected thread was deleted, clear it
+        if (poomfurnitureSelectedThread && poomfurnitureSelectedThreads.includes(poomfurnitureSelectedThread.id)) {
+          setPoomfurnitureSelectedThread(null);
+          setPoomfurnitureThreadMessages([]);
+        }
+      } else {
+        alert('Blad usuwania: ' + data.error);
+      }
+    } catch (err) {
+      alert('Blad: ' + err.message);
+    } finally {
+      setPoomfurnitureDeletingThreads(false);
+    }
   };
 
   // Quick change Poomfurniture thread status (optimistic update)
@@ -2611,6 +2737,26 @@ function CRMContent() {
                         </p>
                       </div>
                       <div className="flex gap-2">
+                        {gmailSelectedThreads.length > 0 && (
+                          <button
+                            onClick={handleGmailDeleteThreads}
+                            disabled={gmailDeletingThreads}
+                            className="px-3 py-1.5 text-sm bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 font-medium"
+                            title="Usun zaznaczone watki"
+                          >
+                            {gmailDeletingThreads ? '...' : `Usun (${gmailSelectedThreads.length})`}
+                          </button>
+                        )}
+                        <button
+                          onClick={() => {
+                            setGmailComposeMode(true);
+                            setGmailSelectedThread(null);
+                          }}
+                          className="px-3 py-1.5 text-sm bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium"
+                          title="Nowa wiadomosc"
+                        >
+                          + Nowa
+                        </button>
                         <button
                           onClick={handleGmailSync}
                           disabled={gmailSyncing}
@@ -2647,6 +2793,7 @@ function CRMContent() {
                         { key: 'new', label: 'Nowe', count: gmailThreads.filter(t => t.status === 'new' || t.unread).length, color: 'red' },
                         { key: 'read', label: 'Przeczytane', count: gmailThreads.filter(t => t.status === 'read' || (!t.unread && t.status !== 'resolved')).length, color: 'blue' },
                         { key: 'resolved', label: 'Rozwiazane', count: gmailThreads.filter(t => t.status === 'resolved').length, color: 'green' },
+                        { key: 'sent', label: 'Wyslane', count: gmailThreads.filter(t => t.status === 'sent').length, color: 'purple' },
                       ].map((tab) => (
                         <button
                           key={tab.key}
@@ -2688,8 +2835,9 @@ function CRMContent() {
                             // Status filter
                             if (gmailFilter === 'all') return true;
                             if (gmailFilter === 'new') return thread.status === 'new' || thread.unread;
-                            if (gmailFilter === 'read') return thread.status === 'read' || (!thread.unread && thread.status !== 'resolved' && thread.status !== 'new');
+                            if (gmailFilter === 'read') return thread.status === 'read' || (!thread.unread && thread.status !== 'resolved' && thread.status !== 'new' && thread.status !== 'sent');
                             if (gmailFilter === 'resolved') return thread.status === 'resolved';
+                            if (gmailFilter === 'sent') return thread.status === 'sent';
                             return true;
                           })
                           .map((thread) => (
@@ -2698,9 +2846,19 @@ function CRMContent() {
                             onClick={() => openGmailThread(thread)}
                             className={`w-full text-left px-4 py-3 border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer ${
                               gmailSelectedThread?.id === thread.id ? 'bg-blue-50' : ''
-                            } ${thread.status === 'new' || (!thread.status && thread.unread) ? 'bg-red-50' : ''} ${thread.status === 'resolved' ? 'bg-green-50' : ''}`}
+                            } ${thread.status === 'new' || (!thread.status && thread.unread) ? 'bg-red-50' : ''} ${thread.status === 'resolved' ? 'bg-green-50' : ''} ${thread.status === 'sent' ? 'bg-purple-50' : ''}`}
                           >
-                            <div className="flex items-start gap-3">
+                            <div className="flex items-start gap-2">
+                              {/* Checkbox for thread selection */}
+                              <div className="mt-2">
+                                <input
+                                  type="checkbox"
+                                  checked={gmailSelectedThreads.includes(thread.id)}
+                                  onChange={(e) => toggleGmailThreadSelection(e, thread.id)}
+                                  onClick={(e) => e.stopPropagation()}
+                                  className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                                />
+                              </div>
                               <div className="relative mt-2">
                                 <button
                                   onClick={(e) => {
@@ -3533,6 +3691,26 @@ function CRMContent() {
                         </p>
                       </div>
                       <div className="flex gap-2">
+                        {allepoduszkiSelectedThreads.length > 0 && (
+                          <button
+                            onClick={handleAllepoduszkiDeleteThreads}
+                            disabled={allepoduszkiDeletingThreads}
+                            className="px-3 py-1.5 text-sm bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 font-medium"
+                            title="Usun zaznaczone watki"
+                          >
+                            {allepoduszkiDeletingThreads ? '...' : `Usun (${allepoduszkiSelectedThreads.length})`}
+                          </button>
+                        )}
+                        <button
+                          onClick={() => {
+                            setAllepoduszkiComposeMode(true);
+                            setAllepoduszkiSelectedThread(null);
+                          }}
+                          className="px-3 py-1.5 text-sm bg-purple-600 text-white rounded-lg hover:bg-purple-700 font-medium"
+                          title="Nowa wiadomosc"
+                        >
+                          + Nowa
+                        </button>
                         <button
                           onClick={handleAllepoduszkiSync}
                           disabled={allepoduszkiSyncing}
@@ -3569,6 +3747,7 @@ function CRMContent() {
                         { key: 'new', label: 'Nowe', count: allepoduszkiThreads.filter(t => t.status === 'new' || t.unread).length, color: 'red' },
                         { key: 'read', label: 'Przeczytane', count: allepoduszkiThreads.filter(t => t.status === 'read' || (!t.unread && t.status !== 'resolved')).length, color: 'blue' },
                         { key: 'resolved', label: 'Rozwiazane', count: allepoduszkiThreads.filter(t => t.status === 'resolved').length, color: 'green' },
+                        { key: 'sent', label: 'Wyslane', count: allepoduszkiThreads.filter(t => t.status === 'sent').length, color: 'purple' },
                       ].map((tab) => (
                         <button
                           key={tab.key}
@@ -3610,8 +3789,9 @@ function CRMContent() {
                             // Status filter
                             if (allepoduszkiFilter === 'all') return true;
                             if (allepoduszkiFilter === 'new') return thread.status === 'new' || thread.unread;
-                            if (allepoduszkiFilter === 'read') return thread.status === 'read' || (!thread.unread && thread.status !== 'resolved' && thread.status !== 'new');
+                            if (allepoduszkiFilter === 'read') return thread.status === 'read' || (!thread.unread && thread.status !== 'resolved' && thread.status !== 'new' && thread.status !== 'sent');
                             if (allepoduszkiFilter === 'resolved') return thread.status === 'resolved';
+                            if (allepoduszkiFilter === 'sent') return thread.status === 'sent';
                             return true;
                           })
                           .map((thread) => (
@@ -3620,9 +3800,19 @@ function CRMContent() {
                             onClick={() => openAllepoduszkiThread(thread)}
                             className={`w-full text-left px-4 py-3 border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer ${
                               allepoduszkiSelectedThread?.id === thread.id ? 'bg-blue-50' : ''
-                            } ${thread.status === 'new' || thread.unread ? 'bg-purple-50' : ''} ${thread.status === 'resolved' ? 'bg-green-50' : ''}`}
+                            } ${thread.status === 'new' || thread.unread ? 'bg-purple-50' : ''} ${thread.status === 'resolved' ? 'bg-green-50' : ''} ${thread.status === 'sent' ? 'bg-purple-100' : ''}`}
                           >
-                            <div className="flex items-start gap-3">
+                            <div className="flex items-start gap-2">
+                              {/* Checkbox for thread selection */}
+                              <div className="mt-2">
+                                <input
+                                  type="checkbox"
+                                  checked={allepoduszkiSelectedThreads.includes(thread.id)}
+                                  onChange={(e) => toggleAllepoduszkiThreadSelection(e, thread.id)}
+                                  onClick={(e) => e.stopPropagation()}
+                                  className="w-4 h-4 rounded border-gray-300 text-purple-600 focus:ring-purple-500 cursor-pointer"
+                                />
+                              </div>
                               <div className="relative mt-2">
                                 <button
                                   onClick={(e) => {
@@ -3893,6 +4083,26 @@ function CRMContent() {
                         </p>
                       </div>
                       <div className="flex gap-2">
+                        {poomfurnitureSelectedThreads.length > 0 && (
+                          <button
+                            onClick={handlePoomfurnitureDeleteThreads}
+                            disabled={poomfurnitureDeletingThreads}
+                            className="px-3 py-1.5 text-sm bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 font-medium"
+                            title="Usun zaznaczone watki"
+                          >
+                            {poomfurnitureDeletingThreads ? '...' : `Usun (${poomfurnitureSelectedThreads.length})`}
+                          </button>
+                        )}
+                        <button
+                          onClick={() => {
+                            setPoomfurnitureComposeMode(true);
+                            setPoomfurnitureSelectedThread(null);
+                          }}
+                          className="px-3 py-1.5 text-sm bg-teal-600 text-white rounded-lg hover:bg-teal-700 font-medium"
+                          title="Nowa wiadomosc"
+                        >
+                          + Nowa
+                        </button>
                         <button
                           onClick={handlePoomfurnitureSync}
                           disabled={poomfurnitureSyncing}
@@ -3929,6 +4139,7 @@ function CRMContent() {
                         { key: 'new', label: 'Nowe', count: poomfurnitureThreads.filter(t => t.status === 'new' || t.unread).length, color: 'red' },
                         { key: 'read', label: 'Przeczytane', count: poomfurnitureThreads.filter(t => t.status === 'read' || (!t.unread && t.status !== 'resolved')).length, color: 'blue' },
                         { key: 'resolved', label: 'Rozwiazane', count: poomfurnitureThreads.filter(t => t.status === 'resolved').length, color: 'green' },
+                        { key: 'sent', label: 'Wyslane', count: poomfurnitureThreads.filter(t => t.status === 'sent').length, color: 'purple' },
                       ].map((tab) => (
                         <button
                           key={tab.key}
@@ -3970,8 +4181,9 @@ function CRMContent() {
                             // Status filter
                             if (poomfurnitureFilter === 'all') return true;
                             if (poomfurnitureFilter === 'new') return thread.status === 'new' || thread.unread;
-                            if (poomfurnitureFilter === 'read') return thread.status === 'read' || (!thread.unread && thread.status !== 'resolved' && thread.status !== 'new');
+                            if (poomfurnitureFilter === 'read') return thread.status === 'read' || (!thread.unread && thread.status !== 'resolved' && thread.status !== 'new' && thread.status !== 'sent');
                             if (poomfurnitureFilter === 'resolved') return thread.status === 'resolved';
+                            if (poomfurnitureFilter === 'sent') return thread.status === 'sent';
                             return true;
                           })
                           .map((thread) => (
@@ -3980,9 +4192,19 @@ function CRMContent() {
                             onClick={() => openPoomfurnitureThread(thread)}
                             className={`w-full text-left px-4 py-3 border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer ${
                               poomfurnitureSelectedThread?.id === thread.id ? 'bg-blue-50' : ''
-                            } ${thread.status === 'new' || thread.unread ? 'bg-teal-50' : ''} ${thread.status === 'resolved' ? 'bg-green-50' : ''}`}
+                            } ${thread.status === 'new' || thread.unread ? 'bg-teal-50' : ''} ${thread.status === 'resolved' ? 'bg-green-50' : ''} ${thread.status === 'sent' ? 'bg-purple-50' : ''}`}
                           >
-                            <div className="flex items-start gap-3">
+                            <div className="flex items-start gap-2">
+                              {/* Checkbox for thread selection */}
+                              <div className="mt-2">
+                                <input
+                                  type="checkbox"
+                                  checked={poomfurnitureSelectedThreads.includes(thread.id)}
+                                  onChange={(e) => togglePoomfurnitureThreadSelection(e, thread.id)}
+                                  onClick={(e) => e.stopPropagation()}
+                                  className="w-4 h-4 rounded border-gray-300 text-teal-600 focus:ring-teal-500 cursor-pointer"
+                                />
+                              </div>
                               <div className="relative mt-2">
                                 <button
                                   onClick={(e) => {
