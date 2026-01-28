@@ -233,6 +233,11 @@ export default function Navigation() {
     );
   };
 
+  // Hide navigation on login page
+  if (pathname === '/login') {
+    return null;
+  }
+
   return (
     <nav className="bg-white dark:bg-gray-800 shadow dark:shadow-gray-900 sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-1 sm:px-2 lg:px-4">
