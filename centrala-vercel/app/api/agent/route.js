@@ -77,6 +77,63 @@ function detectMemoryCommand(message) {
 // Currency conversion
 const EUR_TO_PLN = 4.35;
 
+// Extract facts to remember from conversation using AI
+async function extractFactsToRemember(userMessage, aiResponse) {
+  if (!GROQ_API_KEY) return [];
+
+  try {
+    const prompt = `Przeanalizuj poniższą wymianę wiadomości między użytkownikiem a asystentem AI.
+Wyodrębnij TYLKO konkretne, ważne fakty biznesowe które warto zapamiętać na przyszłość.
+
+ZASADY:
+- Wyodrębniaj TYLKO fakty które użytkownik PODAJE jako informację (np. "firma to X", "mój email to Y", "pracuję w dziale Z")
+- NIE wyodrębniaj pytań użytkownika
+- NIE wyodrębniaj odpowiedzi AI zawierających statystyki (to są dane z bazy, nie nowe fakty)
+- NIE wyodrębniaj ogólnych informacji o systemie
+- Zwróć TYLKO nowe, konkretne fakty biznesowe podane przez użytkownika
+- Jeśli nie ma żadnych nowych faktów do zapamiętania, zwróć pusty JSON
+
+WIADOMOŚĆ UŻYTKOWNIKA:
+${userMessage}
+
+ODPOWIEDŹ ASYSTENTA:
+${aiResponse}
+
+Odpowiedz w formacie JSON:
+{"facts": ["fakt1", "fakt2"]} lub {"facts": []} jeśli brak faktów`;
+
+    const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${GROQ_API_KEY}`
+      },
+      body: JSON.stringify({
+        model: 'llama-3.1-8b-instant',
+        messages: [{ role: 'user', content: prompt }],
+        max_tokens: 200,
+        temperature: 0.1
+      })
+    });
+
+    if (!response.ok) return [];
+
+    const data = await response.json();
+    const content = data.choices[0]?.message?.content || '';
+
+    // Parse JSON from response
+    const jsonMatch = content.match(/\{[\s\S]*\}/);
+    if (jsonMatch) {
+      const parsed = JSON.parse(jsonMatch[0]);
+      return parsed.facts || [];
+    }
+  } catch (error) {
+    console.error('[Agent] Error extracting facts:', error);
+  }
+
+  return [];
+}
+
 // Extract potential order IDs from message
 function extractOrderIds(message) {
   // Match patterns like: AM260101910, 12345678, #12345, order numbers
@@ -543,6 +600,23 @@ export async function POST(request) {
     const aiResponse = await callGroq(message, contextData, orderData, history, memories);
 
     console.log('[Agent] Response generated successfully');
+
+    // Try to extract and save new facts from conversation (async, don't wait)
+    extractFactsToRemember(message, aiResponse).then(async (facts) => {
+      if (facts.length > 0) {
+        console.log('[Agent] Extracted facts to remember:', facts);
+        for (const fact of facts) {
+          try {
+            await saveAIMemory(fact, 'auto');
+            console.log('[Agent] Auto-saved fact:', fact);
+          } catch (err) {
+            console.error('[Agent] Failed to save fact:', err);
+          }
+        }
+      }
+    }).catch(err => {
+      console.error('[Agent] Error in fact extraction:', err);
+    });
 
     return NextResponse.json({
       response: aiResponse,

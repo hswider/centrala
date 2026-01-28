@@ -6,7 +6,7 @@ export default function AgentPage() {
   const [messages, setMessages] = useState([
     {
       role: 'assistant',
-      content: 'Cześć! Jestem Twoim asystentem AI. Mogę odpowiedzieć na pytania dotyczące zamówień i sprzedaży. Na przykład:\n\n• "Ile zamówień było wczoraj?"\n• "Jaki był obrót w ostatnim tygodniu?"\n• "Pokaż statystyki z dzisiaj"\n• "Ile zamówień z Allegro?"\n\nW czym mogę pomóc?'
+      content: 'Cześć! Jestem Twoim asystentem AI. Mogę odpowiedzieć na pytania dotyczące zamówień i sprzedaży.\n\n**Przykłady pytań:**\n• "Ile zamówień było wczoraj?"\n• "Jaki był obrót w ostatnim tygodniu?"\n• "Pokaż statystyki z dzisiaj"\n\n**Mam pamięć!** Automatycznie zapamiętuję ważne informacje z naszych rozmów. Możesz też powiedzieć:\n• "Zapamiętaj, że firma to poom-furniture"\n• "Co pamiętasz?" - pokażę listę zapamiętanych informacji\n\nW czym mogę pomóc?'
     }
   ]);
   const [input, setInput] = useState('');
