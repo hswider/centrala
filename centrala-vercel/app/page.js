@@ -388,7 +388,7 @@ export default function Home() {
                 ({onlineUsers.filter(u => u.isOnline).length} online)
               </span>
             </div>
-            <div className="flex flex-wrap gap-3">
+            <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600">
               {onlineUsers.map(u => {
                 const roleConfig = {
                   admin: { label: 'Administrator', icon: '👑', bg: 'bg-purple-100 dark:bg-purple-900/30', text: 'text-purple-700 dark:text-purple-300', border: 'border-purple-300 dark:border-purple-700' },
@@ -404,7 +404,7 @@ export default function Home() {
                 return (
                   <div
                     key={u.id}
-                    className={`inline-flex flex-col items-center gap-1 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+                    className={`inline-flex flex-col items-center gap-1 px-3 py-2 rounded-lg text-sm font-medium transition-all flex-shrink-0 ${
                       u.isOnline
                         ? 'bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800'
                         : 'bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600'
