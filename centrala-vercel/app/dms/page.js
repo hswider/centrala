@@ -19,6 +19,7 @@ export default function DMSPage() {
   const [user, setUser] = useState(null); // current user
   const [history, setHistory] = useState([]); // document history
   const [historyLoading, setHistoryLoading] = useState(false);
+  const [previewDoc, setPreviewDoc] = useState(null); // document preview modal for WZ/RW
   const invoiceRef = useRef(null);
 
   // Load user and documents on mount
@@ -1792,30 +1793,42 @@ export default function DMSPage() {
                           <option value="completed">Zakończony</option>
                           <option value="cancelled">Anulowany</option>
                         </select>
-                        <button
-                          onClick={() => {
-                            if (doc.docType === 'cmr' && doc.data) {
-                              setCmr(doc.data);
-                              setActiveTab('manual');
-                              setManualDocType('cmr');
-                            } else if (doc.docType === 'invoice' && doc.data) {
-                              setInvoice(doc.data);
-                              setActiveTab('manual');
-                              setManualDocType('gutekissen-invoice');
-                            }
-                          }}
-                          className="px-2 py-1.5 text-xs font-medium bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-300 rounded-lg hover:bg-yellow-200 dark:hover:bg-yellow-900/50"
-                          title="Edytuj"
-                        >
-                          ✏️
-                        </button>
-                        <button
-                          onClick={() => redownloadDocument(doc)}
-                          className="px-2 py-1.5 text-xs font-medium bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded-lg hover:bg-blue-200 dark:hover:bg-blue-900/50"
-                          title="Pobierz"
-                        >
-                          📥
-                        </button>
+                        {(doc.docType === 'WZ' || doc.docType === 'RW') ? (
+                          <button
+                            onClick={() => setPreviewDoc(doc)}
+                            className="px-2 py-1.5 text-xs font-medium bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded-lg hover:bg-blue-200 dark:hover:bg-blue-900/50"
+                            title="Podgląd"
+                          >
+                            👁️
+                          </button>
+                        ) : (
+                          <>
+                            <button
+                              onClick={() => {
+                                if (doc.docType === 'cmr' && doc.data) {
+                                  setCmr(doc.data);
+                                  setActiveTab('manual');
+                                  setManualDocType('cmr');
+                                } else if (doc.docType === 'invoice' && doc.data) {
+                                  setInvoice(doc.data);
+                                  setActiveTab('manual');
+                                  setManualDocType('gutekissen-invoice');
+                                }
+                              }}
+                              className="px-2 py-1.5 text-xs font-medium bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-300 rounded-lg hover:bg-yellow-200 dark:hover:bg-yellow-900/50"
+                              title="Edytuj"
+                            >
+                              ✏️
+                            </button>
+                            <button
+                              onClick={() => redownloadDocument(doc)}
+                              className="px-2 py-1.5 text-xs font-medium bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded-lg hover:bg-blue-200 dark:hover:bg-blue-900/50"
+                              title="Pobierz"
+                            >
+                              📥
+                            </button>
+                          </>
+                        )}
                         <button
                           onClick={() => deleteDocument(doc.id)}
                           className="px-2 py-1.5 text-xs font-medium bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 rounded-lg hover:bg-red-200 dark:hover:bg-red-900/50"
@@ -2199,6 +2212,128 @@ export default function DMSPage() {
           </div>
         )}
       </main>
+
+      {/* Modal podglądu dokumentu WZ/RW */}
+      {previewDoc && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl dark:shadow-gray-900 max-w-2xl w-full max-h-[90vh] overflow-hidden flex flex-col">
+            {/* Header */}
+            <div className={`px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between ${
+              previewDoc.docType === 'WZ' ? 'bg-emerald-50 dark:bg-emerald-900/20' : 'bg-orange-50 dark:bg-orange-900/20'
+            }`}>
+              <div className="flex items-center gap-3">
+                <div className={`w-12 h-12 rounded-lg flex items-center justify-center ${
+                  previewDoc.docType === 'WZ'
+                    ? 'bg-emerald-100 dark:bg-emerald-900/30'
+                    : 'bg-orange-100 dark:bg-orange-900/30'
+                }`}>
+                  <span className={`font-bold text-lg ${
+                    previewDoc.docType === 'WZ'
+                      ? 'text-emerald-600 dark:text-emerald-400'
+                      : 'text-orange-600 dark:text-orange-400'
+                  }`}>{previewDoc.docType}</span>
+                </div>
+                <div>
+                  <h2 className="text-lg font-bold text-gray-900 dark:text-white">
+                    {previewDoc.docType === 'WZ' ? 'Dokument WZ - Przyjęcie zewnętrzne' : 'Dokument RW - Rozchód wewnętrzny'}
+                  </h2>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">Nr: {previewDoc.number}</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setPreviewDoc(null)}
+                className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            {/* Content */}
+            <div className="flex-1 overflow-y-auto p-6">
+              {/* Info podstawowe */}
+              <div className="grid grid-cols-2 gap-4 mb-6">
+                <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4">
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Numer dokumentu</p>
+                  <p className="font-semibold text-gray-900 dark:text-white">{previewDoc.number}</p>
+                </div>
+                <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4">
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Firma</p>
+                  <p className="font-semibold text-gray-900 dark:text-white">{previewDoc.customer || previewDoc.data?.firma || '-'}</p>
+                </div>
+                <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4">
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Data wystawienia</p>
+                  <p className="font-semibold text-gray-900 dark:text-white">
+                    {previewDoc.data?.dataWystawienia
+                      ? new Date(previewDoc.data.dataWystawienia).toLocaleString('pl-PL', {
+                          day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit'
+                        })
+                      : formatDatePL(previewDoc.date)}
+                  </p>
+                </div>
+                <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4">
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Status</p>
+                  <span className={`px-2 py-1 text-xs font-medium rounded ${
+                    previewDoc.status === 'completed' ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300' :
+                    previewDoc.status === 'sent' ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300' :
+                    'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300'
+                  }`}>
+                    {previewDoc.status === 'completed' ? 'Zakończony' :
+                     previewDoc.status === 'sent' ? 'Wysłany' :
+                     previewDoc.status === 'draft' ? 'Wersja robocza' : previewDoc.status}
+                  </span>
+                </div>
+              </div>
+
+              {/* Pozycje dokumentu */}
+              <div>
+                <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
+                  Pozycje dokumentu ({previewDoc.data?.pozycje?.length || 0})
+                </h3>
+                {previewDoc.data?.pozycje && previewDoc.data.pozycje.length > 0 ? (
+                  <div className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
+                    <table className="w-full">
+                      <thead className="bg-gray-50 dark:bg-gray-700">
+                        <tr>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Lp.</th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Nazwa artykułu</th>
+                          <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Ilość</th>
+                          <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Jednostka</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+                        {previewDoc.data.pozycje.map((poz, idx) => (
+                          <tr key={idx} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                            <td className="px-4 py-3 text-sm text-gray-500 dark:text-gray-400">{idx + 1}</td>
+                            <td className="px-4 py-3 text-sm text-gray-900 dark:text-white font-medium">{poz.nazwa}</td>
+                            <td className="px-4 py-3 text-sm text-gray-900 dark:text-white text-right font-bold">
+                              {typeof poz.ilosc === 'number' ? poz.ilosc.toFixed(2) : poz.ilosc}
+                            </td>
+                            <td className="px-4 py-3 text-sm text-gray-500 dark:text-gray-400 text-center">{poz.jednostka || 'szt'}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                ) : (
+                  <p className="text-sm text-gray-500 dark:text-gray-400 text-center py-4">Brak pozycji w dokumencie</p>
+                )}
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="px-6 py-4 border-t border-gray-200 dark:border-gray-700 flex justify-end gap-3">
+              <button
+                onClick={() => setPreviewDoc(null)}
+                className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600"
+              >
+                Zamknij
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
