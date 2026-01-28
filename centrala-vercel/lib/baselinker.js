@@ -231,7 +231,7 @@ async function mapOrderToDTO(order, statuses = {}, fetchImages = false) {
   }
 
   return {
-    id: `BL-${order.order_id}`, // Prefix with BL to distinguish from Apilo orders
+    id: String(order.order_id), // Use actual Baselinker order number
     externalId: order.shop_order_id || order.external_order_id || null,
     externalId2: order.user_login || null,
     extraField1: order.extra_field_1 || null, // Pole dodatkowe 1 (KOM number)
