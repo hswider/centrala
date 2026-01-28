@@ -1210,6 +1210,147 @@ function CRMContent() {
     }
   };
 
+  // Send new composed email for Gmail (Dobrelegowiska)
+  const handleGmailSendCompose = async () => {
+    if (!gmailComposeTo.trim() || !gmailComposeSubject.trim() || (!gmailComposeBody.trim() && gmailComposeAttachments.length === 0)) return;
+
+    setGmailSending(true);
+    try {
+      const attachmentData = await Promise.all(gmailComposeAttachments.map(file => {
+        return new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => {
+            const base64 = reader.result.split(',')[1];
+            resolve({ filename: file.name, mimeType: file.type, data: base64 });
+          };
+          reader.onerror = reject;
+          reader.readAsDataURL(file);
+        });
+      }));
+
+      const res = await fetch('/api/gmail/compose', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          to: gmailComposeTo.trim(),
+          subject: gmailComposeSubject.trim(),
+          text: gmailComposeBody.trim(),
+          attachments: attachmentData
+        })
+      });
+      const data = await res.json();
+
+      if (data.success) {
+        setGmailComposeTo('');
+        setGmailComposeSubject('');
+        setGmailComposeBody('');
+        setGmailComposeAttachments([]);
+        setGmailComposeMode(false);
+        await handleGmailSync();
+      } else {
+        alert('Blad wysylania: ' + data.error);
+      }
+    } catch (err) {
+      alert('Blad: ' + err.message);
+    } finally {
+      setGmailSending(false);
+    }
+  };
+
+  // Send new composed email for Allepoduszki
+  const handleAllepoduszkiSendCompose = async () => {
+    if (!allepoduszkiComposeTo.trim() || !allepoduszkiComposeSubject.trim() || (!allepoduszkiComposeBody.trim() && allepoduszkiComposeAttachments.length === 0)) return;
+
+    setAllepoduszkiSending(true);
+    try {
+      const attachmentData = await Promise.all(allepoduszkiComposeAttachments.map(file => {
+        return new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => {
+            const base64 = reader.result.split(',')[1];
+            resolve({ filename: file.name, mimeType: file.type, data: base64 });
+          };
+          reader.onerror = reject;
+          reader.readAsDataURL(file);
+        });
+      }));
+
+      const res = await fetch('/api/gmail-allepoduszki/compose', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          to: allepoduszkiComposeTo.trim(),
+          subject: allepoduszkiComposeSubject.trim(),
+          text: allepoduszkiComposeBody.trim(),
+          attachments: attachmentData
+        })
+      });
+      const data = await res.json();
+
+      if (data.success) {
+        setAllepoduszkiComposeTo('');
+        setAllepoduszkiComposeSubject('');
+        setAllepoduszkiComposeBody('');
+        setAllepoduszkiComposeAttachments([]);
+        setAllepoduszkiComposeMode(false);
+        await handleAllepoduszkiSync();
+      } else {
+        alert('Blad wysylania: ' + data.error);
+      }
+    } catch (err) {
+      alert('Blad: ' + err.message);
+    } finally {
+      setAllepoduszkiSending(false);
+    }
+  };
+
+  // Send new composed email for Poomfurniture
+  const handlePoomfurnitureSendCompose = async () => {
+    if (!poomfurnitureComposeTo.trim() || !poomfurnitureComposeSubject.trim() || (!poomfurnitureComposeBody.trim() && poomfurnitureComposeAttachments.length === 0)) return;
+
+    setPoomfurnitureSending(true);
+    try {
+      const attachmentData = await Promise.all(poomfurnitureComposeAttachments.map(file => {
+        return new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => {
+            const base64 = reader.result.split(',')[1];
+            resolve({ filename: file.name, mimeType: file.type, data: base64 });
+          };
+          reader.onerror = reject;
+          reader.readAsDataURL(file);
+        });
+      }));
+
+      const res = await fetch('/api/gmail-poomfurniture/compose', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          to: poomfurnitureComposeTo.trim(),
+          subject: poomfurnitureComposeSubject.trim(),
+          text: poomfurnitureComposeBody.trim(),
+          attachments: attachmentData
+        })
+      });
+      const data = await res.json();
+
+      if (data.success) {
+        setPoomfurnitureComposeTo('');
+        setPoomfurnitureComposeSubject('');
+        setPoomfurnitureComposeBody('');
+        setPoomfurnitureComposeAttachments([]);
+        setPoomfurnitureComposeMode(false);
+        await handlePoomfurnitureSync();
+      } else {
+        alert('Blad wysylania: ' + data.error);
+      }
+    } catch (err) {
+      alert('Blad: ' + err.message);
+    } finally {
+      setPoomfurnitureSending(false);
+    }
+  };
+
   const togglePoomkidsMessageSelection = (messageId) => {
     setPoomkidsSelectedMessages(prev => prev.includes(messageId) ? prev.filter(id => id !== messageId) : [...prev, messageId]);
   };
@@ -3069,8 +3210,97 @@ function CRMContent() {
                   </div>
 
                   {/* Message view */}
-                  <div className={`lg:w-2/3 flex flex-col ${!gmailSelectedThread ? 'hidden lg:flex' : ''}`}>
-                    {!gmailSelectedThread ? (
+                  <div className={`lg:w-2/3 flex flex-col ${!gmailSelectedThread && !gmailComposeMode ? 'hidden lg:flex' : ''}`}>
+                    {gmailComposeMode ? (
+                      /* Compose new email form */
+                      <div className="flex-1 flex flex-col">
+                        <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-700">
+                          <div className="flex items-center justify-between mb-2">
+                            <button
+                              onClick={() => {
+                                setGmailComposeMode(false);
+                                setGmailComposeTo('');
+                                setGmailComposeSubject('');
+                                setGmailComposeBody('');
+                                setGmailComposeAttachments([]);
+                              }}
+                              className="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
+                            >
+                              ← Anuluj
+                            </button>
+                            <h3 className="font-semibold text-gray-900 dark:text-white">Nowa wiadomosc</h3>
+                          </div>
+                        </div>
+                        <div className="flex-1 p-4 space-y-4 overflow-y-auto">
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Do:</label>
+                            <input
+                              type="email"
+                              value={gmailComposeTo}
+                              onChange={(e) => setGmailComposeTo(e.target.value)}
+                              placeholder="adres@email.com"
+                              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Temat:</label>
+                            <input
+                              type="text"
+                              value={gmailComposeSubject}
+                              onChange={(e) => setGmailComposeSubject(e.target.value)}
+                              placeholder="Temat wiadomosci"
+                              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Tresc:</label>
+                            <textarea
+                              value={gmailComposeBody}
+                              onChange={(e) => setGmailComposeBody(e.target.value)}
+                              placeholder="Napisz wiadomosc..."
+                              rows={10}
+                              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 resize-none"
+                            />
+                          </div>
+                          {gmailComposeAttachments.length > 0 && (
+                            <div className="flex flex-wrap gap-2">
+                              {gmailComposeAttachments.map((file, index) => (
+                                <div key={index} className="flex items-center gap-1 px-2 py-1 bg-gray-100 dark:bg-gray-700 rounded text-xs">
+                                  <span className="truncate max-w-[100px]">{file.name}</span>
+                                  <button
+                                    onClick={() => setGmailComposeAttachments(prev => prev.filter((_, i) => i !== index))}
+                                    className="text-gray-500 hover:text-red-500 ml-1"
+                                  >×</button>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                        <div className="px-4 py-3 border-t border-gray-100 dark:border-gray-700 flex gap-2">
+                          <label className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer flex items-center" title="Dodaj zalacznik">
+                            <span>📎</span>
+                            <input
+                              type="file"
+                              multiple
+                              className="hidden"
+                              onChange={(e) => {
+                                const files = Array.from(e.target.files || []);
+                                setGmailComposeAttachments(prev => [...prev, ...files]);
+                                e.target.value = '';
+                              }}
+                            />
+                          </label>
+                          <div className="flex-1"></div>
+                          <button
+                            onClick={handleGmailSendCompose}
+                            disabled={gmailSending || !gmailComposeTo.trim() || !gmailComposeSubject.trim() || (!gmailComposeBody.trim() && gmailComposeAttachments.length === 0)}
+                            className="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 font-medium"
+                          >
+                            {gmailSending ? 'Wysylanie...' : 'Wyslij'}
+                          </button>
+                        </div>
+                      </div>
+                    ) : !gmailSelectedThread ? (
                       <div className="flex-1 flex items-center justify-center text-gray-400 dark:text-gray-500">
                         <div className="text-center">
                           <span className="text-6xl">📧</span>
@@ -4045,8 +4275,97 @@ function CRMContent() {
                   </div>
 
                   {/* Message view */}
-                  <div className={`lg:w-2/3 flex flex-col ${!allepoduszkiSelectedThread ? 'hidden lg:flex' : ''}`}>
-                    {!allepoduszkiSelectedThread ? (
+                  <div className={`lg:w-2/3 flex flex-col ${!allepoduszkiSelectedThread && !allepoduszkiComposeMode ? 'hidden lg:flex' : ''}`}>
+                    {allepoduszkiComposeMode ? (
+                      /* Compose new email form */
+                      <div className="flex-1 flex flex-col">
+                        <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-700">
+                          <div className="flex items-center justify-between mb-2">
+                            <button
+                              onClick={() => {
+                                setAllepoduszkiComposeMode(false);
+                                setAllepoduszkiComposeTo('');
+                                setAllepoduszkiComposeSubject('');
+                                setAllepoduszkiComposeBody('');
+                                setAllepoduszkiComposeAttachments([]);
+                              }}
+                              className="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
+                            >
+                              ← Anuluj
+                            </button>
+                            <h3 className="font-semibold text-gray-900 dark:text-white">Nowa wiadomosc</h3>
+                          </div>
+                        </div>
+                        <div className="flex-1 p-4 space-y-4 overflow-y-auto">
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Do:</label>
+                            <input
+                              type="email"
+                              value={allepoduszkiComposeTo}
+                              onChange={(e) => setAllepoduszkiComposeTo(e.target.value)}
+                              placeholder="adres@email.com"
+                              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Temat:</label>
+                            <input
+                              type="text"
+                              value={allepoduszkiComposeSubject}
+                              onChange={(e) => setAllepoduszkiComposeSubject(e.target.value)}
+                              placeholder="Temat wiadomosci"
+                              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Tresc:</label>
+                            <textarea
+                              value={allepoduszkiComposeBody}
+                              onChange={(e) => setAllepoduszkiComposeBody(e.target.value)}
+                              placeholder="Napisz wiadomosc..."
+                              rows={10}
+                              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 resize-none"
+                            />
+                          </div>
+                          {allepoduszkiComposeAttachments.length > 0 && (
+                            <div className="flex flex-wrap gap-2">
+                              {allepoduszkiComposeAttachments.map((file, index) => (
+                                <div key={index} className="flex items-center gap-1 px-2 py-1 bg-gray-100 dark:bg-gray-700 rounded text-xs">
+                                  <span className="truncate max-w-[100px]">{file.name}</span>
+                                  <button
+                                    onClick={() => setAllepoduszkiComposeAttachments(prev => prev.filter((_, i) => i !== index))}
+                                    className="text-gray-500 hover:text-red-500 ml-1"
+                                  >×</button>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                        <div className="px-4 py-3 border-t border-gray-100 dark:border-gray-700 flex gap-2">
+                          <label className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer flex items-center" title="Dodaj zalacznik">
+                            <span>📎</span>
+                            <input
+                              type="file"
+                              multiple
+                              className="hidden"
+                              onChange={(e) => {
+                                const files = Array.from(e.target.files || []);
+                                setAllepoduszkiComposeAttachments(prev => [...prev, ...files]);
+                                e.target.value = '';
+                              }}
+                            />
+                          </label>
+                          <div className="flex-1"></div>
+                          <button
+                            onClick={handleAllepoduszkiSendCompose}
+                            disabled={allepoduszkiSending || !allepoduszkiComposeTo.trim() || !allepoduszkiComposeSubject.trim() || (!allepoduszkiComposeBody.trim() && allepoduszkiComposeAttachments.length === 0)}
+                            className="px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 font-medium"
+                          >
+                            {allepoduszkiSending ? 'Wysylanie...' : 'Wyslij'}
+                          </button>
+                        </div>
+                      </div>
+                    ) : !allepoduszkiSelectedThread ? (
                       <div className="flex-1 flex items-center justify-center text-gray-400 dark:text-gray-500">
                         <div className="text-center">
                           <span className="text-6xl">📧</span>
@@ -4448,8 +4767,97 @@ function CRMContent() {
                   </div>
 
                   {/* Message view */}
-                  <div className={`lg:w-2/3 flex flex-col ${!poomfurnitureSelectedThread ? 'hidden lg:flex' : ''}`}>
-                    {!poomfurnitureSelectedThread ? (
+                  <div className={`lg:w-2/3 flex flex-col ${!poomfurnitureSelectedThread && !poomfurnitureComposeMode ? 'hidden lg:flex' : ''}`}>
+                    {poomfurnitureComposeMode ? (
+                      /* Compose new email form */
+                      <div className="flex-1 flex flex-col">
+                        <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-700">
+                          <div className="flex items-center justify-between mb-2">
+                            <button
+                              onClick={() => {
+                                setPoomfurnitureComposeMode(false);
+                                setPoomfurnitureComposeTo('');
+                                setPoomfurnitureComposeSubject('');
+                                setPoomfurnitureComposeBody('');
+                                setPoomfurnitureComposeAttachments([]);
+                              }}
+                              className="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
+                            >
+                              ← Anuluj
+                            </button>
+                            <h3 className="font-semibold text-gray-900 dark:text-white">Nowa wiadomosc</h3>
+                          </div>
+                        </div>
+                        <div className="flex-1 p-4 space-y-4 overflow-y-auto">
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Do:</label>
+                            <input
+                              type="email"
+                              value={poomfurnitureComposeTo}
+                              onChange={(e) => setPoomfurnitureComposeTo(e.target.value)}
+                              placeholder="adres@email.com"
+                              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Temat:</label>
+                            <input
+                              type="text"
+                              value={poomfurnitureComposeSubject}
+                              onChange={(e) => setPoomfurnitureComposeSubject(e.target.value)}
+                              placeholder="Temat wiadomosci"
+                              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Tresc:</label>
+                            <textarea
+                              value={poomfurnitureComposeBody}
+                              onChange={(e) => setPoomfurnitureComposeBody(e.target.value)}
+                              placeholder="Napisz wiadomosc..."
+                              rows={10}
+                              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 resize-none"
+                            />
+                          </div>
+                          {poomfurnitureComposeAttachments.length > 0 && (
+                            <div className="flex flex-wrap gap-2">
+                              {poomfurnitureComposeAttachments.map((file, index) => (
+                                <div key={index} className="flex items-center gap-1 px-2 py-1 bg-gray-100 dark:bg-gray-700 rounded text-xs">
+                                  <span className="truncate max-w-[100px]">{file.name}</span>
+                                  <button
+                                    onClick={() => setPoomfurnitureComposeAttachments(prev => prev.filter((_, i) => i !== index))}
+                                    className="text-gray-500 hover:text-red-500 ml-1"
+                                  >×</button>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                        <div className="px-4 py-3 border-t border-gray-100 dark:border-gray-700 flex gap-2">
+                          <label className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer flex items-center" title="Dodaj zalacznik">
+                            <span>📎</span>
+                            <input
+                              type="file"
+                              multiple
+                              className="hidden"
+                              onChange={(e) => {
+                                const files = Array.from(e.target.files || []);
+                                setPoomfurnitureComposeAttachments(prev => [...prev, ...files]);
+                                e.target.value = '';
+                              }}
+                            />
+                          </label>
+                          <div className="flex-1"></div>
+                          <button
+                            onClick={handlePoomfurnitureSendCompose}
+                            disabled={poomfurnitureSending || !poomfurnitureComposeTo.trim() || !poomfurnitureComposeSubject.trim() || (!poomfurnitureComposeBody.trim() && poomfurnitureComposeAttachments.length === 0)}
+                            className="px-6 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 disabled:opacity-50 font-medium"
+                          >
+                            {poomfurnitureSending ? 'Wysylanie...' : 'Wyslij'}
+                          </button>
+                        </div>
+                      </div>
+                    ) : !poomfurnitureSelectedThread ? (
                       <div className="flex-1 flex items-center justify-center text-gray-400 dark:text-gray-500">
                         <div className="text-center">
                           <span className="text-6xl">📧</span>
