@@ -64,7 +64,9 @@ export default function DMSPage() {
         const docs = data.documents.map(doc => ({
           id: doc.id,
           docType: doc.doc_type,
-          type: doc.doc_type === 'invoice' ? 'Faktura GuteKissen' : 'CMR',
+          type: doc.doc_type === 'invoice' ? 'Faktura GuteKissen' :
+                doc.doc_type === 'WZ' ? 'Dokument WZ' :
+                doc.doc_type === 'RW' ? 'Dokument RW' : 'CMR',
           number: doc.doc_number,
           customer: doc.customer_name,
           date: doc.created_at,
@@ -1729,6 +1731,14 @@ export default function DMSPage() {
                           <div className="w-10 h-10 bg-green-100 dark:bg-green-900/30 rounded-lg flex items-center justify-center flex-shrink-0">
                             <img src="/icons/gutekissen.png" alt="GuteKissen" className="w-7 h-7 rounded-full" />
                           </div>
+                        ) : doc.docType === 'WZ' ? (
+                          <div className="w-10 h-10 bg-emerald-100 dark:bg-emerald-900/30 rounded-lg flex items-center justify-center flex-shrink-0">
+                            <span className="text-emerald-600 dark:text-emerald-400 font-bold text-xs">WZ</span>
+                          </div>
+                        ) : doc.docType === 'RW' ? (
+                          <div className="w-10 h-10 bg-orange-100 dark:bg-orange-900/30 rounded-lg flex items-center justify-center flex-shrink-0">
+                            <span className="text-orange-600 dark:text-orange-400 font-bold text-xs">RW</span>
+                          </div>
                         ) : (
                           <div className="w-10 h-10 bg-red-100 dark:bg-red-900/30 rounded-lg flex items-center justify-center flex-shrink-0">
                             <span className="text-red-600 dark:text-red-400 font-bold text-xs">CMR</span>
@@ -1739,6 +1749,10 @@ export default function DMSPage() {
                             <span className={`px-2 py-0.5 text-xs font-medium rounded ${
                               doc.docType === 'invoice'
                                 ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300'
+                                : doc.docType === 'WZ'
+                                ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300'
+                                : doc.docType === 'RW'
+                                ? 'bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300'
                                 : 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300'
                             }`}>
                               {doc.type}
@@ -2154,9 +2168,13 @@ export default function DMSPage() {
                           </span>
                           <span className={`px-2 py-0.5 text-xs font-medium rounded ${
                             entry.doc_type === 'invoice' ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300' :
+                            entry.doc_type === 'WZ' ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300' :
+                            entry.doc_type === 'RW' ? 'bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300' :
                             'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300'
                           }`}>
-                            {entry.doc_type === 'invoice' ? 'Faktura' : 'CMR'}
+                            {entry.doc_type === 'invoice' ? 'Faktura' :
+                             entry.doc_type === 'WZ' ? 'Dokument WZ' :
+                             entry.doc_type === 'RW' ? 'Dokument RW' : 'CMR'}
                           </span>
                           {entry.doc_number && (
                             <span className="text-sm font-medium text-gray-900 dark:text-white">{entry.doc_number}</span>

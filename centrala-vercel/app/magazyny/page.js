@@ -746,7 +746,7 @@ export default function MagazynyPage() {
         }
       }
 
-      // Zapisz dokument WZ
+      // Zapisz dokument WZ do warehouse_documents
       await fetch('/api/documents', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -755,6 +755,29 @@ export default function MagazynyPage() {
           numer: wzDocument.numer,
           firma: wzDocument.firma,
           pozycje: validPozycje
+        })
+      });
+
+      // Zapisz dokument do DMS (generated_documents)
+      await fetch('/api/dms/documents', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          docType: 'WZ',
+          docNumber: wzDocument.numer,
+          orderId: null,
+          customerName: wzDocument.firma,
+          data: {
+            typ: 'Przyjecie zewnetrzne',
+            firma: wzDocument.firma,
+            pozycje: validPozycje.map(p => ({
+              nazwa: p.nazwa,
+              ilosc: parseFloat(String(p.ilosc).replace(',', '.')),
+              jednostka: p.jednostka
+            })),
+            dataWystawienia: new Date().toISOString()
+          },
+          status: 'completed'
         })
       });
 
@@ -812,7 +835,7 @@ export default function MagazynyPage() {
         }
       }
 
-      // Zapisz dokument RW
+      // Zapisz dokument RW do warehouse_documents
       await fetch('/api/documents', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -821,6 +844,29 @@ export default function MagazynyPage() {
           numer: rwDocument.numer,
           firma: rwDocument.firma,
           pozycje: validPozycje
+        })
+      });
+
+      // Zapisz dokument do DMS (generated_documents)
+      await fetch('/api/dms/documents', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          docType: 'RW',
+          docNumber: rwDocument.numer,
+          orderId: null,
+          customerName: rwDocument.firma,
+          data: {
+            typ: 'Rozchod wewnetrzny',
+            firma: rwDocument.firma,
+            pozycje: validPozycje.map(p => ({
+              nazwa: p.nazwa,
+              ilosc: parseFloat(String(p.ilosc).replace(',', '.')),
+              jednostka: p.jednostka
+            })),
+            dataWystawienia: new Date().toISOString()
+          },
+          status: 'completed'
         })
       });
 
