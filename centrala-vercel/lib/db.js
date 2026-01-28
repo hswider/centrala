@@ -3673,3 +3673,77 @@ export async function getKauflandTicketsCountByMarketplace() {
   `;
   return rows;
 }
+
+// ============== AI Memory Functions ==============
+
+// Initialize AI memory table
+export async function initAIMemoryTable() {
+  try {
+    await sql`
+      CREATE TABLE IF NOT EXISTS ai_memory (
+        id SERIAL PRIMARY KEY,
+        fact TEXT NOT NULL,
+        category VARCHAR(50) DEFAULT 'general',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        created_by VARCHAR(100)
+      )
+    `;
+    console.log('[DB] AI memory table initialized');
+  } catch (error) {
+    console.error('[DB] Error initializing AI memory table:', error);
+  }
+}
+
+// Get all AI memories
+export async function getAIMemories() {
+  try {
+    await initAIMemoryTable();
+    const { rows } = await sql`
+      SELECT id, fact, category, created_at, created_by
+      FROM ai_memory
+      ORDER BY created_at DESC
+    `;
+    return rows;
+  } catch (error) {
+    console.error('[DB] Error getting AI memories:', error);
+    return [];
+  }
+}
+
+// Save new AI memory
+export async function saveAIMemory(fact, category = 'general', createdBy = null) {
+  try {
+    await initAIMemoryTable();
+    const { rows } = await sql`
+      INSERT INTO ai_memory (fact, category, created_by)
+      VALUES (${fact}, ${category}, ${createdBy})
+      RETURNING id, fact, category, created_at, created_by
+    `;
+    return rows[0];
+  } catch (error) {
+    console.error('[DB] Error saving AI memory:', error);
+    throw error;
+  }
+}
+
+// Delete AI memory
+export async function deleteAIMemory(id) {
+  try {
+    await sql`DELETE FROM ai_memory WHERE id = ${id}`;
+    return true;
+  } catch (error) {
+    console.error('[DB] Error deleting AI memory:', error);
+    throw error;
+  }
+}
+
+// Clear all AI memories
+export async function clearAllAIMemories() {
+  try {
+    await sql`DELETE FROM ai_memory`;
+    return true;
+  } catch (error) {
+    console.error('[DB] Error clearing AI memories:', error);
+    throw error;
+  }
+}

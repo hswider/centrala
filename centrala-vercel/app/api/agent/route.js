@@ -10,10 +10,69 @@ import {
   getDailyStatsLast14Days,
   getTopProductsLast30Days,
   getOverallStats,
-  searchOrderForAgent
+  searchOrderForAgent,
+  getAIMemories,
+  saveAIMemory
 } from '@/lib/db';
 
 const GROQ_API_KEY = process.env.GROQ_API_KEY;
+
+// Detect memory commands in user message
+function detectMemoryCommand(message) {
+  const lowerMessage = message.toLowerCase();
+
+  // Patterns for "remember" commands
+  const rememberPatterns = [
+    /zapami[eę]taj[,:]?\s*(.+)/i,
+    /pami[eę]taj[,:]?\s*[żz]e\s*(.+)/i,
+    /zapisz[,:]?\s*[żz]e\s*(.+)/i,
+    /dodaj do pami[eę]ci[,:]?\s*(.+)/i,
+    /naucz si[eę][,:]?\s*[żz]e\s*(.+)/i,
+    /od teraz[,:]?\s*(.+)/i,
+    /zapami[eę]taj sobie[,:]?\s*(.+)/i
+  ];
+
+  for (const pattern of rememberPatterns) {
+    const match = message.match(pattern);
+    if (match && match[1]) {
+      return {
+        action: 'remember',
+        fact: match[1].trim()
+      };
+    }
+  }
+
+  // Patterns for "forget" commands
+  const forgetPatterns = [
+    /zapomnij[,:]?\s*(.+)/i,
+    /usu[nń] z pami[eę]ci[,:]?\s*(.+)/i,
+    /wyma[żz][,:]?\s*(.+)/i
+  ];
+
+  for (const pattern of forgetPatterns) {
+    const match = message.match(pattern);
+    if (match && match[1]) {
+      return {
+        action: 'forget',
+        fact: match[1].trim()
+      };
+    }
+  }
+
+  // Pattern for listing memories
+  if (lowerMessage.includes('co pamiętasz') ||
+      lowerMessage.includes('co pamietasz') ||
+      lowerMessage.includes('pokaż pamięć') ||
+      lowerMessage.includes('pokaz pamiec') ||
+      lowerMessage.includes('lista wspomnień') ||
+      lowerMessage.includes('lista wspomnien') ||
+      lowerMessage.includes('twoja pamięć') ||
+      lowerMessage.includes('twoja pamiec')) {
+    return { action: 'list' };
+  }
+
+  return null;
+}
 
 // Currency conversion
 const EUR_TO_PLN = 4.35;
@@ -163,7 +222,7 @@ async function gatherContextData() {
 }
 
 // Call Groq API (free and fast)
-async function callGroq(message, contextData, orderData = [], history = []) {
+async function callGroq(message, contextData, orderData = [], history = [], memories = []) {
   if (!GROQ_API_KEY) {
     throw new Error('GROQ_API_KEY nie jest skonfigurowany. Dodaj go do zmiennych środowiskowych w Vercel.');
   }
@@ -171,6 +230,11 @@ async function callGroq(message, contextData, orderData = [], history = []) {
   // Format order data if present
   const orderContext = orderData.length > 0
     ? '\n\n=== ZNALEZIONE ZAMÓWIENIA ===\n' + orderData.map(o => formatOrderForAI(o)).join('\n---\n')
+    : '';
+
+  // Format memories if present
+  const memoriesContext = memories.length > 0
+    ? '\n\n=== TWOJA PAMIĘĆ (zapamiętane informacje) ===\nPoniższe informacje zostały zapamiętane z poprzednich rozmów. Używaj ich odpowiadając na pytania:\n' + memories.map((m, i) => `${i+1}. ${m.fact}`).join('\n')
     : '';
 
   const systemPrompt = `Jesteś asystentem AI dla systemu CENTRALA POOM - wewnętrznej aplikacji firmy POOM Wood do zarządzania sprzedażą wielokanałową. Odpowiadasz po polsku.
@@ -332,7 +396,7 @@ ${contextData?.topProducts?.map((p, i) => `${i+1}. ${p.name} (${p.sku || 'brak S
 OGÓLNE STATYSTYKI:
 - Wszystkie zamówienia w bazie: ${contextData?.overall?.totalOrders || 0}
 - Anulowane: ${contextData?.overall?.canceledOrders || 0}
-- Liczba platform: ${contextData?.overall?.platformCount || 0}${orderContext}`;
+- Liczba platform: ${contextData?.overall?.platformCount || 0}${memoriesContext}${orderContext}`;
 
   // Build messages array with history
   const messages = [
@@ -388,6 +452,49 @@ export async function POST(request) {
 
     console.log('[Agent] Received question:', message, '| History length:', history.length);
 
+    // Load memories from database
+    const memories = await getAIMemories();
+    console.log('[Agent] Loaded memories:', memories.length);
+
+    // Check for memory commands
+    const memoryCommand = detectMemoryCommand(message);
+
+    if (memoryCommand) {
+      if (memoryCommand.action === 'remember') {
+        // Save new memory
+        try {
+          await saveAIMemory(memoryCommand.fact);
+          console.log('[Agent] Saved new memory:', memoryCommand.fact);
+          return NextResponse.json({
+            response: `Zapamiętałem: "${memoryCommand.fact}"\n\nBędę pamiętał tę informację w przyszłych rozmowach.`,
+            timestamp: new Date().toISOString(),
+            memoryAction: 'saved'
+          });
+        } catch (err) {
+          return NextResponse.json({
+            response: `Nie udało się zapamiętać: ${err.message}`,
+            timestamp: new Date().toISOString()
+          });
+        }
+      }
+
+      if (memoryCommand.action === 'list') {
+        // List all memories
+        if (memories.length === 0) {
+          return NextResponse.json({
+            response: 'Moja pamięć jest pusta. Możesz dodać nowe informacje mówiąc np. "Zapamiętaj, że firma to poom-furniture".',
+            timestamp: new Date().toISOString()
+          });
+        }
+
+        const memoryList = memories.map((m, i) => `${i+1}. ${m.fact}`).join('\n');
+        return NextResponse.json({
+          response: `Oto co pamiętam:\n\n${memoryList}\n\nMożesz dodać nowe informacje mówiąc "Zapamiętaj..." lub usunąć mówiąc "Zapomnij...".`,
+          timestamp: new Date().toISOString()
+        });
+      }
+    }
+
     // Gather context data from database
     const contextData = await gatherContextData();
 
@@ -432,8 +539,8 @@ export async function POST(request) {
       console.log('[Agent] Found orders:', orderData.length);
     }
 
-    // Call Groq (free API) with conversation history
-    const aiResponse = await callGroq(message, contextData, orderData, history);
+    // Call Groq (free API) with conversation history and memories
+    const aiResponse = await callGroq(message, contextData, orderData, history, memories);
 
     console.log('[Agent] Response generated successfully');
 
