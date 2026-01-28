@@ -45,6 +45,23 @@ export default function MagazynyPage() {
   const [colorYellow, setColorYellow] = useState('');
   const [colorRed, setColorRed] = useState('');
   const [savingColor, setSavingColor] = useState(false);
+  // Sub-zakładki dla Surowce (WZ/RW)
+  const [surowceSubTab, setSurowceSubTab] = useState('lista'); // 'lista', 'wz', 'rw'
+  const [showWZModal, setShowWZModal] = useState(false);
+  const [showRWModal, setShowRWModal] = useState(false);
+  const [wzDocument, setWzDocument] = useState({
+    numer: '',
+    firma: '',
+    pozycje: [{ produktId: null, nazwa: '', ilosc: '', jednostka: 'szt' }]
+  });
+  const [rwDocument, setRwDocument] = useState({
+    numer: '',
+    firma: 'POOM',
+    pozycje: [{ produktId: null, nazwa: '', ilosc: '', jednostka: 'szt' }]
+  });
+  const [savingDocument, setSavingDocument] = useState(false);
+  const [productSuggestions, setProductSuggestions] = useState([]);
+  const [activeSuggestionIndex, setActiveSuggestionIndex] = useState(null);
   const fileInputRef = useRef(null);
   const stanInputRef = useRef(null);
   const cenaInputRef = useRef(null);
@@ -635,6 +652,190 @@ export default function MagazynyPage() {
       alert('Blad: ' + error.message);
     } finally {
       setSavingColor(false);
+    }
+  };
+
+  // Funkcje do obslugi dokumentow WZ/RW
+  const handleProductSearch = (searchText, index, docType) => {
+    setActiveSuggestionIndex(index);
+    const surowce = magazyny.surowce || [];
+    if (searchText.length >= 2) {
+      const filtered = surowce.filter(item =>
+        item.nazwa.toLowerCase().includes(searchText.toLowerCase())
+      ).slice(0, 10);
+      setProductSuggestions(filtered);
+    } else {
+      setProductSuggestions([]);
+    }
+  };
+
+  const handleSelectProduct = (product, index, docType) => {
+    if (docType === 'wz') {
+      const newPozycje = [...wzDocument.pozycje];
+      newPozycje[index] = {
+        ...newPozycje[index],
+        produktId: product.id,
+        nazwa: product.nazwa,
+        jednostka: product.jednostka || 'szt'
+      };
+      setWzDocument({ ...wzDocument, pozycje: newPozycje });
+    } else {
+      const newPozycje = [...rwDocument.pozycje];
+      newPozycje[index] = {
+        ...newPozycje[index],
+        produktId: product.id,
+        nazwa: product.nazwa,
+        jednostka: product.jednostka || 'szt'
+      };
+      setRwDocument({ ...rwDocument, pozycje: newPozycje });
+    }
+    setProductSuggestions([]);
+    setActiveSuggestionIndex(null);
+  };
+
+  const addDocumentRow = (docType) => {
+    if (docType === 'wz') {
+      setWzDocument({
+        ...wzDocument,
+        pozycje: [...wzDocument.pozycje, { produktId: null, nazwa: '', ilosc: '', jednostka: 'szt' }]
+      });
+    } else {
+      setRwDocument({
+        ...rwDocument,
+        pozycje: [...rwDocument.pozycje, { produktId: null, nazwa: '', ilosc: '', jednostka: 'szt' }]
+      });
+    }
+  };
+
+  const removeDocumentRow = (index, docType) => {
+    if (docType === 'wz') {
+      if (wzDocument.pozycje.length <= 1) return;
+      const newPozycje = wzDocument.pozycje.filter((_, i) => i !== index);
+      setWzDocument({ ...wzDocument, pozycje: newPozycje });
+    } else {
+      if (rwDocument.pozycje.length <= 1) return;
+      const newPozycje = rwDocument.pozycje.filter((_, i) => i !== index);
+      setRwDocument({ ...rwDocument, pozycje: newPozycje });
+    }
+  };
+
+  const handleSubmitWZ = async () => {
+    if (!wzDocument.numer || !wzDocument.firma) {
+      alert('Wypelnij numer dokumentu i firme');
+      return;
+    }
+
+    const validPozycje = wzDocument.pozycje.filter(p => p.produktId && p.ilosc);
+    if (validPozycje.length === 0) {
+      alert('Dodaj przynajmniej jedna pozycje z produktem i iloscia');
+      return;
+    }
+
+    setSavingDocument(true);
+    try {
+      // Aktualizuj stany magazynowe - DODAJ ilosci (WZ = przyjecie)
+      for (const pozycja of validPozycje) {
+        const item = magazyny.surowce.find(s => s.id === pozycja.produktId);
+        if (item) {
+          const newStan = parseFloat(item.stan) + parseFloat(String(pozycja.ilosc).replace(',', '.'));
+          await fetch('/api/inventory', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id: pozycja.produktId, stan: newStan })
+          });
+        }
+      }
+
+      // Zapisz dokument WZ
+      await fetch('/api/documents', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          typ: 'WZ',
+          numer: wzDocument.numer,
+          firma: wzDocument.firma,
+          pozycje: validPozycje
+        })
+      });
+
+      await fetchInventory();
+      setWzDocument({
+        numer: '',
+        firma: '',
+        pozycje: [{ produktId: null, nazwa: '', ilosc: '', jednostka: 'szt' }]
+      });
+      setSurowceSubTab('lista');
+      alert('Dokument WZ zostal zapisany, stany magazynowe zaktualizowane');
+    } catch (error) {
+      alert('Blad: ' + error.message);
+    } finally {
+      setSavingDocument(false);
+    }
+  };
+
+  const handleSubmitRW = async () => {
+    if (!rwDocument.numer) {
+      alert('Wypelnij numer dokumentu');
+      return;
+    }
+
+    const validPozycje = rwDocument.pozycje.filter(p => p.produktId && p.ilosc);
+    if (validPozycje.length === 0) {
+      alert('Dodaj przynajmniej jedna pozycje z produktem i iloscia');
+      return;
+    }
+
+    // Sprawdz czy starczy stanow
+    for (const pozycja of validPozycje) {
+      const item = magazyny.surowce.find(s => s.id === pozycja.produktId);
+      if (item) {
+        const iloscDoOdjecia = parseFloat(String(pozycja.ilosc).replace(',', '.'));
+        if (parseFloat(item.stan) < iloscDoOdjecia) {
+          alert(`Niewystarczajacy stan dla "${item.nazwa}". Dostepne: ${item.stan}, wymagane: ${iloscDoOdjecia}`);
+          return;
+        }
+      }
+    }
+
+    setSavingDocument(true);
+    try {
+      // Aktualizuj stany magazynowe - ODEJMIJ ilosci (RW = rozchod)
+      for (const pozycja of validPozycje) {
+        const item = magazyny.surowce.find(s => s.id === pozycja.produktId);
+        if (item) {
+          const newStan = parseFloat(item.stan) - parseFloat(String(pozycja.ilosc).replace(',', '.'));
+          await fetch('/api/inventory', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id: pozycja.produktId, stan: Math.max(0, newStan) })
+          });
+        }
+      }
+
+      // Zapisz dokument RW
+      await fetch('/api/documents', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          typ: 'RW',
+          numer: rwDocument.numer,
+          firma: rwDocument.firma,
+          pozycje: validPozycje
+        })
+      });
+
+      await fetchInventory();
+      setRwDocument({
+        numer: '',
+        firma: 'POOM',
+        pozycje: [{ produktId: null, nazwa: '', ilosc: '', jednostka: 'szt' }]
+      });
+      setSurowceSubTab('lista');
+      alert('Dokument RW zostal zapisany, stany magazynowe zaktualizowane');
+    } catch (error) {
+      alert('Blad: ' + error.message);
+    } finally {
+      setSavingDocument(false);
     }
   };
 
@@ -1249,7 +1450,359 @@ export default function MagazynyPage() {
           </div>
         </div>
 
-        {/* Content */}
+        {/* Sub-zakładki dla Surowce */}
+        {activeTab === 'surowce' && (
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow dark:shadow-gray-900 mb-4">
+            <div className="flex border-b border-gray-100 dark:border-gray-700">
+              <button
+                onClick={() => setSurowceSubTab('lista')}
+                className={`flex-1 flex items-center justify-center gap-2 py-2.5 text-sm font-medium transition-colors ${
+                  surowceSubTab === 'lista'
+                    ? 'text-blue-600 dark:text-blue-400 border-b-2 border-blue-600 dark:border-blue-400 bg-blue-50 dark:bg-blue-900/30'
+                    : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
+                }`}
+              >
+                <span>📋</span>
+                <span>Lista surowców</span>
+              </button>
+              <button
+                onClick={() => setSurowceSubTab('wz')}
+                className={`flex-1 flex items-center justify-center gap-2 py-2.5 text-sm font-medium transition-colors ${
+                  surowceSubTab === 'wz'
+                    ? 'text-green-600 dark:text-green-400 border-b-2 border-green-600 dark:border-green-400 bg-green-50 dark:bg-green-900/30'
+                    : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
+                }`}
+              >
+                <span>📥</span>
+                <span>Dokument WZ (Przyjęcie)</span>
+              </button>
+              <button
+                onClick={() => setSurowceSubTab('rw')}
+                className={`flex-1 flex items-center justify-center gap-2 py-2.5 text-sm font-medium transition-colors ${
+                  surowceSubTab === 'rw'
+                    ? 'text-red-600 dark:text-red-400 border-b-2 border-red-600 dark:border-red-400 bg-red-50 dark:bg-red-900/30'
+                    : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
+                }`}
+              >
+                <span>📤</span>
+                <span>Dokument RW (Rozchód)</span>
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Panel WZ - Przyjęcie towaru */}
+        {activeTab === 'surowce' && surowceSubTab === 'wz' && (
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow dark:shadow-gray-900 p-6 mb-4">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+              <span className="text-green-600">📥</span>
+              Dokument WZ - Przyjęcie zewnętrzne
+            </h3>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
+              Wypełnij dokument WZ, aby przyjąć towar od zewnętrznego dostawcy. Ilości zostaną DODANE do stanów magazynowych.
+            </p>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Numer dokumentu *</label>
+                <input
+                  type="text"
+                  value={wzDocument.numer}
+                  onChange={(e) => setWzDocument({ ...wzDocument, numer: e.target.value })}
+                  placeholder="np. WZ/2025/001"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Firma (dostawca) *</label>
+                <input
+                  type="text"
+                  value={wzDocument.firma}
+                  onChange={(e) => setWzDocument({ ...wzDocument, firma: e.target.value })}
+                  placeholder="np. Dostawca ABC Sp. z o.o."
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                />
+              </div>
+            </div>
+
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Pozycje dokumentu</label>
+              <div className="space-y-3">
+                {wzDocument.pozycje.map((pozycja, index) => (
+                  <div key={index} className="flex flex-wrap gap-2 items-start p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                    <div className="flex-1 min-w-[200px] relative">
+                      <input
+                        type="text"
+                        value={pozycja.nazwa}
+                        onChange={(e) => {
+                          const newPozycje = [...wzDocument.pozycje];
+                          newPozycje[index].nazwa = e.target.value;
+                          newPozycje[index].produktId = null;
+                          setWzDocument({ ...wzDocument, pozycje: newPozycje });
+                          handleProductSearch(e.target.value, index, 'wz');
+                        }}
+                        placeholder="Wpisz nazwe surowca..."
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                      />
+                      {activeSuggestionIndex === index && productSuggestions.length > 0 && (
+                        <div className="absolute z-50 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg max-h-48 overflow-y-auto">
+                          {productSuggestions.map((product) => (
+                            <button
+                              key={product.id}
+                              onClick={() => handleSelectProduct(product, index, 'wz')}
+                              className="w-full px-3 py-2 text-left hover:bg-green-50 dark:hover:bg-green-900/30 text-sm text-gray-700 dark:text-gray-300 border-b border-gray-100 dark:border-gray-700 last:border-b-0"
+                            >
+                              <span className="font-medium">{product.nazwa}</span>
+                              <span className="text-gray-400 ml-2">({product.stan} {product.jednostka || 'szt'})</span>
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                    <div className="w-24">
+                      <input
+                        type="text"
+                        inputMode="decimal"
+                        value={pozycja.ilosc}
+                        onChange={(e) => {
+                          const val = e.target.value.replace(/[^0-9.,]/g, '');
+                          const newPozycje = [...wzDocument.pozycje];
+                          newPozycje[index].ilosc = val;
+                          setWzDocument({ ...wzDocument, pozycje: newPozycje });
+                        }}
+                        placeholder="Ilość"
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                      />
+                    </div>
+                    <div className="w-20">
+                      <select
+                        value={pozycja.jednostka}
+                        onChange={(e) => {
+                          const newPozycje = [...wzDocument.pozycje];
+                          newPozycje[index].jednostka = e.target.value;
+                          setWzDocument({ ...wzDocument, pozycje: newPozycje });
+                        }}
+                        className="w-full px-2 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                      >
+                        <option value="szt">szt</option>
+                        <option value="m">m</option>
+                        <option value="mb">mb</option>
+                        <option value="m2">m2</option>
+                        <option value="kg">kg</option>
+                      </select>
+                    </div>
+                    <button
+                      onClick={() => removeDocumentRow(index, 'wz')}
+                      className="p-2 text-red-600 hover:bg-red-100 dark:hover:bg-red-900/30 rounded-lg"
+                      title="Usuń pozycję"
+                    >
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      </svg>
+                    </button>
+                  </div>
+                ))}
+              </div>
+              <button
+                onClick={() => addDocumentRow('wz')}
+                className="mt-3 px-4 py-2 text-sm text-green-600 dark:text-green-400 border border-green-300 dark:border-green-600 rounded-lg hover:bg-green-50 dark:hover:bg-green-900/30"
+              >
+                + Dodaj pozycję
+              </button>
+            </div>
+
+            <div className="flex justify-end gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
+              <button
+                onClick={() => {
+                  setSurowceSubTab('lista');
+                  setWzDocument({
+                    numer: '',
+                    firma: '',
+                    pozycje: [{ produktId: null, nazwa: '', ilosc: '', jednostka: 'szt' }]
+                  });
+                }}
+                className="px-4 py-2 text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600"
+              >
+                Anuluj
+              </button>
+              <button
+                onClick={handleSubmitWZ}
+                disabled={savingDocument}
+                className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 flex items-center gap-2"
+              >
+                {savingDocument ? (
+                  <>
+                    <span className="animate-spin">⏳</span>
+                    Zapisywanie...
+                  </>
+                ) : (
+                  <>
+                    <span>📥</span>
+                    Przyjmij towar
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Panel RW - Rozchód wewnętrzny */}
+        {activeTab === 'surowce' && surowceSubTab === 'rw' && (
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow dark:shadow-gray-900 p-6 mb-4">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+              <span className="text-red-600">📤</span>
+              Dokument RW - Rozchód wewnętrzny
+            </h3>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
+              Wypełnij dokument RW, aby wydać surowce z magazynu. Ilości zostaną ODJĘTE od stanów magazynowych.
+            </p>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Numer dokumentu *</label>
+                <input
+                  type="text"
+                  value={rwDocument.numer}
+                  onChange={(e) => setRwDocument({ ...rwDocument, numer: e.target.value })}
+                  placeholder="np. RW/2025/001"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Firma</label>
+                <input
+                  type="text"
+                  value={rwDocument.firma}
+                  disabled
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-600 text-gray-900 dark:text-white rounded-lg cursor-not-allowed"
+                />
+                <p className="text-xs text-gray-400 mt-1">Automatycznie ustawiona na POOM</p>
+              </div>
+            </div>
+
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Pozycje dokumentu</label>
+              <div className="space-y-3">
+                {rwDocument.pozycje.map((pozycja, index) => (
+                  <div key={index} className="flex flex-wrap gap-2 items-start p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                    <div className="flex-1 min-w-[200px] relative">
+                      <input
+                        type="text"
+                        value={pozycja.nazwa}
+                        onChange={(e) => {
+                          const newPozycje = [...rwDocument.pozycje];
+                          newPozycje[index].nazwa = e.target.value;
+                          newPozycje[index].produktId = null;
+                          setRwDocument({ ...rwDocument, pozycje: newPozycje });
+                          handleProductSearch(e.target.value, index, 'rw');
+                        }}
+                        placeholder="Wpisz nazwe surowca..."
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
+                      />
+                      {activeSuggestionIndex === index && productSuggestions.length > 0 && (
+                        <div className="absolute z-50 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg max-h-48 overflow-y-auto">
+                          {productSuggestions.map((product) => (
+                            <button
+                              key={product.id}
+                              onClick={() => handleSelectProduct(product, index, 'rw')}
+                              className="w-full px-3 py-2 text-left hover:bg-red-50 dark:hover:bg-red-900/30 text-sm text-gray-700 dark:text-gray-300 border-b border-gray-100 dark:border-gray-700 last:border-b-0"
+                            >
+                              <span className="font-medium">{product.nazwa}</span>
+                              <span className="text-gray-400 ml-2">({product.stan} {product.jednostka || 'szt'})</span>
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                    <div className="w-24">
+                      <input
+                        type="text"
+                        inputMode="decimal"
+                        value={pozycja.ilosc}
+                        onChange={(e) => {
+                          const val = e.target.value.replace(/[^0-9.,]/g, '');
+                          const newPozycje = [...rwDocument.pozycje];
+                          newPozycje[index].ilosc = val;
+                          setRwDocument({ ...rwDocument, pozycje: newPozycje });
+                        }}
+                        placeholder="Ilość"
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
+                      />
+                    </div>
+                    <div className="w-20">
+                      <select
+                        value={pozycja.jednostka}
+                        onChange={(e) => {
+                          const newPozycje = [...rwDocument.pozycje];
+                          newPozycje[index].jednostka = e.target.value;
+                          setRwDocument({ ...rwDocument, pozycje: newPozycje });
+                        }}
+                        className="w-full px-2 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
+                      >
+                        <option value="szt">szt</option>
+                        <option value="m">m</option>
+                        <option value="mb">mb</option>
+                        <option value="m2">m2</option>
+                        <option value="kg">kg</option>
+                      </select>
+                    </div>
+                    <button
+                      onClick={() => removeDocumentRow(index, 'rw')}
+                      className="p-2 text-red-600 hover:bg-red-100 dark:hover:bg-red-900/30 rounded-lg"
+                      title="Usuń pozycję"
+                    >
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      </svg>
+                    </button>
+                  </div>
+                ))}
+              </div>
+              <button
+                onClick={() => addDocumentRow('rw')}
+                className="mt-3 px-4 py-2 text-sm text-red-600 dark:text-red-400 border border-red-300 dark:border-red-600 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/30"
+              >
+                + Dodaj pozycję
+              </button>
+            </div>
+
+            <div className="flex justify-end gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
+              <button
+                onClick={() => {
+                  setSurowceSubTab('lista');
+                  setRwDocument({
+                    numer: '',
+                    firma: 'POOM',
+                    pozycje: [{ produktId: null, nazwa: '', ilosc: '', jednostka: 'szt' }]
+                  });
+                }}
+                className="px-4 py-2 text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600"
+              >
+                Anuluj
+              </button>
+              <button
+                onClick={handleSubmitRW}
+                disabled={savingDocument}
+                className="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 flex items-center gap-2"
+              >
+                {savingDocument ? (
+                  <>
+                    <span className="animate-spin">⏳</span>
+                    Zapisywanie...
+                  </>
+                ) : (
+                  <>
+                    <span>📤</span>
+                    Wydaj towar
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Content - Lista surowców */}
+        {(activeTab !== 'surowce' || surowceSubTab === 'lista') && (
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow dark:shadow-gray-900">
           <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-700 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
             <div>
@@ -1696,6 +2249,7 @@ export default function MagazynyPage() {
             </div>
           )}
         </div>
+        )}
 
         {/* Add Modal */}
         {showAddModal && (
