@@ -211,7 +211,7 @@ export default function Navigation() {
         key={item.href}
         href={item.href}
         onClick={(e) => handleRestrictedClick(e, item)}
-        className={`relative flex-1 flex flex-col md:flex-row items-center justify-center gap-0.5 md:gap-1 py-2 md:py-3 px-1 md:px-2 lg:px-3 text-xs lg:text-sm font-medium transition-colors whitespace-nowrap ${
+        className={`relative flex-1 flex flex-col md:flex-row items-center justify-center gap-0.5 md:gap-1 py-2 md:py-3 px-1 md:px-3 lg:px-5 text-xs lg:text-sm font-medium transition-colors whitespace-nowrap ${
           !permitted
             ? 'text-red-500 dark:text-red-400 bg-red-50 dark:bg-red-900/20 cursor-not-allowed'
             : isActive
