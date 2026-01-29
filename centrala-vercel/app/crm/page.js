@@ -2599,9 +2599,9 @@ function CRMContent() {
                                     return atts.length > 0 ? (
                                       <div className="mt-2 space-y-2">
                                         {atts.map((att, idx) => {
-                                          const attId = att.id || (att.url ? att.url.split('/').pop() : null);
-                                          const attUrl = attId ? `/api/allegro/attachments/${attId}${att.url ? '?url=' + encodeURIComponent(att.url) : ''}` : null;
-                                          if (!attUrl) return null;
+                                          if (!att.url) return null;
+                                          const attId = att.url.split('/').pop();
+                                          const attUrl = `/api/allegro/attachments/${attId}?url=${encodeURIComponent(att.url)}`;
                                           return (
                                             <a key={attId || idx} href={attUrl} target="_blank" rel="noopener noreferrer" className="block">
                                               <img
