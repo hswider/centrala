@@ -3329,14 +3329,29 @@ function CRMContent() {
                                 Odpowiedz
                               </button>
                               <button
-                                onClick={() => {
+                                onClick={async () => {
                                   const originalMsg = gmailThreadMessages.length > 0 ? gmailThreadMessages[gmailThreadMessages.length - 1] : null;
                                   const forwardBody = originalMsg ? `\n\n---------- Przekazana wiadomosc ----------\nOd: ${gmailSelectedThread.from_email}\nData: ${originalMsg.sent_at ? new Date(originalMsg.sent_at).toLocaleString('pl-PL') : ''}\nTemat: ${gmailSelectedThread.subject}\n\n${originalMsg.body_text || ''}` : '';
+
+                                  let forwardedFiles = [];
+                                  if (originalMsg) {
+                                    const msgAtts = Array.isArray(originalMsg.attachments) ? originalMsg.attachments : (typeof originalMsg.attachments === 'string' ? JSON.parse(originalMsg.attachments || '[]') : []);
+                                    for (const att of msgAtts) {
+                                      try {
+                                        const res = await fetch(`/api/gmail/attachments/${originalMsg.id}/${att.id}?filename=${encodeURIComponent(att.filename)}&mimeType=${encodeURIComponent(att.mimeType)}`);
+                                        if (res.ok) {
+                                          const blob = await res.blob();
+                                          forwardedFiles.push(new File([blob], att.filename, { type: att.mimeType || 'application/octet-stream' }));
+                                        }
+                                      } catch (e) { console.error('Failed to fetch attachment:', e); }
+                                    }
+                                  }
 
                                   setGmailComposeMode(true);
                                   setGmailComposeTo('');
                                   setGmailComposeSubject('Fwd: ' + (gmailSelectedThread.subject || '').replace(/^Fwd:\s*/i, ''));
                                   setGmailComposeBody(forwardBody);
+                                  setGmailComposeAttachments(forwardedFiles);
                                   setGmailSelectedThread(null);
                                 }}
                                 className="px-2 py-1 text-xs font-medium bg-gray-100 text-gray-700 rounded hover:bg-gray-200"
@@ -3886,15 +3901,29 @@ function CRMContent() {
                                 Odpowiedz
                               </button>
                               <button
-                                onClick={() => {
-                                  // Get original message content for forwarding
+                                onClick={async () => {
                                   const originalMsg = poomkidsThreadMessages.length > 0 ? poomkidsThreadMessages[poomkidsThreadMessages.length - 1] : null;
                                   const forwardBody = originalMsg ? `\n\n---------- Przekazana wiadomosc ----------\nOd: ${poomkidsSelectedThread.from_email}\nData: ${originalMsg.sent_at ? new Date(originalMsg.sent_at).toLocaleString('pl-PL') : ''}\nTemat: ${poomkidsSelectedThread.subject}\n\n${originalMsg.body_text || ''}` : '';
+
+                                  let forwardedFiles = [];
+                                  if (originalMsg) {
+                                    const msgAtts = Array.isArray(originalMsg.attachments) ? originalMsg.attachments : (typeof originalMsg.attachments === 'string' ? JSON.parse(originalMsg.attachments || '[]') : []);
+                                    for (const att of msgAtts) {
+                                      try {
+                                        const res = await fetch(`/api/gmail-poomkids/attachments/${originalMsg.id}/${att.id}?filename=${encodeURIComponent(att.filename)}&mimeType=${encodeURIComponent(att.mimeType)}`);
+                                        if (res.ok) {
+                                          const blob = await res.blob();
+                                          forwardedFiles.push(new File([blob], att.filename, { type: att.mimeType || 'application/octet-stream' }));
+                                        }
+                                      } catch (e) { console.error('Failed to fetch attachment:', e); }
+                                    }
+                                  }
 
                                   setPoomkidsComposeMode(true);
                                   setPoomkidsComposeTo('');
                                   setPoomkidsComposeSubject('Fwd: ' + (poomkidsSelectedThread.subject || '').replace(/^Fwd:\s*/i, ''));
                                   setPoomkidsComposeBody(forwardBody);
+                                  setPoomkidsComposeAttachments(forwardedFiles);
                                   setPoomkidsSelectedThread(null);
                                 }}
                                 className="px-2 py-1 text-xs font-medium bg-gray-100 text-gray-700 rounded hover:bg-gray-200"
@@ -4419,14 +4448,29 @@ function CRMContent() {
                                 Odpowiedz
                               </button>
                               <button
-                                onClick={() => {
+                                onClick={async () => {
                                   const originalMsg = allepoduszkiThreadMessages.length > 0 ? allepoduszkiThreadMessages[allepoduszkiThreadMessages.length - 1] : null;
                                   const forwardBody = originalMsg ? `\n\n---------- Przekazana wiadomosc ----------\nOd: ${allepoduszkiSelectedThread.from_email}\nData: ${originalMsg.sent_at ? new Date(originalMsg.sent_at).toLocaleString('pl-PL') : ''}\nTemat: ${allepoduszkiSelectedThread.subject}\n\n${originalMsg.body_text || ''}` : '';
+
+                                  let forwardedFiles = [];
+                                  if (originalMsg) {
+                                    const msgAtts = Array.isArray(originalMsg.attachments) ? originalMsg.attachments : (typeof originalMsg.attachments === 'string' ? JSON.parse(originalMsg.attachments || '[]') : []);
+                                    for (const att of msgAtts) {
+                                      try {
+                                        const res = await fetch(`/api/gmail-allepoduszki/attachments/${originalMsg.id}/${att.id}?filename=${encodeURIComponent(att.filename)}&mimeType=${encodeURIComponent(att.mimeType)}`);
+                                        if (res.ok) {
+                                          const blob = await res.blob();
+                                          forwardedFiles.push(new File([blob], att.filename, { type: att.mimeType || 'application/octet-stream' }));
+                                        }
+                                      } catch (e) { console.error('Failed to fetch attachment:', e); }
+                                    }
+                                  }
 
                                   setAllepoduszkiComposeMode(true);
                                   setAllepoduszkiComposeTo('');
                                   setAllepoduszkiComposeSubject('Fwd: ' + (allepoduszkiSelectedThread.subject || '').replace(/^Fwd:\s*/i, ''));
                                   setAllepoduszkiComposeBody(forwardBody);
+                                  setAllepoduszkiComposeAttachments(forwardedFiles);
                                   setAllepoduszkiSelectedThread(null);
                                 }}
                                 className="px-2 py-1 text-xs font-medium bg-gray-100 text-gray-700 rounded hover:bg-gray-200"
@@ -4949,14 +4993,29 @@ function CRMContent() {
                                 Odpowiedz
                               </button>
                               <button
-                                onClick={() => {
+                                onClick={async () => {
                                   const originalMsg = poomfurnitureThreadMessages.length > 0 ? poomfurnitureThreadMessages[poomfurnitureThreadMessages.length - 1] : null;
                                   const forwardBody = originalMsg ? `\n\n---------- Przekazana wiadomosc ----------\nOd: ${poomfurnitureSelectedThread.from_email}\nData: ${originalMsg.sent_at ? new Date(originalMsg.sent_at).toLocaleString('pl-PL') : ''}\nTemat: ${poomfurnitureSelectedThread.subject}\n\n${originalMsg.body_text || ''}` : '';
+
+                                  let forwardedFiles = [];
+                                  if (originalMsg) {
+                                    const msgAtts = Array.isArray(originalMsg.attachments) ? originalMsg.attachments : (typeof originalMsg.attachments === 'string' ? JSON.parse(originalMsg.attachments || '[]') : []);
+                                    for (const att of msgAtts) {
+                                      try {
+                                        const res = await fetch(`/api/gmail-poomfurniture/attachments/${originalMsg.id}/${att.id}?filename=${encodeURIComponent(att.filename)}&mimeType=${encodeURIComponent(att.mimeType)}`);
+                                        if (res.ok) {
+                                          const blob = await res.blob();
+                                          forwardedFiles.push(new File([blob], att.filename, { type: att.mimeType || 'application/octet-stream' }));
+                                        }
+                                      } catch (e) { console.error('Failed to fetch attachment:', e); }
+                                    }
+                                  }
 
                                   setPoomfurnitureComposeMode(true);
                                   setPoomfurnitureComposeTo('');
                                   setPoomfurnitureComposeSubject('Fwd: ' + (poomfurnitureSelectedThread.subject || '').replace(/^Fwd:\s*/i, ''));
                                   setPoomfurnitureComposeBody(forwardBody);
+                                  setPoomfurnitureComposeAttachments(forwardedFiles);
                                   setPoomfurnitureSelectedThread(null);
                                 }}
                                 className="px-2 py-1 text-xs font-medium bg-gray-100 text-gray-700 rounded hover:bg-gray-200"
