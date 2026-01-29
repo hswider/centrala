@@ -211,7 +211,7 @@ export async function sendReply(threadId, to, subject, body, messageId = null) {
   const fromEmail = tokens.email;
 
   const replyToId = messageId || threadId;
-  const replySubject = 'Re: ' + subject.replace(/^Re:\s*/i, '');
+  const replySubject = 'Re: ' + subject.replace(/^(Re|Odp|AW|SV|Fwd|FW):\s*/gi, '').replace(/^(Re|Odp|AW|SV|Fwd|FW):\s*/gi, '');
 
   const emailLines = [
     `From: ${fromEmail}`,
@@ -244,7 +244,7 @@ export async function sendReplyWithAttachments(threadId, to, subject, body, atta
   const from = tokens?.email || 'me';
 
   const replyToId = messageId || threadId;
-  const replySubject = 'Re: ' + subject.replace(/^Re:\s*/i, '');
+  const replySubject = 'Re: ' + subject.replace(/^(Re|Odp|AW|SV|Fwd|FW):\s*/gi, '').replace(/^(Re|Odp|AW|SV|Fwd|FW):\s*/gi, '');
   const boundary = `boundary_${Date.now()}`;
 
   const emailParts = [
@@ -508,6 +508,20 @@ function htmlToPlainText(html) {
   return text;
 }
 
+// Decode buffer using the specified charset
+function decodeBufferWithCharset(buffer, charset) {
+  const cs = charset.toLowerCase().replace(/^iso-/, 'iso').replace(/^iso/, 'iso-');
+  if (cs === 'utf-8' || cs === 'utf8') {
+    return buffer.toString('utf-8');
+  }
+  try {
+    const decoder = new TextDecoder(charset);
+    return decoder.decode(buffer);
+  } catch {
+    return buffer.toString('utf-8');
+  }
+}
+
 // Decode MIME encoded-word (RFC 2047) in headers like Subject
 function decodeMimeHeader(text) {
   if (!text) return '';
@@ -515,19 +529,26 @@ function decodeMimeHeader(text) {
   // Pattern for encoded-word: =?charset?encoding?encoded_text?=
   const encodedWordPattern = /=\?([^?]+)\?([BbQq])\?([^?]*)\?=/g;
 
-  return text.replace(encodedWordPattern, (match, charset, encoding, encodedText) => {
+  const result = text.replace(encodedWordPattern, (match, charset, encoding, encodedText) => {
     try {
       if (encoding.toUpperCase() === 'B') {
         // Base64 encoding
         const decoded = Buffer.from(encodedText, 'base64');
-        return decoded.toString('utf-8');
+        return decodeBufferWithCharset(decoded, charset);
       } else if (encoding.toUpperCase() === 'Q') {
-        // Quoted-Printable encoding
-        const decoded = encodedText
-          .replace(/_/g, ' ')
-          .replace(/=([0-9A-Fa-f]{2})/g, (m, hex) => String.fromCharCode(parseInt(hex, 16)));
-        // Convert to proper UTF-8 if needed
-        return Buffer.from(decoded, 'latin1').toString('utf-8');
+        // Quoted-Printable encoding - decode to raw bytes
+        const bytes = [];
+        for (let i = 0; i < encodedText.length; i++) {
+          if (encodedText[i] === '_') {
+            bytes.push(0x20);
+          } else if (encodedText[i] === '=' && i + 2 < encodedText.length && /[0-9A-Fa-f]{2}/.test(encodedText.substr(i + 1, 2))) {
+            bytes.push(parseInt(encodedText.substr(i + 1, 2), 16));
+            i += 2;
+          } else {
+            bytes.push(encodedText.charCodeAt(i));
+          }
+        }
+        return decodeBufferWithCharset(Buffer.from(bytes), charset);
       }
     } catch (e) {
       // If decoding fails, return original
@@ -535,6 +556,9 @@ function decodeMimeHeader(text) {
     }
     return match;
   });
+
+  // Remove whitespace between adjacent encoded-words (RFC 2047)
+  return result.replace(/\?=\s+=\?/g, '?==?');
 }
 
 // Parse email message to extract useful data
