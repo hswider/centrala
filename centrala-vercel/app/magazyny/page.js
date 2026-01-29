@@ -45,6 +45,10 @@ export default function MagazynyPage() {
   const [colorYellow, setColorYellow] = useState('');
   const [colorRed, setColorRed] = useState('');
   const [savingColor, setSavingColor] = useState(false);
+  const [showBulkWarningModal, setShowBulkWarningModal] = useState(false);
+  const [bulkYellow, setBulkYellow] = useState('');
+  const [bulkRed, setBulkRed] = useState('');
+  const [savingBulkWarning, setSavingBulkWarning] = useState(false);
   // Sub-zakładki dla Surowce (WZ/RW)
   const [surowceSubTab, setSurowceSubTab] = useState('lista'); // 'lista', 'wz', 'rw'
   const [showWZModal, setShowWZModal] = useState(false);
@@ -652,6 +656,50 @@ export default function MagazynyPage() {
       alert('Blad: ' + error.message);
     } finally {
       setSavingColor(false);
+    }
+  };
+
+  // Masowe ustawienie ostrzezenia
+  const handleBulkWarning = async () => {
+    if (selectedIds.size === 0) return;
+
+    setSavingBulkWarning(true);
+    try {
+      const idsArray = Array.from(selectedIds);
+      const res = await fetch('/api/inventory/bulk-warning', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ids: idsArray,
+          yellow_threshold: bulkYellow === '' ? null : parseInt(bulkYellow),
+          red_threshold: bulkRed === '' ? null : parseInt(bulkRed)
+        })
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        const yellowVal = bulkYellow === '' ? null : parseInt(bulkYellow);
+        const redVal = bulkRed === '' ? null : parseInt(bulkRed);
+        setMagazyny(prev => ({
+          ...prev,
+          [activeTab]: prev[activeTab].map(i =>
+            selectedIds.has(i.id)
+              ? { ...i, yellow_threshold: yellowVal, red_threshold: redVal }
+              : i
+          )
+        }));
+        setShowBulkWarningModal(false);
+        setBulkYellow('');
+        setBulkRed('');
+        setSelectedIds(new Set());
+        alert(`Zaktualizowano progi dla ${data.updated} pozycji`);
+      } else {
+        alert('Blad: ' + data.error);
+      }
+    } catch (error) {
+      alert('Blad: ' + error.message);
+    } finally {
+      setSavingBulkWarning(false);
     }
   };
 
@@ -1913,6 +1961,19 @@ export default function MagazynyPage() {
                     </button>
                   </div>
                   <div className="flex items-center gap-2">
+                    {activeTab === 'surowce' && (
+                      <button
+                        onClick={() => {
+                          setBulkYellow('');
+                          setBulkRed('');
+                          setShowBulkWarningModal(true);
+                        }}
+                        className="px-3 py-1.5 text-sm bg-orange-500 text-white rounded hover:bg-orange-600 disabled:opacity-50 flex items-center gap-1"
+                      >
+                        <span>⚠️</span>
+                        <span>Ustaw ostrzezenie ({selectedIds.size})</span>
+                      </button>
+                    )}
                     <button
                       onClick={handleBulkDelete}
                       disabled={saving}
@@ -3176,6 +3237,87 @@ export default function MagazynyPage() {
                   </button>
                 </div>
               )}
+            </div>
+          </div>
+        )}
+
+        {/* Bulk Warning Modal */}
+        {showBulkWarningModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl dark:shadow-gray-900 max-w-md w-full p-6">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                Masowe ustawienie progów ostrzeżeń
+              </h3>
+              <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+                Ustawisz progi dla <span className="font-bold">{selectedIds.size}</span> zaznaczonych pozycji
+              </p>
+
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-red-700 dark:text-red-400 mb-1">
+                    🔴 Czerwony (krytyczny) - stan mniejszy niż:
+                  </label>
+                  <input
+                    type="number"
+                    value={bulkRed}
+                    onChange={(e) => setBulkRed(e.target.value)}
+                    placeholder="np. 30"
+                    min="0"
+                    className="w-full px-3 py-2 border border-red-300 dark:border-red-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 bg-red-50 dark:bg-red-900/20"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-yellow-700 dark:text-yellow-400 mb-1">
+                    🟡 Żółty (ostrzeżenie) - stan mniejszy niż:
+                  </label>
+                  <input
+                    type="number"
+                    value={bulkYellow}
+                    onChange={(e) => setBulkYellow(e.target.value)}
+                    placeholder="np. 80"
+                    min="0"
+                    className="w-full px-3 py-2 border border-yellow-300 dark:border-yellow-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500 bg-yellow-50 dark:bg-yellow-900/20"
+                  />
+                </div>
+
+                <div className="p-3 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
+                  <p className="text-sm text-green-700 dark:text-green-400">
+                    🟢 Zielony - stan równy lub wyższy niż próg żółty
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex justify-between gap-3 mt-6">
+                <button
+                  onClick={() => {
+                    setBulkYellow('');
+                    setBulkRed('');
+                  }}
+                  className="px-4 py-2 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200"
+                >
+                  Wyczyść progi
+                </button>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => {
+                      setShowBulkWarningModal(false);
+                      setBulkYellow('');
+                      setBulkRed('');
+                    }}
+                    className="px-4 py-2 text-sm bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600"
+                  >
+                    Anuluj
+                  </button>
+                  <button
+                    onClick={handleBulkWarning}
+                    disabled={savingBulkWarning}
+                    className="px-4 py-2 text-sm bg-orange-500 text-white rounded-lg hover:bg-orange-600 disabled:opacity-50"
+                  >
+                    {savingBulkWarning ? 'Zapisywanie...' : `Zapisz dla ${selectedIds.size} pozycji`}
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         )}
