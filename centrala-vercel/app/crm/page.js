@@ -3465,15 +3465,24 @@ function CRMContent() {
                             </div>
                           </div>
                           <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center text-red-600 font-medium">
-                              {(gmailSelectedThread.from_name || gmailSelectedThread.from_email || '?')[0].toUpperCase()}
-                            </div>
-                            <div className="flex-1">
-                              <h3 className="font-semibold text-gray-900 dark:text-white">
-                                {gmailSelectedThread.from_name || gmailSelectedThread.from_email || 'Nieznany'}
-                              </h3>
-                              <p className="text-sm text-gray-600 dark:text-gray-400">{gmailSelectedThread.from_email}</p>
-                            </div>
+                            {(() => {
+                              const ownEmail = gmailAuth.user?.email || '';
+                              const isOwn = ownEmail && gmailSelectedThread.from_email?.toLowerCase() === ownEmail.toLowerCase();
+                              const recipientMsg = isOwn && gmailThreadMessages.length > 0 ? gmailThreadMessages.find(m => m.to_email && m.to_email.toLowerCase() !== ownEmail.toLowerCase()) || gmailThreadMessages[0] : null;
+                              const dn = isOwn ? (recipientMsg?.to_email || gmailSelectedThread.from_email) : (gmailSelectedThread.from_name || gmailSelectedThread.from_email || 'Nieznany');
+                              const de = isOwn ? (recipientMsg?.to_email || gmailSelectedThread.from_email) : gmailSelectedThread.from_email;
+                              return (
+                                <>
+                                  <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center text-red-600 font-medium">
+                                    {(dn || '?')[0].toUpperCase()}
+                                  </div>
+                                  <div className="flex-1">
+                                    <h3 className="font-semibold text-gray-900 dark:text-white">{dn}</h3>
+                                    <p className="text-sm text-gray-600 dark:text-gray-400">{de}</p>
+                                  </div>
+                                </>
+                              );
+                            })()}
                           </div>
                           <h4 className="mt-2 font-medium text-gray-800 dark:text-gray-200">
                             {gmailSelectedThread.subject || '(Brak tematu)'}
@@ -3523,7 +3532,7 @@ function CRMContent() {
                                     }`}
                                   >
                                     <div className={`text-xs mb-1 ${msg.is_outgoing ? 'text-gray-400' : 'text-gray-500'}`}>
-                                      {msg.from_name || msg.from_email}
+                                      {msg.is_outgoing ? `Do: ${msg.to_email || 'Nieznany'}` : (msg.from_name || msg.from_email)}
                                     </div>
                                     <div className="whitespace-pre-wrap break-words text-sm">
                                       {parseMessageBody(msg.body_text, msg.is_outgoing)}
@@ -4022,15 +4031,24 @@ function CRMContent() {
                             </div>
                           </div>
                           <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-medium">
-                              {(poomkidsSelectedThread.from_name || poomkidsSelectedThread.from_email || '?')[0].toUpperCase()}
-                            </div>
-                            <div className="flex-1">
-                              <h3 className="font-semibold text-gray-900 dark:text-white">
-                                {poomkidsSelectedThread.from_name || poomkidsSelectedThread.from_email || 'Nieznany'}
-                              </h3>
-                              <p className="text-sm text-gray-600 dark:text-gray-400">{poomkidsSelectedThread.from_email}</p>
-                            </div>
+                            {(() => {
+                              const ownEmail = poomkidsAuth.user?.email || '';
+                              const isOwn = ownEmail && poomkidsSelectedThread.from_email?.toLowerCase() === ownEmail.toLowerCase();
+                              const recipientMsg = isOwn && poomkidsThreadMessages.length > 0 ? poomkidsThreadMessages.find(m => m.to_email && m.to_email.toLowerCase() !== ownEmail.toLowerCase()) || poomkidsThreadMessages[0] : null;
+                              const dn = isOwn ? (recipientMsg?.to_email || poomkidsSelectedThread.from_email) : (poomkidsSelectedThread.from_name || poomkidsSelectedThread.from_email || 'Nieznany');
+                              const de = isOwn ? (recipientMsg?.to_email || poomkidsSelectedThread.from_email) : poomkidsSelectedThread.from_email;
+                              return (
+                                <>
+                                  <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-medium">
+                                    {(dn || '?')[0].toUpperCase()}
+                                  </div>
+                                  <div className="flex-1">
+                                    <h3 className="font-semibold text-gray-900 dark:text-white">{dn}</h3>
+                                    <p className="text-sm text-gray-600 dark:text-gray-400">{de}</p>
+                                  </div>
+                                </>
+                              );
+                            })()}
                           </div>
                           <h4 className="mt-2 font-medium text-gray-800 dark:text-gray-200">
                             {poomkidsSelectedThread.subject || '(Brak tematu)'}
@@ -4069,7 +4087,7 @@ function CRMContent() {
                                     }`}
                                   >
                                     <div className={`text-xs mb-1 ${msg.is_outgoing ? 'text-gray-400' : 'text-gray-500'}`}>
-                                      {msg.from_name || msg.from_email}
+                                      {msg.is_outgoing ? `Do: ${msg.to_email || 'Nieznany'}` : (msg.from_name || msg.from_email)}
                                     </div>
                                     <div className="whitespace-pre-wrap break-words text-sm">
                                       {parseMessageBody(msg.body_text, msg.is_outgoing)}
@@ -4569,15 +4587,24 @@ function CRMContent() {
                             </div>
                           </div>
                           <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center text-purple-600 font-medium">
-                              {(allepoduszkiSelectedThread.from_name || allepoduszkiSelectedThread.from_email || '?')[0].toUpperCase()}
-                            </div>
-                            <div className="flex-1">
-                              <h3 className="font-semibold text-gray-900 dark:text-white">
-                                {allepoduszkiSelectedThread.from_name || allepoduszkiSelectedThread.from_email || 'Nieznany'}
-                              </h3>
-                              <p className="text-sm text-gray-600 dark:text-gray-400">{allepoduszkiSelectedThread.from_email}</p>
-                            </div>
+                            {(() => {
+                              const ownEmail = allepoduszkiAuth.user?.email || '';
+                              const isOwn = ownEmail && allepoduszkiSelectedThread.from_email?.toLowerCase() === ownEmail.toLowerCase();
+                              const recipientMsg = isOwn && allepoduszkiThreadMessages.length > 0 ? allepoduszkiThreadMessages.find(m => m.to_email && m.to_email.toLowerCase() !== ownEmail.toLowerCase()) || allepoduszkiThreadMessages[0] : null;
+                              const dn = isOwn ? (recipientMsg?.to_email || allepoduszkiSelectedThread.from_email) : (allepoduszkiSelectedThread.from_name || allepoduszkiSelectedThread.from_email || 'Nieznany');
+                              const de = isOwn ? (recipientMsg?.to_email || allepoduszkiSelectedThread.from_email) : allepoduszkiSelectedThread.from_email;
+                              return (
+                                <>
+                                  <div className="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center text-purple-600 font-medium">
+                                    {(dn || '?')[0].toUpperCase()}
+                                  </div>
+                                  <div className="flex-1">
+                                    <h3 className="font-semibold text-gray-900 dark:text-white">{dn}</h3>
+                                    <p className="text-sm text-gray-600 dark:text-gray-400">{de}</p>
+                                  </div>
+                                </>
+                              );
+                            })()}
                           </div>
                           <h4 className="mt-2 font-medium text-gray-800 dark:text-gray-200">
                             {allepoduszkiSelectedThread.subject || '(Brak tematu)'}
@@ -4617,7 +4644,7 @@ function CRMContent() {
                                     }`}
                                   >
                                     <div className={`text-xs mb-1 ${msg.is_outgoing ? 'text-gray-400' : 'text-gray-500'}`}>
-                                      {msg.from_name || msg.from_email}
+                                      {msg.is_outgoing ? `Do: ${msg.to_email || 'Nieznany'}` : (msg.from_name || msg.from_email)}
                                     </div>
                                     <div className="whitespace-pre-wrap break-words text-sm">
                                       {parseMessageBody(msg.body_text, msg.is_outgoing)}
@@ -5114,15 +5141,26 @@ function CRMContent() {
                             </div>
                           </div>
                           <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-full bg-teal-100 flex items-center justify-center text-teal-600 font-medium">
-                              {(poomfurnitureSelectedThread.from_name || poomfurnitureSelectedThread.from_email || '?')[0].toUpperCase()}
-                            </div>
-                            <div className="flex-1">
-                              <h3 className="font-semibold text-gray-900 dark:text-white">
-                                {poomfurnitureSelectedThread.from_name || poomfurnitureSelectedThread.from_email || 'Nieznany'}
-                              </h3>
-                              <p className="text-sm text-gray-600 dark:text-gray-400">{poomfurnitureSelectedThread.from_email}</p>
-                            </div>
+                            {(() => {
+                              const ownEmail = poomfurnitureAuth.user?.email || 'kontakt.poom@gmail.com';
+                              const isOwnThread = poomfurnitureSelectedThread.from_email?.toLowerCase() === ownEmail.toLowerCase();
+                              const recipientMsg = isOwnThread && poomfurnitureThreadMessages.length > 0 ? poomfurnitureThreadMessages.find(m => m.to_email && m.to_email.toLowerCase() !== ownEmail.toLowerCase()) || poomfurnitureThreadMessages[0] : null;
+                              const displayName = isOwnThread ? (recipientMsg?.to_email || poomfurnitureSelectedThread.from_email) : (poomfurnitureSelectedThread.from_name || poomfurnitureSelectedThread.from_email || 'Nieznany');
+                              const displayEmail = isOwnThread ? (recipientMsg?.to_email || poomfurnitureSelectedThread.from_email) : poomfurnitureSelectedThread.from_email;
+                              return (
+                                <>
+                                  <div className="w-10 h-10 rounded-full bg-teal-100 flex items-center justify-center text-teal-600 font-medium">
+                                    {(displayName || '?')[0].toUpperCase()}
+                                  </div>
+                                  <div className="flex-1">
+                                    <h3 className="font-semibold text-gray-900 dark:text-white">
+                                      {displayName}
+                                    </h3>
+                                    <p className="text-sm text-gray-600 dark:text-gray-400">{displayEmail}</p>
+                                  </div>
+                                </>
+                              );
+                            })()}
                           </div>
                           <h4 className="mt-2 font-medium text-gray-800 dark:text-gray-200">
                             {poomfurnitureSelectedThread.subject || '(Brak tematu)'}
@@ -5162,7 +5200,7 @@ function CRMContent() {
                                     }`}
                                   >
                                     <div className={`text-xs mb-1 ${msg.is_outgoing ? 'text-gray-400' : 'text-gray-500'}`}>
-                                      {msg.from_name || msg.from_email}
+                                      {msg.is_outgoing ? `Do: ${msg.to_email || 'Nieznany'}` : (msg.from_name || msg.from_email)}
                                     </div>
                                     <div className="whitespace-pre-wrap break-words text-sm">
                                       {parseMessageBody(msg.body_text, msg.is_outgoing)}
