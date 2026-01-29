@@ -3319,6 +3319,30 @@ function CRMContent() {
                               ← Wstecz
                             </button>
                             <div className="flex items-center gap-2">
+                              <button
+                                onClick={() => {
+                                  setGmailReplyText('');
+                                  document.querySelector('#gmail-reply-textarea')?.focus();
+                                }}
+                                className="px-2 py-1 text-xs font-medium bg-blue-100 text-blue-700 rounded hover:bg-blue-200"
+                              >
+                                Odpowiedz
+                              </button>
+                              <button
+                                onClick={() => {
+                                  const originalMsg = gmailThreadMessages.length > 0 ? gmailThreadMessages[gmailThreadMessages.length - 1] : null;
+                                  const forwardBody = originalMsg ? `\n\n---------- Przekazana wiadomosc ----------\nOd: ${gmailSelectedThread.from_email}\nData: ${originalMsg.sent_at ? new Date(originalMsg.sent_at).toLocaleString('pl-PL') : ''}\nTemat: ${gmailSelectedThread.subject}\n\n${originalMsg.body_text || ''}` : '';
+
+                                  setGmailComposeMode(true);
+                                  setGmailComposeTo('');
+                                  setGmailComposeSubject('Fwd: ' + (gmailSelectedThread.subject || '').replace(/^Fwd:\s*/i, ''));
+                                  setGmailComposeBody(forwardBody);
+                                  setGmailSelectedThread(null);
+                                }}
+                                className="px-2 py-1 text-xs font-medium bg-gray-100 text-gray-700 rounded hover:bg-gray-200"
+                              >
+                                Przekaz dalej
+                              </button>
                               {/* Status dropdown */}
                               <select
                                 value={gmailSelectedThread.status || 'new'}
@@ -3476,6 +3500,7 @@ function CRMContent() {
                               />
                             </label>
                             <textarea
+                              id="gmail-reply-textarea"
                               value={gmailReplyText}
                               onChange={(e) => setGmailReplyText(e.target.value)}
                               placeholder="Napisz odpowiedz..."
@@ -4376,12 +4401,49 @@ function CRMContent() {
                       <>
                         {/* Thread header */}
                         <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-700">
-                          <button
-                            onClick={() => setAllepoduszkiSelectedThread(null)}
-                            className="lg:hidden text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 mb-2"
-                          >
-                            ← Wstecz
-                          </button>
+                          <div className="flex items-center justify-between mb-2">
+                            <button
+                              onClick={() => { setAllepoduszkiSelectedThread(null); setAllepoduszkiSelectedMessages([]); }}
+                              className="lg:hidden text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
+                            >
+                              ← Wstecz
+                            </button>
+                            <div className="flex items-center gap-2">
+                              <button
+                                onClick={() => {
+                                  setAllepoduszkiReplyText('');
+                                  document.querySelector('#allepoduszki-reply-textarea')?.focus();
+                                }}
+                                className="px-2 py-1 text-xs font-medium bg-blue-100 text-blue-700 rounded hover:bg-blue-200"
+                              >
+                                Odpowiedz
+                              </button>
+                              <button
+                                onClick={() => {
+                                  const originalMsg = allepoduszkiThreadMessages.length > 0 ? allepoduszkiThreadMessages[allepoduszkiThreadMessages.length - 1] : null;
+                                  const forwardBody = originalMsg ? `\n\n---------- Przekazana wiadomosc ----------\nOd: ${allepoduszkiSelectedThread.from_email}\nData: ${originalMsg.sent_at ? new Date(originalMsg.sent_at).toLocaleString('pl-PL') : ''}\nTemat: ${allepoduszkiSelectedThread.subject}\n\n${originalMsg.body_text || ''}` : '';
+
+                                  setAllepoduszkiComposeMode(true);
+                                  setAllepoduszkiComposeTo('');
+                                  setAllepoduszkiComposeSubject('Fwd: ' + (allepoduszkiSelectedThread.subject || '').replace(/^Fwd:\s*/i, ''));
+                                  setAllepoduszkiComposeBody(forwardBody);
+                                  setAllepoduszkiSelectedThread(null);
+                                }}
+                                className="px-2 py-1 text-xs font-medium bg-gray-100 text-gray-700 rounded hover:bg-gray-200"
+                              >
+                                Przekaz dalej
+                              </button>
+                              {allepoduszkiSelectedMessages.length > 0 && (
+                                <button
+                                  onClick={handleAllepoduszkiDeleteMessages}
+                                  disabled={allepoduszkiDeleting}
+                                  className="px-2 py-1 text-xs bg-red-600 text-white rounded hover:bg-red-700 disabled:opacity-50"
+                                >
+                                  {allepoduszkiDeleting ? '...' : `Usun (${allepoduszkiSelectedMessages.length})`}
+                                </button>
+                              )}
+                            </div>
+                          </div>
                           <div className="flex items-center gap-3">
                             <div className="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center text-purple-600 font-medium">
                               {(allepoduszkiSelectedThread.from_name || allepoduszkiSelectedThread.from_email || '?')[0].toUpperCase()}
@@ -4501,6 +4563,7 @@ function CRMContent() {
                               />
                             </label>
                             <textarea
+                              id="allepoduszki-reply-textarea"
                               value={allepoduszkiReplyText}
                               onChange={(e) => setAllepoduszkiReplyText(e.target.value)}
                               placeholder="Napisz odpowiedz..."
@@ -4868,12 +4931,49 @@ function CRMContent() {
                       <>
                         {/* Thread header */}
                         <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-700">
-                          <button
-                            onClick={() => setPoomfurnitureSelectedThread(null)}
-                            className="lg:hidden text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 mb-2"
-                          >
-                            ← Wstecz
-                          </button>
+                          <div className="flex items-center justify-between mb-2">
+                            <button
+                              onClick={() => { setPoomfurnitureSelectedThread(null); setPoomfurnitureSelectedMessages([]); }}
+                              className="lg:hidden text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
+                            >
+                              ← Wstecz
+                            </button>
+                            <div className="flex items-center gap-2">
+                              <button
+                                onClick={() => {
+                                  setPoomfurnitureReplyText('');
+                                  document.querySelector('#poomfurniture-reply-textarea')?.focus();
+                                }}
+                                className="px-2 py-1 text-xs font-medium bg-blue-100 text-blue-700 rounded hover:bg-blue-200"
+                              >
+                                Odpowiedz
+                              </button>
+                              <button
+                                onClick={() => {
+                                  const originalMsg = poomfurnitureThreadMessages.length > 0 ? poomfurnitureThreadMessages[poomfurnitureThreadMessages.length - 1] : null;
+                                  const forwardBody = originalMsg ? `\n\n---------- Przekazana wiadomosc ----------\nOd: ${poomfurnitureSelectedThread.from_email}\nData: ${originalMsg.sent_at ? new Date(originalMsg.sent_at).toLocaleString('pl-PL') : ''}\nTemat: ${poomfurnitureSelectedThread.subject}\n\n${originalMsg.body_text || ''}` : '';
+
+                                  setPoomfurnitureComposeMode(true);
+                                  setPoomfurnitureComposeTo('');
+                                  setPoomfurnitureComposeSubject('Fwd: ' + (poomfurnitureSelectedThread.subject || '').replace(/^Fwd:\s*/i, ''));
+                                  setPoomfurnitureComposeBody(forwardBody);
+                                  setPoomfurnitureSelectedThread(null);
+                                }}
+                                className="px-2 py-1 text-xs font-medium bg-gray-100 text-gray-700 rounded hover:bg-gray-200"
+                              >
+                                Przekaz dalej
+                              </button>
+                              {poomfurnitureSelectedMessages.length > 0 && (
+                                <button
+                                  onClick={handlePoomfurnitureDeleteMessages}
+                                  disabled={poomfurnitureDeleting}
+                                  className="px-2 py-1 text-xs bg-red-600 text-white rounded hover:bg-red-700 disabled:opacity-50"
+                                >
+                                  {poomfurnitureDeleting ? '...' : `Usun (${poomfurnitureSelectedMessages.length})`}
+                                </button>
+                              )}
+                            </div>
+                          </div>
                           <div className="flex items-center gap-3">
                             <div className="w-10 h-10 rounded-full bg-teal-100 flex items-center justify-center text-teal-600 font-medium">
                               {(poomfurnitureSelectedThread.from_name || poomfurnitureSelectedThread.from_email || '?')[0].toUpperCase()}
@@ -4994,6 +5094,7 @@ function CRMContent() {
                               />
                             </label>
                             <textarea
+                              id="poomfurniture-reply-textarea"
                               value={poomfurnitureReplyText}
                               onChange={(e) => setPoomfurnitureReplyText(e.target.value)}
                               placeholder="Napisz odpowiedz..."
