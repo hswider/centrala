@@ -7,21 +7,40 @@ export async function GET(request, { params }) {
     const attachmentUrl = searchParams.get('url');
     const accessToken = await getValidAccessToken();
 
-    if (!attachmentUrl) {
-      return NextResponse.json({ success: false, error: 'Missing url param' }, { status: 400 });
+    const { attachmentId } = await params;
+
+    if (!attachmentUrl && !attachmentId) {
+      return NextResponse.json({ success: false, error: 'Missing url or attachmentId' }, { status: 400 });
     }
 
-    // Try with auth first, then without
-    let response = await fetch(attachmentUrl, {
-      headers: { 'Authorization': `Bearer ${accessToken}` }
-    });
+    // Extract UUID from URL or use attachmentId directly
+    const uuid = attachmentUrl ? attachmentUrl.split('/').pop() : attachmentId;
 
-    if (!response.ok) {
-      response = await fetch(attachmentUrl);
+    // Try multiple host patterns - Allegro uses different domains
+    const urlsToTry = [
+      `https://edge.salescenter.allegro.com/message-center/message-attachments/${uuid}`,
+      `https://upload.allegro.pl/message-center/message-attachments/${uuid}`,
+      `https://api.allegro.pl/messaging/message-attachments/${uuid}`,
+    ];
+    if (attachmentUrl && !urlsToTry.includes(attachmentUrl)) {
+      urlsToTry.unshift(attachmentUrl);
     }
 
-    if (!response.ok) {
-      throw new Error(`Failed to fetch attachment (${response.status})`);
+    let response = null;
+    for (const url of urlsToTry) {
+      // Try with auth
+      let res = await fetch(url, {
+        headers: { 'Authorization': `Bearer ${accessToken}` },
+        redirect: 'follow'
+      });
+      if (res.ok) { response = res; break; }
+      // Try without auth
+      res = await fetch(url, { redirect: 'follow' });
+      if (res.ok) { response = res; break; }
+    }
+
+    if (!response) {
+      throw new Error('Attachment not found on any known host');
     }
 
     const contentType = response.headers.get('content-type') || 'application/octet-stream';
