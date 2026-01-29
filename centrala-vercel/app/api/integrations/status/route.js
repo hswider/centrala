@@ -256,9 +256,9 @@ export async function GET() {
         message = syncStatus.message;
       }
 
-      integrations.push({ id: 'allegro-meblebox', name: 'Allegro Meblebox', category: 'crm-eu', status, message, lastSync });
+      integrations.push({ id: 'allegro-meblebox', name: 'Allegro Meblebox', category: 'crm-pl', status, message, lastSync });
     } catch (e) {
-      integrations.push({ id: 'allegro-meblebox', name: 'Allegro Meblebox', category: 'crm-eu', status: 'error', message: 'Nie połączono' });
+      integrations.push({ id: 'allegro-meblebox', name: 'Allegro Meblebox', category: 'crm-pl', status: 'error', message: 'Nie połączono' });
     }
 
     // Check Kaufland
