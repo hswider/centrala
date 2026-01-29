@@ -190,6 +190,35 @@ export async function sendMessage(threadId, text, attachmentIds = []) {
   });
 }
 
+// Declare a new attachment (step 1 of upload)
+export async function declareAttachment(fileName, size) {
+  return allegroFetch('/messaging/message-attachments', {
+    method: 'POST',
+    body: JSON.stringify({ filename: fileName, size })
+  });
+}
+
+// Upload attachment binary (step 2 of upload)
+export async function uploadAttachmentBinary(attachmentId, buffer, contentType) {
+  const accessToken = await getValidAccessToken();
+
+  const response = await fetch(`${ALLEGRO_API_URL}/messaging/message-attachments/${attachmentId}`, {
+    method: 'PUT',
+    headers: {
+      'Authorization': `Bearer ${accessToken}`,
+      'Content-Type': contentType || 'application/octet-stream'
+    },
+    body: buffer
+  });
+
+  if (!response.ok) {
+    const error = await response.text();
+    throw new Error(`Allegro attachment upload error (${response.status}): ${error}`);
+  }
+
+  return response.json();
+}
+
 // Download message attachment (returns raw Response for streaming)
 export async function downloadAttachment(attachmentId) {
   const accessToken = await getValidAccessToken();

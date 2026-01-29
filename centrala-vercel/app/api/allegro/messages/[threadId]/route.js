@@ -88,17 +88,17 @@ export async function POST(request, { params }) {
     }
 
     const body = await request.json();
-    const { text } = body;
+    const { text, attachmentIds } = body;
 
-    if (!text || text.trim() === '') {
+    if ((!text || text.trim() === '') && (!attachmentIds || attachmentIds.length === 0)) {
       return NextResponse.json({
         success: false,
-        error: 'Message text is required'
+        error: 'Message text or attachment is required'
       }, { status: 400 });
     }
 
     // Send message via Allegro API
-    const sentMessage = await sendMessage(threadId, text.trim());
+    const sentMessage = await sendMessage(threadId, (text || '').trim(), attachmentIds || []);
 
     // Save to database
     await saveAllegroMessage(sentMessage, threadId);

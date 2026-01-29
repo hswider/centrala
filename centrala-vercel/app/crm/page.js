@@ -15,6 +15,7 @@ function CRMContent() {
   const [threadMessages, setThreadMessages] = useState([]);
   const [messagesLoading, setMessagesLoading] = useState(false);
   const [replyText, setReplyText] = useState('');
+  const [replyAttachments, setReplyAttachments] = useState([]);
   const [sending, setSending] = useState(false);
   const [syncing, setSyncing] = useState(false);
   const [syncStatus, setSyncStatus] = useState(null);
@@ -336,19 +337,39 @@ function CRMContent() {
 
   // Send reply
   const handleSendReply = async () => {
-    if (!replyText.trim() || !selectedThread) return;
+    if ((!replyText.trim() && replyAttachments.length === 0) || !selectedThread) return;
 
     setSending(true);
     try {
+      // Upload attachments first
+      let attachmentIds = [];
+      for (const file of replyAttachments) {
+        const formData = new FormData();
+        formData.append('file', file);
+        const uploadRes = await fetch('/api/allegro/attachments/upload', {
+          method: 'POST',
+          body: formData
+        });
+        const uploadData = await uploadRes.json();
+        if (uploadData.success) {
+          attachmentIds.push(uploadData.attachmentId);
+        } else {
+          alert('Blad uploadu zalacznika: ' + uploadData.error);
+          setSending(false);
+          return;
+        }
+      }
+
       const res = await fetch(`/api/allegro/messages/${selectedThread.id}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text: replyText.trim() })
+        body: JSON.stringify({ text: replyText.trim(), attachmentIds })
       });
       const data = await res.json();
 
       if (data.success) {
         setReplyText('');
+        setReplyAttachments([]);
         // Refresh messages
         const msgRes = await fetch(`/api/allegro/messages/${selectedThread.id}`);
         const msgData = await msgRes.json();
@@ -2607,6 +2628,19 @@ function CRMContent() {
 
                         {/* Reply input */}
                         <div className="px-4 py-3 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
+                          {replyAttachments.length > 0 && (
+                            <div className="flex flex-wrap gap-2 mb-2">
+                              {replyAttachments.map((file, idx) => (
+                                <div key={idx} className="flex items-center gap-1 px-2 py-1 bg-gray-100 dark:bg-gray-700 rounded text-xs text-gray-700 dark:text-gray-300">
+                                  <span>📎 {file.name}</span>
+                                  <button
+                                    onClick={() => setReplyAttachments(prev => prev.filter((_, i) => i !== idx))}
+                                    className="ml-1 text-red-500 hover:text-red-700 font-bold"
+                                  >×</button>
+                                </div>
+                              ))}
+                            </div>
+                          )}
                           <div className="flex gap-2">
                             <textarea
                               value={replyText}
@@ -2621,9 +2655,29 @@ function CRMContent() {
                                 }
                               }}
                             />
+                            <input
+                              type="file"
+                              id="allegro-reply-attachment"
+                              className="hidden"
+                              multiple
+                              accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.txt"
+                              onChange={(e) => {
+                                if (e.target.files?.length) {
+                                  setReplyAttachments(prev => [...prev, ...Array.from(e.target.files)]);
+                                  e.target.value = '';
+                                }
+                              }}
+                            />
+                            <button
+                              onClick={() => document.getElementById('allegro-reply-attachment').click()}
+                              className="px-3 py-2 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600"
+                              title="Dodaj zalacznik"
+                            >
+                              📎
+                            </button>
                             <button
                               onClick={handleSendReply}
-                              disabled={sending || !replyText.trim()}
+                              disabled={sending || (!replyText.trim() && replyAttachments.length === 0)}
                               className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
                             >
                               {sending ? '...' : 'Wyslij'}
