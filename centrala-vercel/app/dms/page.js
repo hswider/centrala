@@ -75,7 +75,8 @@ export default function DMSPage() {
           total: doc.data?.total || null,
           currency: doc.data?.currency || 'EUR',
           data: doc.data,
-          status: doc.status || 'draft'
+          status: doc.status || 'draft',
+          invoiceStatus: doc.invoice_status || (doc.doc_type === 'WZ' ? 'niezafakturowany' : null)
         }));
         setGeneratedDocs(docs);
       }
@@ -135,6 +136,29 @@ export default function DMSPage() {
     } catch (error) {
       console.error('Error updating document:', error);
       return { success: false, error: error.message };
+    }
+  };
+
+  const toggleInvoiceStatus = async (docId, currentInvoiceStatus) => {
+    const newStatus = currentInvoiceStatus === 'zafakturowany' ? 'niezafakturowany' : 'zafakturowany';
+    try {
+      const res = await fetch(`/api/dms/documents/${docId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          invoiceStatus: newStatus,
+          userName: user?.username || 'Unknown',
+          userId: user?.id || null
+        })
+      });
+      const data = await res.json();
+      if (data.success) {
+        setGeneratedDocs(prev => prev.map(doc =>
+          doc.id === docId ? { ...doc, invoiceStatus: newStatus } : doc
+        ));
+      }
+    } catch (error) {
+      console.error('Error toggling invoice status:', error);
     }
   };
 
@@ -1770,6 +1794,15 @@ export default function DMSPage() {
                                doc.status === 'completed' ? 'Zakończony' :
                                doc.status === 'cancelled' ? 'Anulowany' : doc.status}
                             </span>
+                            {doc.docType === 'WZ' && doc.invoiceStatus && (
+                              <span className={`px-2 py-0.5 text-xs font-medium rounded ${
+                                doc.invoiceStatus === 'zafakturowany'
+                                  ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300'
+                                  : 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-300'
+                              }`}>
+                                {doc.invoiceStatus === 'zafakturowany' ? 'Zafakturowany' : 'Niezafakturowany'}
+                              </span>
+                            )}
                           </div>
                           <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
                             {doc.customer || 'Brak klienta'} • {formatDatePL(doc.date)}
@@ -1793,6 +1826,19 @@ export default function DMSPage() {
                           <option value="completed">Zakończony</option>
                           <option value="cancelled">Anulowany</option>
                         </select>
+                        {doc.docType === 'WZ' && (
+                          <button
+                            onClick={() => toggleInvoiceStatus(doc.id, doc.invoiceStatus)}
+                            className={`px-2 py-1.5 text-xs font-medium rounded-lg transition-colors ${
+                              doc.invoiceStatus === 'zafakturowany'
+                                ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 hover:bg-green-200 dark:hover:bg-green-900/50'
+                                : 'bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 hover:bg-green-100 dark:hover:bg-green-900/30 hover:text-green-700 dark:hover:text-green-300'
+                            }`}
+                            title={doc.invoiceStatus === 'zafakturowany' ? 'Zafakturowany - kliknij aby cofnąć' : 'Oznacz jako zafakturowany'}
+                          >
+                            ✅
+                          </button>
+                        )}
                         {(doc.docType === 'WZ' || doc.docType === 'RW') ? (
                           <button
                             onClick={() => setPreviewDoc(doc)}

@@ -190,6 +190,23 @@ export async function sendMessage(threadId, text, attachmentIds = []) {
   });
 }
 
+// Download message attachment (returns raw Response for streaming)
+export async function downloadAttachment(attachmentId) {
+  const accessToken = await getValidAccessToken();
+
+  const response = await fetch(`${ALLEGRO_API_URL}/messaging/message-attachments/${attachmentId}`, {
+    headers: {
+      'Authorization': `Bearer ${accessToken}`
+    }
+  });
+
+  if (!response.ok) {
+    throw new Error(`Allegro attachment download error (${response.status})`);
+  }
+
+  return response;
+}
+
 // Mark thread as read
 export async function markThreadAsRead(threadId) {
   return allegroFetch(`/messaging/threads/${threadId}/read`, {

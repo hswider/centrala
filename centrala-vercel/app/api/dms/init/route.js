@@ -25,6 +25,12 @@ export async function POST() {
       ADD COLUMN IF NOT EXISTS created_by VARCHAR(100)
     `;
 
+    // Add invoice_status column for WZ documents
+    await sql`
+      ALTER TABLE generated_documents
+      ADD COLUMN IF NOT EXISTS invoice_status VARCHAR(50)
+    `;
+
     // Create document_history table for audit log
     await sql`
       CREATE TABLE IF NOT EXISTS document_history (

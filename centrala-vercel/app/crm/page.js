@@ -2573,6 +2573,27 @@ function CRMContent() {
                                   }`}
                                 >
                                   <p className="whitespace-pre-wrap break-words">{msg.text}</p>
+                                  {(() => {
+                                    const atts = msg.attachments ? (typeof msg.attachments === 'string' ? JSON.parse(msg.attachments || '[]') : (Array.isArray(msg.attachments) ? msg.attachments : [])) : [];
+                                    return atts.length > 0 ? (
+                                      <div className="mt-2 space-y-2">
+                                        {atts.map((att, idx) => (
+                                          <a key={att.id || idx} href={`/api/allegro/attachments/${att.id}`} target="_blank" rel="noopener noreferrer" className="block">
+                                            <img
+                                              src={`/api/allegro/attachments/${att.id}`}
+                                              alt={att.fileName || `Załącznik ${idx + 1}`}
+                                              className="max-w-full max-h-64 rounded border border-gray-200 dark:border-gray-600 cursor-pointer hover:opacity-80"
+                                              onError={(e) => { e.target.style.display = 'none'; if (e.target.nextSibling) e.target.nextSibling.style.display = 'flex'; }}
+                                            />
+                                            <div style={{display:'none'}} className="items-center gap-2 px-3 py-2 bg-gray-100 dark:bg-gray-600 rounded text-sm">
+                                              <span>📎</span>
+                                              <span>{att.fileName || `Załącznik ${idx + 1}`}</span>
+                                            </div>
+                                          </a>
+                                        ))}
+                                      </div>
+                                    ) : null;
+                                  })()}
                                   <p className={`text-xs mt-1 ${
                                     msg.sender_is_interlocutor ? 'text-gray-400' : 'text-blue-200'
                                   }`}>

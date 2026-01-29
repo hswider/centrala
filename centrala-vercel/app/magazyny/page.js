@@ -825,7 +825,8 @@ export default function MagazynyPage() {
             })),
             dataWystawienia: new Date().toISOString()
           },
-          status: 'completed'
+          status: 'completed',
+          invoiceStatus: 'niezafakturowany'
         })
       });
 

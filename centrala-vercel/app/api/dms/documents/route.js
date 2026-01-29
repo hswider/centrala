@@ -70,11 +70,13 @@ export async function GET(request) {
 export async function POST(request) {
   try {
     const body = await request.json();
-    const { docType, docNumber, orderId, customerName, data, status = 'draft', userName, userId } = body;
+    const { docType, docNumber, orderId, customerName, data, status = 'draft', invoiceStatus, userName, userId } = body;
+
+    const invoiceStatusVal = docType === 'WZ' ? (invoiceStatus || 'niezafakturowany') : (invoiceStatus || null);
 
     const { rows } = await sql`
-      INSERT INTO generated_documents (doc_type, doc_number, order_id, customer_name, data, status, created_by)
-      VALUES (${docType}, ${docNumber}, ${orderId}, ${customerName}, ${JSON.stringify(data)}, ${status}, ${userName || null})
+      INSERT INTO generated_documents (doc_type, doc_number, order_id, customer_name, data, status, invoice_status, created_by)
+      VALUES (${docType}, ${docNumber}, ${orderId}, ${customerName}, ${JSON.stringify(data)}, ${status}, ${invoiceStatusVal}, ${userName || null})
       RETURNING *
     `;
 

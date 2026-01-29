@@ -41,7 +41,7 @@ export async function PUT(request, { params }) {
   try {
     const { id } = await params;
     const body = await request.json();
-    const { docNumber, customerName, data, status, userName, userId } = body;
+    const { docNumber, customerName, data, status, invoiceStatus, userName, userId } = body;
 
     // Get current document for comparison
     const { rows: currentRows } = await sql`
@@ -61,6 +61,7 @@ export async function PUT(request, { params }) {
         customer_name = COALESCE(${customerName}, customer_name),
         data = COALESCE(${data ? JSON.stringify(data) : null}, data),
         status = COALESCE(${status}, status),
+        invoice_status = COALESCE(${invoiceStatus}, invoice_status),
         updated_at = CURRENT_TIMESTAMP
       WHERE id = ${id}
       RETURNING *
@@ -75,6 +76,14 @@ export async function PUT(request, { params }) {
       await logHistory(id, 'status_changed', {
         from: currentDoc.status,
         to: status,
+        docNumber: updatedDoc.doc_number
+      }, userName, userId);
+    }
+
+    if (invoiceStatus && invoiceStatus !== currentDoc.invoice_status) {
+      await logHistory(id, 'invoice_status_changed', {
+        from: currentDoc.invoice_status,
+        to: invoiceStatus,
         docNumber: updatedDoc.doc_number
       }, userName, userId);
     }
