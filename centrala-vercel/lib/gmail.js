@@ -1,4 +1,4 @@
-import { getGmailTokens, saveGmailTokens } from './db';
+import { getGmailTokens, saveGmailTokens, clearGmailTokens } from './db';
 
 const GMAIL_API_URL = 'https://gmail.googleapis.com/gmail/v1';
 const GOOGLE_AUTH_URL = 'https://accounts.google.com/o/oauth2/v2/auth';
@@ -99,6 +99,10 @@ export async function refreshAccessToken() {
 
   if (!response.ok) {
     const error = await response.text();
+    if (error.includes('invalid_grant') || error.includes('Token has been expired or revoked')) {
+      console.error('Gmail Dobrelegowiska refresh token expired/revoked, clearing tokens');
+      await clearGmailTokens();
+    }
     throw new Error(`Failed to refresh token: ${error}`);
   }
 
