@@ -1,4 +1,4 @@
-import { getGmailPoomfurnitureTokens, saveGmailPoomfurnitureTokens } from './db';
+import { getGmailPoomfurnitureTokens, saveGmailPoomfurnitureTokens, clearGmailPoomfurnitureTokens } from './db';
 
 const GMAIL_API_URL = 'https://gmail.googleapis.com/gmail/v1';
 const GOOGLE_AUTH_URL = 'https://accounts.google.com/o/oauth2/v2/auth';
@@ -99,6 +99,11 @@ export async function refreshAccessToken() {
 
   if (!response.ok) {
     const error = await response.text();
+    // If refresh token is revoked/expired, clear tokens so user can re-authenticate
+    if (error.includes('invalid_grant') || error.includes('Token has been expired or revoked')) {
+      console.error('Gmail POOMFURNITURE refresh token expired/revoked, clearing tokens');
+      await clearGmailPoomfurnitureTokens();
+    }
     throw new Error(`Failed to refresh token: ${error}`);
   }
 
