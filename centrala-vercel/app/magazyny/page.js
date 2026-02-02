@@ -2092,17 +2092,30 @@ export default function MagazynyPage() {
                         {activeTab === 'gotowe' && (
                           <td className="px-2 py-2 text-center">
                             {item.receptura && item.receptura.count > 0 ? (
-                              <div className="flex items-center justify-center gap-1" title={item.receptura.ingredients.map(i => i.nazwa).join(', ')}>
+                              <div className="relative group flex items-center justify-center gap-1">
                                 {item.receptura.ingredients.map((ing, idx) => {
                                   const colors = ['bg-blue-500', 'bg-yellow-400', 'bg-green-500', 'bg-purple-500', 'bg-red-500', 'bg-pink-400', 'bg-orange-400', 'bg-teal-400'];
                                   return (
                                     <span
                                       key={idx}
                                       className={`inline-block w-3.5 h-3.5 rounded-full ${colors[idx % colors.length]}`}
-                                      title={ing.nazwa}
                                     />
                                   );
                                 })}
+                                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 hidden group-hover:block z-50 pointer-events-none" style={{transitionDelay:'0ms'}}>
+                                  <div className="bg-gray-900 text-white text-xs rounded-lg px-3 py-2 whitespace-nowrap shadow-lg">
+                                    {item.receptura.ingredients.map((ing, idx) => {
+                                      const dotColors = ['text-blue-400', 'text-yellow-400', 'text-green-400', 'text-purple-400', 'text-red-400', 'text-pink-400', 'text-orange-400', 'text-teal-400'];
+                                      return (
+                                        <div key={idx} className="flex items-center gap-1.5">
+                                          <span className={dotColors[idx % dotColors.length]}>{'●'}</span>
+                                          <span>{ing.nazwa}</span>
+                                        </div>
+                                      );
+                                    })}
+                                  </div>
+                                  <div className="w-2 h-2 bg-gray-900 rotate-45 mx-auto -mt-1"></div>
+                                </div>
                               </div>
                             ) : (
                               <span className="text-gray-400 text-xs">-</span>
