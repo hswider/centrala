@@ -252,6 +252,14 @@ export default function Navigation() {
             <span className="text-base">{darkMode ? '☀️' : '🌙'}</span>
             <span className="hidden xl:inline">{darkMode ? 'Jasny' : 'Ciemny'}</span>
           </button>
+          <a
+            href="/ustawienia"
+            className="flex flex-row items-center justify-center gap-1 py-3 px-2 lg:px-3 text-xs lg:text-sm font-medium text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors"
+            title="Ustawienia"
+          >
+            <span className="text-base">⚙️</span>
+            <span className="hidden lg:inline">Ustawienia</span>
+          </a>
           <button
             onClick={handleLogout}
             className="flex flex-row items-center justify-center gap-1 py-3 px-2 lg:px-3 text-xs lg:text-sm font-medium text-gray-400 dark:text-gray-500 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
@@ -277,6 +285,14 @@ export default function Navigation() {
               <span className="text-lg">{darkMode ? '☀️' : '🌙'}</span>
               <span>{darkMode ? 'Jasny' : 'Ciemny'}</span>
             </button>
+            <a
+              href="/ustawienia"
+              className="flex-1 flex flex-col items-center justify-center gap-0.5 py-2 text-xs font-medium text-gray-400 dark:text-gray-500 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors"
+              title="Ustawienia"
+            >
+              <span className="text-lg">⚙️</span>
+              <span>Ustawienia</span>
+            </a>
             <button
               onClick={handleLogout}
               className="flex-1 flex flex-col items-center justify-center gap-0.5 py-2 text-xs font-medium text-gray-400 dark:text-gray-500 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
