@@ -13,6 +13,7 @@ export default function DMSPage() {
   const [docsLoading, setDocsLoading] = useState(true);
   const [docsSearch, setDocsSearch] = useState('');
   const [docsSort, setDocsSort] = useState('date-desc'); // 'date-desc' | 'date-asc' | 'type' | 'customer'
+  const [docsTypeFilter, setDocsTypeFilter] = useState('all'); // 'all' | 'invoice' | 'cmr' | 'WZ' | 'RW'
   const [manualDocType, setManualDocType] = useState(null); // null | 'gutekissen-invoice' | 'cmr'
   const [selectedDocType, setSelectedDocType] = useState(null); // for fromOrder tab
   const [editingDoc, setEditingDoc] = useState(null); // document being edited
@@ -1678,6 +1679,17 @@ export default function DMSPage() {
                       className="px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400"
                     />
                     <select
+                      value={docsTypeFilter}
+                      onChange={(e) => setDocsTypeFilter(e.target.value)}
+                      className="px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    >
+                      <option value="all">Wszystkie typy</option>
+                      <option value="invoice">Faktura GuteKissen</option>
+                      <option value="cmr">List Przewozowy CMR</option>
+                      <option value="WZ">Dokument WZ</option>
+                      <option value="RW">Dokument RW</option>
+                    </select>
+                    <select
                       value={docsSort}
                       onChange={(e) => setDocsSort(e.target.value)}
                       className="px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
@@ -1726,6 +1738,7 @@ export default function DMSPage() {
               <div className="divide-y divide-gray-200 dark:divide-gray-700">
                 {generatedDocs
                   .filter(doc => {
+                    if (docsTypeFilter !== 'all' && doc.type !== docsTypeFilter) return false;
                     if (!docsSearch.trim()) return true;
                     const searchLower = docsSearch.toLowerCase();
                     return (
