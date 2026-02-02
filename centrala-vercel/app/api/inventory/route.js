@@ -65,16 +65,23 @@ export async function GET(request) {
     const recipeCosts = await sql`
       SELECT
         r.product_id,
-        COALESCE(SUM(r.quantity * i.cena), 0) as ingredients_cost
+        COALESCE(SUM(r.quantity * i.cena), 0) as ingredients_cost,
+        COUNT(r.id) as ingredient_count,
+        json_agg(json_build_object('kategoria', i.kategoria, 'nazwa', i.nazwa)) as ingredients_info
       FROM recipes r
       JOIN inventory i ON r.ingredient_id = i.id
       GROUP BY r.product_id
     `;
 
-    // Mapa kosztow skladnikow
+    // Mapa kosztow skladnikow i info o recepturze
     const ingredientsCostMap = {};
+    const recipeInfoMap = {};
     recipeCosts.rows.forEach(row => {
       ingredientsCostMap[row.product_id] = parseFloat(row.ingredients_cost) || 0;
+      recipeInfoMap[row.product_id] = {
+        count: parseInt(row.ingredient_count) || 0,
+        ingredients: row.ingredients_info || []
+      };
     });
 
     // Grupuj po kategorii
@@ -109,6 +116,7 @@ export async function GET(request) {
           item.koszt_wytworzenia = ingredientsCost + laborCost;
           item.koszt_skladnikow = ingredientsCost;
           item.koszt_pracy = laborCost;
+          item.receptura = recipeInfoMap[row.id] || { count: 0, ingredients: [] };
         }
 
         grouped[row.kategoria].push(item);
