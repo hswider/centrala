@@ -1067,9 +1067,9 @@ export default function MagazynyPage() {
     fetchHistory(1, '', '');
   };
 
-  // Eksport do CSV - tylko aktualny magazyn
-  const handleExportCSV = () => {
-    const items = magazyny[activeTab] || [];
+  // Eksport do CSV - tylko aktualny magazyn (lub przekazane items)
+  const handleExportCSV = (customItems) => {
+    const items = customItems || magazyny[activeTab] || [];
 
     if (items.length === 0) {
       alert('Brak danych do eksportu w magazynie: ' + getTabLabel(activeTab));
@@ -1121,7 +1121,7 @@ export default function MagazynyPage() {
     const url = URL.createObjectURL(blob);
 
     link.setAttribute('href', url);
-    link.setAttribute('download', `magazyn_${activeTab}_${new Date().toISOString().slice(0, 10)}.csv`);
+    link.setAttribute('download', `magazyn_${activeTab}${customItems ? '_zaznaczone' : ''}_${new Date().toISOString().slice(0, 10)}.csv`);
     link.style.visibility = 'hidden';
     document.body.appendChild(link);
     link.click();
@@ -1984,6 +1984,17 @@ export default function MagazynyPage() {
                         <span>Ustaw ostrzezenie ({selectedIds.size})</span>
                       </button>
                     )}
+                    <button
+                      onClick={() => {
+                        const allItems = magazyny[activeTab] || [];
+                        const selected = allItems.filter(i => selectedIds.has(i.id));
+                        handleExportCSV(selected);
+                      }}
+                      className="px-3 py-1.5 text-sm bg-green-600 text-white rounded hover:bg-green-700 flex items-center gap-1"
+                    >
+                      <span>📥</span>
+                      <span>Eksport CSV ({selectedIds.size})</span>
+                    </button>
                     <button
                       onClick={handleBulkDelete}
                       disabled={saving}
