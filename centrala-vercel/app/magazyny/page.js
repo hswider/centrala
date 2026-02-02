@@ -1079,30 +1079,39 @@ export default function MagazynyPage() {
     // Rozne kolumny dla gotowych produktow vs reszty
     let headers, csvRows;
 
+    // Helper: formatuj kwote z przecinkiem (polski format) aby Excel nie interpretowal jako daty
+    const fmtPrice = (val) => (val || 0).toFixed(2).replace('.', ',');
+
     if (activeTab === 'gotowe') {
-      headers = ['Nazwa', 'SKU', 'EAN', 'Stan', 'Cena PLN', 'Czas produkcji (min)'];
+      headers = ['Nazwa', 'SKU', 'EAN', 'Stan', 'Wart. jedn. netto PLN', 'Wart. Suma Netto PLN', 'Czas produkcji (min)'];
       csvRows = [
         headers.join(';'),
-        ...items.map(item =>
-          [item.nazwa, item.sku, item.ean || '', item.stan, (item.cena || 0).toFixed(2), item.czas_produkcji || 0].join(';')
-        )
+        ...items.map(item => {
+          const cena = item.cena || 0;
+          const stan = item.stan || 0;
+          return [item.nazwa, item.sku, item.ean || '', stan, fmtPrice(cena), fmtPrice(cena * stan), item.czas_produkcji || 0].join(';');
+        })
       ];
     } else if (activeTab === 'surowce') {
-      headers = ['Nazwa', 'SKU (opcjonalne)', 'Stan', 'Jednostka', 'Wartosc netto PLN'];
+      headers = ['Nazwa', 'SKU (opcjonalne)', 'Stan', 'Jednostka', 'Wart. jedn. netto PLN', 'Wart. Suma Netto PLN'];
       csvRows = [
         headers.join(';'),
-        ...items.map(item =>
-          [item.nazwa, item.sku, item.stan, item.jednostka || 'szt', (item.cena || 0).toFixed(2)].join(';')
-        )
+        ...items.map(item => {
+          const cena = item.cena || 0;
+          const stan = item.stan || 0;
+          return [item.nazwa, item.sku, stan, item.jednostka || 'szt', fmtPrice(cena), fmtPrice(cena * stan)].join(';');
+        })
       ];
     } else {
       // polprodukty, wykroje - bez EAN
-      headers = ['Nazwa', 'SKU (opcjonalne)', 'Tkanina', 'Stan', 'Wartosc netto PLN'];
+      headers = ['Nazwa', 'SKU (opcjonalne)', 'Tkanina', 'Stan', 'Wart. jedn. netto PLN', 'Wart. Suma Netto PLN'];
       csvRows = [
         headers.join(';'),
-        ...items.map(item =>
-          [item.nazwa, item.sku, item.tkanina || '', item.stan, (item.cena || 0).toFixed(2)].join(';')
-        )
+        ...items.map(item => {
+          const cena = item.cena || 0;
+          const stan = item.stan || 0;
+          return [item.nazwa, item.sku, item.tkanina || '', stan, fmtPrice(cena), fmtPrice(cena * stan)].join(';');
+        })
       ];
     }
 
