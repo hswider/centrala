@@ -144,10 +144,6 @@ export default function UstawieniaPage() {
               <span className="text-sm text-gray-900 dark:text-white">Centrala POOM</span>
             </div>
             <div className="flex items-center gap-3">
-              <span className="text-sm font-medium text-gray-500 dark:text-gray-400 w-32">ERP:</span>
-              <span className="text-sm text-gray-900 dark:text-white">Apilo (poom.apilo.com)</span>
-            </div>
-            <div className="flex items-center gap-3">
               <span className="text-sm font-medium text-gray-500 dark:text-gray-400 w-32">Framework:</span>
               <span className="text-sm text-gray-900 dark:text-white">Next.js + Vercel</span>
             </div>
