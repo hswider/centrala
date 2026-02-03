@@ -190,6 +190,100 @@ export default function MagazynyPage() {
     }
   };
 
+  // Generuj etykiete z kodem EAN-13 (100x50mm)
+  const handlePrintLabel = (item) => {
+    if (!item.ean) {
+      alert('Produkt nie ma przypisanego kodu EAN');
+      return;
+    }
+
+    const printWindow = window.open('', '_blank');
+    printWindow.document.write(`
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>Etykieta - ${item.sku}</title>
+        <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"><\/script>
+        <style>
+          @page {
+            size: 100mm 50mm;
+            margin: 0;
+          }
+          * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+          }
+          body {
+            width: 100mm;
+            height: 50mm;
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 3mm;
+          }
+          .product-name {
+            font-size: 10pt;
+            font-weight: bold;
+            text-align: center;
+            margin-bottom: 2mm;
+            max-width: 94mm;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+          }
+          .product-sku {
+            font-size: 8pt;
+            color: #333;
+            margin-bottom: 3mm;
+          }
+          .barcode-container {
+            display: flex;
+            justify-content: center;
+          }
+          svg {
+            max-width: 90mm;
+            height: auto;
+          }
+          @media print {
+            body {
+              -webkit-print-color-adjust: exact;
+              print-color-adjust: exact;
+            }
+          }
+        </style>
+      </head>
+      <body>
+        <div class="product-name">${item.nazwa || 'Brak nazwy'}</div>
+        <div class="product-sku">SKU: ${item.sku || '-'}</div>
+        <div class="barcode-container">
+          <svg id="barcode"></svg>
+        </div>
+        <script>
+          try {
+            JsBarcode("#barcode", "${item.ean}", {
+              format: "EAN13",
+              width: 2,
+              height: 50,
+              displayValue: true,
+              fontSize: 12,
+              margin: 5
+            });
+          } catch(e) {
+            document.getElementById('barcode').innerHTML = '<text>Błędny kod EAN: ${item.ean}</text>';
+          }
+          setTimeout(() => {
+            window.print();
+          }, 300);
+        <\/script>
+      </body>
+      </html>
+    `);
+    printWindow.document.close();
+  };
+
   // Zaznaczanie pozycji
   const toggleSelectItem = (id) => {
     setSelectedIds(prev => {
@@ -2320,6 +2414,15 @@ export default function MagazynyPage() {
                                 title="Szczegoly produktu"
                               >
                                 Szczegoly
+                              </button>
+                            )}
+                            {activeTab === 'gotowe' && item.ean && (
+                              <button
+                                onClick={() => handlePrintLabel(item)}
+                                className="text-green-600 hover:text-green-800 text-xs font-medium px-1.5 py-0.5 bg-green-50 rounded hover:bg-green-100"
+                                title="Drukuj etykiete z kodem EAN"
+                              >
+                                Etykieta
                               </button>
                             )}
                             {activeTab === 'surowce' && (
