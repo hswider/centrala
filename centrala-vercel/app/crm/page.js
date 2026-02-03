@@ -251,6 +251,42 @@ function CRMContent() {
     }
   }, [searchParams]);
 
+  // Auto-select pending thread when threads are loaded
+  useEffect(() => {
+    if (!pendingThreadId) return;
+
+    // Check which tab we're on and if threads are loaded
+    if (activeTab === 'shopify' && gmailThreads.length > 0) {
+      const thread = gmailThreads.find(t => t.id === pendingThreadId);
+      if (thread) {
+        setGmailSelectedThread(thread);
+        fetchGmailThreadMessages(thread.id);
+        setPendingThreadId(null);
+      }
+    } else if (activeTab === 'poomkids' && poomkidsThreads.length > 0) {
+      const thread = poomkidsThreads.find(t => t.id === pendingThreadId);
+      if (thread) {
+        setPoomkidsSelectedThread(thread);
+        fetchPoomkidsThreadMessages(thread.id);
+        setPendingThreadId(null);
+      }
+    } else if (activeTab === 'allepoduszki' && allepoduszkiThreads.length > 0) {
+      const thread = allepoduszkiThreads.find(t => t.id === pendingThreadId);
+      if (thread) {
+        setAllepoduszkiSelectedThread(thread);
+        fetchAllepoduszkiThreadMessages(thread.id);
+        setPendingThreadId(null);
+      }
+    } else if (activeTab === 'poomfurniture' && poomfurnitureThreads.length > 0) {
+      const thread = poomfurnitureThreads.find(t => t.id === pendingThreadId);
+      if (thread) {
+        setPoomfurnitureSelectedThread(thread);
+        fetchPoomfurnitureThreadMessages(thread.id);
+        setPendingThreadId(null);
+      }
+    }
+  }, [pendingThreadId, activeTab, gmailThreads, poomkidsThreads, allepoduszkiThreads, poomfurnitureThreads]);
+
   // Check Allegro authentication status
   const checkAllegroAuth = useCallback(async () => {
     try {
