@@ -251,42 +251,6 @@ function CRMContent() {
     }
   }, [searchParams]);
 
-  // Auto-select pending thread when threads are loaded
-  useEffect(() => {
-    if (!pendingThreadId) return;
-
-    // Check which tab we're on and if threads are loaded
-    if (activeTab === 'shopify' && gmailThreads.length > 0) {
-      const thread = gmailThreads.find(t => t.id === pendingThreadId);
-      if (thread) {
-        setGmailSelectedThread(thread);
-        fetchGmailThreadMessages(thread.id);
-        setPendingThreadId(null);
-      }
-    } else if (activeTab === 'poomkids' && poomkidsThreads.length > 0) {
-      const thread = poomkidsThreads.find(t => t.id === pendingThreadId);
-      if (thread) {
-        setPoomkidsSelectedThread(thread);
-        fetchPoomkidsThreadMessages(thread.id);
-        setPendingThreadId(null);
-      }
-    } else if (activeTab === 'allepoduszki' && allepoduszkiThreads.length > 0) {
-      const thread = allepoduszkiThreads.find(t => t.id === pendingThreadId);
-      if (thread) {
-        setAllepoduszkiSelectedThread(thread);
-        fetchAllepoduszkiThreadMessages(thread.id);
-        setPendingThreadId(null);
-      }
-    } else if (activeTab === 'poomfurniture' && poomfurnitureThreads.length > 0) {
-      const thread = poomfurnitureThreads.find(t => t.id === pendingThreadId);
-      if (thread) {
-        setPoomfurnitureSelectedThread(thread);
-        fetchPoomfurnitureThreadMessages(thread.id);
-        setPendingThreadId(null);
-      }
-    }
-  }, [pendingThreadId, activeTab, gmailThreads, poomkidsThreads, allepoduszkiThreads, poomfurnitureThreads]);
-
   // Check Allegro authentication status
   const checkAllegroAuth = useCallback(async () => {
     try {
@@ -770,17 +734,7 @@ function CRMContent() {
       const res = await fetch('/api/gmail/messages');
       const data = await res.json();
       if (data.success) {
-        const threads = data.threads || [];
-        setGmailThreads(threads);
-        // Auto-select pending thread if exists
-        if (pendingThreadId && activeTab === 'shopify') {
-          const thread = threads.find(t => t.id === pendingThreadId);
-          if (thread) {
-            setGmailSelectedThread(thread);
-            fetchGmailThreadMessages(thread.id);
-            setPendingThreadId(null);
-          }
-        }
+        setGmailThreads(data.threads || []);
       }
     } catch (err) {
       console.error('Gmail threads error:', err);
@@ -1155,17 +1109,7 @@ function CRMContent() {
       const res = await fetch('/api/gmail-poomkids/messages');
       const data = await res.json();
       if (data.success) {
-        const threads = data.threads || [];
-        setPoomkidsThreads(threads);
-        // Auto-select pending thread if exists
-        if (pendingThreadId && activeTab === 'poomkids') {
-          const thread = threads.find(t => t.id === pendingThreadId);
-          if (thread) {
-            setPoomkidsSelectedThread(thread);
-            fetchPoomkidsThreadMessages(thread.id);
-            setPendingThreadId(null);
-          }
-        }
+        setPoomkidsThreads(data.threads || []);
       }
     } catch (err) {
       console.error('POOMKIDS threads error:', err);
@@ -1757,17 +1701,7 @@ function CRMContent() {
       const res = await fetch('/api/gmail-allepoduszki/messages');
       const data = await res.json();
       if (data.success) {
-        const threads = data.threads || [];
-        setAllepoduszkiThreads(threads);
-        // Auto-select pending thread if exists
-        if (pendingThreadId && activeTab === 'allepoduszki') {
-          const thread = threads.find(t => t.id === pendingThreadId);
-          if (thread) {
-            setAllepoduszkiSelectedThread(thread);
-            fetchAllepoduszkiThreadMessages(thread.id);
-            setPendingThreadId(null);
-          }
-        }
+        setAllepoduszkiThreads(data.threads || []);
       }
     } catch (err) {
       console.error('ALLEPODUSZKI threads error:', err);
@@ -2103,17 +2037,7 @@ function CRMContent() {
       const res = await fetch('/api/gmail-poomfurniture/messages');
       const data = await res.json();
       if (data.success) {
-        const threads = data.threads || [];
-        setPoomfurnitureThreads(threads);
-        // Auto-select pending thread if exists
-        if (pendingThreadId && activeTab === 'poomfurniture') {
-          const thread = threads.find(t => t.id === pendingThreadId);
-          if (thread) {
-            setPoomfurnitureSelectedThread(thread);
-            fetchPoomfurnitureThreadMessages(thread.id);
-            setPendingThreadId(null);
-          }
-        }
+        setPoomfurnitureThreads(data.threads || []);
       }
     } catch (err) {
       console.error('POOMFURNITURE threads error:', err);
@@ -2522,6 +2446,38 @@ function CRMContent() {
 
     return parts.length > 0 ? parts : cleanedText;
   };
+
+  // Auto-select pending thread when threads are loaded (from task navigation)
+  useEffect(() => {
+    if (!pendingThreadId) return;
+
+    // Check which tab we're on and if threads are loaded
+    if (activeTab === 'shopify' && gmailThreads.length > 0) {
+      const thread = gmailThreads.find(t => t.id === pendingThreadId);
+      if (thread) {
+        openGmailThread(thread);
+        setPendingThreadId(null);
+      }
+    } else if (activeTab === 'poomkids' && poomkidsThreads.length > 0) {
+      const thread = poomkidsThreads.find(t => t.id === pendingThreadId);
+      if (thread) {
+        openPoomkidsThread(thread);
+        setPendingThreadId(null);
+      }
+    } else if (activeTab === 'allepoduszki' && allepoduszkiThreads.length > 0) {
+      const thread = allepoduszkiThreads.find(t => t.id === pendingThreadId);
+      if (thread) {
+        openAllepoduszkiThread(thread);
+        setPendingThreadId(null);
+      }
+    } else if (activeTab === 'poomfurniture' && poomfurnitureThreads.length > 0) {
+      const thread = poomfurnitureThreads.find(t => t.id === pendingThreadId);
+      if (thread) {
+        openPoomfurnitureThread(thread);
+        setPendingThreadId(null);
+      }
+    }
+  }, [pendingThreadId, activeTab, gmailThreads, poomkidsThreads, allepoduszkiThreads, poomfurnitureThreads]);
 
   return (
     <div className="min-h-screen bg-gray-100 dark:bg-gray-900">
