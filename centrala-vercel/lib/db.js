@@ -820,9 +820,17 @@ export async function initDatabase() {
       thread_type VARCHAR(50),
       status VARCHAR(20) DEFAULT 'pending',
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-      completed_at TIMESTAMP
+      completed_at TIMESTAMP,
+      completed_by VARCHAR(100)
     )
   `;
+
+  // Add completed_by column to tasks if it doesn't exist
+  try {
+    await sql`ALTER TABLE tasks ADD COLUMN IF NOT EXISTS completed_by VARCHAR(100)`;
+  } catch (e) {
+    // Column might already exist or table doesn't exist yet
+  }
 
   // Insert default Allegro Meblebox token row if not exists
   const { rows: allegroMebleboxTokenRows } = await sql`SELECT COUNT(*) as count FROM allegro_meblebox_tokens`;
@@ -3805,12 +3813,12 @@ export async function getTasksForThread(threadId, threadType) {
   return rows;
 }
 
-// Complete a task
+// Complete a task (anyone can complete)
 export async function completeTask(taskId, username) {
   const { rows } = await sql`
     UPDATE tasks
-    SET status = 'completed', completed_at = CURRENT_TIMESTAMP
-    WHERE id = ${taskId} AND assigned_to = ${username}
+    SET status = 'completed', completed_at = CURRENT_TIMESTAMP, completed_by = ${username}
+    WHERE id = ${taskId}
     RETURNING *
   `;
   return rows[0];

@@ -328,6 +328,8 @@ function CRMContent() {
         setTaskContent('');
         setTaskAssignee('');
         setShowTaskForm(false);
+        // Refresh thread tasks
+        fetchThreadTasks(threadId, threadType);
         alert('Uwaga zostala wyslana!');
       } else {
         alert('Blad: ' + data.error);
@@ -336,6 +338,44 @@ function CRMContent() {
       alert('Blad: ' + err.message);
     } finally {
       setTaskSending(false);
+    }
+  };
+
+  // Fetch tasks for a specific thread
+  const fetchThreadTasks = async (threadId, threadType) => {
+    if (!threadId || !threadType) {
+      setThreadTasks([]);
+      return;
+    }
+    try {
+      const res = await fetch(`/api/tasks?threadId=${threadId}&threadType=${threadType}`);
+      const data = await res.json();
+      if (data.success) {
+        setThreadTasks(data.tasks || []);
+      }
+    } catch (err) {
+      console.error('Error fetching thread tasks:', err);
+    }
+  };
+
+  // Complete a thread task
+  const handleCompleteThreadTask = async (taskId) => {
+    if (!currentUser?.username) return;
+    try {
+      const res = await fetch('/api/tasks', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ taskId, username: currentUser.username })
+      });
+      const data = await res.json();
+      if (data.success) {
+        // Update local state to mark task as completed
+        setThreadTasks(prev => prev.map(t =>
+          t.id === taskId ? { ...t, status: 'completed', completed_at: new Date().toISOString() } : t
+        ));
+      }
+    } catch (err) {
+      console.error('Error completing task:', err);
     }
   };
 
@@ -808,6 +848,8 @@ function CRMContent() {
     setGmailSelectedThread(thread);
     setGmailMessagesLoading(true);
     setGmailSelectedMessages([]);
+    setThreadTasks([]);
+    fetchThreadTasks(thread.id, 'shopify');
 
     try {
       // Load from DB first (fast), no refresh=true
@@ -1163,6 +1205,8 @@ function CRMContent() {
     setPoomkidsSelectedThread(thread);
     setPoomkidsMessagesLoading(true);
     setPoomkidsSelectedMessages([]);
+    setThreadTasks([]);
+    fetchThreadTasks(thread.id, 'poomkids');
 
     try {
       // Load from DB first (fast), no refresh=true
@@ -1756,6 +1800,8 @@ function CRMContent() {
     setAllepoduszkiMessagesLoading(true);
     setAllepoduszkiThreadMessages([]);
     setAllepoduszkiSelectedMessages([]);
+    setThreadTasks([]);
+    fetchThreadTasks(thread.id, 'allepoduszki');
 
     try {
       const res = await fetch(`/api/gmail-allepoduszki/messages/${thread.id}?refresh=true`);
@@ -2092,6 +2138,8 @@ function CRMContent() {
     setPoomfurnitureMessagesLoading(true);
     setPoomfurnitureThreadMessages([]);
     setPoomfurnitureSelectedMessages([]);
+    setThreadTasks([]);
+    fetchThreadTasks(thread.id, 'poomfurniture');
 
     try {
       const res = await fetch(`/api/gmail-poomfurniture/messages/${thread.id}?refresh=true`);
@@ -3795,8 +3843,40 @@ function CRMContent() {
                           <h4 className="mt-2 font-medium text-gray-800 dark:text-gray-200">
                             {gmailSelectedThread.subject || '(Brak tematu)'}
                           </h4>
-                          {/* Task/Note creation section */}
+                          {/* Task/Note section */}
                           <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
+                            {/* Display existing tasks for this thread */}
+                            {threadTasks.length > 0 && (
+                              <div className="mb-3 space-y-2">
+                                <p className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase">Uwagi do tego wątku:</p>
+                                {threadTasks.map(task => (
+                                  <div key={task.id} className={`p-2 rounded text-sm ${task.status === 'completed' ? 'bg-gray-100 dark:bg-gray-700 opacity-60' : 'bg-yellow-50 dark:bg-yellow-900/30 border border-yellow-200 dark:border-yellow-800'}`}>
+                                    <div className="flex items-start justify-between gap-2">
+                                      <div className="flex-1">
+                                        <p className="text-gray-800 dark:text-gray-200">{task.content}</p>
+                                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                                          Od: <span className="font-medium">{task.created_by}</span> → Dla: <span className="font-medium">{task.assigned_to}</span>
+                                          <span className="ml-2">{new Date(task.created_at).toLocaleDateString('pl-PL', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}</span>
+                                        </p>
+                                      </div>
+                                      {task.status !== 'completed' && (
+                                        <button
+                                          onClick={() => handleCompleteThreadTask(task.id)}
+                                          className="shrink-0 px-2 py-1 bg-green-500 hover:bg-green-600 text-white text-xs rounded"
+                                          title="Oznacz jako wykonane"
+                                        >
+                                          ✓ Gotowe
+                                        </button>
+                                      )}
+                                      {task.status === 'completed' && (
+                                        <span className="text-xs text-green-600 dark:text-green-400">✓ Wykonane</span>
+                                      )}
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                            {/* Add new task form */}
                             {!showTaskForm ? (
                               <button
                                 onClick={() => setShowTaskForm(true)}
@@ -4424,8 +4504,40 @@ function CRMContent() {
                           <h4 className="mt-2 font-medium text-gray-800 dark:text-gray-200">
                             {poomkidsSelectedThread.subject || '(Brak tematu)'}
                           </h4>
-                          {/* Task/Note creation section */}
+                          {/* Task/Note section */}
                           <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
+                            {/* Display existing tasks for this thread */}
+                            {threadTasks.length > 0 && (
+                              <div className="mb-3 space-y-2">
+                                <p className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase">Uwagi do tego wątku:</p>
+                                {threadTasks.map(task => (
+                                  <div key={task.id} className={`p-2 rounded text-sm ${task.status === 'completed' ? 'bg-gray-100 dark:bg-gray-700 opacity-60' : 'bg-yellow-50 dark:bg-yellow-900/30 border border-yellow-200 dark:border-yellow-800'}`}>
+                                    <div className="flex items-start justify-between gap-2">
+                                      <div className="flex-1">
+                                        <p className="text-gray-800 dark:text-gray-200">{task.content}</p>
+                                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                                          Od: <span className="font-medium">{task.created_by}</span> → Dla: <span className="font-medium">{task.assigned_to}</span>
+                                          <span className="ml-2">{new Date(task.created_at).toLocaleDateString('pl-PL', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}</span>
+                                        </p>
+                                      </div>
+                                      {task.status !== 'completed' && (
+                                        <button
+                                          onClick={() => handleCompleteThreadTask(task.id)}
+                                          className="shrink-0 px-2 py-1 bg-green-500 hover:bg-green-600 text-white text-xs rounded"
+                                          title="Oznacz jako wykonane"
+                                        >
+                                          ✓ Gotowe
+                                        </button>
+                                      )}
+                                      {task.status === 'completed' && (
+                                        <span className="text-xs text-green-600 dark:text-green-400">✓ Wykonane</span>
+                                      )}
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                            {/* Add new task form */}
                             {!showTaskForm ? (
                               <button
                                 onClick={() => setShowTaskForm(true)}
@@ -5043,8 +5155,40 @@ function CRMContent() {
                           <h4 className="mt-2 font-medium text-gray-800 dark:text-gray-200">
                             {allepoduszkiSelectedThread.subject || '(Brak tematu)'}
                           </h4>
-                          {/* Task/Note creation section */}
+                          {/* Task/Note section */}
                           <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
+                            {/* Display existing tasks for this thread */}
+                            {threadTasks.length > 0 && (
+                              <div className="mb-3 space-y-2">
+                                <p className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase">Uwagi do tego wątku:</p>
+                                {threadTasks.map(task => (
+                                  <div key={task.id} className={`p-2 rounded text-sm ${task.status === 'completed' ? 'bg-gray-100 dark:bg-gray-700 opacity-60' : 'bg-yellow-50 dark:bg-yellow-900/30 border border-yellow-200 dark:border-yellow-800'}`}>
+                                    <div className="flex items-start justify-between gap-2">
+                                      <div className="flex-1">
+                                        <p className="text-gray-800 dark:text-gray-200">{task.content}</p>
+                                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                                          Od: <span className="font-medium">{task.created_by}</span> → Dla: <span className="font-medium">{task.assigned_to}</span>
+                                          <span className="ml-2">{new Date(task.created_at).toLocaleDateString('pl-PL', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}</span>
+                                        </p>
+                                      </div>
+                                      {task.status !== 'completed' && (
+                                        <button
+                                          onClick={() => handleCompleteThreadTask(task.id)}
+                                          className="shrink-0 px-2 py-1 bg-green-500 hover:bg-green-600 text-white text-xs rounded"
+                                          title="Oznacz jako wykonane"
+                                        >
+                                          ✓ Gotowe
+                                        </button>
+                                      )}
+                                      {task.status === 'completed' && (
+                                        <span className="text-xs text-green-600 dark:text-green-400">✓ Wykonane</span>
+                                      )}
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                            {/* Add new task form */}
                             {!showTaskForm ? (
                               <button
                                 onClick={() => setShowTaskForm(true)}
@@ -5662,8 +5806,40 @@ function CRMContent() {
                           <h4 className="mt-2 font-medium text-gray-800 dark:text-gray-200">
                             {poomfurnitureSelectedThread.subject || '(Brak tematu)'}
                           </h4>
-                          {/* Task/Note creation section */}
+                          {/* Task/Note section */}
                           <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
+                            {/* Display existing tasks for this thread */}
+                            {threadTasks.length > 0 && (
+                              <div className="mb-3 space-y-2">
+                                <p className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase">Uwagi do tego wątku:</p>
+                                {threadTasks.map(task => (
+                                  <div key={task.id} className={`p-2 rounded text-sm ${task.status === 'completed' ? 'bg-gray-100 dark:bg-gray-700 opacity-60' : 'bg-yellow-50 dark:bg-yellow-900/30 border border-yellow-200 dark:border-yellow-800'}`}>
+                                    <div className="flex items-start justify-between gap-2">
+                                      <div className="flex-1">
+                                        <p className="text-gray-800 dark:text-gray-200">{task.content}</p>
+                                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                                          Od: <span className="font-medium">{task.created_by}</span> → Dla: <span className="font-medium">{task.assigned_to}</span>
+                                          <span className="ml-2">{new Date(task.created_at).toLocaleDateString('pl-PL', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}</span>
+                                        </p>
+                                      </div>
+                                      {task.status !== 'completed' && (
+                                        <button
+                                          onClick={() => handleCompleteThreadTask(task.id)}
+                                          className="shrink-0 px-2 py-1 bg-green-500 hover:bg-green-600 text-white text-xs rounded"
+                                          title="Oznacz jako wykonane"
+                                        >
+                                          ✓ Gotowe
+                                        </button>
+                                      )}
+                                      {task.status === 'completed' && (
+                                        <span className="text-xs text-green-600 dark:text-green-400">✓ Wykonane</span>
+                                      )}
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                            {/* Add new task form */}
                             {!showTaskForm ? (
                               <button
                                 onClick={() => setShowTaskForm(true)}

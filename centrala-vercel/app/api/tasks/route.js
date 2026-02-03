@@ -4,11 +4,12 @@ import {
   createTask,
   getTasksForUser,
   getAllTasks,
+  getTasksForThread,
   completeTask,
   deleteTask
 } from '../../../lib/db';
 
-// GET - Get tasks for a user or all tasks
+// GET - Get tasks for a user, all tasks, or tasks for a specific thread
 export async function GET(request) {
   try {
     await initDatabase();
@@ -16,16 +17,20 @@ export async function GET(request) {
     const { searchParams } = new URL(request.url);
     const username = searchParams.get('username');
     const all = searchParams.get('all') === 'true';
+    const threadId = searchParams.get('threadId');
+    const threadType = searchParams.get('threadType');
 
     let tasks;
-    if (all) {
+    if (threadId && threadType) {
+      tasks = await getTasksForThread(threadId, threadType);
+    } else if (all) {
       tasks = await getAllTasks();
     } else if (username) {
       tasks = await getTasksForUser(username);
     } else {
       return NextResponse.json({
         success: false,
-        error: 'Username parameter is required'
+        error: 'Username, threadId+threadType, or all parameter is required'
       }, { status: 400 });
     }
 
