@@ -1738,7 +1738,8 @@ export default function DMSPage() {
               <div className="divide-y divide-gray-200 dark:divide-gray-700">
                 {generatedDocs
                   .filter(doc => {
-                    if (docsTypeFilter !== 'all' && doc.type?.toLowerCase() !== docsTypeFilter.toLowerCase()) return false;
+                    // Use docType for filtering (matches filter keys: invoice, cmr, WZ, RW)
+                    if (docsTypeFilter !== 'all' && doc.docType?.toLowerCase() !== docsTypeFilter.toLowerCase()) return false;
                     if (!docsSearch.trim()) return true;
                     const searchLower = docsSearch.toLowerCase();
                     return (
