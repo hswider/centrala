@@ -763,6 +763,15 @@ function CRMContent() {
   const handleGmailSendReply = async () => {
     if ((!gmailReplyText.trim() && gmailAttachments.length === 0) || !gmailSelectedThread) return;
 
+    // Validate attachment size
+    if (gmailAttachments.length > 0) {
+      const validation = validateAttachmentsSize(gmailAttachments);
+      if (!validation.valid) {
+        alert(validation.error);
+        return;
+      }
+    }
+
     setGmailSending(true);
     try {
       // Convert attachments to base64
@@ -788,6 +797,12 @@ function CRMContent() {
           attachments: attachmentData
         })
       });
+
+      if (!res.ok) {
+        const errorText = await res.text();
+        throw new Error(errorText.includes('Request Entity Too Large') ? 'Zalaczniki sa za duze. Maksymalny rozmiar to 3MB.' : `Blad serwera: ${res.status}`);
+      }
+
       const data = await res.json();
 
       if (data.success) {
@@ -1111,6 +1126,15 @@ function CRMContent() {
   const handlePoomkidsSendReply = async () => {
     if ((!poomkidsReplyText.trim() && poomkidsAttachments.length === 0) || !poomkidsSelectedThread) return;
 
+    // Validate attachment size
+    if (poomkidsAttachments.length > 0) {
+      const validation = validateAttachmentsSize(poomkidsAttachments);
+      if (!validation.valid) {
+        alert(validation.error);
+        return;
+      }
+    }
+
     setPoomkidsSending(true);
     try {
       // Convert attachments to base64
@@ -1136,6 +1160,12 @@ function CRMContent() {
           attachments: attachmentData
         })
       });
+
+      if (!res.ok) {
+        const errorText = await res.text();
+        throw new Error(errorText.includes('Request Entity Too Large') ? 'Zalaczniki sa za duze. Maksymalny rozmiar to 3MB.' : `Blad serwera: ${res.status}`);
+      }
+
       const data = await res.json();
 
       if (data.success) {
@@ -1185,6 +1215,15 @@ function CRMContent() {
   const handlePoomkidsSendCompose = async () => {
     if (!poomkidsComposeTo.trim() || !poomkidsComposeSubject.trim() || (!poomkidsComposeBody.trim() && poomkidsComposeAttachments.length === 0)) return;
 
+    // Validate attachment size
+    if (poomkidsComposeAttachments.length > 0) {
+      const validation = validateAttachmentsSize(poomkidsComposeAttachments);
+      if (!validation.valid) {
+        alert(validation.error);
+        return;
+      }
+    }
+
     setPoomkidsSending(true);
     try {
       // Convert attachments to base64
@@ -1210,6 +1249,12 @@ function CRMContent() {
           attachments: attachmentData
         })
       });
+
+      if (!res.ok) {
+        const errorText = await res.text();
+        throw new Error(errorText.includes('Request Entity Too Large') ? 'Zalaczniki sa za duze. Maksymalny rozmiar to 3MB.' : `Blad serwera: ${res.status}`);
+      }
+
       const data = await res.json();
 
       if (data.success) {
@@ -1235,6 +1280,15 @@ function CRMContent() {
   const handleGmailSendCompose = async () => {
     if (!gmailComposeTo.trim() || !gmailComposeSubject.trim() || (!gmailComposeBody.trim() && gmailComposeAttachments.length === 0)) return;
 
+    // Validate attachment size
+    if (gmailComposeAttachments.length > 0) {
+      const validation = validateAttachmentsSize(gmailComposeAttachments);
+      if (!validation.valid) {
+        alert(validation.error);
+        return;
+      }
+    }
+
     setGmailSending(true);
     try {
       const attachmentData = await Promise.all(gmailComposeAttachments.map(file => {
@@ -1259,6 +1313,12 @@ function CRMContent() {
           attachments: attachmentData
         })
       });
+
+      if (!res.ok) {
+        const errorText = await res.text();
+        throw new Error(errorText.includes('Request Entity Too Large') ? 'Zalaczniki sa za duze. Maksymalny rozmiar to 3MB.' : `Blad serwera: ${res.status}`);
+      }
+
       const data = await res.json();
 
       if (data.success) {
@@ -1281,6 +1341,15 @@ function CRMContent() {
   // Send new composed email for Allepoduszki
   const handleAllepoduszkiSendCompose = async () => {
     if (!allepoduszkiComposeTo.trim() || !allepoduszkiComposeSubject.trim() || (!allepoduszkiComposeBody.trim() && allepoduszkiComposeAttachments.length === 0)) return;
+
+    // Validate attachment size
+    if (allepoduszkiComposeAttachments.length > 0) {
+      const validation = validateAttachmentsSize(allepoduszkiComposeAttachments);
+      if (!validation.valid) {
+        alert(validation.error);
+        return;
+      }
+    }
 
     setAllepoduszkiSending(true);
     try {
@@ -1306,6 +1375,12 @@ function CRMContent() {
           attachments: attachmentData
         })
       });
+
+      if (!res.ok) {
+        const errorText = await res.text();
+        throw new Error(errorText.includes('Request Entity Too Large') ? 'Zalaczniki sa za duze. Maksymalny rozmiar to 3MB.' : `Blad serwera: ${res.status}`);
+      }
+
       const data = await res.json();
 
       if (data.success) {
@@ -1328,6 +1403,15 @@ function CRMContent() {
   // Send new composed email for Poomfurniture
   const handlePoomfurnitureSendCompose = async () => {
     if (!poomfurnitureComposeTo.trim() || !poomfurnitureComposeSubject.trim() || (!poomfurnitureComposeBody.trim() && poomfurnitureComposeAttachments.length === 0)) return;
+
+    // Validate attachment size
+    if (poomfurnitureComposeAttachments.length > 0) {
+      const validation = validateAttachmentsSize(poomfurnitureComposeAttachments);
+      if (!validation.valid) {
+        alert(validation.error);
+        return;
+      }
+    }
 
     setPoomfurnitureSending(true);
     try {
@@ -1353,6 +1437,12 @@ function CRMContent() {
           attachments: attachmentData
         })
       });
+
+      if (!res.ok) {
+        const errorText = await res.text();
+        throw new Error(errorText.includes('Request Entity Too Large') ? 'Zalaczniki sa za duze. Maksymalny rozmiar to 3MB.' : `Blad serwera: ${res.status}`);
+      }
+
       const data = await res.json();
 
       if (data.success) {
@@ -1609,6 +1699,15 @@ function CRMContent() {
   const handleAllepoduszkiSendReply = async () => {
     if ((!allepoduszkiReplyText.trim() && allepoduszkiAttachments.length === 0) || !allepoduszkiSelectedThread) return;
 
+    // Validate attachment size
+    if (allepoduszkiAttachments.length > 0) {
+      const validation = validateAttachmentsSize(allepoduszkiAttachments);
+      if (!validation.valid) {
+        alert(validation.error);
+        return;
+      }
+    }
+
     setAllepoduszkiSending(true);
     try {
       // Convert attachments to base64
@@ -1634,6 +1733,12 @@ function CRMContent() {
           attachments: attachmentData
         })
       });
+
+      if (!res.ok) {
+        const errorText = await res.text();
+        throw new Error(errorText.includes('Request Entity Too Large') ? 'Zalaczniki sa za duze. Maksymalny rozmiar to 3MB.' : `Blad serwera: ${res.status}`);
+      }
+
       const data = await res.json();
 
       if (data.success) {
@@ -1915,6 +2020,15 @@ function CRMContent() {
   const handlePoomfurnitureSendReply = async () => {
     if ((!poomfurnitureReplyText.trim() && poomfurnitureAttachments.length === 0) || !poomfurnitureSelectedThread) return;
 
+    // Validate attachment size
+    if (poomfurnitureAttachments.length > 0) {
+      const validation = validateAttachmentsSize(poomfurnitureAttachments);
+      if (!validation.valid) {
+        alert(validation.error);
+        return;
+      }
+    }
+
     setPoomfurnitureSending(true);
     try {
       // Convert attachments to base64
@@ -1940,6 +2054,12 @@ function CRMContent() {
           attachments: attachmentData
         })
       });
+
+      if (!res.ok) {
+        const errorText = await res.text();
+        throw new Error(errorText.includes('Request Entity Too Large') ? 'Zalaczniki sa za duze. Maksymalny rozmiar to 3MB.' : `Blad serwera: ${res.status}`);
+      }
+
       const data = await res.json();
 
       if (data.success) {
@@ -2068,6 +2188,17 @@ function CRMContent() {
     if (mimeType?.includes('excel') || filename?.match(/\.(xls|xlsx)$/)) return '📊';
     if (mimeType?.includes('zip') || filename?.match(/\.(zip|rar|7z)$/)) return '📦';
     return '📎';
+  };
+
+  // Validate attachment size (max 3MB total, ~4MB after base64 encoding - Vercel limit is 4.5MB)
+  const MAX_ATTACHMENTS_SIZE = 3 * 1024 * 1024; // 3MB
+  const validateAttachmentsSize = (files) => {
+    const totalSize = files.reduce((sum, file) => sum + file.size, 0);
+    if (totalSize > MAX_ATTACHMENTS_SIZE) {
+      const sizeMB = (totalSize / (1024 * 1024)).toFixed(1);
+      return { valid: false, error: `Zalaczniki sa za duze (${sizeMB}MB). Maksymalny rozmiar to 3MB.` };
+    }
+    return { valid: true };
   };
 
   // Format date
