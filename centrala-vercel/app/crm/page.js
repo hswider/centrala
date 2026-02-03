@@ -3732,23 +3732,40 @@ function CRMContent() {
                                     {msgAttachments.length > 0 && (
                                       <div className="mt-2">
                                         <p className={`text-[10px] mb-1 ${msg.is_outgoing ? 'text-gray-400' : 'text-gray-400'}`}>Zalaczniki:</p>
-                                        <div className="flex flex-wrap gap-1">
-                                          {msgAttachments.map((att, i) => (
-                                            <a
-                                              key={i}
-                                              href={`/api/gmail/attachments/${msg.id}/${att.id}?filename=${encodeURIComponent(att.filename)}&mimeType=${encodeURIComponent(att.mimeType)}`}
-                                              target="_blank"
-                                              rel="noopener noreferrer"
-                                              className={`inline-flex items-center gap-1 px-2 py-1 rounded text-xs ${
-                                                msg.is_outgoing
-                                                  ? 'bg-gray-700 hover:bg-gray-600 text-white'
-                                                  : 'bg-gray-100 dark:bg-gray-600 hover:bg-gray-200 dark:hover:bg-gray-500 text-gray-700 dark:text-gray-200'
-                                              }`}
-                                            >
-                                              <span>{getAttachmentIcon(att.mimeType)}</span>
-                                              <span className="truncate max-w-[100px]">{att.filename}</span>
-                                            </a>
-                                          ))}
+                                        <div className="flex flex-wrap gap-2">
+                                          {msgAttachments.map((att, i) => {
+                                            const attUrl = `/api/gmail/attachments/${msg.id}/${att.id}?filename=${encodeURIComponent(att.filename)}&mimeType=${encodeURIComponent(att.mimeType)}`;
+                                            const isImage = att.mimeType?.startsWith('image/');
+                                            return isImage ? (
+                                              <a key={i} href={attUrl} target="_blank" rel="noopener noreferrer" className="block">
+                                                <img
+                                                  src={attUrl}
+                                                  alt={att.filename}
+                                                  className="max-w-full max-h-48 rounded border border-gray-200 dark:border-gray-600 cursor-pointer hover:opacity-80"
+                                                  onError={(e) => { e.target.style.display = 'none'; if (e.target.nextSibling) e.target.nextSibling.style.display = 'flex'; }}
+                                                />
+                                                <div style={{display:'none'}} className={`items-center gap-1 px-2 py-1 rounded text-xs ${msg.is_outgoing ? 'bg-gray-700 text-white' : 'bg-gray-100 dark:bg-gray-600 text-gray-700 dark:text-gray-200'}`}>
+                                                  <span>🖼️</span>
+                                                  <span className="truncate max-w-[100px]">{att.filename}</span>
+                                                </div>
+                                              </a>
+                                            ) : (
+                                              <a
+                                                key={i}
+                                                href={attUrl}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className={`inline-flex items-center gap-1 px-2 py-1 rounded text-xs ${
+                                                  msg.is_outgoing
+                                                    ? 'bg-gray-700 hover:bg-gray-600 text-white'
+                                                    : 'bg-gray-100 dark:bg-gray-600 hover:bg-gray-200 dark:hover:bg-gray-500 text-gray-700 dark:text-gray-200'
+                                                }`}
+                                              >
+                                                <span>{getAttachmentIcon(att.mimeType)}</span>
+                                                <span className="truncate max-w-[100px]">{att.filename}</span>
+                                              </a>
+                                            );
+                                          })}
                                         </div>
                                       </div>
                                     )}
@@ -4288,23 +4305,40 @@ function CRMContent() {
                                       return msgAttachments.length > 0 && (
                                         <div className="mt-2">
                                           <p className={`text-[10px] mb-1 ${msg.is_outgoing ? 'text-gray-400' : 'text-gray-400'}`}>Zalaczniki:</p>
-                                          <div className="flex flex-wrap gap-1">
-                                            {msgAttachments.map((att, i) => (
-                                              <a
-                                                key={i}
-                                                href={`/api/gmail-poomkids/attachments/${msg.id}/${att.id}?filename=${encodeURIComponent(att.filename)}&mimeType=${encodeURIComponent(att.mimeType)}`}
-                                                target="_blank"
-                                                rel="noopener noreferrer"
-                                                className={`inline-flex items-center gap-1 px-2 py-1 rounded text-xs ${
-                                                  msg.is_outgoing
-                                                    ? 'bg-gray-700 hover:bg-gray-600 text-white'
-                                                    : 'bg-gray-100 dark:bg-gray-600 hover:bg-gray-200 dark:hover:bg-gray-500 text-gray-700 dark:text-gray-200'
-                                                }`}
-                                              >
-                                                <span>{getAttachmentIcon(att.mimeType)}</span>
-                                                <span className="truncate max-w-[100px]">{att.filename}</span>
-                                              </a>
-                                            ))}
+                                          <div className="flex flex-wrap gap-2">
+                                            {msgAttachments.map((att, i) => {
+                                              const attUrl = `/api/gmail-poomkids/attachments/${msg.id}/${att.id}?filename=${encodeURIComponent(att.filename)}&mimeType=${encodeURIComponent(att.mimeType)}`;
+                                              const isImage = att.mimeType?.startsWith('image/');
+                                              return isImage ? (
+                                                <a key={i} href={attUrl} target="_blank" rel="noopener noreferrer" className="block">
+                                                  <img
+                                                    src={attUrl}
+                                                    alt={att.filename}
+                                                    className="max-w-full max-h-48 rounded border border-gray-200 dark:border-gray-600 cursor-pointer hover:opacity-80"
+                                                    onError={(e) => { e.target.style.display = 'none'; if (e.target.nextSibling) e.target.nextSibling.style.display = 'flex'; }}
+                                                  />
+                                                  <div style={{display:'none'}} className={`items-center gap-1 px-2 py-1 rounded text-xs ${msg.is_outgoing ? 'bg-gray-700 text-white' : 'bg-gray-100 dark:bg-gray-600 text-gray-700 dark:text-gray-200'}`}>
+                                                    <span>🖼️</span>
+                                                    <span className="truncate max-w-[100px]">{att.filename}</span>
+                                                  </div>
+                                                </a>
+                                              ) : (
+                                                <a
+                                                  key={i}
+                                                  href={attUrl}
+                                                  target="_blank"
+                                                  rel="noopener noreferrer"
+                                                  className={`inline-flex items-center gap-1 px-2 py-1 rounded text-xs ${
+                                                    msg.is_outgoing
+                                                      ? 'bg-gray-700 hover:bg-gray-600 text-white'
+                                                      : 'bg-gray-100 dark:bg-gray-600 hover:bg-gray-200 dark:hover:bg-gray-500 text-gray-700 dark:text-gray-200'
+                                                  }`}
+                                                >
+                                                  <span>{getAttachmentIcon(att.mimeType)}</span>
+                                                  <span className="truncate max-w-[100px]">{att.filename}</span>
+                                                </a>
+                                              );
+                                            })}
                                           </div>
                                         </div>
                                       );
@@ -4843,23 +4877,40 @@ function CRMContent() {
                                     {msgAttachments.length > 0 && (
                                       <div className="mt-2">
                                         <p className={`text-[10px] mb-1 ${msg.is_outgoing ? 'text-gray-400' : 'text-gray-400'}`}>Zalaczniki:</p>
-                                        <div className="flex flex-wrap gap-1">
-                                          {msgAttachments.map((att, i) => (
-                                            <a
-                                              key={i}
-                                              href={`/api/gmail-allepoduszki/attachments/${msg.id}/${att.id}?filename=${encodeURIComponent(att.filename)}&mimeType=${encodeURIComponent(att.mimeType)}`}
-                                              target="_blank"
-                                              rel="noopener noreferrer"
-                                              className={`inline-flex items-center gap-1 px-2 py-1 rounded text-xs ${
-                                                msg.is_outgoing
-                                                  ? 'bg-gray-700 hover:bg-gray-600 text-white'
-                                                  : 'bg-gray-100 dark:bg-gray-600 hover:bg-gray-200 dark:hover:bg-gray-500 text-gray-700 dark:text-gray-200'
-                                              }`}
-                                            >
-                                              <span>{getAttachmentIcon(att.mimeType)}</span>
-                                              <span className="truncate max-w-[100px]">{att.filename}</span>
-                                            </a>
-                                          ))}
+                                        <div className="flex flex-wrap gap-2">
+                                          {msgAttachments.map((att, i) => {
+                                            const attUrl = `/api/gmail-allepoduszki/attachments/${msg.id}/${att.id}?filename=${encodeURIComponent(att.filename)}&mimeType=${encodeURIComponent(att.mimeType)}`;
+                                            const isImage = att.mimeType?.startsWith('image/');
+                                            return isImage ? (
+                                              <a key={i} href={attUrl} target="_blank" rel="noopener noreferrer" className="block">
+                                                <img
+                                                  src={attUrl}
+                                                  alt={att.filename}
+                                                  className="max-w-full max-h-48 rounded border border-gray-200 dark:border-gray-600 cursor-pointer hover:opacity-80"
+                                                  onError={(e) => { e.target.style.display = 'none'; if (e.target.nextSibling) e.target.nextSibling.style.display = 'flex'; }}
+                                                />
+                                                <div style={{display:'none'}} className={`items-center gap-1 px-2 py-1 rounded text-xs ${msg.is_outgoing ? 'bg-gray-700 text-white' : 'bg-gray-100 dark:bg-gray-600 text-gray-700 dark:text-gray-200'}`}>
+                                                  <span>🖼️</span>
+                                                  <span className="truncate max-w-[100px]">{att.filename}</span>
+                                                </div>
+                                              </a>
+                                            ) : (
+                                              <a
+                                                key={i}
+                                                href={attUrl}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className={`inline-flex items-center gap-1 px-2 py-1 rounded text-xs ${
+                                                  msg.is_outgoing
+                                                    ? 'bg-gray-700 hover:bg-gray-600 text-white'
+                                                    : 'bg-gray-100 dark:bg-gray-600 hover:bg-gray-200 dark:hover:bg-gray-500 text-gray-700 dark:text-gray-200'
+                                                }`}
+                                              >
+                                                <span>{getAttachmentIcon(att.mimeType)}</span>
+                                                <span className="truncate max-w-[100px]">{att.filename}</span>
+                                              </a>
+                                            );
+                                          })}
                                         </div>
                                       </div>
                                     )}
@@ -5399,23 +5450,40 @@ function CRMContent() {
                                     {msgAttachments.length > 0 && (
                                       <div className="mt-2">
                                         <p className={`text-[10px] mb-1 ${msg.is_outgoing ? 'text-gray-400' : 'text-gray-400'}`}>Zalaczniki:</p>
-                                        <div className="flex flex-wrap gap-1">
-                                          {msgAttachments.map((att, i) => (
-                                            <a
-                                              key={i}
-                                              href={`/api/gmail-poomfurniture/attachments/${msg.id}/${att.id}?filename=${encodeURIComponent(att.filename)}&mimeType=${encodeURIComponent(att.mimeType)}`}
-                                              target="_blank"
-                                              rel="noopener noreferrer"
-                                              className={`inline-flex items-center gap-1 px-2 py-1 rounded text-xs ${
-                                                msg.is_outgoing
-                                                  ? 'bg-gray-700 hover:bg-gray-600 text-white'
-                                                  : 'bg-gray-100 dark:bg-gray-600 hover:bg-gray-200 dark:hover:bg-gray-500 text-gray-700 dark:text-gray-200'
-                                              }`}
-                                            >
-                                              <span>{getAttachmentIcon(att.mimeType)}</span>
-                                              <span className="truncate max-w-[100px]">{att.filename}</span>
-                                            </a>
-                                          ))}
+                                        <div className="flex flex-wrap gap-2">
+                                          {msgAttachments.map((att, i) => {
+                                            const attUrl = `/api/gmail-poomfurniture/attachments/${msg.id}/${att.id}?filename=${encodeURIComponent(att.filename)}&mimeType=${encodeURIComponent(att.mimeType)}`;
+                                            const isImage = att.mimeType?.startsWith('image/');
+                                            return isImage ? (
+                                              <a key={i} href={attUrl} target="_blank" rel="noopener noreferrer" className="block">
+                                                <img
+                                                  src={attUrl}
+                                                  alt={att.filename}
+                                                  className="max-w-full max-h-48 rounded border border-gray-200 dark:border-gray-600 cursor-pointer hover:opacity-80"
+                                                  onError={(e) => { e.target.style.display = 'none'; if (e.target.nextSibling) e.target.nextSibling.style.display = 'flex'; }}
+                                                />
+                                                <div style={{display:'none'}} className={`items-center gap-1 px-2 py-1 rounded text-xs ${msg.is_outgoing ? 'bg-gray-700 text-white' : 'bg-gray-100 dark:bg-gray-600 text-gray-700 dark:text-gray-200'}`}>
+                                                  <span>🖼️</span>
+                                                  <span className="truncate max-w-[100px]">{att.filename}</span>
+                                                </div>
+                                              </a>
+                                            ) : (
+                                              <a
+                                                key={i}
+                                                href={attUrl}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className={`inline-flex items-center gap-1 px-2 py-1 rounded text-xs ${
+                                                  msg.is_outgoing
+                                                    ? 'bg-gray-700 hover:bg-gray-600 text-white'
+                                                    : 'bg-gray-100 dark:bg-gray-600 hover:bg-gray-200 dark:hover:bg-gray-500 text-gray-700 dark:text-gray-200'
+                                                }`}
+                                              >
+                                                <span>{getAttachmentIcon(att.mimeType)}</span>
+                                                <span className="truncate max-w-[100px]">{att.filename}</span>
+                                              </a>
+                                            );
+                                          })}
                                         </div>
                                       </div>
                                     )}
