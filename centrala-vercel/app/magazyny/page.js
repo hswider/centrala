@@ -1488,7 +1488,7 @@ export default function MagazynyPage() {
               Historia zmian
             </button>
             <button
-              onClick={handleExportCSV}
+              onClick={() => handleExportCSV()}
               className="px-2.5 py-1.5 text-xs sm:text-sm bg-gray-600 text-white rounded-lg hover:bg-gray-700"
             >
               Export CSV

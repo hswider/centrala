@@ -64,16 +64,35 @@ export default function WMSPage() {
     }
   }, [showHistoryModal, historyFilters]);
 
-  // Export CSV function
+  // Export CSV function - exports data based on active tab
   const exportCSV = () => {
-    // For now, export the static data - in real app this would export from API
-    const csvContent = 'SKU,Nazwa,Lokalizacja,Stan,Min,Max\n' +
-      produkty.map(p => `${p.sku},${p.nazwa},${p.lokalizacja},${p.stan},${p.min},${p.max}`).join('\n');
+    let csvContent = '';
+    let filename = '';
 
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    if (activeTab === 'stan') {
+      csvContent = 'SKU,Nazwa,Lokalizacja,Stan,Min,Max\n' +
+        produkty.map(p => `${p.sku},${p.nazwa},${p.lokalizacja},${p.stan},${p.min},${p.max}`).join('\n');
+      filename = `stan_magazynu_${new Date().toISOString().split('T')[0]}.csv`;
+    } else if (activeTab === 'lokalizacje') {
+      csvContent = 'Kod,Typ,Pojemnosc,Zajete,Produkty\n' +
+        lokalizacje.map(l => `${l.kod},${l.typ},${l.pojemnosc},${l.zajete},${l.produkty}`).join('\n');
+      filename = `lokalizacje_${new Date().toISOString().split('T')[0]}.csv`;
+    } else if (activeTab === 'przyjecia') {
+      csvContent = 'Numer,Data,Dostawca,Pozycje,Status\n' +
+        przyjecia.map(p => `${p.numer},${p.data},${p.dostawca},${p.pozycje},${p.status}`).join('\n');
+      filename = `przyjecia_${new Date().toISOString().split('T')[0]}.csv`;
+    } else if (activeTab === 'wydania') {
+      csvContent = 'Numer,Data,Zamowienie,Pozycje,Status\n' +
+        wydania.map(w => `${w.numer},${w.data},${w.zamowienie},${w.pozycje},${w.status}`).join('\n');
+      filename = `wydania_${new Date().toISOString().split('T')[0]}.csv`;
+    }
+
+    if (!csvContent) return;
+
+    const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
     link.href = URL.createObjectURL(blob);
-    link.download = `stan_magazynu_${new Date().toISOString().split('T')[0]}.csv`;
+    link.download = filename;
     link.click();
   };
 
@@ -187,7 +206,7 @@ export default function WMSPage() {
           </div>
           <div className="flex gap-2">
             <button
-              onClick={exportCSV}
+              onClick={() => exportCSV()}
               className="px-3 py-1.5 text-sm bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 flex items-center gap-1"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
