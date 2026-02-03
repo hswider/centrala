@@ -800,7 +800,7 @@ function CRMContent() {
 
       if (!res.ok) {
         const errorText = await res.text();
-        throw new Error(errorText.includes('Request Entity Too Large') ? 'Zalaczniki sa za duze. Maksymalny rozmiar to 3MB.' : `Blad serwera: ${res.status}`);
+        throw new Error(errorText.includes('Request Entity Too Large') ? 'Zalaczniki sa za duze. Maksymalny rozmiar to 15MB.' : `Blad serwera: ${res.status}`);
       }
 
       const data = await res.json();
@@ -1163,7 +1163,7 @@ function CRMContent() {
 
       if (!res.ok) {
         const errorText = await res.text();
-        throw new Error(errorText.includes('Request Entity Too Large') ? 'Zalaczniki sa za duze. Maksymalny rozmiar to 3MB.' : `Blad serwera: ${res.status}`);
+        throw new Error(errorText.includes('Request Entity Too Large') ? 'Zalaczniki sa za duze. Maksymalny rozmiar to 15MB.' : `Blad serwera: ${res.status}`);
       }
 
       const data = await res.json();
@@ -1252,7 +1252,7 @@ function CRMContent() {
 
       if (!res.ok) {
         const errorText = await res.text();
-        throw new Error(errorText.includes('Request Entity Too Large') ? 'Zalaczniki sa za duze. Maksymalny rozmiar to 3MB.' : `Blad serwera: ${res.status}`);
+        throw new Error(errorText.includes('Request Entity Too Large') ? 'Zalaczniki sa za duze. Maksymalny rozmiar to 15MB.' : `Blad serwera: ${res.status}`);
       }
 
       const data = await res.json();
@@ -1316,7 +1316,7 @@ function CRMContent() {
 
       if (!res.ok) {
         const errorText = await res.text();
-        throw new Error(errorText.includes('Request Entity Too Large') ? 'Zalaczniki sa za duze. Maksymalny rozmiar to 3MB.' : `Blad serwera: ${res.status}`);
+        throw new Error(errorText.includes('Request Entity Too Large') ? 'Zalaczniki sa za duze. Maksymalny rozmiar to 15MB.' : `Blad serwera: ${res.status}`);
       }
 
       const data = await res.json();
@@ -1378,7 +1378,7 @@ function CRMContent() {
 
       if (!res.ok) {
         const errorText = await res.text();
-        throw new Error(errorText.includes('Request Entity Too Large') ? 'Zalaczniki sa za duze. Maksymalny rozmiar to 3MB.' : `Blad serwera: ${res.status}`);
+        throw new Error(errorText.includes('Request Entity Too Large') ? 'Zalaczniki sa za duze. Maksymalny rozmiar to 15MB.' : `Blad serwera: ${res.status}`);
       }
 
       const data = await res.json();
@@ -1440,7 +1440,7 @@ function CRMContent() {
 
       if (!res.ok) {
         const errorText = await res.text();
-        throw new Error(errorText.includes('Request Entity Too Large') ? 'Zalaczniki sa za duze. Maksymalny rozmiar to 3MB.' : `Blad serwera: ${res.status}`);
+        throw new Error(errorText.includes('Request Entity Too Large') ? 'Zalaczniki sa za duze. Maksymalny rozmiar to 15MB.' : `Blad serwera: ${res.status}`);
       }
 
       const data = await res.json();
@@ -1736,7 +1736,7 @@ function CRMContent() {
 
       if (!res.ok) {
         const errorText = await res.text();
-        throw new Error(errorText.includes('Request Entity Too Large') ? 'Zalaczniki sa za duze. Maksymalny rozmiar to 3MB.' : `Blad serwera: ${res.status}`);
+        throw new Error(errorText.includes('Request Entity Too Large') ? 'Zalaczniki sa za duze. Maksymalny rozmiar to 15MB.' : `Blad serwera: ${res.status}`);
       }
 
       const data = await res.json();
@@ -2057,7 +2057,7 @@ function CRMContent() {
 
       if (!res.ok) {
         const errorText = await res.text();
-        throw new Error(errorText.includes('Request Entity Too Large') ? 'Zalaczniki sa za duze. Maksymalny rozmiar to 3MB.' : `Blad serwera: ${res.status}`);
+        throw new Error(errorText.includes('Request Entity Too Large') ? 'Zalaczniki sa za duze. Maksymalny rozmiar to 15MB.' : `Blad serwera: ${res.status}`);
       }
 
       const data = await res.json();
@@ -2190,13 +2190,13 @@ function CRMContent() {
     return '📎';
   };
 
-  // Validate attachment size (max 3MB total, ~4MB after base64 encoding - Vercel limit is 4.5MB)
-  const MAX_ATTACHMENTS_SIZE = 3 * 1024 * 1024; // 3MB
+  // Validate attachment size (max 15MB total, ~20MB after base64 encoding - Vercel Pro limit is 20MB)
+  const MAX_ATTACHMENTS_SIZE = 15 * 1024 * 1024; // 15MB
   const validateAttachmentsSize = (files) => {
     const totalSize = files.reduce((sum, file) => sum + file.size, 0);
     if (totalSize > MAX_ATTACHMENTS_SIZE) {
       const sizeMB = (totalSize / (1024 * 1024)).toFixed(1);
-      return { valid: false, error: `Zalaczniki sa za duze (${sizeMB}MB). Maksymalny rozmiar to 3MB.` };
+      return { valid: false, error: `Zalaczniki sa za duze (${sizeMB}MB). Maksymalny rozmiar to 15MB.` };
     }
     return { valid: true };
   };
