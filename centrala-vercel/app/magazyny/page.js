@@ -202,21 +202,34 @@ export default function MagazynyPage() {
       <!DOCTYPE html>
       <html>
       <head>
-        <title>Etykieta - ${item.sku}</title>
+        <title></title>
         <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"><\/script>
         <style>
           @page {
             size: 100mm 50mm;
-            margin: 0;
+            margin: 0 !important;
+          }
+          @media print {
+            @page {
+              margin: 0 !important;
+            }
+            html, body {
+              margin: 0 !important;
+              padding: 0 !important;
+            }
           }
           * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
           }
-          body {
+          html, body {
             width: 100mm;
             height: 50mm;
+            margin: 0 !important;
+            padding: 0 !important;
+          }
+          body {
             font-family: Arial, sans-serif;
             display: flex;
             flex-direction: column;
@@ -294,21 +307,34 @@ export default function MagazynyPage() {
       <!DOCTYPE html>
       <html>
       <head>
-        <title>Etykieta - ${item.sku}</title>
+        <title></title>
         <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"><\/script>
         <style>
           @page {
             size: 100mm 50mm;
-            margin: 0;
+            margin: 0 !important;
+          }
+          @media print {
+            @page {
+              margin: 0 !important;
+            }
+            html, body {
+              margin: 0 !important;
+              padding: 0 !important;
+            }
           }
           * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
           }
-          body {
+          html, body {
             width: 100mm;
             height: 50mm;
+            margin: 0 !important;
+            padding: 0 !important;
+          }
+          body {
             font-family: Arial, sans-serif;
             display: flex;
             flex-direction: column;
