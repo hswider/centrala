@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid, AreaChart, Area } from 'recharts';
 
 export default function Home() {
@@ -35,6 +36,17 @@ export default function Home() {
   // Tasks state
   const [userTasks, setUserTasks] = useState([]);
   const [tasksLoading, setTasksLoading] = useState(true);
+
+  const router = useRouter();
+
+  // Navigate to task thread in CRM
+  const goToTask = (task) => {
+    if (task.thread_id && task.thread_type) {
+      router.push(`/crm?tab=${task.thread_type}&thread=${task.thread_id}`);
+    } else {
+      router.push('/crm');
+    }
+  };
 
   // Permission labels mapping
   const permissionLabels = {
@@ -442,13 +454,24 @@ export default function Home() {
                           {new Date(task.created_at).toLocaleDateString('pl-PL', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
                         </p>
                       </div>
-                      <button
-                        onClick={() => completeTask(task.id)}
-                        className="shrink-0 px-2 py-1 bg-green-500 hover:bg-green-600 text-white text-xs rounded transition-colors"
-                        title="Oznacz jako wykonane"
-                      >
-                        ✓ Gotowe
-                      </button>
+                      <div className="shrink-0 flex gap-1">
+                        {task.thread_id && (
+                          <button
+                            onClick={() => goToTask(task)}
+                            className="px-2 py-1 bg-blue-500 hover:bg-blue-600 text-white text-xs rounded transition-colors"
+                            title="Przejdz do wątku"
+                          >
+                            → Przejdz
+                          </button>
+                        )}
+                        <button
+                          onClick={() => completeTask(task.id)}
+                          className="px-2 py-1 bg-green-500 hover:bg-green-600 text-white text-xs rounded transition-colors"
+                          title="Oznacz jako wykonane"
+                        >
+                          ✓ Gotowe
+                        </button>
+                      </div>
                     </div>
                   ))}
                 </div>

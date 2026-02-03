@@ -151,6 +151,7 @@ function CRMContent() {
   const [taskSending, setTaskSending] = useState(false);
   const [showTaskForm, setShowTaskForm] = useState(false);
   const [threadTasks, setThreadTasks] = useState([]);
+  const [pendingThreadId, setPendingThreadId] = useState(null);
 
   const tabs = [
     { key: 'wiadomosci', label: 'Allegro Dobrelegowiska', icon: 'https://a.allegroimg.com/original/12c30c/0d4b068640de9b0daf22af9d97c5', overlayIcon: '/icons/dobrelegowiska.png', isImage: true, badge: unreadCount, color: 'orange', isConnected: allegroAuth.authenticated, isLoading: allegroAuth.loading },
@@ -234,6 +235,18 @@ function CRMContent() {
     }
     if (poomfurnitureGmailError) {
       alert(`Blad Gmail poom-furniture.com: ${poomfurnitureGmailError}`);
+      window.history.replaceState({}, '', '/crm');
+    }
+
+    // Handle task navigation parameters
+    const tabParam = searchParams.get('tab');
+    const threadParam = searchParams.get('thread');
+    if (tabParam) {
+      setActiveTab(tabParam);
+      if (threadParam) {
+        setPendingThreadId(threadParam);
+      }
+      // Clear URL params after handling
       window.history.replaceState({}, '', '/crm');
     }
   }, [searchParams]);
@@ -721,7 +734,17 @@ function CRMContent() {
       const res = await fetch('/api/gmail/messages');
       const data = await res.json();
       if (data.success) {
-        setGmailThreads(data.threads || []);
+        const threads = data.threads || [];
+        setGmailThreads(threads);
+        // Auto-select pending thread if exists
+        if (pendingThreadId && activeTab === 'shopify') {
+          const thread = threads.find(t => t.id === pendingThreadId);
+          if (thread) {
+            setGmailSelectedThread(thread);
+            fetchGmailThreadMessages(thread.id);
+            setPendingThreadId(null);
+          }
+        }
       }
     } catch (err) {
       console.error('Gmail threads error:', err);
@@ -1096,7 +1119,17 @@ function CRMContent() {
       const res = await fetch('/api/gmail-poomkids/messages');
       const data = await res.json();
       if (data.success) {
-        setPoomkidsThreads(data.threads || []);
+        const threads = data.threads || [];
+        setPoomkidsThreads(threads);
+        // Auto-select pending thread if exists
+        if (pendingThreadId && activeTab === 'poomkids') {
+          const thread = threads.find(t => t.id === pendingThreadId);
+          if (thread) {
+            setPoomkidsSelectedThread(thread);
+            fetchPoomkidsThreadMessages(thread.id);
+            setPendingThreadId(null);
+          }
+        }
       }
     } catch (err) {
       console.error('POOMKIDS threads error:', err);
@@ -1688,7 +1721,17 @@ function CRMContent() {
       const res = await fetch('/api/gmail-allepoduszki/messages');
       const data = await res.json();
       if (data.success) {
-        setAllepoduszkiThreads(data.threads || []);
+        const threads = data.threads || [];
+        setAllepoduszkiThreads(threads);
+        // Auto-select pending thread if exists
+        if (pendingThreadId && activeTab === 'allepoduszki') {
+          const thread = threads.find(t => t.id === pendingThreadId);
+          if (thread) {
+            setAllepoduszkiSelectedThread(thread);
+            fetchAllepoduszkiThreadMessages(thread.id);
+            setPendingThreadId(null);
+          }
+        }
       }
     } catch (err) {
       console.error('ALLEPODUSZKI threads error:', err);
@@ -2024,7 +2067,17 @@ function CRMContent() {
       const res = await fetch('/api/gmail-poomfurniture/messages');
       const data = await res.json();
       if (data.success) {
-        setPoomfurnitureThreads(data.threads || []);
+        const threads = data.threads || [];
+        setPoomfurnitureThreads(threads);
+        // Auto-select pending thread if exists
+        if (pendingThreadId && activeTab === 'poomfurniture') {
+          const thread = threads.find(t => t.id === pendingThreadId);
+          if (thread) {
+            setPoomfurnitureSelectedThread(thread);
+            fetchPoomfurnitureThreadMessages(thread.id);
+            setPendingThreadId(null);
+          }
+        }
       }
     } catch (err) {
       console.error('POOMFURNITURE threads error:', err);
