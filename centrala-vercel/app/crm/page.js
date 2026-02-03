@@ -143,6 +143,15 @@ function CRMContent() {
   const [poomfurnitureComposeBody, setPoomfurnitureComposeBody] = useState('');
   const [poomfurnitureComposeAttachments, setPoomfurnitureComposeAttachments] = useState([]);
 
+  // Task/note creation state
+  const [currentUser, setCurrentUser] = useState(null);
+  const [allUsers, setAllUsers] = useState([]);
+  const [taskContent, setTaskContent] = useState('');
+  const [taskAssignee, setTaskAssignee] = useState('');
+  const [taskSending, setTaskSending] = useState(false);
+  const [showTaskForm, setShowTaskForm] = useState(false);
+  const [threadTasks, setThreadTasks] = useState([]);
+
   const tabs = [
     { key: 'wiadomosci', label: 'Allegro Dobrelegowiska', icon: 'https://a.allegroimg.com/original/12c30c/0d4b068640de9b0daf22af9d97c5', overlayIcon: '/icons/dobrelegowiska.png', isImage: true, badge: unreadCount, color: 'orange', isConnected: allegroAuth.authenticated, isLoading: allegroAuth.loading },
     { key: 'meblebox', label: 'Allegro Meblebox', icon: 'https://a.allegroimg.com/original/12c30c/0d4b068640de9b0daf22af9d97c5', isImage: true, badge: mebleboxUnreadCount, color: 'orange', isConnected: mebleboxAuth.authenticated, isLoading: mebleboxAuth.loading },
@@ -253,6 +262,69 @@ function CRMContent() {
   useEffect(() => {
     checkAllegroAuth();
   }, [checkAllegroAuth]);
+
+  // Fetch current user and all users for task assignment
+  useEffect(() => {
+    const fetchCurrentUser = async () => {
+      try {
+        const res = await fetch('/api/auth/me');
+        const data = await res.json();
+        if (data.success) {
+          setCurrentUser(data.user);
+        }
+      } catch (err) {
+        console.error('Error fetching current user:', err);
+      }
+    };
+
+    const fetchAllUsers = async () => {
+      try {
+        const res = await fetch('/api/users/online');
+        const data = await res.json();
+        if (data.success) {
+          setAllUsers(data.users);
+        }
+      } catch (err) {
+        console.error('Error fetching users:', err);
+      }
+    };
+
+    fetchCurrentUser();
+    fetchAllUsers();
+  }, []);
+
+  // Create a task/note for another user
+  const handleCreateTask = async (threadId, threadType) => {
+    if (!taskContent.trim() || !taskAssignee || !currentUser?.username) return;
+
+    setTaskSending(true);
+    try {
+      const res = await fetch('/api/tasks', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          createdBy: currentUser.username,
+          assignedTo: taskAssignee,
+          content: taskContent,
+          threadId: threadId || null,
+          threadType: threadType || null
+        })
+      });
+      const data = await res.json();
+      if (data.success) {
+        setTaskContent('');
+        setTaskAssignee('');
+        setShowTaskForm(false);
+        alert('Uwaga zostala wyslana!');
+      } else {
+        alert('Blad: ' + data.error);
+      }
+    } catch (err) {
+      alert('Blad: ' + err.message);
+    } finally {
+      setTaskSending(false);
+    }
+  };
 
   // Fetch sync status
   const fetchSyncStatus = async () => {
@@ -3678,6 +3750,52 @@ function CRMContent() {
                           <h4 className="mt-2 font-medium text-gray-800 dark:text-gray-200">
                             {gmailSelectedThread.subject || '(Brak tematu)'}
                           </h4>
+                          {/* Task/Note creation section */}
+                          <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
+                            {!showTaskForm ? (
+                              <button
+                                onClick={() => setShowTaskForm(true)}
+                                className="text-sm text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1"
+                              >
+                                <span>📋</span> Dodaj uwage dla pracownika
+                              </button>
+                            ) : (
+                              <div className="space-y-2">
+                                <div className="flex items-center gap-2">
+                                  <select
+                                    value={taskAssignee}
+                                    onChange={(e) => setTaskAssignee(e.target.value)}
+                                    className="flex-1 px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                                  >
+                                    <option value="">Wybierz pracownika...</option>
+                                    {allUsers.filter(u => u.username !== currentUser?.username).map(u => (
+                                      <option key={u.id} value={u.username}>{u.username}</option>
+                                    ))}
+                                  </select>
+                                  <button
+                                    onClick={() => { setShowTaskForm(false); setTaskContent(''); setTaskAssignee(''); }}
+                                    className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                                  >
+                                    ✕
+                                  </button>
+                                </div>
+                                <textarea
+                                  value={taskContent}
+                                  onChange={(e) => setTaskContent(e.target.value)}
+                                  placeholder="Wpisz uwage..."
+                                  rows={2}
+                                  className="w-full px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white resize-none"
+                                />
+                                <button
+                                  onClick={() => handleCreateTask(gmailSelectedThread.id, 'shopify')}
+                                  disabled={taskSending || !taskContent.trim() || !taskAssignee}
+                                  className="px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
+                                >
+                                  {taskSending ? 'Wysylanie...' : 'Wyslij uwage'}
+                                </button>
+                              </div>
+                            )}
+                          </div>
                         </div>
 
                         {/* Messages */}
@@ -4261,6 +4379,52 @@ function CRMContent() {
                           <h4 className="mt-2 font-medium text-gray-800 dark:text-gray-200">
                             {poomkidsSelectedThread.subject || '(Brak tematu)'}
                           </h4>
+                          {/* Task/Note creation section */}
+                          <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
+                            {!showTaskForm ? (
+                              <button
+                                onClick={() => setShowTaskForm(true)}
+                                className="text-sm text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1"
+                              >
+                                <span>📋</span> Dodaj uwage dla pracownika
+                              </button>
+                            ) : (
+                              <div className="space-y-2">
+                                <div className="flex items-center gap-2">
+                                  <select
+                                    value={taskAssignee}
+                                    onChange={(e) => setTaskAssignee(e.target.value)}
+                                    className="flex-1 px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                                  >
+                                    <option value="">Wybierz pracownika...</option>
+                                    {allUsers.filter(u => u.username !== currentUser?.username).map(u => (
+                                      <option key={u.id} value={u.username}>{u.username}</option>
+                                    ))}
+                                  </select>
+                                  <button
+                                    onClick={() => { setShowTaskForm(false); setTaskContent(''); setTaskAssignee(''); }}
+                                    className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                                  >
+                                    ✕
+                                  </button>
+                                </div>
+                                <textarea
+                                  value={taskContent}
+                                  onChange={(e) => setTaskContent(e.target.value)}
+                                  placeholder="Wpisz uwage..."
+                                  rows={2}
+                                  className="w-full px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white resize-none"
+                                />
+                                <button
+                                  onClick={() => handleCreateTask(poomkidsSelectedThread.id, 'poomkids')}
+                                  disabled={taskSending || !taskContent.trim() || !taskAssignee}
+                                  className="px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
+                                >
+                                  {taskSending ? 'Wysylanie...' : 'Wyslij uwage'}
+                                </button>
+                              </div>
+                            )}
+                          </div>
                         </div>
 
                         {/* Messages */}
@@ -4834,6 +4998,52 @@ function CRMContent() {
                           <h4 className="mt-2 font-medium text-gray-800 dark:text-gray-200">
                             {allepoduszkiSelectedThread.subject || '(Brak tematu)'}
                           </h4>
+                          {/* Task/Note creation section */}
+                          <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
+                            {!showTaskForm ? (
+                              <button
+                                onClick={() => setShowTaskForm(true)}
+                                className="text-sm text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1"
+                              >
+                                <span>📋</span> Dodaj uwage dla pracownika
+                              </button>
+                            ) : (
+                              <div className="space-y-2">
+                                <div className="flex items-center gap-2">
+                                  <select
+                                    value={taskAssignee}
+                                    onChange={(e) => setTaskAssignee(e.target.value)}
+                                    className="flex-1 px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                                  >
+                                    <option value="">Wybierz pracownika...</option>
+                                    {allUsers.filter(u => u.username !== currentUser?.username).map(u => (
+                                      <option key={u.id} value={u.username}>{u.username}</option>
+                                    ))}
+                                  </select>
+                                  <button
+                                    onClick={() => { setShowTaskForm(false); setTaskContent(''); setTaskAssignee(''); }}
+                                    className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                                  >
+                                    ✕
+                                  </button>
+                                </div>
+                                <textarea
+                                  value={taskContent}
+                                  onChange={(e) => setTaskContent(e.target.value)}
+                                  placeholder="Wpisz uwage..."
+                                  rows={2}
+                                  className="w-full px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white resize-none"
+                                />
+                                <button
+                                  onClick={() => handleCreateTask(allepoduszkiSelectedThread.id, 'allepoduszki')}
+                                  disabled={taskSending || !taskContent.trim() || !taskAssignee}
+                                  className="px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
+                                >
+                                  {taskSending ? 'Wysylanie...' : 'Wyslij uwage'}
+                                </button>
+                              </div>
+                            )}
+                          </div>
                         </div>
 
                         {/* Messages */}
@@ -5407,6 +5617,52 @@ function CRMContent() {
                           <h4 className="mt-2 font-medium text-gray-800 dark:text-gray-200">
                             {poomfurnitureSelectedThread.subject || '(Brak tematu)'}
                           </h4>
+                          {/* Task/Note creation section */}
+                          <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
+                            {!showTaskForm ? (
+                              <button
+                                onClick={() => setShowTaskForm(true)}
+                                className="text-sm text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1"
+                              >
+                                <span>📋</span> Dodaj uwage dla pracownika
+                              </button>
+                            ) : (
+                              <div className="space-y-2">
+                                <div className="flex items-center gap-2">
+                                  <select
+                                    value={taskAssignee}
+                                    onChange={(e) => setTaskAssignee(e.target.value)}
+                                    className="flex-1 px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                                  >
+                                    <option value="">Wybierz pracownika...</option>
+                                    {allUsers.filter(u => u.username !== currentUser?.username).map(u => (
+                                      <option key={u.id} value={u.username}>{u.username}</option>
+                                    ))}
+                                  </select>
+                                  <button
+                                    onClick={() => { setShowTaskForm(false); setTaskContent(''); setTaskAssignee(''); }}
+                                    className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                                  >
+                                    ✕
+                                  </button>
+                                </div>
+                                <textarea
+                                  value={taskContent}
+                                  onChange={(e) => setTaskContent(e.target.value)}
+                                  placeholder="Wpisz uwage..."
+                                  rows={2}
+                                  className="w-full px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white resize-none"
+                                />
+                                <button
+                                  onClick={() => handleCreateTask(poomfurnitureSelectedThread.id, 'poomfurniture')}
+                                  disabled={taskSending || !taskContent.trim() || !taskAssignee}
+                                  className="px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
+                                >
+                                  {taskSending ? 'Wysylanie...' : 'Wyslij uwage'}
+                                </button>
+                              </div>
+                            )}
+                          </div>
                         </div>
 
                         {/* Messages */}

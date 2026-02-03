@@ -809,6 +809,21 @@ export async function initDatabase() {
     )
   `;
 
+  // Tasks/notes table for team communication
+  await sql`
+    CREATE TABLE IF NOT EXISTS tasks (
+      id SERIAL PRIMARY KEY,
+      created_by VARCHAR(100) NOT NULL,
+      assigned_to VARCHAR(100) NOT NULL,
+      content TEXT NOT NULL,
+      thread_id VARCHAR(255),
+      thread_type VARCHAR(50),
+      status VARCHAR(20) DEFAULT 'pending',
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      completed_at TIMESTAMP
+    )
+  `;
+
   // Insert default Allegro Meblebox token row if not exists
   const { rows: allegroMebleboxTokenRows } = await sql`SELECT COUNT(*) as count FROM allegro_meblebox_tokens`;
   if (allegroMebleboxTokenRows[0].count === '0') {
@@ -3746,4 +3761,71 @@ export async function clearAllAIMemories() {
     console.error('[DB] Error clearing AI memories:', error);
     throw error;
   }
+}
+
+// ========== TASKS FUNCTIONS ==========
+
+// Create a new task
+export async function createTask({ createdBy, assignedTo, content, threadId = null, threadType = null }) {
+  const { rows } = await sql`
+    INSERT INTO tasks (created_by, assigned_to, content, thread_id, thread_type, status, created_at)
+    VALUES (${createdBy}, ${assignedTo}, ${content}, ${threadId}, ${threadType}, 'pending', CURRENT_TIMESTAMP)
+    RETURNING *
+  `;
+  return rows[0];
+}
+
+// Get tasks assigned to a user
+export async function getTasksForUser(username) {
+  const { rows } = await sql`
+    SELECT * FROM tasks
+    WHERE assigned_to = ${username} AND status = 'pending'
+    ORDER BY created_at DESC
+  `;
+  return rows;
+}
+
+// Get all tasks (for admin or thread view)
+export async function getAllTasks() {
+  const { rows } = await sql`
+    SELECT * FROM tasks
+    ORDER BY created_at DESC
+    LIMIT 100
+  `;
+  return rows;
+}
+
+// Get tasks for a specific thread
+export async function getTasksForThread(threadId, threadType) {
+  const { rows } = await sql`
+    SELECT * FROM tasks
+    WHERE thread_id = ${threadId} AND thread_type = ${threadType}
+    ORDER BY created_at DESC
+  `;
+  return rows;
+}
+
+// Complete a task
+export async function completeTask(taskId, username) {
+  const { rows } = await sql`
+    UPDATE tasks
+    SET status = 'completed', completed_at = CURRENT_TIMESTAMP
+    WHERE id = ${taskId} AND assigned_to = ${username}
+    RETURNING *
+  `;
+  return rows[0];
+}
+
+// Delete a task
+export async function deleteTask(taskId) {
+  await sql`DELETE FROM tasks WHERE id = ${taskId}`;
+}
+
+// Count pending tasks for a user
+export async function countPendingTasksForUser(username) {
+  const { rows } = await sql`
+    SELECT COUNT(*) as count FROM tasks
+    WHERE assigned_to = ${username} AND status = 'pending'
+  `;
+  return parseInt(rows[0].count, 10);
 }

@@ -32,6 +32,10 @@ export default function Home() {
   const [integrationsLoading, setIntegrationsLoading] = useState(true);
   const [showIntegrationsDetails, setShowIntegrationsDetails] = useState(false);
 
+  // Tasks state
+  const [userTasks, setUserTasks] = useState([]);
+  const [tasksLoading, setTasksLoading] = useState(true);
+
   // Permission labels mapping
   const permissionLabels = {
     dashboard: { label: 'Dashboard', icon: '📊' },
@@ -204,6 +208,38 @@ export default function Home() {
     }
   };
 
+  const fetchUserTasks = async (username) => {
+    if (!username) return;
+    try {
+      const res = await fetch(`/api/tasks?username=${encodeURIComponent(username)}`);
+      const data = await res.json();
+      if (data.success) {
+        setUserTasks(data.tasks);
+      }
+    } catch (err) {
+      console.error('Error fetching tasks:', err);
+    } finally {
+      setTasksLoading(false);
+    }
+  };
+
+  const completeTask = async (taskId) => {
+    if (!user?.username) return;
+    try {
+      const res = await fetch('/api/tasks', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ taskId, username: user.username })
+      });
+      const data = await res.json();
+      if (data.success) {
+        setUserTasks(prev => prev.filter(t => t.id !== taskId));
+      }
+    } catch (err) {
+      console.error('Error completing task:', err);
+    }
+  };
+
   const triggerSync = async () => {
     setSyncing(true);
     try {
@@ -236,6 +272,16 @@ export default function Home() {
       clearInterval(integrationsInterval);
     };
   }, []);
+
+  // Fetch tasks when user is loaded
+  useEffect(() => {
+    if (user?.username) {
+      fetchUserTasks(user.username);
+      // Refresh tasks every 60 seconds
+      const tasksInterval = setInterval(() => fetchUserTasks(user.username), 60000);
+      return () => clearInterval(tasksInterval);
+    }
+  }, [user?.username]);
 
   const platformConfig = {
     'Amazon': {
@@ -375,6 +421,39 @@ export default function Home() {
                 })}
               </div>
             </div>
+            {/* Tasks assigned to user */}
+            {userTasks.length > 0 && (
+              <div className="mt-4 pt-4 border-t border-blue-400/30">
+                <p className="text-blue-200 mb-2 flex items-center gap-2">
+                  <span className="text-lg">📋</span>
+                  Zadania dla Ciebie ({userTasks.length}):
+                </p>
+                <div className="space-y-2 max-h-48 overflow-y-auto">
+                  {userTasks.map(task => (
+                    <div
+                      key={task.id}
+                      className="flex items-start justify-between gap-3 bg-yellow-500/20 border border-yellow-400/50 rounded-lg px-3 py-2"
+                    >
+                      <div className="flex-1 min-w-0">
+                        <p className="text-white text-sm break-words">{task.content}</p>
+                        <p className="text-blue-200 text-xs mt-1">
+                          Od: <span className="font-medium">{task.created_by}</span>
+                          {' • '}
+                          {new Date(task.created_at).toLocaleDateString('pl-PL', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
+                        </p>
+                      </div>
+                      <button
+                        onClick={() => completeTask(task.id)}
+                        className="shrink-0 px-2 py-1 bg-green-500 hover:bg-green-600 text-white text-xs rounded transition-colors"
+                        title="Oznacz jako wykonane"
+                      >
+                        ✓ Gotowe
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         )}
 
