@@ -772,6 +772,21 @@ function CRMContent() {
       }
     }
 
+    // Determine reply recipient - if thread is from us, find customer email
+    const ownEmail = gmailAuth.user?.email?.toLowerCase() || '';
+    let replyTo = gmailSelectedThread.from_email;
+    if (ownEmail && gmailSelectedThread.from_email?.toLowerCase() === ownEmail) {
+      const incomingMsg = [...gmailThreadMessages].reverse().find(m => !m.is_outgoing);
+      if (incomingMsg?.from_email) {
+        replyTo = incomingMsg.from_email;
+      } else {
+        const outgoingMsg = gmailThreadMessages.find(m => m.is_outgoing && m.to_email);
+        if (outgoingMsg?.to_email) {
+          replyTo = outgoingMsg.to_email;
+        }
+      }
+    }
+
     setGmailSending(true);
     try {
       // Convert attachments to base64
@@ -792,7 +807,7 @@ function CRMContent() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           text: gmailReplyText.trim(),
-          to: gmailSelectedThread.from_email,
+          to: replyTo,
           subject: gmailSelectedThread.subject,
           attachments: attachmentData
         })
@@ -1135,6 +1150,21 @@ function CRMContent() {
       }
     }
 
+    // Determine reply recipient - if thread is from us, find customer email
+    const ownEmail = poomkidsAuth.user?.email?.toLowerCase() || '';
+    let replyTo = poomkidsSelectedThread.from_email;
+    if (ownEmail && poomkidsSelectedThread.from_email?.toLowerCase() === ownEmail) {
+      const incomingMsg = [...poomkidsThreadMessages].reverse().find(m => !m.is_outgoing);
+      if (incomingMsg?.from_email) {
+        replyTo = incomingMsg.from_email;
+      } else {
+        const outgoingMsg = poomkidsThreadMessages.find(m => m.is_outgoing && m.to_email);
+        if (outgoingMsg?.to_email) {
+          replyTo = outgoingMsg.to_email;
+        }
+      }
+    }
+
     setPoomkidsSending(true);
     try {
       // Convert attachments to base64
@@ -1155,7 +1185,7 @@ function CRMContent() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           text: poomkidsReplyText.trim(),
-          to: poomkidsSelectedThread.from_email,
+          to: replyTo,
           subject: poomkidsSelectedThread.subject,
           attachments: attachmentData
         })
@@ -1708,6 +1738,21 @@ function CRMContent() {
       }
     }
 
+    // Determine reply recipient - if thread is from us, find customer email
+    const ownEmail = allepoduszkiAuth.user?.email?.toLowerCase() || '';
+    let replyTo = allepoduszkiSelectedThread.from_email;
+    if (ownEmail && allepoduszkiSelectedThread.from_email?.toLowerCase() === ownEmail) {
+      const incomingMsg = [...allepoduszkiThreadMessages].reverse().find(m => !m.is_outgoing);
+      if (incomingMsg?.from_email) {
+        replyTo = incomingMsg.from_email;
+      } else {
+        const outgoingMsg = allepoduszkiThreadMessages.find(m => m.is_outgoing && m.to_email);
+        if (outgoingMsg?.to_email) {
+          replyTo = outgoingMsg.to_email;
+        }
+      }
+    }
+
     setAllepoduszkiSending(true);
     try {
       // Convert attachments to base64
@@ -1728,7 +1773,7 @@ function CRMContent() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           text: allepoduszkiReplyText.trim(),
-          to: allepoduszkiSelectedThread.from_email,
+          to: replyTo,
           subject: allepoduszkiSelectedThread.subject,
           attachments: attachmentData
         })
@@ -2029,6 +2074,21 @@ function CRMContent() {
       }
     }
 
+    // Determine reply recipient - if thread is from us, find customer email
+    const ownEmail = poomfurnitureAuth.user?.email?.toLowerCase() || '';
+    let replyTo = poomfurnitureSelectedThread.from_email;
+    if (ownEmail && poomfurnitureSelectedThread.from_email?.toLowerCase() === ownEmail) {
+      const incomingMsg = [...poomfurnitureThreadMessages].reverse().find(m => !m.is_outgoing);
+      if (incomingMsg?.from_email) {
+        replyTo = incomingMsg.from_email;
+      } else {
+        const outgoingMsg = poomfurnitureThreadMessages.find(m => m.is_outgoing && m.to_email);
+        if (outgoingMsg?.to_email) {
+          replyTo = outgoingMsg.to_email;
+        }
+      }
+    }
+
     setPoomfurnitureSending(true);
     try {
       // Convert attachments to base64
@@ -2049,7 +2109,7 @@ function CRMContent() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           text: poomfurnitureReplyText.trim(),
-          to: poomfurnitureSelectedThread.from_email,
+          to: replyTo,
           subject: poomfurnitureSelectedThread.subject,
           attachments: attachmentData
         })
