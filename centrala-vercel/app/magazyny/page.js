@@ -2272,9 +2272,7 @@ export default function MagazynyPage() {
                     {activeTab === 'gotowe' && (
                       <th className="px-2 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase w-32">EAN-13</th>
                     )}
-                    {activeTab === 'gotowe' && (
-                      <th className="px-2 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase w-24">Receptura</th>
-                    )}
+                    <th className="px-2 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase w-24">Receptura</th>
                     <th className="px-2 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase w-32">Stan</th>
                     {activeTab === 'surowce' && (
                       <>
@@ -2301,7 +2299,7 @@ export default function MagazynyPage() {
                 <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
                   {currentItems.length === 0 ? (
                     <tr>
-                      <td colSpan={activeTab === 'gotowe' ? 11 : (activeTab === 'wykroje' || activeTab === 'polprodukty') ? 8 : activeTab === 'surowce' ? 9 : 7} className="px-4 py-8 text-center text-gray-500">
+                      <td colSpan={activeTab === 'gotowe' ? 11 : (activeTab === 'wykroje' || activeTab === 'polprodukty') ? 9 : activeTab === 'surowce' ? 10 : 8} className="px-4 py-8 text-center text-gray-500">
                         {searchQuery
                           ? 'Brak wynikow dla wyszukiwania'
                           : 'Brak pozycji w magazynie. Dodaj recznie lub zaimportuj z CSV.'}
@@ -2330,39 +2328,37 @@ export default function MagazynyPage() {
                             <span className="font-mono text-xs text-gray-500">{item.ean || '-'}</span>
                           </td>
                         )}
-                        {activeTab === 'gotowe' && (
-                          <td className="px-2 py-2 text-center">
-                            {item.receptura && item.receptura.count > 0 ? (
-                              <div className="relative group flex items-center justify-center gap-1">
-                                {item.receptura.ingredients.map((ing, idx) => {
-                                  const colors = ['bg-blue-500', 'bg-yellow-400', 'bg-green-500', 'bg-purple-500', 'bg-red-500', 'bg-pink-400', 'bg-orange-400', 'bg-teal-400'];
-                                  return (
-                                    <span
-                                      key={idx}
-                                      className={`inline-block w-3.5 h-3.5 rounded-full ${colors[idx % colors.length]}`}
-                                    />
-                                  );
-                                })}
-                                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 hidden group-hover:block z-50 pointer-events-none" style={{transitionDelay:'0ms'}}>
-                                  <div className="bg-gray-900 text-white text-xs rounded-lg px-3 py-2 whitespace-nowrap shadow-lg">
-                                    {item.receptura.ingredients.map((ing, idx) => {
-                                      const dotColors = ['text-blue-400', 'text-yellow-400', 'text-green-400', 'text-purple-400', 'text-red-400', 'text-pink-400', 'text-orange-400', 'text-teal-400'];
-                                      return (
-                                        <div key={idx} className="flex items-center gap-1.5">
-                                          <span className={dotColors[idx % dotColors.length]}>{'●'}</span>
-                                          <span>{ing.nazwa}</span>
-                                        </div>
-                                      );
-                                    })}
-                                  </div>
-                                  <div className="w-2 h-2 bg-gray-900 rotate-45 mx-auto -mt-1"></div>
+                        <td className="px-2 py-2 text-center">
+                          {item.receptura && item.receptura.count > 0 ? (
+                            <div className="relative group flex items-center justify-center gap-1">
+                              {item.receptura.ingredients.map((ing, idx) => {
+                                const colors = ['bg-blue-500', 'bg-yellow-400', 'bg-green-500', 'bg-purple-500', 'bg-red-500', 'bg-pink-400', 'bg-orange-400', 'bg-teal-400'];
+                                return (
+                                  <span
+                                    key={idx}
+                                    className={`inline-block w-3.5 h-3.5 rounded-full ${colors[idx % colors.length]}`}
+                                  />
+                                );
+                              })}
+                              <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 hidden group-hover:block z-50 pointer-events-none" style={{transitionDelay:'0ms'}}>
+                                <div className="bg-gray-900 text-white text-xs rounded-lg px-3 py-2 whitespace-nowrap shadow-lg">
+                                  {item.receptura.ingredients.map((ing, idx) => {
+                                    const dotColors = ['text-blue-400', 'text-yellow-400', 'text-green-400', 'text-purple-400', 'text-red-400', 'text-pink-400', 'text-orange-400', 'text-teal-400'];
+                                    return (
+                                      <div key={idx} className="flex items-center gap-1.5">
+                                        <span className={dotColors[idx % dotColors.length]}>{'●'}</span>
+                                        <span>{ing.nazwa}</span>
+                                      </div>
+                                    );
+                                  })}
                                 </div>
+                                <div className="w-2 h-2 bg-gray-900 rotate-45 mx-auto -mt-1"></div>
                               </div>
-                            ) : (
-                              <span className="text-gray-400 text-xs">-</span>
-                            )}
-                          </td>
-                        )}
+                            </div>
+                          ) : (
+                            <span className="text-gray-400 text-xs">-</span>
+                          )}
+                        </td>
                         <td className="px-2 py-2">
                           <div className="flex items-center justify-center gap-2">
                             <button
