@@ -73,10 +73,10 @@ export default function MagazynyPage() {
   const czasInputRef = useRef(null);
 
   const tabs = [
-    { key: 'gotowe', label: 'Gotowe produkty', icon: '📦' },
-    { key: 'polprodukty', label: 'Polprodukty', icon: '🔧' },
-    { key: 'wykroje', label: 'Wykroje', icon: '✂️' },
-    { key: 'surowce', label: 'Surowce', icon: '🧱' },
+    { key: 'gotowe', label: 'Gotowe produkty', icon: '📦', color: '#22C55E', bgLight: 'bg-green-50', textColor: 'text-green-600', borderColor: 'border-green-500' },
+    { key: 'polprodukty', label: 'Polprodukty', icon: '🔧', color: '#3B82F6', bgLight: 'bg-blue-50', textColor: 'text-blue-600', borderColor: 'border-blue-500' },
+    { key: 'wykroje', label: 'Wykroje', icon: '✂️', color: '#F59E0B', bgLight: 'bg-amber-50', textColor: 'text-amber-600', borderColor: 'border-amber-500' },
+    { key: 'surowce', label: 'Surowce', icon: '🧱', color: '#A16207', bgLight: 'bg-yellow-50', textColor: 'text-yellow-700', borderColor: 'border-yellow-600' },
   ];
 
   const [magazyny, setMagazyny] = useState({
@@ -1775,9 +1775,9 @@ export default function MagazynyPage() {
             const totalStan = Math.round(items.reduce((sum, i) => sum + i.stan, 0) * 100) / 100;
             const totalValue = Math.round(items.reduce((sum, i) => sum + (i.cena || 0) * i.stan, 0) * 100) / 100;
             return (
-              <div key={tab.key} className="bg-white dark:bg-gray-800 rounded-lg shadow dark:shadow-gray-900 p-3 lg:p-4">
+              <div key={tab.key} className={`bg-white dark:bg-gray-800 rounded-lg shadow dark:shadow-gray-900 p-3 lg:p-4 border-l-4 ${tab.borderColor}`}>
                 <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{tab.label}</p>
-                <p className="text-xl lg:text-2xl font-bold text-blue-600">{items.length}</p>
+                <p className={`text-xl lg:text-2xl font-bold ${tab.textColor}`}>{items.length}</p>
                 <p className="text-[10px] text-gray-400 dark:text-gray-500 -mt-1 mb-1">pozycji w magazynie</p>
                 <div className="flex flex-col gap-0.5 text-xs">
                   <div className="flex justify-between">
@@ -1785,7 +1785,7 @@ export default function MagazynyPage() {
                     <span className="text-[10px] text-gray-400 dark:text-gray-500">stan magazynu</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-green-600 font-medium">{totalValue.toFixed(2)} zl</span>
+                    <span className={`font-medium ${tab.textColor}`}>{totalValue.toFixed(2)} zl</span>
                     <span className="text-[10px] text-gray-400 dark:text-gray-500">wartosc</span>
                   </div>
                 </div>
@@ -1803,7 +1803,7 @@ export default function MagazynyPage() {
                 onClick={() => handleTabChange(tab.key)}
                 className={`flex-1 flex items-center justify-center gap-2 py-3 text-sm font-medium transition-colors whitespace-nowrap px-4 ${
                   activeTab === tab.key
-                    ? 'text-blue-600 dark:text-blue-400 border-b-2 border-blue-600 dark:border-blue-400 bg-blue-50 dark:bg-blue-900/30'
+                    ? `${tab.textColor} border-b-2 ${tab.borderColor} ${tab.bgLight}`
                     : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
                 }`}
               >
