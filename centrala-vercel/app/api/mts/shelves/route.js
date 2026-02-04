@@ -110,18 +110,48 @@ export async function GET(request) {
     `;
 
     // Buduj mapę receptur: product_sku -> [{ ingredientSku, quantity, kategoria }]
+    // Krok 1: Zbierz receptury tylko dla dozwolonych produktow gotowych
     const recipeMap = {};
+    const allowedPolprodukty = new Set(); // Polprodukty uzywane w dozwolonych produktach
+
     allRecipes.rows.forEach(row => {
       const productKey = normalizeSku(row.product_sku);
-      if (!recipeMap[productKey]) {
-        recipeMap[productKey] = [];
+      // Najpierw dodaj receptury dla dozwolonych produktow gotowych
+      if (allowedGotoweSku.includes(productKey)) {
+        if (!recipeMap[productKey]) {
+          recipeMap[productKey] = [];
+        }
+        recipeMap[productKey].push({
+          ingredientSku: normalizeSku(row.ingredient_sku),
+          ingredientNazwa: row.ingredient_nazwa,
+          quantity: parseFloat(row.quantity) || 1,
+          kategoria: row.ingredient_kategoria
+        });
+        // Zapamietaj polprodukty uzywane w tych recepturach
+        if (row.ingredient_kategoria === 'polprodukty') {
+          allowedPolprodukty.add(normalizeSku(row.ingredient_sku));
+        }
       }
-      recipeMap[productKey].push({
-        ingredientSku: normalizeSku(row.ingredient_sku),
-        ingredientNazwa: row.ingredient_nazwa,
-        quantity: parseFloat(row.quantity) || 1,
-        kategoria: row.ingredient_kategoria
-      });
+    });
+
+    // Krok 2: Dodaj receptury dla polproduktow (potrzebne do obliczenia wykrojow)
+    allRecipes.rows.forEach(row => {
+      const productKey = normalizeSku(row.product_sku);
+      if (allowedPolprodukty.has(productKey)) {
+        if (!recipeMap[productKey]) {
+          recipeMap[productKey] = [];
+        }
+        // Sprawdz czy juz nie dodano tego skladnika
+        const exists = recipeMap[productKey].some(i => i.ingredientSku === normalizeSku(row.ingredient_sku));
+        if (!exists) {
+          recipeMap[productKey].push({
+            ingredientSku: normalizeSku(row.ingredient_sku),
+            ingredientNazwa: row.ingredient_nazwa,
+            quantity: parseFloat(row.quantity) || 1,
+            kategoria: row.ingredient_kategoria
+          });
+        }
+      }
     });
 
     let products = [];
