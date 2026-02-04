@@ -36,10 +36,22 @@ export async function GET(request) {
       GROUP BY item->>'sku', item->>'name'
     `;
 
-    // Buduj mapę sprzedazy gotowych produktow
+    // Dozwolone SKU gotowych produktow (PUFAPOKROWIEC)
+    const allowedGotoweSku = [
+      'PUFAPOKROWIEC-SKU-001',
+      'PUFAPOKROWIEC-SKU-002',
+      'PUFAPOKROWIEC-SKU-003',
+      'PUFAPOKROWIEC-SKU-004',
+      'PUFAPOKROWIEC-SKU-005'
+    ];
+
+    // Buduj mapę sprzedazy gotowych produktow (tylko dozwolone SKU)
     const salesMap = {};
     salesTrends.rows.forEach(row => {
       const key = normalizeSku(row.sku);
+      // Filtruj tylko dozwolone produkty gotowe
+      if (!allowedGotoweSku.includes(key)) return;
+
       if (!salesMap[key]) {
         salesMap[key] = {
           sku: row.sku,
@@ -115,10 +127,13 @@ export async function GET(request) {
     let products = [];
 
     if (shelf === 'gotowe') {
-      // Dla gotowych produktow - prosta analiza jak wczesniej
+      // Dla gotowych produktow - prosta analiza tylko dla dozwolonych SKU
       const allKeys = new Set([...Object.keys(inventoryMap), ...Object.keys(salesMap)]);
 
       allKeys.forEach(key => {
+        // Filtruj tylko dozwolone SKU dla gotowych
+        if (!allowedGotoweSku.includes(key)) return;
+
         const inv = inventoryMap[key];
         const sales = salesMap[key];
 
@@ -279,16 +294,6 @@ export async function GET(request) {
 
     // Sortuj po deficycie
     products.sort((a, b) => a.deficit - b.deficit);
-
-    // Filtruj tylko dozwolone SKU (PUFAPOKROWIEC)
-    const allowedSkus = [
-      'PUFAPOKROWIEC-SKU-001',
-      'PUFAPOKROWIEC-SKU-002',
-      'PUFAPOKROWIEC-SKU-003',
-      'PUFAPOKROWIEC-SKU-004',
-      'PUFAPOKROWIEC-SKU-005'
-    ];
-    products = products.filter(p => allowedSkus.includes(normalizeSku(p.sku)));
 
     // Statystyki
     const summary = {
