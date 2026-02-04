@@ -24,9 +24,6 @@ const MINUTE_RATE = 0.358;
 // GET - pobierz wszystkie pozycje (opcjonalnie filtruj po kategorii)
 export async function GET(request) {
   try {
-    // Ensure database migrations are run (e.g. tkanina column)
-    await initDatabase();
-
     const { searchParams } = new URL(request.url);
     const kategoria = searchParams.get('kategoria');
     const search = searchParams.get('search');
@@ -61,7 +58,7 @@ export async function GET(request) {
       `;
     }
 
-    // Pobierz koszty skladnikow dla gotowych produktow
+    // Pobierz koszty skladnikow i receptury dla wszystkich kategorii (oprocz surowcow)
     const recipeCosts = await sql`
       SELECT
         r.product_id,
@@ -116,6 +113,10 @@ export async function GET(request) {
           item.koszt_wytworzenia = ingredientsCost + laborCost;
           item.koszt_skladnikow = ingredientsCost;
           item.koszt_pracy = laborCost;
+        }
+
+        // Dodaj recepture dla wszystkich kategorii oprocz surowcow
+        if (row.kategoria !== 'surowce') {
           item.receptura = recipeInfoMap[row.id] || { count: 0, ingredients: [] };
         }
 
