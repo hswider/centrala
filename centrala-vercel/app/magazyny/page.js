@@ -1897,7 +1897,7 @@ export default function MagazynyPage() {
               href="/magazyny/bol"
               className="px-2.5 py-1.5 text-xs sm:text-sm bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
             >
-              BOL
+              BOM
             </Link>
             <button
               onClick={() => handleExportCSV()}

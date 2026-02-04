@@ -64,7 +64,13 @@ export async function GET(request) {
         r.product_id,
         COALESCE(SUM(r.quantity * i.cena), 0) as ingredients_cost,
         COUNT(r.id) as ingredient_count,
-        json_agg(json_build_object('kategoria', i.kategoria, 'nazwa', i.nazwa)) as ingredients_info
+        json_agg(json_build_object(
+          'ingredient_id', i.id,
+          'ingredient_sku', i.sku,
+          'ingredient_nazwa', i.nazwa,
+          'kategoria', i.kategoria,
+          'quantity', r.quantity
+        )) as ingredients_info
       FROM recipes r
       JOIN inventory i ON r.ingredient_id = i.id
       GROUP BY r.product_id

@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 
-export default function BOLPage() {
+export default function BOMPage() {
   const [activeTab, setActiveTab] = useState('gotowe');
   const [loading, setLoading] = useState(true);
   const [magazyny, setMagazyny] = useState({
@@ -59,18 +59,18 @@ export default function BOLPage() {
     );
   });
 
-  // Format recipe for display
-  const formatRecipe = (item) => {
-    if (!item.recipe || item.recipe.length === 0) return '-';
-    return item.recipe.map(r => `${r.ingredient_sku || r.ingredient_nazwa}: ${r.quantity}`).join(', ');
+  // Get recipe from item (receptura.ingredients)
+  const getRecipe = (item) => {
+    return item.receptura?.ingredients || [];
   };
 
   // Get max number of ingredients across all items for CSV columns
   const getMaxIngredients = (items) => {
     let max = 0;
     items.forEach(item => {
-      if (item.recipe && item.recipe.length > max) {
-        max = item.recipe.length;
+      const recipe = getRecipe(item);
+      if (recipe.length > max) {
+        max = recipe.length;
       }
     });
     return Math.max(max, 5); // Minimum 5 columns for import template
@@ -89,14 +89,15 @@ export default function BOLPage() {
 
     // Build rows
     const rows = items.map(item => {
+      const recipe = getRecipe(item);
       const row = [
         `"${(item.nazwa || '').replace(/"/g, '""')}"`,
         `"${(item.sku || '').replace(/"/g, '""')}"`
       ];
 
       for (let i = 0; i < maxIngredients; i++) {
-        if (item.recipe && item.recipe[i]) {
-          const r = item.recipe[i];
+        if (recipe[i]) {
+          const r = recipe[i];
           row.push(
             `"${(r.ingredient_sku || '').replace(/"/g, '""')}"`,
             `"${(r.ingredient_nazwa || '').replace(/"/g, '""')}"`,
@@ -115,7 +116,7 @@ export default function BOLPage() {
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = `BOL_${activeTab}_${new Date().toISOString().split('T')[0]}.csv`;
+    link.download = `BOM_${activeTab}_${new Date().toISOString().split('T')[0]}.csv`;
     link.click();
     URL.revokeObjectURL(url);
   };
@@ -216,17 +217,17 @@ export default function BOLPage() {
       }
 
       try {
-        // First, clear existing recipe
-        const existingRecipe = row.matchedItem.recipe || [];
-        for (const ing of existingRecipe) {
-          await fetch('/api/inventory/recipe', {
-            method: 'DELETE',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              productId: row.matchedItem.id,
-              ingredientId: ing.ingredient_id
-            })
-          });
+        // First, get existing recipe to delete
+        const existingRes = await fetch(`/api/recipes?productId=${row.matchedItem.id}`);
+        const existingData = await existingRes.json();
+
+        if (existingData.success && existingData.data) {
+          // Delete existing ingredients
+          for (const ing of existingData.data) {
+            await fetch(`/api/recipes?id=${ing.id}`, {
+              method: 'DELETE'
+            });
+          }
         }
 
         // Then add new ingredients
@@ -245,7 +246,7 @@ export default function BOLPage() {
           }
 
           if (ingredientItem) {
-            await fetch('/api/inventory/recipe', {
+            await fetch('/api/recipes', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
@@ -279,7 +280,7 @@ export default function BOLPage() {
         {/* Header */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-6">
           <div>
-            <h1 className="text-xl lg:text-2xl font-bold text-gray-900 dark:text-white">BOL - Bill of Lading (Receptury)</h1>
+            <h1 className="text-xl lg:text-2xl font-bold text-gray-900 dark:text-white">BOM - Bill of Materials (Receptury)</h1>
             <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">Zarzadzanie skladnikami i recepturami produktow</p>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -367,36 +368,39 @@ export default function BOLPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-                  {filteredItems.map((item) => (
-                    <tr key={item.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
-                      <td className="px-4 py-3 text-gray-900 dark:text-white">{item.nazwa}</td>
-                      <td className="px-4 py-3 text-gray-600 dark:text-gray-400 font-mono text-xs">{item.sku || '-'}</td>
-                      <td className="px-4 py-3">
-                        {item.recipe && item.recipe.length > 0 ? (
-                          <div className="flex flex-wrap gap-1">
-                            {item.recipe.map((r, idx) => (
-                              <span
-                                key={idx}
-                                className="inline-flex items-center px-2 py-0.5 rounded text-xs bg-indigo-100 dark:bg-indigo-900/30 text-indigo-800 dark:text-indigo-300"
-                              >
-                                {r.ingredient_sku || r.ingredient_nazwa}: {r.quantity}
-                              </span>
-                            ))}
-                          </div>
-                        ) : (
-                          <span className="text-gray-400 dark:text-gray-500">-</span>
-                        )}
-                      </td>
-                      <td className="px-4 py-3 text-center">
-                        <Link
-                          href={`/magazyny?tab=${activeTab}&open=${item.id}`}
-                          className="text-indigo-600 hover:text-indigo-800 dark:text-indigo-400 dark:hover:text-indigo-300 text-xs"
-                        >
-                          Edytuj w WMS
-                        </Link>
-                      </td>
-                    </tr>
-                  ))}
+                  {filteredItems.map((item) => {
+                    const recipe = getRecipe(item);
+                    return (
+                      <tr key={item.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                        <td className="px-4 py-3 text-gray-900 dark:text-white">{item.nazwa}</td>
+                        <td className="px-4 py-3 text-gray-600 dark:text-gray-400 font-mono text-xs">{item.sku || '-'}</td>
+                        <td className="px-4 py-3">
+                          {recipe.length > 0 ? (
+                            <div className="flex flex-wrap gap-1">
+                              {recipe.map((r, idx) => (
+                                <span
+                                  key={idx}
+                                  className="inline-flex items-center px-2 py-0.5 rounded text-xs bg-indigo-100 dark:bg-indigo-900/30 text-indigo-800 dark:text-indigo-300"
+                                >
+                                  {r.ingredient_sku || r.ingredient_nazwa}: {r.quantity}
+                                </span>
+                              ))}
+                            </div>
+                          ) : (
+                            <span className="text-gray-400 dark:text-gray-500">-</span>
+                          )}
+                        </td>
+                        <td className="px-4 py-3 text-center">
+                          <Link
+                            href={`/magazyny?tab=${activeTab}&open=${item.id}`}
+                            className="text-indigo-600 hover:text-indigo-800 dark:text-indigo-400 dark:hover:text-indigo-300 text-xs"
+                          >
+                            Edytuj w WMS
+                          </Link>
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
