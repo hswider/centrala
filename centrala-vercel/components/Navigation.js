@@ -211,7 +211,7 @@ export default function Navigation() {
         key={item.href}
         href={item.href}
         onClick={(e) => handleRestrictedClick(e, item)}
-        className={`relative flex-1 flex flex-col md:flex-row items-center justify-center gap-0.5 md:gap-1 py-2 md:py-3 px-1 md:px-3 lg:px-5 text-xs lg:text-sm font-medium transition-colors whitespace-nowrap ${
+        className={`relative flex-1 flex flex-col md:flex-row items-center justify-center gap-0.5 md:gap-0.5 py-2 md:py-2 px-1 md:px-2 lg:px-3 text-xs font-medium transition-colors whitespace-nowrap ${
           !permitted
             ? 'text-red-500 dark:text-red-400 bg-red-50 dark:bg-red-900/20 cursor-not-allowed'
             : isActive
@@ -219,7 +219,7 @@ export default function Navigation() {
               : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700'
         }`}
       >
-        <span className="text-lg md:text-sm lg:text-base">{item.icon}</span>
+        <span className="text-base md:text-xs lg:text-sm">{item.icon}</span>
         <span className="truncate max-w-[60px] md:max-w-none">{item.label}</span>
         {!permitted && (
           <span className="absolute top-0.5 right-0.5 md:static md:ml-1 text-red-500 dark:text-red-400 text-xs">🔒</span>
@@ -246,26 +246,26 @@ export default function Navigation() {
           {navItems.map(renderNavItem)}
           <button
             onClick={toggleDarkMode}
-            className="flex flex-row items-center justify-center gap-1 py-3 px-2 lg:px-3 text-xs lg:text-sm font-medium text-gray-500 dark:text-gray-400 hover:text-yellow-600 dark:hover:text-yellow-400 hover:bg-yellow-50 dark:hover:bg-yellow-900/20 transition-colors border-l border-gray-200 dark:border-gray-700"
+            className="flex flex-row items-center justify-center gap-0.5 py-2 px-1.5 lg:px-2 text-xs font-medium text-gray-500 dark:text-gray-400 hover:text-yellow-600 dark:hover:text-yellow-400 hover:bg-yellow-50 dark:hover:bg-yellow-900/20 transition-colors border-l border-gray-200 dark:border-gray-700"
             title={darkMode ? 'Tryb jasny' : 'Tryb ciemny'}
           >
-            <span className="text-base">{darkMode ? '☀️' : '🌙'}</span>
+            <span className="text-xs lg:text-sm">{darkMode ? '☀️' : '🌙'}</span>
             <span className="hidden xl:inline">{darkMode ? 'Jasny' : 'Ciemny'}</span>
           </button>
           <a
             href="/ustawienia"
-            className="flex flex-row items-center justify-center gap-1 py-3 px-2 lg:px-3 text-xs lg:text-sm font-medium text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors"
+            className="flex flex-row items-center justify-center gap-0.5 py-2 px-1.5 lg:px-2 text-xs font-medium text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors"
             title="Ustawienia"
           >
-            <span className="text-base">⚙️</span>
+            <span className="text-xs lg:text-sm">⚙️</span>
             <span className="hidden lg:inline">Ustawienia</span>
           </a>
           <button
             onClick={handleLogout}
-            className="flex flex-row items-center justify-center gap-1 py-3 px-2 lg:px-3 text-xs lg:text-sm font-medium text-gray-400 dark:text-gray-500 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+            className="flex flex-row items-center justify-center gap-0.5 py-2 px-1.5 lg:px-2 text-xs font-medium text-gray-400 dark:text-gray-500 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
             title="Wyloguj"
           >
-            <span className="text-base">🚪</span>
+            <span className="text-xs lg:text-sm">🚪</span>
             <span className="hidden lg:inline">Wyloguj</span>
           </button>
         </div>
