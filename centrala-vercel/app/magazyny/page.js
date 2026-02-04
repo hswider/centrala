@@ -22,6 +22,7 @@ export default function MagazynyPage() {
   const [rozchódValues, setRozchódValues] = useState({});
   const [showRecipeModal, setShowRecipeModal] = useState(false);
   const [recipeItem, setRecipeItem] = useState(null);
+  const [recipeChanged, setRecipeChanged] = useState(false);
   const [showHistoryModal, setShowHistoryModal] = useState(false);
   const [historyData, setHistoryData] = useState([]);
   const [historyLoading, setHistoryLoading] = useState(false);
@@ -839,6 +840,7 @@ export default function MagazynyPage() {
     setRecipeItem(item);
     setShowRecipeModal(true);
     setLoadingRecipe(true);
+    setRecipeChanged(false); // Reset flagi zmian
 
     try {
       const res = await fetch(`/api/recipes?productId=${item.id}`);
@@ -1232,6 +1234,7 @@ export default function MagazynyPage() {
 
       const data = await res.json();
       if (data.success) {
+        setRecipeChanged(true); // Oznacz ze byly zmiany
         // Odswież recepture
         const res2 = await fetch(`/api/recipes?productId=${recipeItem.id}`);
         const data2 = await res2.json();
@@ -1255,6 +1258,7 @@ export default function MagazynyPage() {
 
       const data = await res.json();
       if (data.success) {
+        setRecipeChanged(true); // Oznacz ze byly zmiany
         setRecipeIngredients(prev => prev.filter(i => i.id !== recipeId));
       }
     } catch (error) {
@@ -1271,6 +1275,7 @@ export default function MagazynyPage() {
         body: JSON.stringify({ id: recipeId, quantity: newQty })
       });
 
+      setRecipeChanged(true); // Oznacz ze byly zmiany
       setRecipeIngredients(prev =>
         prev.map(i => i.id === recipeId ? { ...i, quantity: newQty } : i)
       );
@@ -3091,8 +3096,10 @@ export default function MagazynyPage() {
                     setIngredientSearchPolprodukty('');
                     setIngredientSearchWykroje('');
                     setIngredientSearchSurowce('');
-                    // Odswież liste produktow zeby pokazac aktualna recepture
-                    fetchInventory(activeTab, true);
+                    // Odswież liste produktow tylko jesli byly zmiany
+                    if (recipeChanged) {
+                      fetchInventory(activeTab, true);
+                    }
                   }}
                   className="text-gray-400 hover:text-gray-600 text-2xl"
                 >
@@ -3396,8 +3403,10 @@ export default function MagazynyPage() {
                         setIngredientSearchPolprodukty('');
                         setIngredientSearchWykroje('');
                         setIngredientSearchSurowce('');
-                        // Odswież liste produktow zeby pokazac aktualna recepture
-                        fetchInventory(activeTab, true);
+                        // Odswież liste produktow tylko jesli byly zmiany
+                        if (recipeChanged) {
+                          fetchInventory(activeTab, true);
+                        }
                       }}
                       className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700"
                     >
