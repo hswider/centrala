@@ -1776,7 +1776,7 @@ export default function MagazynyPage() {
             const totalValue = Math.round(items.reduce((sum, i) => sum + (i.cena || 0) * i.stan, 0) * 100) / 100;
             return (
               <div key={tab.key} className={`bg-white dark:bg-gray-800 rounded-lg shadow dark:shadow-gray-900 p-3 lg:p-4 border-l-4 ${tab.borderColor}`}>
-                <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{tab.label}</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{tab.icon} {tab.label}</p>
                 <p className={`text-xl lg:text-2xl font-bold ${tab.textColor}`}>{items.length}</p>
                 <p className="text-[10px] text-gray-400 dark:text-gray-500 -mt-1 mb-1">pozycji w magazynie</p>
                 <div className="flex flex-col gap-0.5 text-xs">
