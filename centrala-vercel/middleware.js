@@ -38,6 +38,7 @@ const publicRoutes = [
   '/api/ecom/delivery-time', // ECOM delivery time check
   '/api/gmail/init-status',  // Gmail status column init
   '/api/add-ola',             // Add Ola user
+  '/api/gmail/merge-threads', // Gmail thread merge utility
 ];
 
 export function middleware(request) {
