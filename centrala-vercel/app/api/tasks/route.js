@@ -23,6 +23,9 @@ export async function GET(request) {
     let tasks;
     if (threadId && threadType) {
       tasks = await getTasksForThread(threadId, threadType);
+    } else if (threadType) {
+      // Get all tasks for a specific thread type (e.g., 'wms')
+      tasks = await getTasksForThread(null, threadType);
     } else if (all) {
       tasks = await getAllTasks();
     } else if (username) {
@@ -30,7 +33,7 @@ export async function GET(request) {
     } else {
       return NextResponse.json({
         success: false,
-        error: 'Username, threadId+threadType, or all parameter is required'
+        error: 'Username, threadId+threadType, threadType, or all parameter is required'
       }, { status: 400 });
     }
 

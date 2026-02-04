@@ -67,6 +67,15 @@ export default function MagazynyPage() {
   const [savingDocument, setSavingDocument] = useState(false);
   const [productSuggestions, setProductSuggestions] = useState([]);
   const [activeSuggestionIndex, setActiveSuggestionIndex] = useState(null);
+  // Tasks/Zadania state
+  const [showTasksModal, setShowTasksModal] = useState(false);
+  const [wmsTasks, setWmsTasks] = useState([]);
+  const [tasksLoading, setTasksLoading] = useState(false);
+  const [currentUser, setCurrentUser] = useState(null);
+  const [allUsers, setAllUsers] = useState([]);
+  const [newTaskContent, setNewTaskContent] = useState('');
+  const [newTaskAssignee, setNewTaskAssignee] = useState('');
+  const [taskSending, setTaskSending] = useState(false);
   const fileInputRef = useRef(null);
   const stanInputRef = useRef(null);
   const cenaInputRef = useRef(null);
@@ -129,6 +138,131 @@ export default function MagazynyPage() {
   useEffect(() => {
     fetchInventory(); // bez parametru = wszystkie kategorie
   }, []);
+
+  // Pobierz aktualnego uzytkownika i liste uzytkownikow dla zadan
+  useEffect(() => {
+    const fetchCurrentUser = async () => {
+      try {
+        const res = await fetch('/api/auth/me');
+        const data = await res.json();
+        if (data.success) {
+          setCurrentUser(data.user);
+        }
+      } catch (err) {
+        console.error('Error fetching current user:', err);
+      }
+    };
+
+    const fetchAllUsers = async () => {
+      try {
+        const res = await fetch('/api/users/online');
+        const data = await res.json();
+        if (data.success) {
+          setAllUsers(data.users);
+        }
+      } catch (err) {
+        console.error('Error fetching users:', err);
+      }
+    };
+
+    fetchCurrentUser();
+    fetchAllUsers();
+  }, []);
+
+  // Zaladuj zadania WMS na starcie (dla badge)
+  useEffect(() => {
+    fetchWmsTasks();
+  }, []);
+
+  // Funkcja pobierania zadan WMS
+  const fetchWmsTasks = async () => {
+    setTasksLoading(true);
+    try {
+      const res = await fetch('/api/tasks?threadType=wms');
+      const data = await res.json();
+      if (data.success) {
+        setWmsTasks(data.tasks || []);
+      }
+    } catch (err) {
+      console.error('Error fetching WMS tasks:', err);
+    } finally {
+      setTasksLoading(false);
+    }
+  };
+
+  // Funkcja dodawania zadania
+  const handleAddTask = async () => {
+    if (!newTaskContent.trim() || !newTaskAssignee) {
+      alert('Wypelnij tresc zadania i wybierz osobe');
+      return;
+    }
+
+    setTaskSending(true);
+    try {
+      const res = await fetch('/api/tasks', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          createdBy: currentUser?.username || 'system',
+          assignedTo: newTaskAssignee,
+          content: newTaskContent,
+          threadId: 'wms-tasks',
+          threadType: 'wms'
+        })
+      });
+      const data = await res.json();
+      if (data.success) {
+        setNewTaskContent('');
+        setNewTaskAssignee('');
+        fetchWmsTasks();
+        alert('Zadanie zostalo dodane!');
+      } else {
+        alert('Blad: ' + data.error);
+      }
+    } catch (err) {
+      console.error('Error adding task:', err);
+      alert('Blad podczas dodawania zadania');
+    } finally {
+      setTaskSending(false);
+    }
+  };
+
+  // Funkcja oznaczania zadania jako wykonane
+  const handleCompleteTask = async (taskId) => {
+    try {
+      const res = await fetch('/api/tasks', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          taskId,
+          username: currentUser?.username || 'system'
+        })
+      });
+      const data = await res.json();
+      if (data.success) {
+        fetchWmsTasks();
+      }
+    } catch (err) {
+      console.error('Error completing task:', err);
+    }
+  };
+
+  // Funkcja usuwania zadania
+  const handleDeleteTask = async (taskId) => {
+    if (!confirm('Czy na pewno chcesz usunac to zadanie?')) return;
+
+    try {
+      const res = await fetch(`/api/tasks?taskId=${taskId}`, {
+        method: 'DELETE'
+      });
+      const data = await res.json();
+      if (data.success) {
+        fetchWmsTasks();
+      }
+    } catch (err) {
+      console.error('Error deleting task:', err);
+    }
+  };
 
   // Zaladuj dane gdy zmienia sie zakladka
   const handleTabChange = useCallback((newTab) => {
@@ -1746,6 +1880,17 @@ export default function MagazynyPage() {
               className="px-2.5 py-1.5 text-xs sm:text-sm bg-purple-600 text-white rounded-lg hover:bg-purple-700"
             >
               Historia zmian
+            </button>
+            <button
+              onClick={() => { setShowTasksModal(true); fetchWmsTasks(); }}
+              className="px-2.5 py-1.5 text-xs sm:text-sm bg-orange-600 text-white rounded-lg hover:bg-orange-700 flex items-center gap-1"
+            >
+              Zadania
+              {wmsTasks.filter(t => t.status === 'pending' && t.assigned_to === currentUser?.username).length > 0 && (
+                <span className="bg-white text-orange-600 text-xs font-bold px-1.5 py-0.5 rounded-full">
+                  {wmsTasks.filter(t => t.status === 'pending' && t.assigned_to === currentUser?.username).length}
+                </span>
+              )}
             </button>
             <button
               onClick={() => handleExportCSV()}
@@ -3583,6 +3728,136 @@ export default function MagazynyPage() {
                   </button>
                 </div>
               )}
+            </div>
+          </div>
+        )}
+
+        {/* Tasks Modal */}
+        {showTasksModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl dark:shadow-gray-900 max-w-2xl w-full p-6 max-h-[90vh] overflow-hidden flex flex-col">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Zadania WMS</h3>
+                <button
+                  onClick={() => setShowTasksModal(false)}
+                  className="text-gray-400 hover:text-gray-600 text-2xl"
+                >
+                  &times;
+                </button>
+              </div>
+
+              {/* Formularz dodawania zadania */}
+              <div className="bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-lg p-4 mb-4">
+                <h4 className="text-sm font-medium text-orange-800 dark:text-orange-200 mb-3">Dodaj nowe zadanie</h4>
+                <div className="space-y-3">
+                  <div>
+                    <label className="block text-xs text-gray-600 dark:text-gray-400 mb-1">Przypisz do:</label>
+                    <select
+                      value={newTaskAssignee}
+                      onChange={(e) => setNewTaskAssignee(e.target.value)}
+                      className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    >
+                      <option value="">Wybierz pracownika...</option>
+                      {allUsers.map(u => (
+                        <option key={u.id} value={u.username}>{u.username}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-xs text-gray-600 dark:text-gray-400 mb-1">Tresc zadania:</label>
+                    <textarea
+                      value={newTaskContent}
+                      onChange={(e) => setNewTaskContent(e.target.value)}
+                      placeholder="Opisz zadanie do wykonania..."
+                      rows={2}
+                      className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white resize-none"
+                    />
+                  </div>
+                  <button
+                    onClick={handleAddTask}
+                    disabled={taskSending || !newTaskContent.trim() || !newTaskAssignee}
+                    className="w-full px-4 py-2 text-sm bg-orange-600 text-white rounded-lg hover:bg-orange-700 disabled:opacity-50"
+                  >
+                    {taskSending ? 'Dodawanie...' : 'Dodaj zadanie'}
+                  </button>
+                </div>
+              </div>
+
+              {/* Lista zadan */}
+              <div className="flex-1 overflow-y-auto">
+                <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Lista zadan ({wmsTasks.length})</h4>
+
+                {tasksLoading ? (
+                  <div className="text-center py-8 text-gray-500">Ladowanie...</div>
+                ) : wmsTasks.length === 0 ? (
+                  <div className="text-center py-8 text-gray-500 dark:text-gray-400">Brak zadan</div>
+                ) : (
+                  <div className="space-y-2">
+                    {wmsTasks.map(task => (
+                      <div
+                        key={task.id}
+                        className={`p-3 rounded-lg border ${
+                          task.status === 'completed'
+                            ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800'
+                            : task.assigned_to === currentUser?.username
+                              ? 'bg-yellow-50 dark:bg-yellow-900/20 border-yellow-300 dark:border-yellow-700'
+                              : 'bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600'
+                        }`}
+                      >
+                        <div className="flex justify-between items-start gap-2">
+                          <div className="flex-1 min-w-0">
+                            <p className={`text-sm ${task.status === 'completed' ? 'line-through text-gray-500' : 'text-gray-900 dark:text-white'}`}>
+                              {task.content}
+                            </p>
+                            <div className="flex flex-wrap gap-2 mt-1 text-xs text-gray-500 dark:text-gray-400">
+                              <span>Od: <span className="font-medium">{task.created_by}</span></span>
+                              <span>→</span>
+                              <span>Dla: <span className={`font-medium ${task.assigned_to === currentUser?.username ? 'text-orange-600 dark:text-orange-400' : ''}`}>{task.assigned_to}</span></span>
+                              <span>|</span>
+                              <span>{new Date(task.created_at).toLocaleDateString('pl-PL', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}</span>
+                            </div>
+                            {task.status === 'completed' && task.completed_at && (
+                              <p className="text-xs text-green-600 dark:text-green-400 mt-1">
+                                ✓ Wykonane przez {task.completed_by} ({new Date(task.completed_at).toLocaleDateString('pl-PL', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })})
+                              </p>
+                            )}
+                          </div>
+                          <div className="flex gap-1">
+                            {task.status === 'pending' && (
+                              <button
+                                onClick={() => handleCompleteTask(task.id)}
+                                className="px-2 py-1 text-xs bg-green-600 text-white rounded hover:bg-green-700"
+                                title="Oznacz jako wykonane"
+                              >
+                                ✓
+                              </button>
+                            )}
+                            {(task.created_by === currentUser?.username || currentUser?.username === 'admin') && (
+                              <button
+                                onClick={() => handleDeleteTask(task.id)}
+                                className="px-2 py-1 text-xs bg-red-600 text-white rounded hover:bg-red-700"
+                                title="Usun zadanie"
+                              >
+                                ✕
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Zamknij */}
+              <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+                <button
+                  onClick={() => setShowTasksModal(false)}
+                  className="w-full px-4 py-2 text-sm bg-gray-600 text-white rounded-lg hover:bg-gray-700"
+                >
+                  Zamknij
+                </button>
+              </div>
             </div>
           </div>
         )}

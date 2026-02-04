@@ -3803,14 +3803,24 @@ export async function getAllTasks() {
   return rows;
 }
 
-// Get tasks for a specific thread
+// Get tasks for a specific thread or all tasks of a thread type
 export async function getTasksForThread(threadId, threadType) {
-  const { rows } = await sql`
-    SELECT * FROM tasks
-    WHERE thread_id = ${threadId} AND thread_type = ${threadType}
-    ORDER BY created_at DESC
-  `;
-  return rows;
+  if (threadId) {
+    const { rows } = await sql`
+      SELECT * FROM tasks
+      WHERE thread_id = ${threadId} AND thread_type = ${threadType}
+      ORDER BY created_at DESC
+    `;
+    return rows;
+  } else {
+    // Get all tasks for thread type (e.g., all 'wms' tasks)
+    const { rows } = await sql`
+      SELECT * FROM tasks
+      WHERE thread_type = ${threadType}
+      ORDER BY created_at DESC
+    `;
+    return rows;
+  }
 }
 
 // Complete a task (anyone can complete)

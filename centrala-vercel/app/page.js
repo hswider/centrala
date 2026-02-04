@@ -39,9 +39,11 @@ export default function Home() {
 
   const router = useRouter();
 
-  // Navigate to task thread in CRM
+  // Navigate to task thread in CRM or WMS
   const goToTask = (task) => {
-    if (task.thread_id && task.thread_type) {
+    if (task.thread_type === 'wms') {
+      router.push('/magazyny');
+    } else if (task.thread_id && task.thread_type) {
       router.push(`/crm?tab=${task.thread_type}&thread=${task.thread_id}`);
     } else {
       router.push('/crm');
@@ -455,13 +457,17 @@ export default function Home() {
                         </p>
                       </div>
                       <div className="shrink-0 flex gap-1">
-                        {task.thread_id && (
+                        {(task.thread_id || task.thread_type === 'wms') && (
                           <button
                             onClick={() => goToTask(task)}
-                            className="px-2 py-1 bg-blue-500 hover:bg-blue-600 text-white text-xs rounded transition-colors"
-                            title="Przejdz do wątku"
+                            className={`px-2 py-1 text-white text-xs rounded transition-colors ${
+                              task.thread_type === 'wms'
+                                ? 'bg-orange-500 hover:bg-orange-600'
+                                : 'bg-blue-500 hover:bg-blue-600'
+                            }`}
+                            title={task.thread_type === 'wms' ? 'Przejdz do WMS' : 'Przejdz do wątku'}
                           >
-                            → Przejdz
+                            {task.thread_type === 'wms' ? '🏭 WMS' : '→ Przejdz'}
                           </button>
                         )}
                         <button
