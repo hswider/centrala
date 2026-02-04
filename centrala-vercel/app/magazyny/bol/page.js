@@ -17,6 +17,9 @@ export default function BOMPage() {
   const [importData, setImportData] = useState([]);
   const [importPreview, setImportPreview] = useState([]);
   const [importing, setImporting] = useState(false);
+  const [selectedIds, setSelectedIds] = useState(new Set());
+  const [perPage, setPerPage] = useState(50);
+  const [currentPage, setCurrentPage] = useState(1);
   const fileInputRef = useRef(null);
 
   const tabs = [
@@ -46,6 +49,12 @@ export default function BOMPage() {
     fetchInventory();
   }, []);
 
+  // Reset page and selection when tab changes
+  useEffect(() => {
+    setCurrentPage(1);
+    setSelectedIds(new Set());
+  }, [activeTab]);
+
   // Get current tab data
   const currentTab = tabs.find(t => t.key === activeTab);
   const currentItems = magazyny[activeTab] || [];
@@ -59,12 +68,36 @@ export default function BOMPage() {
     );
   });
 
+  // Pagination
+  const totalPages = Math.ceil(filteredItems.length / perPage);
+  const startIndex = (currentPage - 1) * perPage;
+  const paginatedItems = filteredItems.slice(startIndex, startIndex + perPage);
+
   // Get recipe from item (receptura.ingredients)
   const getRecipe = (item) => {
     return item.receptura?.ingredients || [];
   };
 
-  // Get max number of ingredients across all items for CSV columns
+  // Selection handlers
+  const toggleSelectAll = () => {
+    if (selectedIds.size === paginatedItems.length) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(paginatedItems.map(item => item.id)));
+    }
+  };
+
+  const toggleSelect = (id) => {
+    const newSelected = new Set(selectedIds);
+    if (newSelected.has(id)) {
+      newSelected.delete(id);
+    } else {
+      newSelected.add(id);
+    }
+    setSelectedIds(newSelected);
+  };
+
+  // Get max number of ingredients across items for CSV columns
   const getMaxIngredients = (items) => {
     let max = 0;
     items.forEach(item => {
@@ -76,10 +109,18 @@ export default function BOMPage() {
     return Math.max(max, 5); // Minimum 5 columns for import template
   };
 
-  // Export to CSV
+  // Export to CSV (selected items or all if none selected)
   const handleExportCSV = () => {
-    const items = filteredItems;
-    const maxIngredients = getMaxIngredients(items);
+    const itemsToExport = selectedIds.size > 0
+      ? filteredItems.filter(item => selectedIds.has(item.id))
+      : filteredItems;
+
+    if (itemsToExport.length === 0) {
+      alert('Brak pozycji do eksportu');
+      return;
+    }
+
+    const maxIngredients = getMaxIngredients(itemsToExport);
 
     // Build header
     let headers = ['Nazwa', 'SKU'];
@@ -88,7 +129,7 @@ export default function BOMPage() {
     }
 
     // Build rows
-    const rows = items.map(item => {
+    const rows = itemsToExport.map(item => {
       const recipe = getRecipe(item);
       const row = [
         `"${(item.nazwa || '').replace(/"/g, '""')}"`,
@@ -184,17 +225,41 @@ export default function BOMPage() {
       const parsed = parseCSV(text);
       setImportData(parsed);
 
-      // Create preview with matching status
+      // Create preview with matching status - search in ALL warehouses for the product
+      const allItems = [...(magazyny.gotowe || []), ...(magazyny.polprodukty || []), ...(magazyny.wykroje || [])];
+
       const preview = parsed.map(row => {
-        const matchedItem = currentItems.find(item =>
-          (row.SKU && item.sku === row.SKU) ||
-          (row.Nazwa && item.nazwa === row.Nazwa)
+        // Match by SKU first, then by name
+        const matchedItem = allItems.find(item =>
+          (row.SKU && item.sku && item.sku === row.SKU) ||
+          (row.Nazwa && item.nazwa && item.nazwa === row.Nazwa)
         );
+
+        // Find ingredients in polprodukty, wykroje, surowce
+        const ingredientMatches = row.ingredients.map(ing => {
+          let found = null;
+          for (const kategoria of ['polprodukty', 'wykroje', 'surowce']) {
+            const match = magazyny[kategoria]?.find(item =>
+              (ing.sku && item.sku && item.sku === ing.sku) ||
+              (ing.nazwa && item.nazwa && item.nazwa === ing.nazwa)
+            );
+            if (match) {
+              found = match;
+              break;
+            }
+          }
+          return { ...ing, matched: !!found, matchedItem: found };
+        });
+
+        const matchedIngredientsCount = ingredientMatches.filter(i => i.matched).length;
+
         return {
           ...row,
           matched: !!matchedItem,
           matchedItem: matchedItem,
-          ingredientCount: row.ingredients?.length || 0
+          ingredientCount: row.ingredients?.length || 0,
+          ingredientMatches,
+          matchedIngredientsCount
         };
       });
 
@@ -210,9 +275,18 @@ export default function BOMPage() {
     setImporting(true);
     let successCount = 0;
     let errorCount = 0;
+    let skippedCount = 0;
 
     for (const row of importPreview) {
-      if (!row.matched || !row.matchedItem || row.ingredients.length === 0) {
+      // Skip if product not found in WMS
+      if (!row.matched || !row.matchedItem) {
+        skippedCount++;
+        continue;
+      }
+
+      // Skip if no valid ingredients
+      if (row.matchedIngredientsCount === 0) {
+        skippedCount++;
         continue;
       }
 
@@ -230,28 +304,15 @@ export default function BOMPage() {
           }
         }
 
-        // Then add new ingredients
-        for (const ing of row.ingredients) {
-          // Find ingredient by SKU or Nazwa in all warehouses
-          let ingredientItem = null;
-          for (const kategoria of ['polprodukty', 'wykroje', 'surowce']) {
-            const found = magazyny[kategoria]?.find(item =>
-              (ing.sku && item.sku === ing.sku) ||
-              (ing.nazwa && item.nazwa === ing.nazwa)
-            );
-            if (found) {
-              ingredientItem = found;
-              break;
-            }
-          }
-
-          if (ingredientItem) {
+        // Then add new ingredients (only matched ones)
+        for (const ing of row.ingredientMatches) {
+          if (ing.matched && ing.matchedItem) {
             await fetch('/api/recipes', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
                 productId: row.matchedItem.id,
-                ingredientId: ingredientItem.id,
+                ingredientId: ing.matchedItem.id,
                 quantity: ing.ilosc
               })
             });
@@ -270,7 +331,7 @@ export default function BOMPage() {
     setImportData([]);
     setImportPreview([]);
 
-    alert(`Import zakonczony!\nZaktualizowano: ${successCount}\nBledy: ${errorCount}`);
+    alert(`Import zakonczony!\n\nZaktualizowano receptur: ${successCount}\nPominietych (brak produktu/skladnikow): ${skippedCount}\nBledow: ${errorCount}`);
     fetchInventory();
   };
 
@@ -294,7 +355,7 @@ export default function BOMPage() {
               onClick={handleExportCSV}
               className="px-2.5 py-1.5 text-xs sm:text-sm bg-green-600 text-white rounded-lg hover:bg-green-700"
             >
-              Export CSV
+              {selectedIds.size > 0 ? `Export CSV (${selectedIds.size})` : 'Export CSV'}
             </button>
             <button
               onClick={() => fileInputRef.current?.click()}
@@ -332,20 +393,37 @@ export default function BOMPage() {
           </div>
         </div>
 
-        {/* Search */}
+        {/* Search and Pagination Controls */}
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow dark:shadow-gray-900 p-4 mb-4">
-          <div className="flex items-center gap-4">
-            <div className="flex-1">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+            <div className="flex-1 w-full sm:w-auto">
               <input
                 type="text"
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1); }}
                 placeholder="Szukaj po nazwie lub SKU..."
                 className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
               />
             </div>
+            <div className="flex items-center gap-3">
+              <span className="text-sm text-gray-500 dark:text-gray-400">Pozycji na stronie:</span>
+              <select
+                value={perPage}
+                onChange={(e) => { setPerPage(Number(e.target.value)); setCurrentPage(1); }}
+                className="px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+              >
+                <option value={50}>50</option>
+                <option value={100}>100</option>
+                <option value={250}>250</option>
+              </select>
+            </div>
             <div className="text-sm text-gray-500 dark:text-gray-400">
               {filteredItems.length} pozycji
+              {selectedIds.size > 0 && (
+                <span className="ml-2 text-indigo-600 dark:text-indigo-400">
+                  ({selectedIds.size} zaznaczonych)
+                </span>
+              )}
             </div>
           </div>
         </div>
@@ -357,60 +435,103 @@ export default function BOMPage() {
           ) : filteredItems.length === 0 ? (
             <div className="p-8 text-center text-gray-500">Brak pozycji</div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead className="bg-gray-50 dark:bg-gray-700">
-                  <tr>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Nazwa produktu</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">SKU</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Receptura</th>
-                    <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Akcje</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-                  {filteredItems.map((item) => {
-                    const recipe = getRecipe(item);
-                    return (
-                      <tr key={item.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
-                        <td className="px-4 py-3 text-gray-900 dark:text-white">{item.nazwa}</td>
-                        <td className="px-4 py-3 text-gray-600 dark:text-gray-400 font-mono text-xs">{item.sku || '-'}</td>
-                        <td className="px-4 py-3">
-                          {recipe.length > 0 ? (
-                            <div className="flex flex-wrap gap-1">
-                              {recipe.map((r, idx) => (
-                                <span
-                                  key={idx}
-                                  className="inline-flex items-center px-2 py-0.5 rounded text-xs bg-indigo-100 dark:bg-indigo-900/30 text-indigo-800 dark:text-indigo-300"
-                                >
-                                  {r.ingredient_sku || r.ingredient_nazwa}: {r.quantity}
-                                </span>
-                              ))}
-                            </div>
-                          ) : (
-                            <span className="text-gray-400 dark:text-gray-500">-</span>
-                          )}
-                        </td>
-                        <td className="px-4 py-3 text-center">
-                          <Link
-                            href={`/magazyny?tab=${activeTab}&open=${item.id}`}
-                            className="text-indigo-600 hover:text-indigo-800 dark:text-indigo-400 dark:hover:text-indigo-300 text-xs"
-                          >
-                            Edytuj w WMS
-                          </Link>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
+            <>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead className="bg-gray-50 dark:bg-gray-700">
+                    <tr>
+                      <th className="px-2 py-3 text-center w-10">
+                        <input
+                          type="checkbox"
+                          checked={selectedIds.size === paginatedItems.length && paginatedItems.length > 0}
+                          onChange={toggleSelectAll}
+                          className="w-4 h-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                        />
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Nazwa produktu</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">SKU</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Receptura</th>
+                      <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Akcje</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+                    {paginatedItems.map((item) => {
+                      const recipe = getRecipe(item);
+                      return (
+                        <tr key={item.id} className={`hover:bg-gray-50 dark:hover:bg-gray-700/50 ${selectedIds.has(item.id) ? 'bg-indigo-50 dark:bg-indigo-900/20' : ''}`}>
+                          <td className="px-2 py-3 text-center">
+                            <input
+                              type="checkbox"
+                              checked={selectedIds.has(item.id)}
+                              onChange={() => toggleSelect(item.id)}
+                              className="w-4 h-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                            />
+                          </td>
+                          <td className="px-4 py-3 text-gray-900 dark:text-white">{item.nazwa}</td>
+                          <td className="px-4 py-3 text-gray-600 dark:text-gray-400 font-mono text-xs">{item.sku || '-'}</td>
+                          <td className="px-4 py-3">
+                            {recipe.length > 0 ? (
+                              <div className="flex flex-wrap gap-1">
+                                {recipe.map((r, idx) => (
+                                  <span
+                                    key={idx}
+                                    className="inline-flex items-center px-2 py-0.5 rounded text-xs bg-indigo-100 dark:bg-indigo-900/30 text-indigo-800 dark:text-indigo-300"
+                                  >
+                                    {r.ingredient_sku || r.ingredient_nazwa}: {r.quantity}
+                                  </span>
+                                ))}
+                              </div>
+                            ) : (
+                              <span className="text-gray-400 dark:text-gray-500">-</span>
+                            )}
+                          </td>
+                          <td className="px-4 py-3 text-center">
+                            <Link
+                              href={`/magazyny?tab=${activeTab}&open=${item.id}`}
+                              className="text-indigo-600 hover:text-indigo-800 dark:text-indigo-400 dark:hover:text-indigo-300 text-xs"
+                            >
+                              Edytuj w WMS
+                            </Link>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Pagination */}
+              {totalPages > 1 && (
+                <div className="flex items-center justify-between px-4 py-3 border-t border-gray-200 dark:border-gray-700">
+                  <div className="text-sm text-gray-500 dark:text-gray-400">
+                    Strona {currentPage} z {totalPages} ({startIndex + 1}-{Math.min(startIndex + perPage, filteredItems.length)} z {filteredItems.length})
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                      disabled={currentPage === 1}
+                      className="px-3 py-1 text-sm bg-gray-200 dark:bg-gray-700 rounded disabled:opacity-50 hover:bg-gray-300 dark:hover:bg-gray-600"
+                    >
+                      Poprzednia
+                    </button>
+                    <button
+                      onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                      disabled={currentPage === totalPages}
+                      className="px-3 py-1 text-sm bg-gray-200 dark:bg-gray-700 rounded disabled:opacity-50 hover:bg-gray-300 dark:hover:bg-gray-600"
+                    >
+                      Nastepna
+                    </button>
+                  </div>
+                </div>
+              )}
+            </>
           )}
         </div>
 
         {/* Import Modal */}
         {showImportModal && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl dark:shadow-gray-900 max-w-4xl w-full p-6 max-h-[90vh] overflow-hidden flex flex-col">
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl dark:shadow-gray-900 max-w-5xl w-full p-6 max-h-[90vh] overflow-hidden flex flex-col">
               <div className="flex justify-between items-center mb-4">
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Import receptur z CSV</h3>
                 <button
@@ -421,10 +542,24 @@ export default function BOMPage() {
                 </button>
               </div>
 
+              {/* Instructions */}
+              <div className="mb-4 p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
+                <h4 className="font-medium text-yellow-800 dark:text-yellow-200 mb-2">Instrukcja importu:</h4>
+                <ul className="text-sm text-yellow-700 dark:text-yellow-300 space-y-1 list-disc list-inside">
+                  <li><strong>Tylko aktualizacja receptur</strong> - nie mozna dodawac nowych produktow, ktore nie istnieja w WMS</li>
+                  <li><strong>Dopasowanie po SKU lub Nazwie</strong> - system szuka produktu najpierw po SKU, potem po nazwie</li>
+                  <li><strong>Skladniki musza istniec w WMS</strong> - skladniki sa szukane w Polproduktach, Wykrojach i Surowcach</li>
+                  <li><strong>Receptura zostanie nadpisana</strong> - istniejaca receptura produktu zostanie zastapiona nowa</li>
+                  <li><strong>Format CSV</strong>: Nazwa, SKU, Skladnik1_SKU, Skladnik1_Nazwa, Skladnik1_Ilosc, ...</li>
+                </ul>
+              </div>
+
+              {/* Summary */}
               <div className="mb-4 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
                 <p className="text-sm text-blue-800 dark:text-blue-200">
-                  <strong>Podglad importu:</strong> Znaleziono {importPreview.length} wierszy,
-                  z czego {importPreview.filter(r => r.matched).length} dopasowanych do produktow w magazynie.
+                  <strong>Podsumowanie:</strong> Znaleziono {importPreview.length} wierszy |
+                  <span className="text-green-600 dark:text-green-400 ml-2">{importPreview.filter(r => r.matched).length} dopasowanych produktow</span> |
+                  <span className="text-red-600 dark:text-red-400 ml-2">{importPreview.filter(r => !r.matched).length} nieznalezionych</span>
                 </p>
               </div>
 
@@ -435,7 +570,8 @@ export default function BOMPage() {
                       <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
                       <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Nazwa</th>
                       <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">SKU</th>
-                      <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Skladniki ({'>'}0)</th>
+                      <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Skladniki w CSV</th>
+                      <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Dopasowane</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
@@ -443,18 +579,29 @@ export default function BOMPage() {
                       <tr key={idx} className={row.matched ? 'bg-green-50 dark:bg-green-900/20' : 'bg-red-50 dark:bg-red-900/20'}>
                         <td className="px-3 py-2">
                           {row.matched ? (
-                            <span className="text-green-600 dark:text-green-400">✓ Dopasowano</span>
+                            <span className="text-green-600 dark:text-green-400">✓ Znaleziono</span>
                           ) : (
-                            <span className="text-red-600 dark:text-red-400">✗ Nie znaleziono</span>
+                            <span className="text-red-600 dark:text-red-400">✗ Brak w WMS</span>
                           )}
                         </td>
-                        <td className="px-3 py-2 text-gray-900 dark:text-white">{row.Nazwa}</td>
-                        <td className="px-3 py-2 text-gray-600 dark:text-gray-400 font-mono text-xs">{row.SKU}</td>
-                        <td className="px-3 py-2">
+                        <td className="px-3 py-2 text-gray-900 dark:text-white text-xs">{row.Nazwa}</td>
+                        <td className="px-3 py-2 text-gray-600 dark:text-gray-400 font-mono text-xs">{row.SKU || '-'}</td>
+                        <td className="px-3 py-2 text-xs">
                           {row.ingredientCount > 0 ? (
-                            <span className="text-indigo-600 dark:text-indigo-400">{row.ingredientCount} skladnikow</span>
+                            <span>{row.ingredientCount} skladnikow</span>
                           ) : (
                             <span className="text-gray-400">brak</span>
+                          )}
+                        </td>
+                        <td className="px-3 py-2 text-xs">
+                          {row.matched && row.matchedIngredientsCount > 0 ? (
+                            <span className="text-green-600 dark:text-green-400">
+                              {row.matchedIngredientsCount}/{row.ingredientCount}
+                            </span>
+                          ) : row.matched ? (
+                            <span className="text-yellow-600 dark:text-yellow-400">0 (brak dopasowanych)</span>
+                          ) : (
+                            <span className="text-gray-400">-</span>
                           )}
                         </td>
                       </tr>
@@ -472,10 +619,10 @@ export default function BOMPage() {
                 </button>
                 <button
                   onClick={handleImport}
-                  disabled={importing || importPreview.filter(r => r.matched && r.ingredientCount > 0).length === 0}
+                  disabled={importing || importPreview.filter(r => r.matched && r.matchedIngredientsCount > 0).length === 0}
                   className="flex-1 px-4 py-2 text-sm bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50"
                 >
-                  {importing ? 'Importowanie...' : `Importuj ${importPreview.filter(r => r.matched && r.ingredientCount > 0).length} receptur`}
+                  {importing ? 'Importowanie...' : `Zaktualizuj ${importPreview.filter(r => r.matched && r.matchedIngredientsCount > 0).length} receptur`}
                 </button>
               </div>
             </div>
