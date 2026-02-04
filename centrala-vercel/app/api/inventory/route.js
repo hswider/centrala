@@ -18,8 +18,8 @@ async function getCurrentUser() {
   return { userId: null, username: null };
 }
 
-// Stala stawki minutowej (najnizsza krajowa 3606 PLN / 168h / 60min)
-const MINUTE_RATE = 0.358;
+// Stala stawki minutowej (najnizsza krajowa netto ~25 zl/h / 60min)
+const MINUTE_RATE = 0.417;
 
 // GET - pobierz wszystkie pozycje (opcjonalnie filtruj po kategorii)
 export async function GET(request) {

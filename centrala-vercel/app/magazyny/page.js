@@ -3123,7 +3123,7 @@ export default function MagazynyPage() {
 
               {/* Kalkulator kosztow wytworzenia - tylko dla gotowych produktow */}
               {activeTab === 'gotowe' && (() => {
-                const MINUTE_RATE = 0.358;
+                const MINUTE_RATE = 0.417; // 25 zl/h netto (najnizsza krajowa)
                 const ingredientsCost = recipeIngredients.reduce((sum, ing) => sum + (ing.ingredientCena || 0) * ing.quantity, 0);
                 const productionTime = recipeItem.czas_produkcji || 0;
                 const laborCost = productionTime * MINUTE_RATE;
