@@ -272,11 +272,11 @@ export async function GET(request) {
         });
       }
 
-      // Polacz z inventory i oblicz deficyt
-      Object.entries(inventoryMap).forEach(([key, inv]) => {
-        const demand = ingredientDemand[key];
-        const totalDemand = demand?.totalDemand || 0;
-        const currentStock = inv.currentStock;
+      // Polacz z inventory i oblicz deficyt - TYLKO dla skladnikow z receptur PUFAPOKROWIEC
+      Object.entries(ingredientDemand).forEach(([key, demand]) => {
+        const inv = inventoryMap[key];
+        const totalDemand = demand.totalDemand || 0;
+        const currentStock = inv?.currentStock || 0;
         const deficit = currentStock - totalDemand;
         const toProduce = deficit < 0 ? Math.ceil(Math.abs(deficit)) : 0;
 
@@ -288,36 +288,17 @@ export async function GET(request) {
         }
 
         products.push({
-          id: inv.id,
-          sku: inv.sku,
-          nazwa: inv.nazwa,
+          id: inv?.id || null,
+          sku: inv?.sku || key,
+          nazwa: inv?.nazwa || demand.nazwa,
           currentStock: Math.round(currentStock * 100) / 100,
           totalDemand: Math.round(totalDemand),
           avgDaily: Math.round((totalDemand / days) * 100) / 100,
           deficit: Math.round(deficit),
           toProduce,
           priority,
-          inInventory: true,
-          usedIn: demand?.usedIn || []
-        });
-      });
-
-      // Dodaj skladniki z zapotrzebowaniem ale bez pozycji w inventory
-      Object.entries(ingredientDemand).forEach(([key, demand]) => {
-        if (inventoryMap[key]) return; // Juz dodane
-
-        products.push({
-          id: null,
-          sku: key,
-          nazwa: demand.nazwa,
-          currentStock: 0,
-          totalDemand: Math.round(demand.totalDemand),
-          avgDaily: Math.round((demand.totalDemand / days) * 100) / 100,
-          deficit: -Math.round(demand.totalDemand),
-          toProduce: Math.ceil(demand.totalDemand),
-          priority: 'critical',
-          inInventory: false,
-          usedIn: demand.usedIn
+          inInventory: !!inv,
+          usedIn: demand.usedIn || []
         });
       });
     }
