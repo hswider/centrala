@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect, useCallback } from 'react';
+import Link from 'next/link';
 
 export default function MagazynyPage() {
   const [activeTab, setActiveTab] = useState('gotowe');
@@ -1892,6 +1893,12 @@ export default function MagazynyPage() {
                 </span>
               )}
             </button>
+            <Link
+              href="/magazyny/bol"
+              className="px-2.5 py-1.5 text-xs sm:text-sm bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
+            >
+              BOL
+            </Link>
             <button
               onClick={() => handleExportCSV()}
               className="px-2.5 py-1.5 text-xs sm:text-sm bg-gray-600 text-white rounded-lg hover:bg-gray-700"
