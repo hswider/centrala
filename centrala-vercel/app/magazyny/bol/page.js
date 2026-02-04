@@ -547,10 +547,11 @@ export default function BOMPage() {
                 <h4 className="font-medium text-yellow-800 dark:text-yellow-200 mb-2">Instrukcja importu:</h4>
                 <ul className="text-sm text-yellow-700 dark:text-yellow-300 space-y-1 list-disc list-inside">
                   <li><strong>Tylko aktualizacja receptur</strong> - nie mozna dodawac nowych produktow, ktore nie istnieja w WMS</li>
-                  <li><strong>Dopasowanie po SKU lub Nazwie</strong> - system szuka produktu najpierw po SKU, potem po nazwie</li>
+                  <li><strong>Elastyczne dopasowanie</strong> - dla produktu i skladnikow mozesz podac <strong>tylko SKU</strong> lub <strong>tylko Nazwe</strong> - system automatycznie dopasuje brakujace dane</li>
                   <li><strong>Skladniki musza istniec w WMS</strong> - skladniki sa szukane w Polproduktach, Wykrojach i Surowcach</li>
                   <li><strong>Receptura zostanie nadpisana</strong> - istniejaca receptura produktu zostanie zastapiona nowa</li>
                   <li><strong>Format CSV</strong>: Nazwa, SKU, Skladnik1_SKU, Skladnik1_Nazwa, Skladnik1_Ilosc, ...</li>
+                  <li><strong>Przyklad</strong>: Mozesz uzyc pustego SKU produktu i podac tylko Nazwe, lub pusty Skladnik1_Nazwa i podac tylko Skladnik1_SKU</li>
                 </ul>
               </div>
 
@@ -568,10 +569,9 @@ export default function BOMPage() {
                   <thead className="bg-gray-50 dark:bg-gray-700 sticky top-0">
                     <tr>
                       <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                      <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Nazwa</th>
-                      <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">SKU</th>
-                      <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Skladniki w CSV</th>
-                      <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Dopasowane</th>
+                      <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Nazwa (z CSV → dopasowana)</th>
+                      <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">SKU (z CSV → dopasowany)</th>
+                      <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Skladniki</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
@@ -584,24 +584,43 @@ export default function BOMPage() {
                             <span className="text-red-600 dark:text-red-400">✗ Brak w WMS</span>
                           )}
                         </td>
-                        <td className="px-3 py-2 text-gray-900 dark:text-white text-xs">{row.Nazwa}</td>
-                        <td className="px-3 py-2 text-gray-600 dark:text-gray-400 font-mono text-xs">{row.SKU || '-'}</td>
                         <td className="px-3 py-2 text-xs">
-                          {row.ingredientCount > 0 ? (
-                            <span>{row.ingredientCount} skladnikow</span>
+                          {row.Nazwa ? (
+                            <span className="text-gray-900 dark:text-white">{row.Nazwa}</span>
+                          ) : row.matched && row.matchedItem?.nazwa ? (
+                            <span className="text-blue-600 dark:text-blue-400" title="Auto-dopasowane z WMS">
+                              ← {row.matchedItem.nazwa}
+                            </span>
                           ) : (
-                            <span className="text-gray-400">brak</span>
+                            <span className="text-gray-400">-</span>
+                          )}
+                        </td>
+                        <td className="px-3 py-2 font-mono text-xs">
+                          {row.SKU ? (
+                            <span className="text-gray-600 dark:text-gray-400">{row.SKU}</span>
+                          ) : row.matched && row.matchedItem?.sku ? (
+                            <span className="text-blue-600 dark:text-blue-400" title="Auto-dopasowane z WMS">
+                              ← {row.matchedItem.sku}
+                            </span>
+                          ) : (
+                            <span className="text-gray-400">-</span>
                           )}
                         </td>
                         <td className="px-3 py-2 text-xs">
-                          {row.matched && row.matchedIngredientsCount > 0 ? (
-                            <span className="text-green-600 dark:text-green-400">
-                              {row.matchedIngredientsCount}/{row.ingredientCount}
-                            </span>
-                          ) : row.matched ? (
-                            <span className="text-yellow-600 dark:text-yellow-400">0 (brak dopasowanych)</span>
+                          {row.ingredientMatches && row.ingredientMatches.length > 0 ? (
+                            <div className="space-y-1">
+                              {row.ingredientMatches.map((ing, ingIdx) => (
+                                <div key={ingIdx} className={`flex items-center gap-1 ${ing.matched ? 'text-green-700 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+                                  <span>{ing.matched ? '✓' : '✗'}</span>
+                                  <span className="font-mono">{ing.sku || (ing.matched && ing.matchedItem?.sku ? `← ${ing.matchedItem.sku}` : '')}</span>
+                                  <span className="text-gray-500">|</span>
+                                  <span>{ing.nazwa || (ing.matched && ing.matchedItem?.nazwa ? `← ${ing.matchedItem.nazwa}` : '')}</span>
+                                  <span className="text-gray-500">×{ing.ilosc}</span>
+                                </div>
+                              ))}
+                            </div>
                           ) : (
-                            <span className="text-gray-400">-</span>
+                            <span className="text-gray-400">brak skladnikow</span>
                           )}
                         </td>
                       </tr>
@@ -622,7 +641,7 @@ export default function BOMPage() {
                   disabled={importing || importPreview.filter(r => r.matched && r.matchedIngredientsCount > 0).length === 0}
                   className="flex-1 px-4 py-2 text-sm bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50"
                 >
-                  {importing ? 'Importowanie...' : `Zaktualizuj ${importPreview.filter(r => r.matched && r.matchedIngredientsCount > 0).length} receptur`}
+                  {importing ? 'Importowanie...' : `Importuj ${importPreview.filter(r => r.matched && r.matchedIngredientsCount > 0).length} receptur (auto-dopasowane)`}
                 </button>
               </div>
             </div>
