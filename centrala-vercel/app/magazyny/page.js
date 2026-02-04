@@ -124,9 +124,9 @@ export default function MagazynyPage() {
     }
   }, []);
 
-  // Zaladuj poczatkowa kategorie (gotowe)
+  // Zaladuj wszystkie kategorie na starcie (dla podsumowania)
   useEffect(() => {
-    fetchInventory('gotowe');
+    fetchInventory(); // bez parametru = wszystkie kategorie
   }, []);
 
   // Zaladuj dane gdy zmienia sie zakladka
