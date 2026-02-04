@@ -51,7 +51,7 @@ export default function MagazynyPage() {
   const [bulkRed, setBulkRed] = useState('');
   const [savingBulkWarning, setSavingBulkWarning] = useState(false);
   // Sub-zakładki dla Surowce (WZ/RW)
-  const [surowceSubTab, setSurowceSubTab] = useState('lista'); // 'lista', 'wz', 'rw'
+  const [surowceSubTab, setSurowceSubTab] = useState('wz'); // 'wz', 'rw', 'lista'
   const [showWZModal, setShowWZModal] = useState(false);
   const [showRWModal, setShowRWModal] = useState(false);
   const [wzDocument, setWzDocument] = useState({
@@ -1819,17 +1819,6 @@ export default function MagazynyPage() {
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow dark:shadow-gray-900 mb-4">
             <div className="flex border-b border-gray-100 dark:border-gray-700">
               <button
-                onClick={() => setSurowceSubTab('lista')}
-                className={`flex-1 flex items-center justify-center gap-2 py-2.5 text-sm font-medium transition-colors ${
-                  surowceSubTab === 'lista'
-                    ? 'text-blue-600 dark:text-blue-400 border-b-2 border-blue-600 dark:border-blue-400 bg-blue-50 dark:bg-blue-900/30'
-                    : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
-                }`}
-              >
-                <span>📋</span>
-                <span>Lista surowców</span>
-              </button>
-              <button
                 onClick={() => setSurowceSubTab('wz')}
                 className={`flex-1 flex items-center justify-center gap-2 py-2.5 text-sm font-medium transition-colors ${
                   surowceSubTab === 'wz'
@@ -1850,6 +1839,17 @@ export default function MagazynyPage() {
               >
                 <span>📤</span>
                 <span>Dokument RW (Rozchód)</span>
+              </button>
+              <button
+                onClick={() => setSurowceSubTab('lista')}
+                className={`flex-1 flex items-center justify-center gap-2 py-2.5 text-sm font-medium transition-colors ${
+                  surowceSubTab === 'lista'
+                    ? 'text-blue-600 dark:text-blue-400 border-b-2 border-blue-600 dark:border-blue-400 bg-blue-50 dark:bg-blue-900/30'
+                    : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
+                }`}
+              >
+                <span>📋</span>
+                <span>Lista surowców</span>
               </button>
             </div>
           </div>
