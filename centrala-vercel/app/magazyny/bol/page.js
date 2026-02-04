@@ -20,6 +20,7 @@ export default function BOMPage() {
   const [selectedIds, setSelectedIds] = useState(new Set());
   const [perPage, setPerPage] = useState(50);
   const [currentPage, setCurrentPage] = useState(1);
+  const [showInstructions, setShowInstructions] = useState(false);
   const fileInputRef = useRef(null);
 
   const tabs = [
@@ -358,6 +359,12 @@ export default function BOMPage() {
               {selectedIds.size > 0 ? `Export CSV (${selectedIds.size})` : 'Export CSV'}
             </button>
             <button
+              onClick={() => setShowInstructions(true)}
+              className="px-2.5 py-1.5 text-xs sm:text-sm bg-yellow-500 text-white rounded-lg hover:bg-yellow-600"
+            >
+              ? Instrukcje
+            </button>
+            <button
               onClick={() => fileInputRef.current?.click()}
               className="px-2.5 py-1.5 text-xs sm:text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700"
             >
@@ -644,6 +651,76 @@ export default function BOMPage() {
                   {importing ? 'Importowanie...' : `Importuj ${importPreview.filter(r => r.matched && r.matchedIngredientsCount > 0).length} receptur (auto-dopasowane)`}
                 </button>
               </div>
+            </div>
+          </div>
+        )}
+
+        {/* Instructions Modal */}
+        {showInstructions && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl dark:shadow-gray-900 max-w-2xl w-full p-6 max-h-[90vh] overflow-y-auto">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Instrukcja importu/eksportu CSV</h3>
+                <button
+                  onClick={() => setShowInstructions(false)}
+                  className="text-gray-400 hover:text-gray-600 text-2xl"
+                >
+                  &times;
+                </button>
+              </div>
+
+              <div className="space-y-4">
+                {/* Export */}
+                <div className="p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
+                  <h4 className="font-medium text-green-800 dark:text-green-200 mb-2">Export CSV</h4>
+                  <ul className="text-sm text-green-700 dark:text-green-300 space-y-1 list-disc list-inside">
+                    <li>Zaznacz pozycje checkboxami lub eksportuj wszystkie</li>
+                    <li>Plik zawiera: Nazwa, SKU, oraz kolumny dla skladnikow</li>
+                    <li>Kazdy skladnik ma 3 kolumny: SKU, Nazwa, Ilosc</li>
+                  </ul>
+                </div>
+
+                {/* Import */}
+                <div className="p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+                  <h4 className="font-medium text-blue-800 dark:text-blue-200 mb-2">Import CSV - Zasady</h4>
+                  <ul className="text-sm text-blue-700 dark:text-blue-300 space-y-1 list-disc list-inside">
+                    <li><strong>Tylko aktualizacja receptur</strong> - nie mozna dodawac nowych produktow</li>
+                    <li><strong>Produkty musza istniec w WMS</strong> - import pominie nieznane produkty</li>
+                    <li><strong>Skladniki musza istniec w WMS</strong> - szukane w Polproduktach, Wykrojach, Surowcach</li>
+                    <li><strong>Receptura zostanie nadpisana</strong> - stara receptura zostanie usunieta</li>
+                  </ul>
+                </div>
+
+                {/* Flexible matching */}
+                <div className="p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
+                  <h4 className="font-medium text-yellow-800 dark:text-yellow-200 mb-2">Elastyczne dopasowanie</h4>
+                  <ul className="text-sm text-yellow-700 dark:text-yellow-300 space-y-1 list-disc list-inside">
+                    <li>Mozesz podac <strong>tylko SKU</strong> - system znajdzie Nazwe automatycznie</li>
+                    <li>Mozesz podac <strong>tylko Nazwe</strong> - system znajdzie SKU automatycznie</li>
+                    <li>Dotyczy zarowno produktow jak i skladnikow</li>
+                    <li>W podgladzie importu zobaczysz auto-dopasowane dane (niebieska strzalka)</li>
+                  </ul>
+                </div>
+
+                {/* Format */}
+                <div className="p-4 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg">
+                  <h4 className="font-medium text-gray-800 dark:text-gray-200 mb-2">Format CSV</h4>
+                  <p className="text-sm text-gray-600 dark:text-gray-300 mb-2">Kolumny w pliku:</p>
+                  <code className="block text-xs bg-gray-200 dark:bg-gray-600 p-2 rounded overflow-x-auto">
+                    Nazwa, SKU, Skladnik1_SKU, Skladnik1_Nazwa, Skladnik1_Ilosc, Skladnik2_SKU, Skladnik2_Nazwa, Skladnik2_Ilosc, ...
+                  </code>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                    Tip: Najlatwiej wyeksportowac istniejace dane i uzyc ich jako szablonu.
+                  </p>
+                </div>
+              </div>
+
+              <button
+                onClick={() => setShowInstructions(false)}
+                className="w-full mt-4 py-2 px-4 bg-gray-600 text-white rounded-lg hover:bg-gray-700"
+              >
+                Zamknij
+              </button>
             </div>
           </div>
         )}
