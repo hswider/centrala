@@ -3794,9 +3794,11 @@ export async function getTasksForUser(username) {
 }
 
 // Get all tasks (for admin or thread view)
+// Completed tasks are hidden after 24 hours
 export async function getAllTasks() {
   const { rows } = await sql`
     SELECT * FROM tasks
+    WHERE status = 'pending' OR (status = 'completed' AND completed_at > NOW() - INTERVAL '24 hours')
     ORDER BY created_at DESC
     LIMIT 100
   `;
@@ -3804,11 +3806,13 @@ export async function getAllTasks() {
 }
 
 // Get tasks for a specific thread or all tasks of a thread type
+// Completed tasks are hidden after 24 hours
 export async function getTasksForThread(threadId, threadType) {
   if (threadId) {
     const { rows } = await sql`
       SELECT * FROM tasks
       WHERE thread_id = ${threadId} AND thread_type = ${threadType}
+        AND (status = 'pending' OR (status = 'completed' AND completed_at > NOW() - INTERVAL '24 hours'))
       ORDER BY created_at DESC
     `;
     return rows;
@@ -3817,6 +3821,7 @@ export async function getTasksForThread(threadId, threadType) {
     const { rows } = await sql`
       SELECT * FROM tasks
       WHERE thread_type = ${threadType}
+        AND (status = 'pending' OR (status = 'completed' AND completed_at > NOW() - INTERVAL '24 hours'))
       ORDER BY created_at DESC
     `;
     return rows;
