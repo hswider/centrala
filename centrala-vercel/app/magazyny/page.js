@@ -3107,69 +3107,75 @@ export default function MagazynyPage() {
                 const productionTime = recipeItem.czas_produkcji || 0;
                 const laborCost = productionTime * MINUTE_RATE;
                 const totalCost = ingredientsCost + laborCost;
+                const margin = recipeItem.cena - totalCost;
+                const marginPercent = totalCost > 0 ? ((margin / totalCost) * 100) : (recipeItem.cena > 0 ? 100 : 0);
 
                 return (
-                  <div className="bg-gradient-to-r from-blue-50 to-green-50 border border-blue-200 rounded-lg p-4 mb-4">
-                    <h4 className="font-semibold text-gray-800 mb-3 border-b pb-2">Kalkulator kosztow wytworzenia</h4>
-
-                    {/* Czas produkcji */}
-                    <div className="flex justify-between items-center py-2 border-b border-gray-200">
-                      <div>
-                        <p className="text-sm font-medium text-gray-700">Czas produkcji</p>
-                        <p className="text-xs text-gray-500">Ustawiony w tabeli glownej</p>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-lg font-bold text-gray-800">{productionTime} min</p>
-                      </div>
+                  <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-sm mb-4 overflow-hidden">
+                    {/* Header */}
+                    <div className="bg-gradient-to-r from-indigo-500 to-purple-600 px-4 py-3">
+                      <h4 className="font-semibold text-white flex items-center gap-2">
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                        </svg>
+                        Kalkulator kosztow
+                      </h4>
                     </div>
 
-                    {/* Koszt skladnikow */}
-                    <div className="flex justify-between items-center py-2 border-b border-gray-200">
-                      <div>
-                        <p className="text-sm font-medium text-gray-700">Koszt skladnikow</p>
-                        <p className="text-xs text-gray-500">Suma wartosci netto skladnikow</p>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-lg font-bold text-blue-700">{ingredientsCost.toFixed(2)} zl</p>
-                      </div>
-                    </div>
-
-                    {/* Koszt pracy */}
-                    <div className="flex justify-between items-center py-2 border-b border-gray-200">
-                      <div>
-                        <p className="text-sm font-medium text-gray-700">Koszt pracy</p>
-                        <p className="text-xs text-gray-500">{productionTime} min × {MINUTE_RATE.toFixed(3)} zl/min (najnizsza krajowa)</p>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-lg font-bold text-orange-600">{laborCost.toFixed(2)} zl</p>
-                      </div>
-                    </div>
-
-                    {/* SUMA */}
-                    <div className="flex justify-between items-center pt-3 mt-2">
-                      <div>
-                        <p className="text-base font-bold text-gray-900">KOSZT WYTWORZENIA</p>
-                        <p className="text-xs text-gray-500">Skladniki + praca</p>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-2xl font-bold text-green-700">{totalCost.toFixed(2)} zl</p>
-                      </div>
-                    </div>
-
-                    {/* Marza */}
-                    {recipeItem.cena > 0 && (
-                      <div className="flex justify-between items-center pt-2 mt-2 border-t border-gray-300">
-                        <div>
-                          <p className="text-sm font-medium text-gray-700">Marza</p>
-                          <p className="text-xs text-gray-500">Cena sprzedazy: {recipeItem.cena.toFixed(2)} zl</p>
+                    <div className="p-4">
+                      {/* Grid z kosztami */}
+                      <div className="grid grid-cols-3 gap-3 mb-4">
+                        {/* Czas */}
+                        <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-3 text-center">
+                          <div className="text-2xl mb-1">⏱️</div>
+                          <p className="text-xl font-bold text-gray-800 dark:text-white">{productionTime}</p>
+                          <p className="text-xs text-gray-500 dark:text-gray-400">minut</p>
                         </div>
-                        <div className="text-right">
-                          <p className={`text-lg font-bold ${(recipeItem.cena - totalCost) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                            {(recipeItem.cena - totalCost).toFixed(2)} zl ({totalCost > 0 ? (((recipeItem.cena - totalCost) / totalCost) * 100).toFixed(0) : 0}%)
-                          </p>
+                        {/* Skladniki */}
+                        <div className="bg-blue-50 dark:bg-blue-900/30 rounded-lg p-3 text-center">
+                          <div className="text-2xl mb-1">📦</div>
+                          <p className="text-xl font-bold text-blue-600 dark:text-blue-400">{ingredientsCost.toFixed(2)}</p>
+                          <p className="text-xs text-gray-500 dark:text-gray-400">skladniki</p>
+                        </div>
+                        {/* Praca */}
+                        <div className="bg-orange-50 dark:bg-orange-900/30 rounded-lg p-3 text-center">
+                          <div className="text-2xl mb-1">👷</div>
+                          <p className="text-xl font-bold text-orange-600 dark:text-orange-400">{laborCost.toFixed(2)}</p>
+                          <p className="text-xs text-gray-500 dark:text-gray-400">praca</p>
                         </div>
                       </div>
-                    )}
+
+                      {/* Suma kosztow */}
+                      <div className="bg-gradient-to-r from-green-500 to-emerald-600 rounded-lg p-4 text-white mb-3">
+                        <div className="flex justify-between items-center">
+                          <div>
+                            <p className="text-sm opacity-90">Koszt wytworzenia</p>
+                            <p className="text-xs opacity-75">{ingredientsCost.toFixed(2)} + {laborCost.toFixed(2)} zl</p>
+                          </div>
+                          <p className="text-3xl font-bold">{totalCost.toFixed(2)} zl</p>
+                        </div>
+                      </div>
+
+                      {/* Marza */}
+                      {recipeItem.cena > 0 && (
+                        <div className={`rounded-lg p-4 ${margin >= 0 ? 'bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800' : 'bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800'}`}>
+                          <div className="flex justify-between items-center">
+                            <div>
+                              <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Marza netto</p>
+                              <p className="text-xs text-gray-500 dark:text-gray-400">Cena: {recipeItem.cena.toFixed(2)} zl</p>
+                            </div>
+                            <div className="text-right">
+                              <p className={`text-2xl font-bold ${margin >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+                                {margin >= 0 ? '+' : ''}{margin.toFixed(2)} zl
+                              </p>
+                              <p className={`text-sm font-medium ${margin >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+                                {marginPercent.toFixed(0)}%
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 );
               })()}
