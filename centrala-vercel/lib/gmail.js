@@ -210,19 +210,22 @@ function encodeEmailSubject(subject) {
 }
 
 // Send reply to thread
-export async function sendReply(threadId, to, subject, body, messageId = null) {
+export async function sendReply(threadId, to, subject, body, messageId = null, allMessageIds = []) {
   const tokens = await getGmailTokens();
   const fromEmail = tokens.email;
 
-  const replyToId = messageId || threadId;
+  // Use the last message's Message-ID for In-Reply-To, fall back to threadId if not available
+  const inReplyTo = messageId || threadId;
+  // Build References header with all previous Message-IDs (proper threading requires the full chain)
+  const references = allMessageIds.length > 0 ? allMessageIds.join(' ') : inReplyTo;
   const replySubject = 'Re: ' + subject.replace(/^(Re|Odp|AW|SV|Fwd|FW):\s*/gi, '').replace(/^(Re|Odp|AW|SV|Fwd|FW):\s*/gi, '');
 
   const emailLines = [
     `From: ${fromEmail}`,
     `To: ${to}`,
     `Subject: ${encodeEmailSubject(replySubject)}`,
-    `In-Reply-To: ${replyToId}`,
-    `References: ${replyToId}`,
+    `In-Reply-To: ${inReplyTo}`,
+    `References: ${references}`,
     'MIME-Version: 1.0',
     'Content-Type: text/plain; charset=utf-8',
     'Content-Transfer-Encoding: base64',
@@ -243,11 +246,14 @@ export async function sendReply(threadId, to, subject, body, messageId = null) {
 }
 
 // Send reply with attachments
-export async function sendReplyWithAttachments(threadId, to, subject, body, attachments = [], messageId = null) {
+export async function sendReplyWithAttachments(threadId, to, subject, body, attachments = [], messageId = null, allMessageIds = []) {
   const tokens = await getGmailTokens();
   const from = tokens?.email || 'me';
 
-  const replyToId = messageId || threadId;
+  // Use the last message's Message-ID for In-Reply-To, fall back to threadId if not available
+  const inReplyTo = messageId || threadId;
+  // Build References header with all previous Message-IDs (proper threading requires the full chain)
+  const references = allMessageIds.length > 0 ? allMessageIds.join(' ') : inReplyTo;
   const replySubject = 'Re: ' + subject.replace(/^(Re|Odp|AW|SV|Fwd|FW):\s*/gi, '').replace(/^(Re|Odp|AW|SV|Fwd|FW):\s*/gi, '');
   const boundary = `boundary_${Date.now()}`;
 
@@ -255,8 +261,8 @@ export async function sendReplyWithAttachments(threadId, to, subject, body, atta
     `From: ${from}`,
     `To: ${to}`,
     `Subject: ${encodeEmailSubject(replySubject)}`,
-    `In-Reply-To: ${replyToId}`,
-    `References: ${replyToId}`,
+    `In-Reply-To: ${inReplyTo}`,
+    `References: ${references}`,
     'MIME-Version: 1.0',
     `Content-Type: multipart/mixed; boundary="${boundary}"`,
     '',

@@ -149,22 +149,29 @@ export async function POST(request, { params }) {
       }, { status: 400 });
     }
 
-    // Get thread first to find the last message's Message-ID for proper threading
+    // Get thread first to find ALL Message-IDs for proper threading
     const threadForReply = await getThread(threadId);
     let lastMessageId = null;
+    let allMessageIds = [];
     if (threadForReply && threadForReply.messages && threadForReply.messages.length > 0) {
-      const lastMsg = threadForReply.messages[threadForReply.messages.length - 1];
-      const headers = lastMsg.payload?.headers || [];
-      const msgIdHeader = headers.find(h => h.name.toLowerCase() === 'message-id');
-      lastMessageId = msgIdHeader?.value || null;
+      // Collect all Message-IDs from the thread for the References header
+      for (const msg of threadForReply.messages) {
+        const headers = msg.payload?.headers || [];
+        const msgIdHeader = headers.find(h => h.name.toLowerCase() === 'message-id');
+        if (msgIdHeader?.value) {
+          allMessageIds.push(msgIdHeader.value);
+        }
+      }
+      // The last Message-ID is used for In-Reply-To
+      lastMessageId = allMessageIds.length > 0 ? allMessageIds[allMessageIds.length - 1] : null;
     }
 
     // Send reply via Gmail API (with or without attachments)
     let sentMessage;
     if (attachments && attachments.length > 0) {
-      sentMessage = await sendReplyWithAttachments(threadId, to, subject || '', text?.trim() || '', attachments, lastMessageId);
+      sentMessage = await sendReplyWithAttachments(threadId, to, subject || '', text?.trim() || '', attachments, lastMessageId, allMessageIds);
     } else {
-      sentMessage = await sendReply(threadId, to, subject || '', text.trim(), lastMessageId);
+      sentMessage = await sendReply(threadId, to, subject || '', text.trim(), lastMessageId, allMessageIds);
     }
 
     // Refresh thread to get the sent message
