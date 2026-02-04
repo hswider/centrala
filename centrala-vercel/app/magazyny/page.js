@@ -3076,12 +3076,12 @@ export default function MagazynyPage() {
 
         {/* Recipe Modal */}
         {showRecipeModal && recipeItem && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl dark:shadow-gray-900 max-w-2xl w-full p-6 max-h-[90vh] overflow-y-auto">
-              <div className="flex justify-between items-start mb-4">
-                <div>
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-2 sm:p-4">
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl dark:shadow-gray-900 max-w-4xl w-full p-4 sm:p-6 max-h-[95vh] overflow-y-auto">
+              <div className="flex justify-between items-start mb-4 gap-4">
+                <div className="min-w-0 flex-1">
                   <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Szczegoly produktu</h3>
-                  <p className="text-sm text-gray-500">{recipeItem.sku} - {recipeItem.nazwa}</p>
+                  <p className="text-sm text-gray-500 break-words">{recipeItem.sku} - {recipeItem.nazwa}</p>
                 </div>
                 <button
                   onClick={() => {
@@ -3180,86 +3180,92 @@ export default function MagazynyPage() {
                 <>
                   {/* Lista skladnikow */}
                   <div className="mb-6">
-                    <h4 className="font-medium text-gray-700 mb-2">Skladniki ({recipeIngredients.length})</h4>
+                    <h4 className="font-medium text-gray-700 dark:text-gray-300 mb-2">Skladniki ({recipeIngredients.length})</h4>
                     {recipeIngredients.length === 0 ? (
-                      <p className="text-sm text-gray-500 py-4 text-center bg-gray-50 rounded">
+                      <p className="text-sm text-gray-500 py-4 text-center bg-gray-50 dark:bg-gray-700 rounded">
                         Brak skladnikow. Dodaj skladniki z listy ponizej.
                       </p>
                     ) : (
-                      <table className="w-full text-sm">
-                        <thead className="bg-gray-50 dark:bg-gray-700">
-                          <tr>
-                            <th className="px-3 py-2 text-left">SKU</th>
-                            <th className="px-3 py-2 text-left">Nazwa</th>
-                            <th className="px-3 py-2 text-center">Ilosc</th>
-                            <th className="px-3 py-2 text-right">Wart. netto</th>
-                            <th className="px-3 py-2 text-right">Suma</th>
-                            <th className="px-3 py-2 text-center">Stan</th>
-                            <th className="px-3 py-2 text-center">Akcja</th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y">
-                          {recipeIngredients.map(ing => (
-                            <tr key={ing.id}>
-                              <td className="px-3 py-2 font-mono text-xs">{ing.sku}</td>
-                              <td className="px-3 py-2">{ing.nazwa}</td>
-                              <td className="px-3 py-2 text-center">
-                                <input
-                                  type="number"
-                                  value={ing.quantity}
-                                  onChange={(e) => handleUpdateIngredientQty(ing.id, parseFloat(e.target.value) || 1)}
-                                  className="w-16 px-2 py-1 text-center border rounded"
-                                  min="0.01"
-                                  step="0.01"
-                                />
-                              </td>
-                              <td className="px-3 py-2 text-right text-gray-600">
-                                {(ing.ingredientCena || 0).toFixed(2)} zl
-                              </td>
-                              <td className="px-3 py-2 text-right font-medium">
-                                {((ing.ingredientCena || 0) * ing.quantity).toFixed(2)} zl
-                              </td>
-                              <td className="px-3 py-2 text-center">
-                                <span className={`px-2 py-0.5 rounded text-xs ${
-                                  ing.ingredientStan > 0 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                                }`}>
-                                  {ing.ingredientStan} szt.
-                                </span>
-                              </td>
-                              <td className="px-3 py-2 text-center">
-                                <button
-                                  onClick={() => handleRemoveIngredient(ing.id)}
-                                  className="text-red-600 hover:text-red-800"
-                                >
-                                  Usun
-                                </button>
-                              </td>
+                      <div className="overflow-x-auto -mx-4 sm:mx-0">
+                        <table className="w-full text-sm min-w-[600px]">
+                          <thead className="bg-gray-50 dark:bg-gray-700">
+                            <tr>
+                              <th className="px-2 sm:px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase w-24">SKU</th>
+                              <th className="px-2 sm:px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Nazwa</th>
+                              <th className="px-2 sm:px-3 py-2 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase w-20">Ilosc</th>
+                              <th className="px-2 sm:px-3 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase w-24">Cena</th>
+                              <th className="px-2 sm:px-3 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase w-24">Suma</th>
+                              <th className="px-2 sm:px-3 py-2 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase w-20">Stan</th>
+                              <th className="px-2 sm:px-3 py-2 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase w-16">Akcja</th>
                             </tr>
-                          ))}
-                        </tbody>
-                      </table>
+                          </thead>
+                          <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
+                            {recipeIngredients.map(ing => (
+                              <tr key={ing.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
+                                <td className="px-2 sm:px-3 py-2">
+                                  <span className="font-mono text-[10px] text-gray-600 dark:text-gray-400 break-all">{ing.sku}</span>
+                                </td>
+                                <td className="px-2 sm:px-3 py-2">
+                                  <span className="text-sm text-gray-900 dark:text-white">{ing.nazwa}</span>
+                                </td>
+                                <td className="px-2 sm:px-3 py-2 text-center">
+                                  <input
+                                    type="number"
+                                    value={ing.quantity}
+                                    onChange={(e) => handleUpdateIngredientQty(ing.id, parseFloat(e.target.value) || 1)}
+                                    className="w-16 px-2 py-1 text-center border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm"
+                                    min="0.01"
+                                    step="0.01"
+                                  />
+                                </td>
+                                <td className="px-2 sm:px-3 py-2 text-right text-sm text-gray-600 dark:text-gray-400 whitespace-nowrap">
+                                  {(ing.ingredientCena || 0).toFixed(2)} zl
+                                </td>
+                                <td className="px-2 sm:px-3 py-2 text-right font-medium text-sm text-gray-900 dark:text-white whitespace-nowrap">
+                                  {((ing.ingredientCena || 0) * ing.quantity).toFixed(2)} zl
+                                </td>
+                                <td className="px-2 sm:px-3 py-2 text-center">
+                                  <span className={`px-2 py-0.5 rounded text-xs font-medium ${
+                                    ing.ingredientStan > 0 ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300' : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300'
+                                  }`}>
+                                    {ing.ingredientStan}
+                                  </span>
+                                </td>
+                                <td className="px-2 sm:px-3 py-2 text-center">
+                                  <button
+                                    onClick={() => handleRemoveIngredient(ing.id)}
+                                    className="text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 text-xs font-medium"
+                                  >
+                                    Usun
+                                  </button>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
                     )}
                   </div>
 
                   {/* Dodaj skladnik */}
-                  <div className="border-t pt-4">
-                    <h4 className="font-medium text-gray-700 mb-2">Dodaj skladnik z magazynu</h4>
+                  <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
+                    <h4 className="font-medium text-gray-700 dark:text-gray-300 mb-3">Dodaj skladnik z magazynu</h4>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                       {/* Polprodukty - tylko dla gotowych produktow */}
                       {activeTab === 'gotowe' && (
-                        <div>
-                          <p className="text-xs font-medium text-gray-500 mb-1">Polprodukty</p>
+                        <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-3">
+                          <p className="text-xs font-semibold text-blue-700 dark:text-blue-400 mb-2 uppercase tracking-wide">Polprodukty</p>
                           <input
                             type="text"
                             value={ingredientSearchPolprodukty}
                             onChange={(e) => setIngredientSearchPolprodukty(e.target.value)}
-                            placeholder="Szukaj polproduktow..."
-                            className="w-full px-2 py-1.5 border border-gray-300 rounded text-xs mb-1 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                            placeholder="Szukaj..."
+                            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm mb-2 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
                           />
-                          <div className="max-h-40 overflow-y-auto border rounded">
+                          <div className="max-h-48 overflow-y-auto bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
                             {(magazyny.polprodukty || []).length === 0 ? (
-                              <p className="text-xs text-gray-400 p-2">Brak polproduktow</p>
+                              <p className="text-xs text-gray-400 p-3 text-center">Brak polproduktow</p>
                             ) : (
                               (() => {
                                 const filtered = (magazyny.polprodukty || [])
@@ -3270,16 +3276,16 @@ export default function MagazynyPage() {
                                     return p.nazwa.toLowerCase().includes(search) || p.sku.toLowerCase().includes(search);
                                   });
                                 return filtered.length === 0 ? (
-                                  <p className="text-xs text-gray-400 p-2">{ingredientSearchPolprodukty ? 'Brak wynikow' : 'Wszystkie dodane'}</p>
+                                  <p className="text-xs text-gray-400 p-3 text-center">{ingredientSearchPolprodukty ? 'Brak wynikow' : 'Wszystkie dodane'}</p>
                                 ) : (
-                                  filtered.map(p => (
+                                  filtered.slice(0, 50).map(p => (
                                     <button
                                       key={p.id}
                                       onClick={() => handleAddIngredient(p.id)}
-                                      className="w-full text-left px-2 py-1.5 text-xs hover:bg-blue-50 border-b last:border-b-0 flex justify-between"
+                                      className="w-full text-left px-3 py-2 text-xs hover:bg-blue-100 dark:hover:bg-blue-900/40 border-b border-gray-100 dark:border-gray-700 last:border-b-0 flex items-center justify-between gap-2 transition-colors"
                                     >
-                                      <span>{p.sku} - {p.nazwa}</span>
-                                      <span className="text-gray-400">+</span>
+                                      <span className="truncate text-gray-700 dark:text-gray-300">{p.nazwa}</span>
+                                      <span className="text-blue-500 text-lg flex-shrink-0">+</span>
                                     </button>
                                   ))
                                 );
@@ -3290,18 +3296,18 @@ export default function MagazynyPage() {
                       )}
                       {/* Wykroje - dla gotowych i polproduktow */}
                       {(activeTab === 'gotowe' || activeTab === 'polprodukty') && (
-                        <div>
-                          <p className="text-xs font-medium text-gray-500 mb-1">Wykroje</p>
+                        <div className="bg-yellow-50 dark:bg-yellow-900/20 rounded-lg p-3">
+                          <p className="text-xs font-semibold text-yellow-700 dark:text-yellow-400 mb-2 uppercase tracking-wide">Wykroje</p>
                           <input
                             type="text"
                             value={ingredientSearchWykroje}
                             onChange={(e) => setIngredientSearchWykroje(e.target.value)}
-                            placeholder="Szukaj wykrojow..."
-                            className="w-full px-2 py-1.5 border border-gray-300 rounded text-xs mb-1 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                            placeholder="Szukaj..."
+                            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm mb-2 focus:outline-none focus:ring-2 focus:ring-yellow-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
                           />
-                          <div className="max-h-40 overflow-y-auto border rounded">
+                          <div className="max-h-48 overflow-y-auto bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
                             {(magazyny.wykroje || []).length === 0 ? (
-                              <p className="text-xs text-gray-400 p-2">Brak wykrojow</p>
+                              <p className="text-xs text-gray-400 p-3 text-center">Brak wykrojow</p>
                             ) : (
                               (() => {
                                 const filtered = (magazyny.wykroje || [])
@@ -3312,16 +3318,16 @@ export default function MagazynyPage() {
                                     return p.nazwa.toLowerCase().includes(search) || p.sku.toLowerCase().includes(search);
                                   });
                                 return filtered.length === 0 ? (
-                                  <p className="text-xs text-gray-400 p-2">{ingredientSearchWykroje ? 'Brak wynikow' : 'Wszystkie dodane'}</p>
+                                  <p className="text-xs text-gray-400 p-3 text-center">{ingredientSearchWykroje ? 'Brak wynikow' : 'Wszystkie dodane'}</p>
                                 ) : (
-                                  filtered.map(p => (
+                                  filtered.slice(0, 50).map(p => (
                                     <button
                                       key={p.id}
                                       onClick={() => handleAddIngredient(p.id)}
-                                      className="w-full text-left px-2 py-1.5 text-xs hover:bg-blue-50 border-b last:border-b-0 flex justify-between"
+                                      className="w-full text-left px-3 py-2 text-xs hover:bg-yellow-100 dark:hover:bg-yellow-900/40 border-b border-gray-100 dark:border-gray-700 last:border-b-0 flex items-center justify-between gap-2 transition-colors"
                                     >
-                                      <span>{p.sku} - {p.nazwa}</span>
-                                      <span className="text-gray-400">+</span>
+                                      <span className="truncate text-gray-700 dark:text-gray-300">{p.nazwa}</span>
+                                      <span className="text-yellow-600 text-lg flex-shrink-0">+</span>
                                     </button>
                                   ))
                                 );
@@ -3331,18 +3337,18 @@ export default function MagazynyPage() {
                         </div>
                       )}
                       {/* Surowce - dla wszystkich (gotowe, polprodukty, wykroje) */}
-                      <div className={activeTab === 'wykroje' ? 'sm:col-span-2' : (activeTab === 'polprodukty' ? '' : 'sm:col-span-2')}>
-                        <p className="text-xs font-medium text-gray-500 mb-1">Surowce</p>
+                      <div className={`bg-green-50 dark:bg-green-900/20 rounded-lg p-3 ${activeTab === 'wykroje' ? 'md:col-span-2 lg:col-span-3' : (activeTab === 'polprodukty' ? '' : '')}`}>
+                        <p className="text-xs font-semibold text-green-700 dark:text-green-400 mb-2 uppercase tracking-wide">Surowce</p>
                         <input
                           type="text"
                           value={ingredientSearchSurowce}
                           onChange={(e) => setIngredientSearchSurowce(e.target.value)}
-                          placeholder="Szukaj surowcow..."
-                          className="w-full px-2 py-1.5 border border-gray-300 rounded text-xs mb-1 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                          placeholder="Szukaj..."
+                          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm mb-2 focus:outline-none focus:ring-2 focus:ring-green-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
                         />
-                        <div className="max-h-40 overflow-y-auto border rounded">
+                        <div className="max-h-48 overflow-y-auto bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
                           {(magazyny.surowce || []).length === 0 ? (
-                            <p className="text-xs text-gray-400 p-2">Brak surowcow</p>
+                            <p className="text-xs text-gray-400 p-3 text-center">Brak surowcow</p>
                           ) : (
                             (() => {
                               const filtered = (magazyny.surowce || [])
@@ -3353,16 +3359,16 @@ export default function MagazynyPage() {
                                   return p.nazwa.toLowerCase().includes(search) || p.sku.toLowerCase().includes(search);
                                 });
                               return filtered.length === 0 ? (
-                                <p className="text-xs text-gray-400 p-2">{ingredientSearchSurowce ? 'Brak wynikow' : 'Wszystkie dodane'}</p>
+                                <p className="text-xs text-gray-400 p-3 text-center">{ingredientSearchSurowce ? 'Brak wynikow' : 'Wszystkie dodane'}</p>
                               ) : (
-                                filtered.map(p => (
+                                filtered.slice(0, 50).map(p => (
                                   <button
                                     key={p.id}
                                     onClick={() => handleAddIngredient(p.id)}
-                                    className="w-full text-left px-2 py-1.5 text-xs hover:bg-blue-50 border-b last:border-b-0 flex justify-between"
+                                    className="w-full text-left px-3 py-2 text-xs hover:bg-green-100 dark:hover:bg-green-900/40 border-b border-gray-100 dark:border-gray-700 last:border-b-0 flex items-center justify-between gap-2 transition-colors"
                                   >
-                                    <span>{p.sku} - {p.nazwa}</span>
-                                    <span className="text-gray-400">+</span>
+                                    <span className="truncate text-gray-700 dark:text-gray-300">{p.nazwa}</span>
+                                    <span className="text-green-600 text-lg flex-shrink-0">+</span>
                                   </button>
                                 ))
                               );
