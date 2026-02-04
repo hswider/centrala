@@ -280,6 +280,16 @@ export async function GET(request) {
     // Sortuj po deficycie
     products.sort((a, b) => a.deficit - b.deficit);
 
+    // Filtruj tylko dozwolone SKU (PUFAPOKROWIEC)
+    const allowedSkus = [
+      'PUFAPOKROWIEC-SKU-001',
+      'PUFAPOKROWIEC-SKU-002',
+      'PUFAPOKROWIEC-SKU-003',
+      'PUFAPOKROWIEC-SKU-004',
+      'PUFAPOKROWIEC-SKU-005'
+    ];
+    products = products.filter(p => allowedSkus.includes(normalizeSku(p.sku)));
+
     // Statystyki
     const summary = {
       shelf,
