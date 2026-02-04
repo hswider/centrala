@@ -85,17 +85,37 @@ export default function MagazynyPage() {
     surowce: [],
   });
 
+  // Cache zaladowanych kategorii (lazy loading) - uzywamy ref dla stabilnosci funkcji
+  const loadedCategoriesRef = useRef(new Set());
+
   const [newItem, setNewItem] = useState({ sku: '', nazwa: '', ean: '', stan: '', cena: '', czas_produkcji: '', jednostka: 'szt', tkanina: '' });
 
-  // Pobierz dane z API
-  const fetchInventory = useCallback(async () => {
+  // Pobierz dane z API dla konkretnej kategorii (lazy loading)
+  const fetchInventory = useCallback(async (kategoria = null, forceRefresh = false) => {
+    // Jesli kategoria juz zaladowana i nie wymuszamy odswiezenia, pomin
+    if (kategoria && loadedCategoriesRef.current.has(kategoria) && !forceRefresh) {
+      return;
+    }
+
     try {
       setLoading(true);
-      const res = await fetch('/api/inventory');
+      const url = kategoria ? `/api/inventory?kategoria=${kategoria}` : '/api/inventory';
+      const res = await fetch(url);
       const data = await res.json();
 
       if (data.success) {
-        setMagazyny(data.data);
+        if (kategoria) {
+          // Aktualizuj tylko dana kategorie
+          setMagazyny(prev => ({
+            ...prev,
+            [kategoria]: data.data[kategoria] || []
+          }));
+          loadedCategoriesRef.current.add(kategoria);
+        } else {
+          // Zaladuj wszystkie kategorie (fallback)
+          setMagazyny(data.data);
+          loadedCategoriesRef.current = new Set(['gotowe', 'polprodukty', 'wykroje', 'surowce']);
+        }
       }
     } catch (error) {
       console.error('Blad pobierania danych:', error);
@@ -104,8 +124,17 @@ export default function MagazynyPage() {
     }
   }, []);
 
+  // Zaladuj poczatkowa kategorie (gotowe)
   useEffect(() => {
-    fetchInventory();
+    fetchInventory('gotowe');
+  }, []);
+
+  // Zaladuj dane gdy zmienia sie zakladka
+  const handleTabChange = useCallback((newTab) => {
+    setActiveTab(newTab);
+    setCurrentPage(1);
+    setSelectedIds(new Set());
+    fetchInventory(newTab);
   }, [fetchInventory]);
 
   // Dodaj nowa pozycje
@@ -156,7 +185,7 @@ export default function MagazynyPage() {
       const data = await res.json();
 
       if (data.success) {
-        await fetchInventory();
+        await fetchInventory(activeTab, true);
         setNewItem({ sku: '', nazwa: '', ean: '', stan: '', cena: '', czas_produkcji: '', jednostka: 'szt', tkanina: '' });
         setShowAddModal(false);
       } else {
@@ -181,7 +210,7 @@ export default function MagazynyPage() {
       const data = await res.json();
 
       if (data.success) {
-        await fetchInventory();
+        await fetchInventory(activeTab, true);
       } else {
         alert('Blad: ' + data.error);
       }
@@ -461,7 +490,7 @@ export default function MagazynyPage() {
 
       if (data.success) {
         setSelectedIds(new Set());
-        await fetchInventory();
+        await fetchInventory(activeTab, true);
         alert(`Usunieto ${data.deleted} pozycji`);
       } else {
         alert('Blad: ' + data.error);
@@ -504,7 +533,7 @@ export default function MagazynyPage() {
       const data = await res.json();
 
       if (data.success) {
-        await fetchInventory();
+        await fetchInventory(activeTab, true);
         setShowEditModal(false);
         setEditingItem(null);
       } else {
@@ -1042,7 +1071,7 @@ export default function MagazynyPage() {
         })
       });
 
-      await fetchInventory();
+      await fetchInventory('surowce', true);
       setWzDocument({
         numer: '',
         firma: '',
@@ -1131,7 +1160,7 @@ export default function MagazynyPage() {
         })
       });
 
-      await fetchInventory();
+      await fetchInventory('surowce', true);
       setRwDocument({
         numer: '',
         firma: 'POOM',
@@ -1553,7 +1582,7 @@ export default function MagazynyPage() {
           const data = await res.json();
 
           if (data.success) {
-            await fetchInventory();
+            await fetchInventory(activeTab, true);
             let message = '';
 
             // Buduj komunikat z podzialem na nowe i zaktualizowane
@@ -1752,7 +1781,7 @@ export default function MagazynyPage() {
             {tabs.map((tab) => (
               <button
                 key={tab.key}
-                onClick={() => { setActiveTab(tab.key); setCurrentPage(1); setSelectedIds(new Set()); }}
+                onClick={() => handleTabChange(tab.key)}
                 className={`flex-1 flex items-center justify-center gap-2 py-3 text-sm font-medium transition-colors whitespace-nowrap px-4 ${
                   activeTab === tab.key
                     ? 'text-blue-600 dark:text-blue-400 border-b-2 border-blue-600 dark:border-blue-400 bg-blue-50 dark:bg-blue-900/30'
@@ -3062,6 +3091,8 @@ export default function MagazynyPage() {
                     setIngredientSearchPolprodukty('');
                     setIngredientSearchWykroje('');
                     setIngredientSearchSurowce('');
+                    // Odswież liste produktow zeby pokazac aktualna recepture
+                    fetchInventory(activeTab, true);
                   }}
                   className="text-gray-400 hover:text-gray-600 text-2xl"
                 >
@@ -3351,6 +3382,8 @@ export default function MagazynyPage() {
                         setIngredientSearchPolprodukty('');
                         setIngredientSearchWykroje('');
                         setIngredientSearchSurowce('');
+                        // Odswież liste produktow zeby pokazac aktualna recepture
+                        fetchInventory(activeTab, true);
                       }}
                       className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700"
                     >
