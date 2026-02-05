@@ -142,8 +142,8 @@ export default function RankPage() {
     fetchStats(30);
   }, []);
 
-  // Check if user has admin permission
-  const isAdmin = user?.permissions?.includes('admin');
+  // Check if user has rank or admin permission
+  const hasAccess = user?.permissions?.includes('rank') || user?.permissions?.includes('admin');
 
   // Show loading while checking auth
   if (authLoading) {
@@ -154,8 +154,8 @@ export default function RankPage() {
     );
   }
 
-  // Show access denied if not admin
-  if (!isAdmin) {
+  // Show access denied if no access
+  if (!hasAccess) {
     return (
       <div className="min-h-screen bg-gray-100 dark:bg-gray-900 flex items-center justify-center px-4">
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg dark:shadow-gray-900 p-8 max-w-md w-full text-center">
@@ -164,7 +164,7 @@ export default function RankPage() {
           </div>
           <h1 className="text-xl font-bold text-gray-900 dark:text-white mb-2">Brak dostępu</h1>
           <p className="text-gray-500 dark:text-gray-400 mb-6">
-            Ta strona jest dostępna tylko dla użytkowników z uprawnieniami administratora.
+            Nie masz uprawnień do tej strony. Skontaktuj się z administratorem.
           </p>
           <a
             href="/"
