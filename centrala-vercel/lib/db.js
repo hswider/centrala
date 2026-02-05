@@ -111,6 +111,13 @@ export async function initDatabase() {
     // Ignore errors
   }
 
+  // Give Alicja access to rank
+  try {
+    await sql`UPDATE users SET permissions = permissions || '["rank"]'::jsonb WHERE LOWER(username) = 'alicja' AND NOT (permissions @> '["rank"]'::jsonb)`;
+  } catch (e) {
+    // Ignore errors
+  }
+
   // Add last_activity column for online status tracking
   try {
     await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS last_activity TIMESTAMP`;
