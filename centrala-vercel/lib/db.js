@@ -111,9 +111,10 @@ export async function initDatabase() {
     // Ignore errors
   }
 
-  // Give Alicja access to rank
+  // Give Alicja access to rank and dms
   try {
     await sql`UPDATE users SET permissions = permissions || '["rank"]'::jsonb WHERE LOWER(username) = 'alicja' AND NOT (permissions @> '["rank"]'::jsonb)`;
+    await sql`UPDATE users SET permissions = permissions || '["dms"]'::jsonb WHERE LOWER(username) = 'alicja' AND NOT (permissions @> '["dms"]'::jsonb)`;
   } catch (e) {
     // Ignore errors
   }
