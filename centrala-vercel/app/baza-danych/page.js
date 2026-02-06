@@ -29,7 +29,25 @@ export default function BazaDanychPage() {
   const [hasAccess, setHasAccess] = useState(null);
   const [itemsPerPage, setItemsPerPage] = useState(50);
   const [currentPage, setCurrentPage] = useState(1);
+  const [showImportModal, setShowImportModal] = useState(false);
   const fileInputRef = useRef(null);
+
+  // Example CSV content for download
+  const exampleCSV = `SKU;Sprzedaz
+PPI-SKU-109;100
+PPI-SKU-110;50
+PUFAPOKROWIEC-SKU-001;75
+LEGOWISKO-60-SZARY;120`;
+
+  const downloadExampleCSV = () => {
+    const blob = new Blob([exampleCSV], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'przyklad_import_sprzedazy.csv';
+    link.click();
+    URL.revokeObjectURL(url);
+  };
 
   // Check access on mount
   useEffect(() => {
@@ -147,6 +165,7 @@ export default function BazaDanychPage() {
       const result = await res.json();
       if (result.success) {
         setSuccess(result.message);
+        setShowImportModal(false);
         fetchData(); // Refresh data
       } else {
         setError(result.error);
@@ -280,18 +299,13 @@ export default function BazaDanychPage() {
           <div className="flex flex-col sm:flex-row sm:items-center gap-3">
             {/* Import CSV */}
             <div className="flex items-center gap-2">
-              <label className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 cursor-pointer flex items-center gap-2 text-sm font-medium">
+              <button
+                onClick={() => setShowImportModal(true)}
+                className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center gap-2 text-sm font-medium"
+              >
                 <span>📥</span>
                 <span>Import CSV</span>
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept=".csv,.txt"
-                  onChange={handleFileSelect}
-                  className="hidden"
-                  disabled={importing}
-                />
-              </label>
+              </button>
               {importing && <span className="text-sm text-gray-500">Importowanie...</span>}
             </div>
 
@@ -463,53 +477,105 @@ export default function BazaDanychPage() {
           )}
         </div>
 
-        {/* Instructions */}
-        <div className="mt-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4">
-          <h3 className="text-sm font-semibold text-blue-800 dark:text-blue-300 mb-3">Instrukcja importu danych z Amazon</h3>
+      </main>
 
-          <div className="space-y-3 text-xs text-blue-700 dark:text-blue-400">
-            <div>
-              <strong className="text-blue-800 dark:text-blue-300">1. Pobierz raport z Amazon Seller Central:</strong>
-              <ul className="list-disc ml-4 mt-1 space-y-1">
-                <li>Zaloguj sie do Amazon Seller Central</li>
-                <li>Przejdz do: Reports → Business Reports → Sales and Traffic</li>
-                <li>Wybierz zakres dat (np. caly miesiac)</li>
-                <li>Eksportuj do CSV</li>
-              </ul>
+      {/* Import CSV Modal */}
+      {showImportModal && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setShowImportModal(false)}>
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-lg w-full max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+            <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Import danych sprzedazy</h3>
+              <button
+                onClick={() => setShowImportModal(false)}
+                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 text-xl"
+              >
+                ×
+              </button>
             </div>
 
-            <div>
-              <strong className="text-blue-800 dark:text-blue-300">2. Przygotuj plik CSV:</strong>
-              <p className="mt-1">Plik musi zawierac dwie kolumny: <code className="bg-blue-100 dark:bg-blue-900/50 px-1 rounded">SKU</code> i <code className="bg-blue-100 dark:bg-blue-900/50 px-1 rounded">Sprzedaz</code> (lub Quantity/Ilosc/qty)</p>
-            </div>
+            <div className="p-4 space-y-4">
+              {/* Target month info */}
+              <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-3">
+                <p className="text-sm text-blue-800 dark:text-blue-300">
+                  Importujesz dane do: <strong>{MONTHS[selectedMonth - 1].label} {selectedYear}</strong>
+                </p>
+              </div>
 
-            <div>
-              <strong className="text-blue-800 dark:text-blue-300">3. Przykladowy format CSV:</strong>
-              <pre className="mt-1 bg-white dark:bg-gray-800 p-2 rounded border border-blue-200 dark:border-blue-800 overflow-x-auto">
+              {/* Instructions */}
+              <div className="space-y-3 text-sm text-gray-600 dark:text-gray-400">
+                <div>
+                  <strong className="text-gray-800 dark:text-gray-200">Format pliku CSV:</strong>
+                  <p className="mt-1">Plik musi zawierac dwie kolumny: <code className="bg-gray-100 dark:bg-gray-700 px-1 rounded text-xs">SKU</code> i <code className="bg-gray-100 dark:bg-gray-700 px-1 rounded text-xs">Sprzedaz</code></p>
+                </div>
+
+                <div>
+                  <strong className="text-gray-800 dark:text-gray-200">Przykladowy format:</strong>
+                  <pre className="mt-1 bg-gray-100 dark:bg-gray-700 p-2 rounded text-xs overflow-x-auto">
 {`SKU;Sprzedaz
 PPI-SKU-109;100
 PPI-SKU-110;50
-PUFAPOKROWIEC-SKU-001;75
-LEGOWISKO-60-SZARY;120`}
-              </pre>
+PUFAPOKROWIEC-SKU-001;75`}
+                  </pre>
+                </div>
+
+                <button
+                  onClick={downloadExampleCSV}
+                  className="w-full px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 text-sm font-medium flex items-center justify-center gap-2"
+                >
+                  <span>📄</span>
+                  Pobierz przykladowy plik CSV
+                </button>
+              </div>
+
+              {/* Warning */}
+              <div className="bg-yellow-50 dark:bg-yellow-900/20 rounded-lg p-3 text-sm text-yellow-800 dark:text-yellow-300">
+                <strong>Uwaga:</strong> Import <strong>dodaje</strong> wartosci do istniejacych (nie nadpisuje).
+              </div>
+
+              {/* File input */}
+              <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-6 text-center">
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".csv,.txt"
+                  onChange={handleFileSelect}
+                  className="hidden"
+                  id="csv-file-input"
+                  disabled={importing}
+                />
+                <label
+                  htmlFor="csv-file-input"
+                  className="cursor-pointer flex flex-col items-center gap-2"
+                >
+                  <span className="text-4xl">📁</span>
+                  <span className="text-sm text-gray-600 dark:text-gray-400">
+                    {importing ? 'Importowanie...' : 'Kliknij aby wybrac plik CSV'}
+                  </span>
+                  <span className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm font-medium">
+                    Wybierz plik
+                  </span>
+                </label>
+              </div>
+
+              {/* Error in modal */}
+              {error && (
+                <div className="p-3 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 rounded-lg text-sm">
+                  {error}
+                </div>
+              )}
             </div>
 
-            <div>
-              <strong className="text-blue-800 dark:text-blue-300">4. Importuj plik:</strong>
-              <ul className="list-disc ml-4 mt-1 space-y-1">
-                <li>Wybierz odpowiedni <strong>miesiac</strong> i <strong>rok</strong> u gory strony</li>
-                <li>Kliknij przycisk <strong>"Import CSV"</strong></li>
-                <li>Wybierz przygotowany plik</li>
-                <li>System automatycznie doda wartosci do istniejacych (mozesz importowac wiele plikow)</li>
-              </ul>
-            </div>
-
-            <div className="bg-yellow-100 dark:bg-yellow-900/30 p-2 rounded text-yellow-800 dark:text-yellow-300">
-              <strong>Uwaga:</strong> Import <strong>dodaje</strong> wartosci do istniejacych (nie nadpisuje). Jesli chcesz zaczac od nowa, najpierw kliknij "Resetuj miesiac".
+            <div className="px-4 py-3 border-t border-gray-200 dark:border-gray-700 flex justify-end">
+              <button
+                onClick={() => setShowImportModal(false)}
+                className="px-4 py-2 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200"
+              >
+                Anuluj
+              </button>
             </div>
           </div>
         </div>
-      </main>
+      )}
     </div>
   );
 }
