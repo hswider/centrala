@@ -4013,15 +4013,27 @@ function CRMContent() {
                               </button>
                               <button
                                 onClick={async () => {
-                                  const originalMsg = gmailThreadMessages.length > 0 ? gmailThreadMessages[gmailThreadMessages.length - 1] : null;
-                                  const forwardBody = originalMsg ? `\n\n---------- Przekazana wiadomosc ----------\nOd: ${gmailSelectedThread.from_email}\nData: ${originalMsg.sent_at ? new Date(originalMsg.sent_at).toLocaleString('pl-PL') : ''}\nTemat: ${gmailSelectedThread.subject}\n\n${originalMsg.body_text || ''}` : '';
+                                  // Build full conversation thread for forwarding
+                                  let forwardBody = '\n\n---------- Przekazana wiadomosc ----------\n';
+                                  forwardBody += `Temat: ${gmailSelectedThread.subject || '(brak tematu)'}\n\n`;
 
+                                  // Add all messages in chronological order
+                                  const sortedMessages = [...gmailThreadMessages].sort((a, b) => new Date(a.sent_at) - new Date(b.sent_at));
+                                  sortedMessages.forEach((msg, idx) => {
+                                    const senderEmail = msg.is_outgoing ? (gmailAuth.user?.email || 'Ja') : (msg.from_email || gmailSelectedThread.from_email);
+                                    const dateStr = msg.sent_at ? new Date(msg.sent_at).toLocaleString('pl-PL') : '';
+                                    forwardBody += `--- ${idx + 1}. ${senderEmail} (${dateStr}) ---\n`;
+                                    forwardBody += `${msg.body_text || '(brak tresci)'}\n\n`;
+                                  });
+
+                                  // Collect attachments from the last message only
                                   let forwardedFiles = [];
-                                  if (originalMsg) {
-                                    const msgAtts = Array.isArray(originalMsg.attachments) ? originalMsg.attachments : (typeof originalMsg.attachments === 'string' ? JSON.parse(originalMsg.attachments || '[]') : []);
+                                  const lastMsg = gmailThreadMessages.length > 0 ? gmailThreadMessages[gmailThreadMessages.length - 1] : null;
+                                  if (lastMsg) {
+                                    const msgAtts = Array.isArray(lastMsg.attachments) ? lastMsg.attachments : (typeof lastMsg.attachments === 'string' ? JSON.parse(lastMsg.attachments || '[]') : []);
                                     for (const att of msgAtts) {
                                       try {
-                                        const res = await fetch(`/api/gmail/attachments/${originalMsg.id}/${att.id}?filename=${encodeURIComponent(att.filename)}&mimeType=${encodeURIComponent(att.mimeType)}`);
+                                        const res = await fetch(`/api/gmail/attachments/${lastMsg.id}/${att.id}?filename=${encodeURIComponent(att.filename)}&mimeType=${encodeURIComponent(att.mimeType)}`);
                                         if (res.ok) {
                                           const blob = await res.blob();
                                           forwardedFiles.push(new File([blob], att.filename, { type: att.mimeType || 'application/octet-stream' }));
@@ -4722,15 +4734,27 @@ function CRMContent() {
                               </button>
                               <button
                                 onClick={async () => {
-                                  const originalMsg = poomkidsThreadMessages.length > 0 ? poomkidsThreadMessages[poomkidsThreadMessages.length - 1] : null;
-                                  const forwardBody = originalMsg ? `\n\n---------- Przekazana wiadomosc ----------\nOd: ${poomkidsSelectedThread.from_email}\nData: ${originalMsg.sent_at ? new Date(originalMsg.sent_at).toLocaleString('pl-PL') : ''}\nTemat: ${poomkidsSelectedThread.subject}\n\n${originalMsg.body_text || ''}` : '';
+                                  // Build full conversation thread for forwarding
+                                  let forwardBody = '\n\n---------- Przekazana wiadomosc ----------\n';
+                                  forwardBody += `Temat: ${poomkidsSelectedThread.subject || '(brak tematu)'}\n\n`;
 
+                                  // Add all messages in chronological order
+                                  const sortedMessages = [...poomkidsThreadMessages].sort((a, b) => new Date(a.sent_at) - new Date(b.sent_at));
+                                  sortedMessages.forEach((msg, idx) => {
+                                    const senderEmail = msg.is_outgoing ? (poomkidsAuth.user?.email || 'Ja') : (msg.from_email || poomkidsSelectedThread.from_email);
+                                    const dateStr = msg.sent_at ? new Date(msg.sent_at).toLocaleString('pl-PL') : '';
+                                    forwardBody += `--- ${idx + 1}. ${senderEmail} (${dateStr}) ---\n`;
+                                    forwardBody += `${msg.body_text || '(brak tresci)'}\n\n`;
+                                  });
+
+                                  // Collect attachments from the last message only
                                   let forwardedFiles = [];
-                                  if (originalMsg) {
-                                    const msgAtts = Array.isArray(originalMsg.attachments) ? originalMsg.attachments : (typeof originalMsg.attachments === 'string' ? JSON.parse(originalMsg.attachments || '[]') : []);
+                                  const lastMsg = poomkidsThreadMessages.length > 0 ? poomkidsThreadMessages[poomkidsThreadMessages.length - 1] : null;
+                                  if (lastMsg) {
+                                    const msgAtts = Array.isArray(lastMsg.attachments) ? lastMsg.attachments : (typeof lastMsg.attachments === 'string' ? JSON.parse(lastMsg.attachments || '[]') : []);
                                     for (const att of msgAtts) {
                                       try {
-                                        const res = await fetch(`/api/gmail-poomkids/attachments/${originalMsg.id}/${att.id}?filename=${encodeURIComponent(att.filename)}&mimeType=${encodeURIComponent(att.mimeType)}`);
+                                        const res = await fetch(`/api/gmail-poomkids/attachments/${lastMsg.id}/${att.id}?filename=${encodeURIComponent(att.filename)}&mimeType=${encodeURIComponent(att.mimeType)}`);
                                         if (res.ok) {
                                           const blob = await res.blob();
                                           forwardedFiles.push(new File([blob], att.filename, { type: att.mimeType || 'application/octet-stream' }));
@@ -5420,15 +5444,27 @@ function CRMContent() {
                               </button>
                               <button
                                 onClick={async () => {
-                                  const originalMsg = allepoduszkiThreadMessages.length > 0 ? allepoduszkiThreadMessages[allepoduszkiThreadMessages.length - 1] : null;
-                                  const forwardBody = originalMsg ? `\n\n---------- Przekazana wiadomosc ----------\nOd: ${allepoduszkiSelectedThread.from_email}\nData: ${originalMsg.sent_at ? new Date(originalMsg.sent_at).toLocaleString('pl-PL') : ''}\nTemat: ${allepoduszkiSelectedThread.subject}\n\n${originalMsg.body_text || ''}` : '';
+                                  // Build full conversation thread for forwarding
+                                  let forwardBody = '\n\n---------- Przekazana wiadomosc ----------\n';
+                                  forwardBody += `Temat: ${allepoduszkiSelectedThread.subject || '(brak tematu)'}\n\n`;
 
+                                  // Add all messages in chronological order
+                                  const sortedMessages = [...allepoduszkiThreadMessages].sort((a, b) => new Date(a.sent_at) - new Date(b.sent_at));
+                                  sortedMessages.forEach((msg, idx) => {
+                                    const senderEmail = msg.is_outgoing ? (allepoduszkiAuth.user?.email || 'Ja') : (msg.from_email || allepoduszkiSelectedThread.from_email);
+                                    const dateStr = msg.sent_at ? new Date(msg.sent_at).toLocaleString('pl-PL') : '';
+                                    forwardBody += `--- ${idx + 1}. ${senderEmail} (${dateStr}) ---\n`;
+                                    forwardBody += `${msg.body_text || '(brak tresci)'}\n\n`;
+                                  });
+
+                                  // Collect attachments from the last message only
                                   let forwardedFiles = [];
-                                  if (originalMsg) {
-                                    const msgAtts = Array.isArray(originalMsg.attachments) ? originalMsg.attachments : (typeof originalMsg.attachments === 'string' ? JSON.parse(originalMsg.attachments || '[]') : []);
+                                  const lastMsg = allepoduszkiThreadMessages.length > 0 ? allepoduszkiThreadMessages[allepoduszkiThreadMessages.length - 1] : null;
+                                  if (lastMsg) {
+                                    const msgAtts = Array.isArray(lastMsg.attachments) ? lastMsg.attachments : (typeof lastMsg.attachments === 'string' ? JSON.parse(lastMsg.attachments || '[]') : []);
                                     for (const att of msgAtts) {
                                       try {
-                                        const res = await fetch(`/api/gmail-allepoduszki/attachments/${originalMsg.id}/${att.id}?filename=${encodeURIComponent(att.filename)}&mimeType=${encodeURIComponent(att.mimeType)}`);
+                                        const res = await fetch(`/api/gmail-allepoduszki/attachments/${lastMsg.id}/${att.id}?filename=${encodeURIComponent(att.filename)}&mimeType=${encodeURIComponent(att.mimeType)}`);
                                         if (res.ok) {
                                           const blob = await res.blob();
                                           forwardedFiles.push(new File([blob], att.filename, { type: att.mimeType || 'application/octet-stream' }));
@@ -6116,15 +6152,27 @@ function CRMContent() {
                               </button>
                               <button
                                 onClick={async () => {
-                                  const originalMsg = poomfurnitureThreadMessages.length > 0 ? poomfurnitureThreadMessages[poomfurnitureThreadMessages.length - 1] : null;
-                                  const forwardBody = originalMsg ? `\n\n---------- Przekazana wiadomosc ----------\nOd: ${poomfurnitureSelectedThread.from_email}\nData: ${originalMsg.sent_at ? new Date(originalMsg.sent_at).toLocaleString('pl-PL') : ''}\nTemat: ${poomfurnitureSelectedThread.subject}\n\n${originalMsg.body_text || ''}` : '';
+                                  // Build full conversation thread for forwarding
+                                  let forwardBody = '\n\n---------- Przekazana wiadomosc ----------\n';
+                                  forwardBody += `Temat: ${poomfurnitureSelectedThread.subject || '(brak tematu)'}\n\n`;
 
+                                  // Add all messages in chronological order
+                                  const sortedMessages = [...poomfurnitureThreadMessages].sort((a, b) => new Date(a.sent_at) - new Date(b.sent_at));
+                                  sortedMessages.forEach((msg, idx) => {
+                                    const senderEmail = msg.is_outgoing ? (poomfurnitureAuth.user?.email || 'Ja') : (msg.from_email || poomfurnitureSelectedThread.from_email);
+                                    const dateStr = msg.sent_at ? new Date(msg.sent_at).toLocaleString('pl-PL') : '';
+                                    forwardBody += `--- ${idx + 1}. ${senderEmail} (${dateStr}) ---\n`;
+                                    forwardBody += `${msg.body_text || '(brak tresci)'}\n\n`;
+                                  });
+
+                                  // Collect attachments from the last message only
                                   let forwardedFiles = [];
-                                  if (originalMsg) {
-                                    const msgAtts = Array.isArray(originalMsg.attachments) ? originalMsg.attachments : (typeof originalMsg.attachments === 'string' ? JSON.parse(originalMsg.attachments || '[]') : []);
+                                  const lastMsg = poomfurnitureThreadMessages.length > 0 ? poomfurnitureThreadMessages[poomfurnitureThreadMessages.length - 1] : null;
+                                  if (lastMsg) {
+                                    const msgAtts = Array.isArray(lastMsg.attachments) ? lastMsg.attachments : (typeof lastMsg.attachments === 'string' ? JSON.parse(lastMsg.attachments || '[]') : []);
                                     for (const att of msgAtts) {
                                       try {
-                                        const res = await fetch(`/api/gmail-poomfurniture/attachments/${originalMsg.id}/${att.id}?filename=${encodeURIComponent(att.filename)}&mimeType=${encodeURIComponent(att.mimeType)}`);
+                                        const res = await fetch(`/api/gmail-poomfurniture/attachments/${lastMsg.id}/${att.id}?filename=${encodeURIComponent(att.filename)}&mimeType=${encodeURIComponent(att.mimeType)}`);
                                         if (res.ok) {
                                           const blob = await res.blob();
                                           forwardedFiles.push(new File([blob], att.filename, { type: att.mimeType || 'application/octet-stream' }));
