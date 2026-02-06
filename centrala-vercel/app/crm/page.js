@@ -152,6 +152,7 @@ function CRMContent() {
   const [taskAssignee, setTaskAssignee] = useState('');
   const [taskSending, setTaskSending] = useState(false);
   const [showTaskForm, setShowTaskForm] = useState(false);
+  const [tasksExpanded, setTasksExpanded] = useState(false);
   const [threadTasks, setThreadTasks] = useState([]);
   const [pendingThreadId, setPendingThreadId] = useState(null);
 
@@ -3936,47 +3937,67 @@ function CRMContent() {
                           <h4 className="mt-2 font-medium text-gray-800 dark:text-gray-200">
                             {gmailSelectedThread.subject || '(Brak tematu)'}
                           </h4>
-                          {/* Task/Note section */}
+                          {/* Task/Note section - collapsible */}
                           <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
-                            {/* Display existing tasks for this thread */}
-                            {threadTasks.length > 0 && (
-                              <div className="mb-3 space-y-2">
-                                <p className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase">Uwagi do tego wątku:</p>
-                                {threadTasks.map(task => (
-                                  <div key={task.id} className={`p-2 rounded text-sm ${task.status === 'completed' ? 'bg-gray-100 dark:bg-gray-700 opacity-60' : 'bg-yellow-50 dark:bg-yellow-900/30 border border-yellow-200 dark:border-yellow-800'}`}>
-                                    <div className="flex items-start justify-between gap-2">
-                                      <div className="flex-1">
-                                        <p className="text-gray-800 dark:text-gray-200">{task.content}</p>
-                                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                                          Od: <span className="font-medium">{task.created_by}</span> → Dla: <span className="font-medium">{task.assigned_to}</span>
-                                          <span className="ml-2">{new Date(task.created_at).toLocaleDateString('pl-PL', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}</span>
-                                        </p>
+                            {/* Collapsible header */}
+                            <button
+                              onClick={() => setTasksExpanded(!tasksExpanded)}
+                              className="w-full flex items-center justify-between text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase hover:text-gray-800 dark:hover:text-gray-300"
+                            >
+                              <span className="flex items-center gap-1">
+                                <svg className={`w-3 h-3 transition-transform ${tasksExpanded ? 'rotate-90' : ''}`} fill="currentColor" viewBox="0 0 20 20">
+                                  <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
+                                </svg>
+                                Uwagi do tego wątku {threadTasks.length > 0 && `(${threadTasks.length})`}
+                              </span>
+                              {threadTasks.filter(t => t.status !== 'completed').length > 0 && (
+                                <span className="px-1.5 py-0.5 text-[10px] bg-yellow-100 text-yellow-700 rounded-full">
+                                  {threadTasks.filter(t => t.status !== 'completed').length} aktywne
+                                </span>
+                              )}
+                            </button>
+
+                            {/* Collapsible content */}
+                            {tasksExpanded && (
+                              <div className="mt-2 space-y-2">
+                                {/* Display existing tasks for this thread */}
+                                {threadTasks.length > 0 && (
+                                  <div className="space-y-2">
+                                    {threadTasks.map(task => (
+                                      <div key={task.id} className={`p-2 rounded text-sm ${task.status === 'completed' ? 'bg-gray-100 dark:bg-gray-700 opacity-60' : 'bg-yellow-50 dark:bg-yellow-900/30 border border-yellow-200 dark:border-yellow-800'}`}>
+                                        <div className="flex items-start justify-between gap-2">
+                                          <div className="flex-1">
+                                            <p className="text-gray-800 dark:text-gray-200">{task.content}</p>
+                                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                                              Od: <span className="font-medium">{task.created_by}</span> → Dla: <span className="font-medium">{task.assigned_to}</span>
+                                              <span className="ml-2">{new Date(task.created_at).toLocaleDateString('pl-PL', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}</span>
+                                            </p>
+                                          </div>
+                                          {task.status !== 'completed' && (
+                                            <button
+                                              onClick={() => handleCompleteThreadTask(task.id)}
+                                              className="shrink-0 px-2 py-1 bg-green-500 hover:bg-green-600 text-white text-xs rounded"
+                                              title="Oznacz jako wykonane"
+                                            >
+                                              ✓ Gotowe
+                                            </button>
+                                          )}
+                                          {task.status === 'completed' && (
+                                            <span className="text-xs text-green-600 dark:text-green-400">✓ Wykonane</span>
+                                          )}
+                                        </div>
                                       </div>
-                                      {task.status !== 'completed' && (
-                                        <button
-                                          onClick={() => handleCompleteThreadTask(task.id)}
-                                          className="shrink-0 px-2 py-1 bg-green-500 hover:bg-green-600 text-white text-xs rounded"
-                                          title="Oznacz jako wykonane"
-                                        >
-                                          ✓ Gotowe
-                                        </button>
-                                      )}
-                                      {task.status === 'completed' && (
-                                        <span className="text-xs text-green-600 dark:text-green-400">✓ Wykonane</span>
-                                      )}
-                                    </div>
+                                    ))}
                                   </div>
-                                ))}
-                              </div>
-                            )}
-                            {/* Add new task form */}
-                            {!showTaskForm ? (
-                              <button
-                                onClick={() => setShowTaskForm(true)}
-                                className="text-sm text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1"
-                              >
-                                <span>📋</span> Dodaj uwage dla pracownika
-                              </button>
+                                )}
+                                {/* Add new task form */}
+                                {!showTaskForm ? (
+                                  <button
+                                    onClick={() => setShowTaskForm(true)}
+                                    className="text-sm text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1"
+                                  >
+                                    <span>📋</span> Dodaj uwage dla pracownika
+                                  </button>
                             ) : (
                               <div className="space-y-2">
                                 <div className="flex items-center gap-2">
@@ -4011,6 +4032,8 @@ function CRMContent() {
                                 >
                                   {taskSending ? 'Wysylanie...' : 'Wyslij uwage'}
                                 </button>
+                              </div>
+                            )}
                               </div>
                             )}
                           </div>
@@ -4600,47 +4623,67 @@ function CRMContent() {
                           <h4 className="mt-2 font-medium text-gray-800 dark:text-gray-200">
                             {poomkidsSelectedThread.subject || '(Brak tematu)'}
                           </h4>
-                          {/* Task/Note section */}
+                          {/* Task/Note section - collapsible */}
                           <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
-                            {/* Display existing tasks for this thread */}
-                            {threadTasks.length > 0 && (
-                              <div className="mb-3 space-y-2">
-                                <p className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase">Uwagi do tego wątku:</p>
-                                {threadTasks.map(task => (
-                                  <div key={task.id} className={`p-2 rounded text-sm ${task.status === 'completed' ? 'bg-gray-100 dark:bg-gray-700 opacity-60' : 'bg-yellow-50 dark:bg-yellow-900/30 border border-yellow-200 dark:border-yellow-800'}`}>
-                                    <div className="flex items-start justify-between gap-2">
-                                      <div className="flex-1">
-                                        <p className="text-gray-800 dark:text-gray-200">{task.content}</p>
-                                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                                          Od: <span className="font-medium">{task.created_by}</span> → Dla: <span className="font-medium">{task.assigned_to}</span>
-                                          <span className="ml-2">{new Date(task.created_at).toLocaleDateString('pl-PL', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}</span>
-                                        </p>
+                            {/* Collapsible header */}
+                            <button
+                              onClick={() => setTasksExpanded(!tasksExpanded)}
+                              className="w-full flex items-center justify-between text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase hover:text-gray-800 dark:hover:text-gray-300"
+                            >
+                              <span className="flex items-center gap-1">
+                                <svg className={`w-3 h-3 transition-transform ${tasksExpanded ? 'rotate-90' : ''}`} fill="currentColor" viewBox="0 0 20 20">
+                                  <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
+                                </svg>
+                                Uwagi do tego wątku {threadTasks.length > 0 && `(${threadTasks.length})`}
+                              </span>
+                              {threadTasks.filter(t => t.status !== 'completed').length > 0 && (
+                                <span className="px-1.5 py-0.5 text-[10px] bg-yellow-100 text-yellow-700 rounded-full">
+                                  {threadTasks.filter(t => t.status !== 'completed').length} aktywne
+                                </span>
+                              )}
+                            </button>
+
+                            {/* Collapsible content */}
+                            {tasksExpanded && (
+                              <div className="mt-2 space-y-2">
+                                {/* Display existing tasks for this thread */}
+                                {threadTasks.length > 0 && (
+                                  <div className="space-y-2">
+                                    {threadTasks.map(task => (
+                                      <div key={task.id} className={`p-2 rounded text-sm ${task.status === 'completed' ? 'bg-gray-100 dark:bg-gray-700 opacity-60' : 'bg-yellow-50 dark:bg-yellow-900/30 border border-yellow-200 dark:border-yellow-800'}`}>
+                                        <div className="flex items-start justify-between gap-2">
+                                          <div className="flex-1">
+                                            <p className="text-gray-800 dark:text-gray-200">{task.content}</p>
+                                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                                              Od: <span className="font-medium">{task.created_by}</span> → Dla: <span className="font-medium">{task.assigned_to}</span>
+                                              <span className="ml-2">{new Date(task.created_at).toLocaleDateString('pl-PL', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}</span>
+                                            </p>
+                                          </div>
+                                          {task.status !== 'completed' && (
+                                            <button
+                                              onClick={() => handleCompleteThreadTask(task.id)}
+                                              className="shrink-0 px-2 py-1 bg-green-500 hover:bg-green-600 text-white text-xs rounded"
+                                              title="Oznacz jako wykonane"
+                                            >
+                                              ✓ Gotowe
+                                            </button>
+                                          )}
+                                          {task.status === 'completed' && (
+                                            <span className="text-xs text-green-600 dark:text-green-400">✓ Wykonane</span>
+                                          )}
+                                        </div>
                                       </div>
-                                      {task.status !== 'completed' && (
-                                        <button
-                                          onClick={() => handleCompleteThreadTask(task.id)}
-                                          className="shrink-0 px-2 py-1 bg-green-500 hover:bg-green-600 text-white text-xs rounded"
-                                          title="Oznacz jako wykonane"
-                                        >
-                                          ✓ Gotowe
-                                        </button>
-                                      )}
-                                      {task.status === 'completed' && (
-                                        <span className="text-xs text-green-600 dark:text-green-400">✓ Wykonane</span>
-                                      )}
-                                    </div>
+                                    ))}
                                   </div>
-                                ))}
-                              </div>
-                            )}
-                            {/* Add new task form */}
-                            {!showTaskForm ? (
-                              <button
-                                onClick={() => setShowTaskForm(true)}
-                                className="text-sm text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1"
-                              >
-                                <span>📋</span> Dodaj uwage dla pracownika
-                              </button>
+                                )}
+                                {/* Add new task form */}
+                                {!showTaskForm ? (
+                                  <button
+                                    onClick={() => setShowTaskForm(true)}
+                                    className="text-sm text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1"
+                                  >
+                                    <span>📋</span> Dodaj uwage dla pracownika
+                                  </button>
                             ) : (
                               <div className="space-y-2">
                                 <div className="flex items-center gap-2">
@@ -4675,6 +4718,8 @@ function CRMContent() {
                                 >
                                   {taskSending ? 'Wysylanie...' : 'Wyslij uwage'}
                                 </button>
+                              </div>
+                            )}
                               </div>
                             )}
                           </div>
@@ -5254,47 +5299,67 @@ function CRMContent() {
                           <h4 className="mt-2 font-medium text-gray-800 dark:text-gray-200">
                             {allepoduszkiSelectedThread.subject || '(Brak tematu)'}
                           </h4>
-                          {/* Task/Note section */}
+                          {/* Task/Note section - collapsible */}
                           <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
-                            {/* Display existing tasks for this thread */}
-                            {threadTasks.length > 0 && (
-                              <div className="mb-3 space-y-2">
-                                <p className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase">Uwagi do tego wątku:</p>
-                                {threadTasks.map(task => (
-                                  <div key={task.id} className={`p-2 rounded text-sm ${task.status === 'completed' ? 'bg-gray-100 dark:bg-gray-700 opacity-60' : 'bg-yellow-50 dark:bg-yellow-900/30 border border-yellow-200 dark:border-yellow-800'}`}>
-                                    <div className="flex items-start justify-between gap-2">
-                                      <div className="flex-1">
-                                        <p className="text-gray-800 dark:text-gray-200">{task.content}</p>
-                                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                                          Od: <span className="font-medium">{task.created_by}</span> → Dla: <span className="font-medium">{task.assigned_to}</span>
-                                          <span className="ml-2">{new Date(task.created_at).toLocaleDateString('pl-PL', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}</span>
-                                        </p>
+                            {/* Collapsible header */}
+                            <button
+                              onClick={() => setTasksExpanded(!tasksExpanded)}
+                              className="w-full flex items-center justify-between text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase hover:text-gray-800 dark:hover:text-gray-300"
+                            >
+                              <span className="flex items-center gap-1">
+                                <svg className={`w-3 h-3 transition-transform ${tasksExpanded ? 'rotate-90' : ''}`} fill="currentColor" viewBox="0 0 20 20">
+                                  <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
+                                </svg>
+                                Uwagi do tego wątku {threadTasks.length > 0 && `(${threadTasks.length})`}
+                              </span>
+                              {threadTasks.filter(t => t.status !== 'completed').length > 0 && (
+                                <span className="px-1.5 py-0.5 text-[10px] bg-yellow-100 text-yellow-700 rounded-full">
+                                  {threadTasks.filter(t => t.status !== 'completed').length} aktywne
+                                </span>
+                              )}
+                            </button>
+
+                            {/* Collapsible content */}
+                            {tasksExpanded && (
+                              <div className="mt-2 space-y-2">
+                                {/* Display existing tasks for this thread */}
+                                {threadTasks.length > 0 && (
+                                  <div className="space-y-2">
+                                    {threadTasks.map(task => (
+                                      <div key={task.id} className={`p-2 rounded text-sm ${task.status === 'completed' ? 'bg-gray-100 dark:bg-gray-700 opacity-60' : 'bg-yellow-50 dark:bg-yellow-900/30 border border-yellow-200 dark:border-yellow-800'}`}>
+                                        <div className="flex items-start justify-between gap-2">
+                                          <div className="flex-1">
+                                            <p className="text-gray-800 dark:text-gray-200">{task.content}</p>
+                                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                                              Od: <span className="font-medium">{task.created_by}</span> → Dla: <span className="font-medium">{task.assigned_to}</span>
+                                              <span className="ml-2">{new Date(task.created_at).toLocaleDateString('pl-PL', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}</span>
+                                            </p>
+                                          </div>
+                                          {task.status !== 'completed' && (
+                                            <button
+                                              onClick={() => handleCompleteThreadTask(task.id)}
+                                              className="shrink-0 px-2 py-1 bg-green-500 hover:bg-green-600 text-white text-xs rounded"
+                                              title="Oznacz jako wykonane"
+                                            >
+                                              ✓ Gotowe
+                                            </button>
+                                          )}
+                                          {task.status === 'completed' && (
+                                            <span className="text-xs text-green-600 dark:text-green-400">✓ Wykonane</span>
+                                          )}
+                                        </div>
                                       </div>
-                                      {task.status !== 'completed' && (
-                                        <button
-                                          onClick={() => handleCompleteThreadTask(task.id)}
-                                          className="shrink-0 px-2 py-1 bg-green-500 hover:bg-green-600 text-white text-xs rounded"
-                                          title="Oznacz jako wykonane"
-                                        >
-                                          ✓ Gotowe
-                                        </button>
-                                      )}
-                                      {task.status === 'completed' && (
-                                        <span className="text-xs text-green-600 dark:text-green-400">✓ Wykonane</span>
-                                      )}
-                                    </div>
+                                    ))}
                                   </div>
-                                ))}
-                              </div>
-                            )}
-                            {/* Add new task form */}
-                            {!showTaskForm ? (
-                              <button
-                                onClick={() => setShowTaskForm(true)}
-                                className="text-sm text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1"
-                              >
-                                <span>📋</span> Dodaj uwage dla pracownika
-                              </button>
+                                )}
+                                {/* Add new task form */}
+                                {!showTaskForm ? (
+                                  <button
+                                    onClick={() => setShowTaskForm(true)}
+                                    className="text-sm text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1"
+                                  >
+                                    <span>📋</span> Dodaj uwage dla pracownika
+                                  </button>
                             ) : (
                               <div className="space-y-2">
                                 <div className="flex items-center gap-2">
@@ -5329,6 +5394,8 @@ function CRMContent() {
                                 >
                                   {taskSending ? 'Wysylanie...' : 'Wyslij uwage'}
                                 </button>
+                              </div>
+                            )}
                               </div>
                             )}
                           </div>
@@ -5908,47 +5975,67 @@ function CRMContent() {
                           <h4 className="mt-2 font-medium text-gray-800 dark:text-gray-200">
                             {poomfurnitureSelectedThread.subject || '(Brak tematu)'}
                           </h4>
-                          {/* Task/Note section */}
+                          {/* Task/Note section - collapsible */}
                           <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
-                            {/* Display existing tasks for this thread */}
-                            {threadTasks.length > 0 && (
-                              <div className="mb-3 space-y-2">
-                                <p className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase">Uwagi do tego wątku:</p>
-                                {threadTasks.map(task => (
-                                  <div key={task.id} className={`p-2 rounded text-sm ${task.status === 'completed' ? 'bg-gray-100 dark:bg-gray-700 opacity-60' : 'bg-yellow-50 dark:bg-yellow-900/30 border border-yellow-200 dark:border-yellow-800'}`}>
-                                    <div className="flex items-start justify-between gap-2">
-                                      <div className="flex-1">
-                                        <p className="text-gray-800 dark:text-gray-200">{task.content}</p>
-                                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                                          Od: <span className="font-medium">{task.created_by}</span> → Dla: <span className="font-medium">{task.assigned_to}</span>
-                                          <span className="ml-2">{new Date(task.created_at).toLocaleDateString('pl-PL', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}</span>
-                                        </p>
+                            {/* Collapsible header */}
+                            <button
+                              onClick={() => setTasksExpanded(!tasksExpanded)}
+                              className="w-full flex items-center justify-between text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase hover:text-gray-800 dark:hover:text-gray-300"
+                            >
+                              <span className="flex items-center gap-1">
+                                <svg className={`w-3 h-3 transition-transform ${tasksExpanded ? 'rotate-90' : ''}`} fill="currentColor" viewBox="0 0 20 20">
+                                  <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
+                                </svg>
+                                Uwagi do tego wątku {threadTasks.length > 0 && `(${threadTasks.length})`}
+                              </span>
+                              {threadTasks.filter(t => t.status !== 'completed').length > 0 && (
+                                <span className="px-1.5 py-0.5 text-[10px] bg-yellow-100 text-yellow-700 rounded-full">
+                                  {threadTasks.filter(t => t.status !== 'completed').length} aktywne
+                                </span>
+                              )}
+                            </button>
+
+                            {/* Collapsible content */}
+                            {tasksExpanded && (
+                              <div className="mt-2 space-y-2">
+                                {/* Display existing tasks for this thread */}
+                                {threadTasks.length > 0 && (
+                                  <div className="space-y-2">
+                                    {threadTasks.map(task => (
+                                      <div key={task.id} className={`p-2 rounded text-sm ${task.status === 'completed' ? 'bg-gray-100 dark:bg-gray-700 opacity-60' : 'bg-yellow-50 dark:bg-yellow-900/30 border border-yellow-200 dark:border-yellow-800'}`}>
+                                        <div className="flex items-start justify-between gap-2">
+                                          <div className="flex-1">
+                                            <p className="text-gray-800 dark:text-gray-200">{task.content}</p>
+                                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                                              Od: <span className="font-medium">{task.created_by}</span> → Dla: <span className="font-medium">{task.assigned_to}</span>
+                                              <span className="ml-2">{new Date(task.created_at).toLocaleDateString('pl-PL', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}</span>
+                                            </p>
+                                          </div>
+                                          {task.status !== 'completed' && (
+                                            <button
+                                              onClick={() => handleCompleteThreadTask(task.id)}
+                                              className="shrink-0 px-2 py-1 bg-green-500 hover:bg-green-600 text-white text-xs rounded"
+                                              title="Oznacz jako wykonane"
+                                            >
+                                              ✓ Gotowe
+                                            </button>
+                                          )}
+                                          {task.status === 'completed' && (
+                                            <span className="text-xs text-green-600 dark:text-green-400">✓ Wykonane</span>
+                                          )}
+                                        </div>
                                       </div>
-                                      {task.status !== 'completed' && (
-                                        <button
-                                          onClick={() => handleCompleteThreadTask(task.id)}
-                                          className="shrink-0 px-2 py-1 bg-green-500 hover:bg-green-600 text-white text-xs rounded"
-                                          title="Oznacz jako wykonane"
-                                        >
-                                          ✓ Gotowe
-                                        </button>
-                                      )}
-                                      {task.status === 'completed' && (
-                                        <span className="text-xs text-green-600 dark:text-green-400">✓ Wykonane</span>
-                                      )}
-                                    </div>
+                                    ))}
                                   </div>
-                                ))}
-                              </div>
-                            )}
-                            {/* Add new task form */}
-                            {!showTaskForm ? (
-                              <button
-                                onClick={() => setShowTaskForm(true)}
-                                className="text-sm text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1"
-                              >
-                                <span>📋</span> Dodaj uwage dla pracownika
-                              </button>
+                                )}
+                                {/* Add new task form */}
+                                {!showTaskForm ? (
+                                  <button
+                                    onClick={() => setShowTaskForm(true)}
+                                    className="text-sm text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1"
+                                  >
+                                    <span>📋</span> Dodaj uwage dla pracownika
+                                  </button>
                             ) : (
                               <div className="space-y-2">
                                 <div className="flex items-center gap-2">
@@ -5983,6 +6070,8 @@ function CRMContent() {
                                 >
                                   {taskSending ? 'Wysylanie...' : 'Wyslij uwage'}
                                 </button>
+                              </div>
+                            )}
                               </div>
                             )}
                           </div>
