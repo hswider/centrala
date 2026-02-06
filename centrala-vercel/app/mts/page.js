@@ -2,12 +2,33 @@
 
 import { useState, useEffect } from 'react';
 
+const MONTHS = [
+  { key: 1, label: 'Styczen' },
+  { key: 2, label: 'Luty' },
+  { key: 3, label: 'Marzec' },
+  { key: 4, label: 'Kwiecien' },
+  { key: 5, label: 'Maj' },
+  { key: 6, label: 'Czerwiec' },
+  { key: 7, label: 'Lipiec' },
+  { key: 8, label: 'Sierpien' },
+  { key: 9, label: 'Wrzesien' },
+  { key: 10, label: 'Pazdziernik' },
+  { key: 11, label: 'Listopad' },
+  { key: 12, label: 'Grudzien' },
+];
+
 export default function MTSPage() {
   const [analysis, setAnalysis] = useState(null);
   const [loading, setLoading] = useState(true);
+
+  // Data source: 'historical' (default) or 'orders'
+  const [dataSource, setDataSource] = useState('historical');
+  const [baseMonth, setBaseMonth] = useState(new Date().getMonth() + 1);
+  const [baseYear, setBaseYear] = useState(new Date().getFullYear() - 1);
+
   const [selectedPeriod, setSelectedPeriod] = useState(14);
   const [planningDays, setPlanningDays] = useState(7);
-  const [safetyFactor, setSafetyFactor] = useState(1.2);
+  const [safetyFactor, setSafetyFactor] = useState(1.0);
   const [filterPriority, setFilterPriority] = useState('all');
 
   // REGALY state
@@ -25,7 +46,13 @@ export default function MTSPage() {
   const fetchAnalysis = async () => {
     try {
       setLoading(true);
-      const res = await fetch(`/api/mts/analysis?days=${selectedPeriod}&planningDays=${planningDays}&safetyFactor=${safetyFactor}`);
+      let url = `/api/mts/analysis?planningDays=${planningDays}&safetyFactor=${safetyFactor}&dataSource=${dataSource}`;
+      if (dataSource === 'historical') {
+        url += `&baseMonth=${baseMonth}&baseYear=${baseYear}`;
+      } else {
+        url += `&days=${selectedPeriod}`;
+      }
+      const res = await fetch(url);
       const data = await res.json();
       if (data.success) {
         setAnalysis(data.analysis);
@@ -54,7 +81,7 @@ export default function MTSPage() {
 
   useEffect(() => {
     fetchAnalysis();
-  }, [selectedPeriod, planningDays, safetyFactor]);
+  }, [dataSource, baseMonth, baseYear, selectedPeriod, planningDays, safetyFactor]);
 
   useEffect(() => {
     fetchShelfAnalysis();
@@ -115,25 +142,79 @@ export default function MTSPage() {
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow dark:shadow-gray-900 p-4 mb-4">
           <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">Parametry analizy</h2>
           <div className="flex flex-wrap items-center gap-4">
-            {/* Okres analizy */}
+            {/* Zrodlo danych */}
             <div className="flex items-center gap-2">
-              <span className="text-xs text-gray-500 dark:text-gray-400">Okres:</span>
+              <span className="text-xs text-gray-500 dark:text-gray-400">Zrodlo:</span>
               <div className="flex gap-1">
-                {[7, 14, 30].map((days) => (
-                  <button
-                    key={days}
-                    onClick={() => setSelectedPeriod(days)}
-                    className={`px-3 py-1 text-xs font-medium rounded transition-colors ${
-                      selectedPeriod === days
-                        ? 'bg-blue-600 text-white'
-                        : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
-                    }`}
-                  >
-                    {days}d
-                  </button>
-                ))}
+                <button
+                  onClick={() => setDataSource('historical')}
+                  className={`px-3 py-1 text-xs font-medium rounded transition-colors ${
+                    dataSource === 'historical'
+                      ? 'bg-purple-600 text-white'
+                      : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                  }`}
+                >
+                  Historyczne
+                </button>
+                <button
+                  onClick={() => setDataSource('orders')}
+                  className={`px-3 py-1 text-xs font-medium rounded transition-colors ${
+                    dataSource === 'orders'
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                  }`}
+                >
+                  30 dni wstecz
+                </button>
               </div>
             </div>
+
+            {/* Miesiac/Rok (tylko dla historical) */}
+            {dataSource === 'historical' && (
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-gray-500 dark:text-gray-400">Baza:</span>
+                <select
+                  value={baseMonth}
+                  onChange={(e) => setBaseMonth(parseInt(e.target.value))}
+                  className="px-2 py-1 text-xs border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                >
+                  {MONTHS.map(m => (
+                    <option key={m.key} value={m.key}>{m.label}</option>
+                  ))}
+                </select>
+                <select
+                  value={baseYear}
+                  onChange={(e) => setBaseYear(parseInt(e.target.value))}
+                  className="px-2 py-1 text-xs border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                >
+                  {[2023, 2024, 2025, 2026].map(y => (
+                    <option key={y} value={y}>{y}</option>
+                  ))}
+                </select>
+              </div>
+            )}
+
+            {/* Okres analizy (tylko dla orders) */}
+            {dataSource === 'orders' && (
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-gray-500 dark:text-gray-400">Okres:</span>
+                <div className="flex gap-1">
+                  {[7, 14, 30].map((days) => (
+                    <button
+                      key={days}
+                      onClick={() => setSelectedPeriod(days)}
+                      className={`px-3 py-1 text-xs font-medium rounded transition-colors ${
+                        selectedPeriod === days
+                          ? 'bg-blue-600 text-white'
+                          : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                      }`}
+                    >
+                      {days}d
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* Horyzont planowania */}
             <div className="flex items-center gap-2">

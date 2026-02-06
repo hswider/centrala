@@ -7,23 +7,95 @@ export async function GET(request) {
     await initDatabase();
 
     const { searchParams } = new URL(request.url);
-    const days = parseInt(searchParams.get('days')) || 14;
-    const planningDays = parseInt(searchParams.get('planningDays')) || 7;
-    const safetyFactor = parseFloat(searchParams.get('safetyFactor')) || 1.2;
 
-    // Pobierz trendy sprzedazy z ostatnich X dni
-    const salesTrends = await sql`
-      SELECT
-        item->>'sku' as sku,
-        item->>'name' as nazwa,
-        SUM((item->>'quantity')::int) as total_sold,
-        COUNT(DISTINCT o.id) as order_count
-      FROM orders o, jsonb_array_elements(items) as item
-      WHERE ordered_at >= (CURRENT_DATE AT TIME ZONE 'Europe/Warsaw') - INTERVAL '1 day' * ${days}
-        AND is_canceled = false
-        AND (item->>'isShipping')::boolean = false
-      GROUP BY item->>'sku', item->>'name'
-    `;
+    // Data source: 'orders' (last X days) or 'historical' (previous year data)
+    const dataSource = searchParams.get('dataSource') || 'historical';
+
+    // For 'orders' mode - number of days to analyze
+    const days = parseInt(searchParams.get('days')) || 14;
+
+    // For 'historical' mode - base month and year
+    const baseMonth = parseInt(searchParams.get('baseMonth')) || new Date().getMonth() + 1;
+    const baseYear = parseInt(searchParams.get('baseYear')) || new Date().getFullYear() - 1;
+
+    // Planning parameters
+    const planningDays = parseInt(searchParams.get('planningDays')) || 7;
+    const safetyFactor = parseFloat(searchParams.get('safetyFactor')) || 1.0;
+
+    // Normalizuj SKU
+    const normalizeSku = (sku) => (sku || '').toUpperCase().trim().replace(/\s+/g, '-');
+
+    // Fetch per-SKU configurations
+    const skuConfigs = await sql`SELECT * FROM mts_sku_config`;
+    const configMap = {};
+    skuConfigs.rows.forEach(c => {
+      configMap[normalizeSku(c.sku)] = {
+        growthPercent: parseFloat(c.growth_percent) || 0,
+        thresholdOk: parseInt(c.threshold_ok) || 100,
+        thresholdWarning: parseInt(c.threshold_warning) || 200,
+        thresholdCritical: parseInt(c.threshold_critical) || 300
+      };
+    });
+
+    // Default thresholds
+    const defaultConfig = {
+      growthPercent: 0,
+      thresholdOk: 100,
+      thresholdWarning: 200,
+      thresholdCritical: 300
+    };
+
+    let salesMap = {};
+    let analyzedPeriod = '';
+
+    if (dataSource === 'historical') {
+      // Fetch from historical_sales table
+      const historicalSales = await sql`
+        SELECT sku, quantity
+        FROM historical_sales
+        WHERE year = ${baseYear} AND month = ${baseMonth}
+      `;
+
+      analyzedPeriod = `${baseMonth}/${baseYear} (dane historyczne)`;
+
+      historicalSales.rows.forEach(row => {
+        const key = normalizeSku(row.sku);
+        salesMap[key] = {
+          sku: row.sku,
+          totalSold: parseInt(row.quantity) || 0
+        };
+      });
+    } else {
+      // Fetch from orders (current mode - last X days)
+      const salesTrends = await sql`
+        SELECT
+          item->>'sku' as sku,
+          item->>'name' as nazwa,
+          SUM((item->>'quantity')::int) as total_sold,
+          COUNT(DISTINCT o.id) as order_count
+        FROM orders o, jsonb_array_elements(items) as item
+        WHERE ordered_at >= (CURRENT_DATE AT TIME ZONE 'Europe/Warsaw') - INTERVAL '1 day' * ${days}
+          AND is_canceled = false
+          AND (item->>'isShipping')::boolean = false
+        GROUP BY item->>'sku', item->>'name'
+      `;
+
+      analyzedPeriod = `ostatnie ${days} dni (aktualne zamowienia)`;
+
+      salesTrends.rows.forEach(row => {
+        const key = normalizeSku(row.sku);
+        if (!salesMap[key]) {
+          salesMap[key] = {
+            sku: row.sku,
+            nazwa: row.nazwa,
+            totalSold: 0,
+            orderCount: 0
+          };
+        }
+        salesMap[key].totalSold += parseInt(row.total_sold) || 0;
+        salesMap[key].orderCount += parseInt(row.order_count) || 0;
+      });
+    }
 
     // Pobierz stany inventory (gotowe produkty)
     const inventoryStock = await sql`
@@ -38,9 +110,6 @@ export async function GET(request) {
       FROM inventory
       WHERE kategoria = 'gotowe'
     `;
-
-    // Normalizuj SKU
-    const normalizeSku = (sku) => (sku || '').toUpperCase().trim().replace(/\s+/g, '-');
 
     // Buduj mapę inventory
     const inventoryMap = {};
@@ -57,25 +126,12 @@ export async function GET(request) {
       };
     });
 
-    // Buduj mapę sprzedazy
-    const salesMap = {};
-    salesTrends.rows.forEach(row => {
-      const key = normalizeSku(row.sku);
-      if (!salesMap[key]) {
-        salesMap[key] = {
-          sku: row.sku,
-          nazwa: row.nazwa,
-          totalSold: 0,
-          orderCount: 0
-        };
-      }
-      salesMap[key].totalSold += parseInt(row.total_sold) || 0;
-      salesMap[key].orderCount += parseInt(row.order_count) || 0;
-    });
-
-    // Polacz dane i oblicz zapotrzebowanie
+    // Połącz dane i oblicz zapotrzebowanie
     const products = [];
     const allKeys = new Set([...Object.keys(inventoryMap), ...Object.keys(salesMap)]);
+
+    // For historical mode, base period is 30 days (monthly data)
+    const basePeriodDays = dataSource === 'historical' ? 30 : days;
 
     allKeys.forEach(key => {
       const inv = inventoryMap[key];
@@ -84,18 +140,25 @@ export async function GET(request) {
       // Pomijaj produkty bez sprzedazy i bez stanu
       if (!sales && (!inv || inv.currentStock === 0)) return;
 
-      const totalSold = sales?.totalSold || 0;
-      const avgDaily = totalSold / days;
-      const weeklyDemand = avgDaily * planningDays;
-      const currentStock = inv?.currentStock || 0;
-      const deficit = currentStock - (weeklyDemand * safetyFactor);
-      const toProduce = deficit < 0 ? Math.ceil(Math.abs(deficit)) : 0;
+      const config = configMap[key] || defaultConfig;
+      const growthMultiplier = 1 + (config.growthPercent / 100);
 
-      // Okresl priorytet
+      const totalSold = sales?.totalSold || 0;
+      const avgDaily = totalSold / basePeriodDays;
+
+      // Apply growth percentage and safety factor
+      const projectedDemand = avgDaily * planningDays * growthMultiplier * safetyFactor;
+      const currentStock = inv?.currentStock || 0;
+      const deficit = Math.round(projectedDemand - currentStock);
+      const toProduce = deficit > 0 ? deficit : 0;
+
+      // Determine priority based on per-SKU thresholds
       let priority = 'ok';
-      if (deficit < -weeklyDemand * 0.5) {
+      if (deficit > config.thresholdCritical) {
         priority = 'critical';
-      } else if (deficit < 0) {
+      } else if (deficit > config.thresholdWarning) {
+        priority = 'warning';
+      } else if (deficit > config.thresholdOk) {
         priority = 'warning';
       }
 
@@ -107,17 +170,23 @@ export async function GET(request) {
         minStock: inv?.minStock || 0,
         totalSold,
         avgDaily: Math.round(avgDaily * 100) / 100,
-        weeklyDemand: Math.round(weeklyDemand),
-        deficit: Math.round(deficit),
+        projectedDemand: Math.round(projectedDemand),
+        deficit,
         toProduce,
         priority,
         inInventory: !!inv,
-        cena: inv?.cena || 0
+        cena: inv?.cena || 0,
+        growthPercent: config.growthPercent,
+        thresholds: {
+          ok: config.thresholdOk,
+          warning: config.thresholdWarning,
+          critical: config.thresholdCritical
+        }
       });
     });
 
     // Sortuj po deficycie (najbardziej krytyczne na gorze)
-    products.sort((a, b) => a.deficit - b.deficit);
+    products.sort((a, b) => b.deficit - a.deficit);
 
     // Statystyki podsumowujace
     const summary = {
@@ -132,7 +201,11 @@ export async function GET(request) {
     return NextResponse.json({
       success: true,
       analysis: {
-        periodDays: days,
+        dataSource,
+        analyzedPeriod,
+        baseMonth: dataSource === 'historical' ? baseMonth : null,
+        baseYear: dataSource === 'historical' ? baseYear : null,
+        periodDays: dataSource === 'historical' ? 30 : days,
         planningDays,
         safetyFactor,
         generatedAt: new Date().toISOString(),
