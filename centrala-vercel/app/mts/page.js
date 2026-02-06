@@ -171,10 +171,7 @@ export default function MTSPage() {
         {/* REGALY */}
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow dark:shadow-gray-900 mb-4">
           <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-700">
-            <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-300">REGALY - Analiza zapotrzebowania wg receptur (Top 50)</h2>
-            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-              Wykroje: 30 dni | Polprodukty: 14 dni | Gotowe produkty: 7 dni | Sortowane wg deficytu
-            </p>
+            <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-300">REGALY - Analiza zapotrzebowania wg receptur</h2>
           </div>
 
           {/* Tabs */}
