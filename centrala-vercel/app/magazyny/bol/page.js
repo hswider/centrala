@@ -195,7 +195,16 @@ export default function BOMPage() {
     const lines = text.split(/\r?\n/).filter(line => line.trim());
     if (lines.length < 2) return [];
 
-    const headers = lines[0].split(',').map(h => h.replace(/^"|"$/g, '').trim());
+    // Auto-detect separator (comma or semicolon) based on first line
+    const firstLine = lines[0];
+    const commaCount = (firstLine.match(/,/g) || []).length;
+    const semicolonCount = (firstLine.match(/;/g) || []).length;
+    const separator = semicolonCount > commaCount ? ';' : ',';
+
+    console.log('CSV separator detected:', separator, '(commas:', commaCount, 'semicolons:', semicolonCount, ')');
+
+    const headers = firstLine.split(separator).map(h => h.replace(/^"|"$/g, '').trim());
+    console.log('CSV headers:', headers);
     const data = [];
 
     for (let i = 1; i < lines.length; i++) {
@@ -206,7 +215,7 @@ export default function BOMPage() {
       for (let char of lines[i]) {
         if (char === '"') {
           inQuotes = !inQuotes;
-        } else if (char === ',' && !inQuotes) {
+        } else if (char === separator && !inQuotes) {
           values.push(current.trim());
           current = '';
         } else {
