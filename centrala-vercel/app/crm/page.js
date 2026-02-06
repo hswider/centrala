@@ -3905,18 +3905,29 @@ function CRMContent() {
                           <div className="flex items-center gap-3">
                             {(() => {
                               const ownEmail = gmailAuth.user?.email || '';
-                              const isOwn = ownEmail && gmailSelectedThread.from_email?.toLowerCase() === ownEmail.toLowerCase();
-                              const recipientMsg = isOwn && gmailThreadMessages.length > 0 ? gmailThreadMessages.find(m => m.to_email && m.to_email.toLowerCase() !== ownEmail.toLowerCase()) || gmailThreadMessages[0] : null;
-                              const dn = isOwn ? (recipientMsg?.to_email || gmailSelectedThread.from_email) : (gmailSelectedThread.from_name || gmailSelectedThread.from_email || 'Nieznany');
-                              const de = isOwn ? (recipientMsg?.to_email || gmailSelectedThread.from_email) : gmailSelectedThread.from_email;
+                              const firstIncomingMsg = gmailThreadMessages.find(m => !m.is_outgoing);
+                              const fromEmail = gmailSelectedThread.from_email || firstIncomingMsg?.from_email || '';
+                              const fromName = gmailSelectedThread.from_name || firstIncomingMsg?.from_name || fromEmail;
+                              const toEmail = firstIncomingMsg?.to_email || ownEmail;
+                              const ccEmail = firstIncomingMsg?.cc_email || '';
                               return (
                                 <>
                                   <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center text-red-600 font-medium">
-                                    {(dn || '?')[0].toUpperCase()}
+                                    {(fromName || '?')[0].toUpperCase()}
                                   </div>
-                                  <div className="flex-1">
-                                    <h3 className="font-semibold text-gray-900 dark:text-white">{dn}</h3>
-                                    <p className="text-sm text-gray-600 dark:text-gray-400">{de}</p>
+                                  <div className="flex-1 text-sm">
+                                    <p className="text-gray-900 dark:text-white">
+                                      <span className="text-gray-500 dark:text-gray-400">Od:</span> <span className="font-medium">{fromName}</span>
+                                      {fromName !== fromEmail && <span className="text-gray-500 dark:text-gray-400 ml-1">&lt;{fromEmail}&gt;</span>}
+                                    </p>
+                                    <p className="text-gray-600 dark:text-gray-400">
+                                      <span className="text-gray-500 dark:text-gray-400">Do:</span> {toEmail}
+                                    </p>
+                                    {ccEmail && (
+                                      <p className="text-gray-500 dark:text-gray-500 text-xs mt-0.5 break-all">
+                                        <span>DW:</span> {ccEmail}
+                                      </p>
+                                    )}
                                   </div>
                                 </>
                               );
