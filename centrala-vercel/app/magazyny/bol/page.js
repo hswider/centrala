@@ -17,6 +17,8 @@ export default function BOMPage() {
   const [importData, setImportData] = useState([]);
   const [importPreview, setImportPreview] = useState([]);
   const [importing, setImporting] = useState(false);
+  const [importProgress, setImportProgress] = useState({ current: 0, total: 0, currentName: '' });
+  const [importResult, setImportResult] = useState(null); // { success, skipped, errors }
   const [selectedIds, setSelectedIds] = useState(new Set());
   const [perPage, setPerPage] = useState(50);
   const [currentPage, setCurrentPage] = useState(1);
@@ -310,22 +312,32 @@ export default function BOMPage() {
   // Import recipes
   const handleImport = async () => {
     setImporting(true);
+    setImportResult(null);
+
     let successCount = 0;
     let errorCount = 0;
     let skippedCount = 0;
+    const errorDetails = [];
 
-    for (const row of importPreview) {
-      // Skip if product not found in WMS
-      if (!row.matched || !row.matchedItem) {
-        skippedCount++;
-        continue;
-      }
+    // Filter only rows that will be processed
+    const rowsToProcess = importPreview.filter(row =>
+      row.matched && row.matchedItem && row.matchedIngredientsCount > 0
+    );
+    const totalToProcess = rowsToProcess.length;
+    const skippedFromStart = importPreview.length - totalToProcess;
+    skippedCount = skippedFromStart;
 
-      // Skip if no valid ingredients
-      if (row.matchedIngredientsCount === 0) {
-        skippedCount++;
-        continue;
-      }
+    setImportProgress({ current: 0, total: totalToProcess, currentName: 'Rozpoczynanie...' });
+
+    for (let i = 0; i < rowsToProcess.length; i++) {
+      const row = rowsToProcess[i];
+      const productName = row.matchedItem?.nazwa || row.Nazwa || `Produkt ${i + 1}`;
+
+      setImportProgress({
+        current: i + 1,
+        total: totalToProcess,
+        currentName: productName
+      });
 
       try {
         // First, get existing recipe to delete
@@ -333,18 +345,19 @@ export default function BOMPage() {
         const existingData = await existingRes.json();
 
         if (existingData.success && existingData.data) {
-          // Delete existing ingredients
-          for (const ing of existingData.data) {
-            await fetch(`/api/recipes?id=${ing.id}`, {
-              method: 'DELETE'
-            });
-          }
+          // Delete existing ingredients - batch delete in parallel
+          await Promise.all(
+            existingData.data.map(ing =>
+              fetch(`/api/recipes?id=${ing.id}`, { method: 'DELETE' })
+            )
+          );
         }
 
-        // Then add new ingredients (only matched ones)
-        for (const ing of row.ingredientMatches) {
-          if (ing.matched && ing.matchedItem) {
-            await fetch('/api/recipes', {
+        // Then add new ingredients (only matched ones) - batch add in parallel
+        const addPromises = row.ingredientMatches
+          .filter(ing => ing.matched && ing.matchedItem)
+          .map(ing =>
+            fetch('/api/recipes', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
@@ -352,23 +365,36 @@ export default function BOMPage() {
                 ingredientId: ing.matchedItem.id,
                 quantity: ing.ilosc
               })
-            });
-          }
-        }
+            })
+          );
 
+        await Promise.all(addPromises);
         successCount++;
       } catch (err) {
         console.error('Error importing recipe:', err);
         errorCount++;
+        errorDetails.push(`${productName}: ${err.message}`);
       }
     }
 
     setImporting(false);
+    setImportProgress({ current: 0, total: 0, currentName: '' });
+
+    // Show result modal instead of alert
+    setImportResult({
+      success: successCount,
+      skipped: skippedCount,
+      errors: errorCount,
+      errorDetails: errorDetails.slice(0, 10) // Show max 10 errors
+    });
+  };
+
+  // Close import and show results
+  const closeImportWithResults = () => {
     setShowImportModal(false);
     setImportData([]);
     setImportPreview([]);
-
-    alert(`Import zakonczony!\n\nZaktualizowano receptur: ${successCount}\nPominietych (brak produktu/skladnikow): ${skippedCount}\nBledow: ${errorCount}`);
+    setImportResult(null);
     fetchInventory();
   };
 
@@ -672,20 +698,86 @@ export default function BOMPage() {
                 </table>
               </div>
 
-              <div className="flex gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
-                <button
-                  onClick={() => { setShowImportModal(false); setImportData([]); setImportPreview([]); }}
-                  className="flex-1 px-4 py-2 text-sm bg-gray-600 text-white rounded-lg hover:bg-gray-700"
-                >
-                  Anuluj
-                </button>
-                <button
-                  onClick={handleImport}
-                  disabled={importing || importPreview.filter(r => r.matched && r.matchedIngredientsCount > 0).length === 0}
-                  className="flex-1 px-4 py-2 text-sm bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50"
-                >
-                  {importing ? 'Importowanie...' : `Importuj ${importPreview.filter(r => r.matched && r.matchedIngredientsCount > 0).length} receptur (auto-dopasowane)`}
-                </button>
+              {/* Import Progress / Results / Actions */}
+              <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
+                {/* Progress Bar during import */}
+                {importing && (
+                  <div className="mb-4">
+                    <div className="flex justify-between items-center mb-2">
+                      <span className="text-sm font-medium text-indigo-600 dark:text-indigo-400">
+                        Importowanie... {importProgress.current} / {importProgress.total}
+                      </span>
+                      <span className="text-sm text-gray-500">
+                        {importProgress.total > 0 ? Math.round((importProgress.current / importProgress.total) * 100) : 0}%
+                      </span>
+                    </div>
+                    <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3">
+                      <div
+                        className="bg-indigo-600 h-3 rounded-full transition-all duration-300"
+                        style={{ width: `${importProgress.total > 0 ? (importProgress.current / importProgress.total) * 100 : 0}%` }}
+                      />
+                    </div>
+                    <p className="mt-2 text-xs text-gray-500 dark:text-gray-400 truncate">
+                      Aktualnie: {importProgress.currentName}
+                    </p>
+                  </div>
+                )}
+
+                {/* Results after import */}
+                {importResult && (
+                  <div className="mb-4 p-4 rounded-lg bg-gray-50 dark:bg-gray-700">
+                    <h4 className="font-semibold text-gray-900 dark:text-white mb-3">Import zakonczony!</h4>
+                    <div className="grid grid-cols-3 gap-3 text-center mb-3">
+                      <div className="p-2 bg-green-100 dark:bg-green-900/30 rounded">
+                        <div className="text-2xl font-bold text-green-600 dark:text-green-400">{importResult.success}</div>
+                        <div className="text-xs text-green-700 dark:text-green-300">Sukces</div>
+                      </div>
+                      <div className="p-2 bg-yellow-100 dark:bg-yellow-900/30 rounded">
+                        <div className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">{importResult.skipped}</div>
+                        <div className="text-xs text-yellow-700 dark:text-yellow-300">Pominiete</div>
+                      </div>
+                      <div className="p-2 bg-red-100 dark:bg-red-900/30 rounded">
+                        <div className="text-2xl font-bold text-red-600 dark:text-red-400">{importResult.errors}</div>
+                        <div className="text-xs text-red-700 dark:text-red-300">Bledy</div>
+                      </div>
+                    </div>
+                    {importResult.errorDetails && importResult.errorDetails.length > 0 && (
+                      <div className="text-xs text-red-600 dark:text-red-400 mt-2">
+                        <p className="font-medium mb-1">Szczegoly bledow:</p>
+                        <ul className="list-disc list-inside">
+                          {importResult.errorDetails.map((err, idx) => (
+                            <li key={idx}>{err}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                    <button
+                      onClick={closeImportWithResults}
+                      className="w-full mt-3 px-4 py-2 text-sm bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
+                    >
+                      Zamknij i odswiez dane
+                    </button>
+                  </div>
+                )}
+
+                {/* Action buttons (only when not importing and no results) */}
+                {!importing && !importResult && (
+                  <div className="flex gap-3">
+                    <button
+                      onClick={() => { setShowImportModal(false); setImportData([]); setImportPreview([]); }}
+                      className="flex-1 px-4 py-2 text-sm bg-gray-600 text-white rounded-lg hover:bg-gray-700"
+                    >
+                      Anuluj
+                    </button>
+                    <button
+                      onClick={handleImport}
+                      disabled={importPreview.filter(r => r.matched && r.matchedIngredientsCount > 0).length === 0}
+                      className="flex-1 px-4 py-2 text-sm bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50"
+                    >
+                      Importuj {importPreview.filter(r => r.matched && r.matchedIngredientsCount > 0).length} receptur
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
           </div>
