@@ -3682,25 +3682,13 @@ function CRMContent() {
                             setGmailComposeMode(true);
                             setGmailSelectedThread(null);
                           }}
-                          className="px-3 py-1.5 text-sm bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium"
+                          className="px-3 py-1.5 text-sm bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-medium flex items-center gap-1.5 shadow-sm"
                           title="Nowa wiadomosc"
                         >
-                          + Nowa
-                        </button>
-                        <button
-                          onClick={handleGmailSync}
-                          disabled={gmailSyncing}
-                          className="w-9 h-9 flex items-center justify-center bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
-                          title="Synchronizuj"
-                        >
-                          {gmailSyncing ? '⏳' : '🔄'}
-                        </button>
-                        <button
-                          onClick={handleGmailLogout}
-                          className="px-3 py-1.5 text-sm bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600"
-                          title="Wyloguj z Gmail"
-                        >
-                          Wyloguj
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                          </svg>
+                          Utwórz
                         </button>
                       </div>
                     </div>
