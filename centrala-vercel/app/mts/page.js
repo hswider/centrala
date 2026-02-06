@@ -197,7 +197,6 @@ export default function MTSPage() {
               >
                 <span className="mr-2">{shelf.icon}</span>
                 {shelf.label}
-                <span className="ml-2 text-xs opacity-75">({shelf.days}d)</span>
               </button>
             ))}
           </div>
