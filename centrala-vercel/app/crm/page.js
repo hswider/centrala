@@ -4042,20 +4042,6 @@ function CRMContent() {
                               >
                                 Przekaz dalej
                               </button>
-                              {/* Status dropdown */}
-                              <select
-                                value={gmailSelectedThread.status || 'new'}
-                                onChange={(e) => handleGmailStatusChange(e.target.value)}
-                                className={`px-2 py-1 text-xs font-medium rounded border-0 cursor-pointer ${
-                                  gmailSelectedThread.status === 'resolved' ? 'bg-green-100 text-green-700' :
-                                  gmailSelectedThread.status === 'read' ? 'bg-blue-100 text-blue-700' :
-                                  'bg-red-100 text-red-700'
-                                }`}
-                              >
-                                <option value="new">Nowe</option>
-                                <option value="read">Przeczytane</option>
-                                <option value="resolved">Rozwiazane</option>
-                              </select>
                               {/* Delete selected messages button */}
                               {gmailSelectedMessages.length > 0 && (
                                 <button
