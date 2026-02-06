@@ -73,6 +73,9 @@ function CRMContent() {
   // Lightbox state for image preview
   const [lightboxImage, setLightboxImage] = useState(null); // { url: '', filename: '' }
 
+  // Email autocomplete state - which compose "To" field is showing suggestions
+  const [showEmailSuggestions, setShowEmailSuggestions] = useState(null); // 'gmail', 'poomkids', 'allepoduszki', 'poomfurniture'
+
   // Gmail POOMKIDS (Shopify POOMKIDS) state
   const [poomkidsAuth, setPoomkidsAuth] = useState({ authenticated: false, user: null, loading: true });
   const [poomkidsThreads, setPoomkidsThreads] = useState([]);
@@ -2636,6 +2639,23 @@ function CRMContent() {
     return date.toLocaleDateString('pl-PL', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
   };
 
+  // Get unique email addresses from threads for autocomplete
+  const getEmailSuggestions = (threads, filterText, ownEmail = '') => {
+    const emails = new Set();
+    threads.forEach(thread => {
+      if (thread.from_email && thread.from_email !== ownEmail) {
+        emails.add(thread.from_email.toLowerCase());
+      }
+      if (thread.to_email && thread.to_email !== ownEmail) {
+        emails.add(thread.to_email.toLowerCase());
+      }
+    });
+    const allEmails = Array.from(emails).sort();
+    if (!filterText) return allEmails.slice(0, 10);
+    const filter = filterText.toLowerCase();
+    return allEmails.filter(email => email.includes(filter)).slice(0, 10);
+  };
+
   // Parse message body to convert URLs to clickable links and clean up formatting
   const parseMessageBody = (text, isOutgoing = false) => {
     if (!text) return '(Brak tresci tekstowej)';
@@ -3892,15 +3912,36 @@ function CRMContent() {
                           </div>
                         </div>
                         <div className="flex-1 p-4 space-y-4 overflow-y-auto">
-                          <div>
+                          <div className="relative">
                             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Do:</label>
                             <input
                               type="email"
                               value={gmailComposeTo}
-                              onChange={(e) => setGmailComposeTo(e.target.value)}
+                              onChange={(e) => {
+                                setGmailComposeTo(e.target.value);
+                                setShowEmailSuggestions(e.target.value ? 'gmail' : null);
+                              }}
+                              onFocus={() => gmailComposeTo && setShowEmailSuggestions('gmail')}
+                              onBlur={() => setTimeout(() => setShowEmailSuggestions(null), 200)}
                               placeholder="adres@email.com"
                               className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
                             />
+                            {showEmailSuggestions === 'gmail' && getEmailSuggestions(gmailThreads, gmailComposeTo, gmailAuth.user?.email).length > 0 && (
+                              <div className="absolute z-50 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg max-h-40 overflow-y-auto">
+                                {getEmailSuggestions(gmailThreads, gmailComposeTo, gmailAuth.user?.email).map((email, idx) => (
+                                  <div
+                                    key={idx}
+                                    className="px-3 py-2 text-sm cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-900 dark:text-white"
+                                    onMouseDown={() => {
+                                      setGmailComposeTo(email);
+                                      setShowEmailSuggestions(null);
+                                    }}
+                                  >
+                                    {email}
+                                  </div>
+                                ))}
+                              </div>
+                            )}
                           </div>
                           <div>
                             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Temat:</label>
@@ -4613,15 +4654,36 @@ function CRMContent() {
                           </div>
                         </div>
                         <div className="flex-1 p-4 space-y-4 overflow-y-auto">
-                          <div>
+                          <div className="relative">
                             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Do:</label>
                             <input
                               type="email"
                               value={poomkidsComposeTo}
-                              onChange={(e) => setPoomkidsComposeTo(e.target.value)}
+                              onChange={(e) => {
+                                setPoomkidsComposeTo(e.target.value);
+                                setShowEmailSuggestions(e.target.value ? 'poomkids' : null);
+                              }}
+                              onFocus={() => poomkidsComposeTo && setShowEmailSuggestions('poomkids')}
+                              onBlur={() => setTimeout(() => setShowEmailSuggestions(null), 200)}
                               placeholder="adres@email.com"
                               className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
                             />
+                            {showEmailSuggestions === 'poomkids' && getEmailSuggestions(poomkidsThreads, poomkidsComposeTo, poomkidsAuth.user?.email).length > 0 && (
+                              <div className="absolute z-50 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg max-h-40 overflow-y-auto">
+                                {getEmailSuggestions(poomkidsThreads, poomkidsComposeTo, poomkidsAuth.user?.email).map((email, idx) => (
+                                  <div
+                                    key={idx}
+                                    className="px-3 py-2 text-sm cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-900 dark:text-white"
+                                    onMouseDown={() => {
+                                      setPoomkidsComposeTo(email);
+                                      setShowEmailSuggestions(null);
+                                    }}
+                                  >
+                                    {email}
+                                  </div>
+                                ))}
+                              </div>
+                            )}
                           </div>
                           <div>
                             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Temat:</label>
@@ -5323,15 +5385,36 @@ function CRMContent() {
                           </div>
                         </div>
                         <div className="flex-1 p-4 space-y-4 overflow-y-auto">
-                          <div>
+                          <div className="relative">
                             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Do:</label>
                             <input
                               type="email"
                               value={allepoduszkiComposeTo}
-                              onChange={(e) => setAllepoduszkiComposeTo(e.target.value)}
+                              onChange={(e) => {
+                                setAllepoduszkiComposeTo(e.target.value);
+                                setShowEmailSuggestions(e.target.value ? 'allepoduszki' : null);
+                              }}
+                              onFocus={() => allepoduszkiComposeTo && setShowEmailSuggestions('allepoduszki')}
+                              onBlur={() => setTimeout(() => setShowEmailSuggestions(null), 200)}
                               placeholder="adres@email.com"
                               className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
                             />
+                            {showEmailSuggestions === 'allepoduszki' && getEmailSuggestions(allepoduszkiThreads, allepoduszkiComposeTo, allepoduszkiAuth.user?.email).length > 0 && (
+                              <div className="absolute z-50 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg max-h-40 overflow-y-auto">
+                                {getEmailSuggestions(allepoduszkiThreads, allepoduszkiComposeTo, allepoduszkiAuth.user?.email).map((email, idx) => (
+                                  <div
+                                    key={idx}
+                                    className="px-3 py-2 text-sm cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-900 dark:text-white"
+                                    onMouseDown={() => {
+                                      setAllepoduszkiComposeTo(email);
+                                      setShowEmailSuggestions(null);
+                                    }}
+                                  >
+                                    {email}
+                                  </div>
+                                ))}
+                              </div>
+                            )}
                           </div>
                           <div>
                             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Temat:</label>
@@ -6031,15 +6114,36 @@ function CRMContent() {
                           </div>
                         </div>
                         <div className="flex-1 p-4 space-y-4 overflow-y-auto">
-                          <div>
+                          <div className="relative">
                             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Do:</label>
                             <input
                               type="email"
                               value={poomfurnitureComposeTo}
-                              onChange={(e) => setPoomfurnitureComposeTo(e.target.value)}
+                              onChange={(e) => {
+                                setPoomfurnitureComposeTo(e.target.value);
+                                setShowEmailSuggestions(e.target.value ? 'poomfurniture' : null);
+                              }}
+                              onFocus={() => poomfurnitureComposeTo && setShowEmailSuggestions('poomfurniture')}
+                              onBlur={() => setTimeout(() => setShowEmailSuggestions(null), 200)}
                               placeholder="adres@email.com"
                               className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
                             />
+                            {showEmailSuggestions === 'poomfurniture' && getEmailSuggestions(poomfurnitureThreads, poomfurnitureComposeTo, poomfurnitureAuth.user?.email).length > 0 && (
+                              <div className="absolute z-50 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg max-h-40 overflow-y-auto">
+                                {getEmailSuggestions(poomfurnitureThreads, poomfurnitureComposeTo, poomfurnitureAuth.user?.email).map((email, idx) => (
+                                  <div
+                                    key={idx}
+                                    className="px-3 py-2 text-sm cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-900 dark:text-white"
+                                    onMouseDown={() => {
+                                      setPoomfurnitureComposeTo(email);
+                                      setShowEmailSuggestions(null);
+                                    }}
+                                  >
+                                    {email}
+                                  </div>
+                                ))}
+                              </div>
+                            )}
                           </div>
                           <div>
                             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Temat:</label>
