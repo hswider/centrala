@@ -2656,10 +2656,17 @@ function CRMContent() {
       .replace(/>\s*написал:\s*[\s\S]*/i, '')
       .replace(/>\s*пишет:\s*[\s\S]*/i, '')
       .replace(/\n*On .+ wrote:[\s\S]*/i, '')
-      .replace(/\n*W dniu .+ napisał:[\s\S]*/i, '')
-      .replace(/\n*Dnia .+ napisał:[\s\S]*/i, '')
-      // Polish format with napisał(a): - matches "niedziela, 25 stycznia 2026 22:53, email napisał(a):"
-      .replace(/\n*.+\d{4}.+napisał\(a\):[\s\S]*/i, '')
+      // Polish quote formats - multiple variations (can be at start or after newline)
+      .replace(/^W dniu .+napisał\(a\):[\s\S]*/im, '')
+      .replace(/^W dniu .+napisał:[\s\S]*/im, '')
+      .replace(/^Dnia .+napisał\(a\):[\s\S]*/im, '')
+      .replace(/^Dnia .+napisał:[\s\S]*/im, '')
+      // Generic Polish format - any line with date pattern and napisał(a):
+      .replace(/^.*\d{1,2}\s+\w+\s+\d{4}.*napisał\(a\):[\s\S]*/im, '')
+      .replace(/^.*\d{1,2}\s+\w+\s+\d{4}.*napisał:[\s\S]*/im, '')
+      // Also match variations with "o" time format like "5 lut 2026 o 16:42"
+      .replace(/^.*\d{1,2}\s+\w{3,}\s+\d{4}\s+o\s+\d{1,2}:\d{2}.*napisał\(a\):[\s\S]*/im, '')
+      // Remove lines starting with ">" (quoted content)
       .replace(/\n(?:>.*\n?){2,}[\s\S]*/, '')
       .replace(/\n*\[image:[^\]]*\]\s*Zamówienie\s*#\d+[\s\S]*/i, '')
       // Proton Mail signature
