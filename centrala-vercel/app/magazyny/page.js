@@ -2521,7 +2521,7 @@ export default function MagazynyPage() {
                                       return (
                                         <div key={idx} className="flex items-center gap-1.5">
                                           <span className={dotColors[idx % dotColors.length]}>{'●'}</span>
-                                          <span>{ing.nazwa}</span>
+                                          <span>{ing.ingredient_nazwa || ing.nazwa}</span>
                                         </div>
                                       );
                                     })}
