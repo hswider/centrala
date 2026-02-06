@@ -13,6 +13,7 @@ export default function Navigation() {
   const [userPermissions, setUserPermissions] = useState([]);
   const [showAccessDenied, setShowAccessDenied] = useState(false);
   const [deniedModule, setDeniedModule] = useState('');
+  const [userRole, setUserRole] = useState(null);
   const { darkMode, toggleDarkMode } = useTheme();
 
   // Fetch user permissions
@@ -23,6 +24,7 @@ export default function Navigation() {
         const data = await res.json();
         if (data.success && data.user?.permissions) {
           setUserPermissions(data.user.permissions);
+          setUserRole(data.user.role);
         }
       } catch (err) {
         // Silently ignore
@@ -164,6 +166,7 @@ export default function Navigation() {
     { href: '/magazyny', label: 'WMS', icon: '🏭', permission: 'wms' },
     { href: '/mes', label: 'MES', icon: '⚙️', permission: 'mes' },
     { href: '/mts', label: 'MTS', icon: '📋', permission: 'mts' },
+    ...(userRole === 'it_administrator' ? [{ href: '/baza-danych', label: 'Baza', icon: '💾', permission: null }] : []),
     { href: '/dms', label: 'DMS', icon: '📄', permission: 'dms' },
     { href: '/ecom', label: 'ECOM', icon: '🖥️', permission: 'ecom' },
     { href: '/crm', label: 'CRM 🇵🇱', icon: '👥', badge: unreadCount, permission: 'crm' },
@@ -174,13 +177,14 @@ export default function Navigation() {
 
   // Check if user has permission for a module
   const hasPermission = (permission) => {
+    if (permission === null) return true; // No permission required
     if (!userPermissions.length) return true; // Loading state - allow all
     return userPermissions.includes(permission);
   };
 
   // Handle click on restricted module
   const handleRestrictedClick = (e, item) => {
-    if (!hasPermission(item.permission)) {
+    if (item.permission !== null && !hasPermission(item.permission)) {
       e.preventDefault();
       setDeniedModule(item.label);
       setShowAccessDenied(true);
@@ -197,6 +201,7 @@ export default function Navigation() {
       (item.href === '/magazyny' && pathname.startsWith('/magazyny')) ||
       (item.href === '/mes' && pathname.startsWith('/mes')) ||
       (item.href === '/mts' && pathname.startsWith('/mts')) ||
+      (item.href === '/baza-danych' && pathname.startsWith('/baza-danych')) ||
       (item.href === '/dms' && pathname.startsWith('/dms')) ||
       (item.href === '/ecom' && pathname.startsWith('/ecom')) ||
       (item.href === '/crm' && pathname === '/crm') ||

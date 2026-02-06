@@ -855,6 +855,34 @@ export async function initDatabase() {
     // Column might already exist or table doesn't exist yet
   }
 
+  // Historical sales data for MTS (previous year data from Amazon)
+  await sql`
+    CREATE TABLE IF NOT EXISTS historical_sales (
+      id SERIAL PRIMARY KEY,
+      sku VARCHAR(100) NOT NULL,
+      year INT NOT NULL,
+      month INT NOT NULL,
+      quantity INT DEFAULT 0,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      UNIQUE(sku, year, month)
+    )
+  `;
+
+  // MTS SKU configuration (growth %, thresholds per SKU)
+  await sql`
+    CREATE TABLE IF NOT EXISTS mts_sku_config (
+      id SERIAL PRIMARY KEY,
+      sku VARCHAR(100) UNIQUE NOT NULL,
+      growth_percent DECIMAL(5,2) DEFAULT 0,
+      threshold_ok INT DEFAULT 100,
+      threshold_warning INT DEFAULT 200,
+      threshold_critical INT DEFAULT 300,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )
+  `;
+
   // Insert default Allegro Meblebox token row if not exists
   const { rows: allegroMebleboxTokenRows } = await sql`SELECT COUNT(*) as count FROM allegro_meblebox_tokens`;
   if (allegroMebleboxTokenRows[0].count === '0') {
