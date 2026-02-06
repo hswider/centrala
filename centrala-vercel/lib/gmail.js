@@ -210,7 +210,7 @@ function encodeEmailSubject(subject) {
 }
 
 // Send reply to thread
-export async function sendReply(threadId, to, subject, body, messageId = null, allMessageIds = []) {
+export async function sendReply(threadId, to, subject, body, messageId = null, allMessageIds = [], cc = null) {
   const tokens = await getGmailTokens();
   const fromEmail = tokens.email;
 
@@ -223,6 +223,14 @@ export async function sendReply(threadId, to, subject, body, messageId = null, a
   const emailLines = [
     `From: ${fromEmail}`,
     `To: ${to}`,
+  ];
+
+  // Add CC if provided
+  if (cc) {
+    emailLines.push(`Cc: ${cc}`);
+  }
+
+  emailLines.push(
     `Subject: ${encodeEmailSubject(replySubject)}`,
     `In-Reply-To: ${inReplyTo}`,
     `References: ${references}`,
@@ -231,7 +239,7 @@ export async function sendReply(threadId, to, subject, body, messageId = null, a
     'Content-Transfer-Encoding: base64',
     '',
     Buffer.from(body, 'utf-8').toString('base64')
-  ];
+  );
 
   const rawEmail = emailLines.join('\r\n');
   const encodedEmail = Buffer.from(rawEmail).toString('base64url');
@@ -246,7 +254,7 @@ export async function sendReply(threadId, to, subject, body, messageId = null, a
 }
 
 // Send reply with attachments
-export async function sendReplyWithAttachments(threadId, to, subject, body, attachments = [], messageId = null, allMessageIds = []) {
+export async function sendReplyWithAttachments(threadId, to, subject, body, attachments = [], messageId = null, allMessageIds = [], cc = null) {
   const tokens = await getGmailTokens();
   const from = tokens?.email || 'me';
 
@@ -260,6 +268,14 @@ export async function sendReplyWithAttachments(threadId, to, subject, body, atta
   const emailParts = [
     `From: ${from}`,
     `To: ${to}`,
+  ];
+
+  // Add CC if provided
+  if (cc) {
+    emailParts.push(`Cc: ${cc}`);
+  }
+
+  emailParts.push(
     `Subject: ${encodeEmailSubject(replySubject)}`,
     `In-Reply-To: ${inReplyTo}`,
     `References: ${references}`,
@@ -271,7 +287,7 @@ export async function sendReplyWithAttachments(threadId, to, subject, body, atta
     'Content-Transfer-Encoding: base64',
     '',
     Buffer.from(body, 'utf-8').toString('base64')
-  ];
+  );
 
   for (const attachment of attachments) {
     emailParts.push(`--${boundary}`);
@@ -651,6 +667,9 @@ export function parseMessage(message) {
     fromEmail = fromMatch[2];
   }
 
+  // Parse CC header
+  const ccHeader = getHeader('Cc');
+
   return {
     id: message.id,
     threadId: message.threadId,
@@ -658,6 +677,7 @@ export function parseMessage(message) {
     fromName,
     fromEmail,
     to: getHeader('To'),
+    cc: ccHeader,
     subject: getHeader('Subject'),
     date: getHeader('Date'),
     snippet: message.snippet,

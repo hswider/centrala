@@ -105,6 +105,7 @@ async function handleSync(request) {
               fromEmail: parsed.fromEmail,
               fromName: parsed.fromName,
               to: parsed.to,
+              cc: parsed.cc,
               subject: parsed.subject,
               bodyText: parsed.bodyText,
               bodyHtml: parsed.bodyHtml,

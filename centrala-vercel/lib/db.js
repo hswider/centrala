@@ -298,7 +298,8 @@ export async function initDatabase() {
       thread_id VARCHAR(100) REFERENCES gmail_threads(id) ON DELETE CASCADE,
       from_email VARCHAR(255),
       from_name VARCHAR(255),
-      to_email VARCHAR(255),
+      to_email TEXT,
+      cc_email TEXT,
       subject TEXT,
       body_text TEXT,
       body_html TEXT,
@@ -309,6 +310,20 @@ export async function initDatabase() {
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )
   `;
+
+  // Add cc_email column if not exists (migration)
+  try {
+    await sql`ALTER TABLE gmail_messages ADD COLUMN IF NOT EXISTS cc_email TEXT`;
+  } catch (e) {
+    // Column may already exist
+  }
+
+  // Extend to_email to TEXT if needed (migration)
+  try {
+    await sql`ALTER TABLE gmail_messages ALTER COLUMN to_email TYPE TEXT`;
+  } catch (e) {
+    // Already TEXT or doesn't need change
+  }
 
   // Gmail sync status
   await sql`
@@ -2144,7 +2159,7 @@ export async function saveGmailThread(thread) {
 export async function saveGmailMessage(message, threadId) {
   await sql`
     INSERT INTO gmail_messages (
-      id, thread_id, from_email, from_name, to_email,
+      id, thread_id, from_email, from_name, to_email, cc_email,
       subject, body_text, body_html, sent_at, is_outgoing,
       has_attachments, attachments, created_at
     ) VALUES (
@@ -2153,6 +2168,7 @@ export async function saveGmailMessage(message, threadId) {
       ${message.fromEmail || ''},
       ${message.fromName || ''},
       ${message.to || ''},
+      ${message.cc || ''},
       ${message.subject || ''},
       ${message.bodyText || ''},
       ${message.bodyHtml || ''},
@@ -2165,6 +2181,7 @@ export async function saveGmailMessage(message, threadId) {
     ON CONFLICT (id) DO UPDATE SET
       body_text = EXCLUDED.body_text,
       body_html = EXCLUDED.body_html,
+      cc_email = EXCLUDED.cc_email,
       is_outgoing = EXCLUDED.is_outgoing,
       has_attachments = EXCLUDED.has_attachments,
       attachments = EXCLUDED.attachments

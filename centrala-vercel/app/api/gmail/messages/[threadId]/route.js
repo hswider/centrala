@@ -77,6 +77,7 @@ export async function GET(request, { params }) {
               fromEmail: parsed.fromEmail,
               fromName: parsed.fromName,
               to: parsed.to,
+              cc: parsed.cc,
               subject: parsed.subject,
               bodyText: parsed.bodyText,
               bodyHtml: parsed.bodyHtml,
@@ -133,7 +134,7 @@ export async function POST(request, { params }) {
     }
 
     const body = await request.json();
-    const { text, to, subject, attachments } = body;
+    const { text, to, cc, subject, attachments } = body;
 
     if ((!text || text.trim() === '') && (!attachments || attachments.length === 0)) {
       return NextResponse.json({
@@ -169,9 +170,9 @@ export async function POST(request, { params }) {
     // Send reply via Gmail API (with or without attachments)
     let sentMessage;
     if (attachments && attachments.length > 0) {
-      sentMessage = await sendReplyWithAttachments(threadId, to, subject || '', text?.trim() || '', attachments, lastMessageId, allMessageIds);
+      sentMessage = await sendReplyWithAttachments(threadId, to, subject || '', text?.trim() || '', attachments, lastMessageId, allMessageIds, cc);
     } else {
-      sentMessage = await sendReply(threadId, to, subject || '', text.trim(), lastMessageId, allMessageIds);
+      sentMessage = await sendReply(threadId, to, subject || '', text.trim(), lastMessageId, allMessageIds, cc);
     }
 
     // Refresh thread to get the sent message
@@ -189,6 +190,7 @@ export async function POST(request, { params }) {
           fromEmail: parsed.fromEmail,
           fromName: parsed.fromName,
           to: parsed.to,
+          cc: parsed.cc,
           subject: parsed.subject,
           bodyText: parsed.bodyText,
           bodyHtml: parsed.bodyHtml,

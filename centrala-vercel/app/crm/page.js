@@ -48,6 +48,7 @@ function CRMContent() {
   const [gmailThreadMessages, setGmailThreadMessages] = useState([]);
   const [gmailMessagesLoading, setGmailMessagesLoading] = useState(false);
   const [gmailReplyText, setGmailReplyText] = useState('');
+  const [gmailReplyAll, setGmailReplyAll] = useState(false);
   const [gmailSending, setGmailSending] = useState(false);
   const [gmailSyncing, setGmailSyncing] = useState(false);
   const [gmailSyncStatus, setGmailSyncStatus] = useState(null);
@@ -914,6 +915,40 @@ function CRMContent() {
       }
     }
 
+    // Collect CC addresses for Reply All
+    let ccAddresses = null;
+    if (gmailReplyAll) {
+      const allEmails = new Set();
+      // Add all unique CC addresses from thread messages
+      gmailThreadMessages.forEach(msg => {
+        if (msg.cc_email) {
+          msg.cc_email.split(',').forEach(email => {
+            const trimmed = email.trim().toLowerCase();
+            if (trimmed && trimmed !== ownEmail && trimmed !== replyTo?.toLowerCase()) {
+              allEmails.add(email.trim());
+            }
+          });
+        }
+        // Also add To addresses (except our own and the primary recipient)
+        if (msg.to_email && !msg.is_outgoing) {
+          msg.to_email.split(',').forEach(email => {
+            const trimmed = email.trim().toLowerCase();
+            if (trimmed && trimmed !== ownEmail && trimmed !== replyTo?.toLowerCase()) {
+              allEmails.add(email.trim());
+            }
+          });
+        }
+      });
+      // Add original sender to CC if they're not the primary recipient
+      const origSender = gmailSelectedThread.from_email;
+      if (origSender && origSender.toLowerCase() !== ownEmail && origSender.toLowerCase() !== replyTo?.toLowerCase()) {
+        allEmails.add(origSender);
+      }
+      if (allEmails.size > 0) {
+        ccAddresses = Array.from(allEmails).join(', ');
+      }
+    }
+
     setGmailSending(true);
     try {
       // Convert attachments to base64
@@ -935,6 +970,7 @@ function CRMContent() {
         body: JSON.stringify({
           text: gmailReplyText.trim(),
           to: replyTo,
+          cc: ccAddresses,
           subject: gmailSelectedThread.subject,
           attachments: attachmentData
         })
@@ -949,6 +985,7 @@ function CRMContent() {
 
       if (data.success) {
         setGmailReplyText('');
+        setGmailReplyAll(false);
         setGmailAttachments([]);
         const msgRes = await fetch(`/api/gmail/messages/${gmailSelectedThread.id}?refresh=true`);
         const msgData = await msgRes.json();
@@ -3757,12 +3794,23 @@ function CRMContent() {
                             <div className="flex items-center gap-2">
                               <button
                                 onClick={() => {
+                                  setGmailReplyAll(false);
                                   setGmailReplyText('');
                                   document.querySelector('#gmail-reply-textarea')?.focus();
                                 }}
                                 className="px-2 py-1 text-xs font-medium bg-blue-100 text-blue-700 rounded hover:bg-blue-200"
                               >
                                 Odpowiedz
+                              </button>
+                              <button
+                                onClick={() => {
+                                  setGmailReplyAll(true);
+                                  setGmailReplyText('');
+                                  document.querySelector('#gmail-reply-textarea')?.focus();
+                                }}
+                                className="px-2 py-1 text-xs font-medium bg-purple-100 text-purple-700 rounded hover:bg-purple-200"
+                              >
+                                Odp. wszystkim
                               </button>
                               <button
                                 onClick={async () => {
@@ -3967,6 +4015,9 @@ function CRMContent() {
                                   >
                                     <div className={`text-xs mb-1 ${msg.is_outgoing ? 'text-gray-400' : 'text-gray-500'}`}>
                                       {msg.is_outgoing ? `Do: ${msg.to_email || 'Nieznany'}` : (msg.from_name || msg.from_email)}
+                                      {msg.cc_email && (
+                                        <span className="block text-[10px] opacity-75 mt-0.5">DW: {msg.cc_email}</span>
+                                      )}
                                     </div>
                                     <div className="whitespace-pre-wrap break-words text-sm">
                                       {parseMessageBody(msg.body_text, msg.is_outgoing)}
@@ -4058,9 +4109,9 @@ function CRMContent() {
                               id="gmail-reply-textarea"
                               value={gmailReplyText}
                               onChange={(e) => setGmailReplyText(e.target.value)}
-                              placeholder="Napisz odpowiedz..."
+                              placeholder={gmailReplyAll ? "Odpowiedz wszystkim (wlacznie z DW)..." : "Napisz odpowiedz..."}
                               rows={2}
-                              className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 resize-none"
+                              className={`flex-1 px-3 py-2 border bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 resize-none ${gmailReplyAll ? 'border-purple-400 focus:ring-purple-500' : 'border-gray-300 dark:border-gray-600 focus:ring-red-500'}`}
                               onKeyDown={(e) => {
                                 if (e.key === 'Enter' && !e.shiftKey) {
                                   e.preventDefault();
@@ -4617,6 +4668,9 @@ function CRMContent() {
                                   >
                                     <div className={`text-xs mb-1 ${msg.is_outgoing ? 'text-gray-400' : 'text-gray-500'}`}>
                                       {msg.is_outgoing ? `Do: ${msg.to_email || 'Nieznany'}` : (msg.from_name || msg.from_email)}
+                                      {msg.cc_email && (
+                                        <span className="block text-[10px] opacity-75 mt-0.5">DW: {msg.cc_email}</span>
+                                      )}
                                     </div>
                                     <div className="whitespace-pre-wrap break-words text-sm">
                                       {parseMessageBody(msg.body_text, msg.is_outgoing)}
@@ -5269,6 +5323,9 @@ function CRMContent() {
                                   >
                                     <div className={`text-xs mb-1 ${msg.is_outgoing ? 'text-gray-400' : 'text-gray-500'}`}>
                                       {msg.is_outgoing ? `Do: ${msg.to_email || 'Nieznany'}` : (msg.from_name || msg.from_email)}
+                                      {msg.cc_email && (
+                                        <span className="block text-[10px] opacity-75 mt-0.5">DW: {msg.cc_email}</span>
+                                      )}
                                     </div>
                                     <div className="whitespace-pre-wrap break-words text-sm">
                                       {parseMessageBody(msg.body_text, msg.is_outgoing)}
@@ -5920,6 +5977,9 @@ function CRMContent() {
                                   >
                                     <div className={`text-xs mb-1 ${msg.is_outgoing ? 'text-gray-400' : 'text-gray-500'}`}>
                                       {msg.is_outgoing ? `Do: ${msg.to_email || 'Nieznany'}` : (msg.from_name || msg.from_email)}
+                                      {msg.cc_email && (
+                                        <span className="block text-[10px] opacity-75 mt-0.5">DW: {msg.cc_email}</span>
+                                      )}
                                     </div>
                                     <div className="whitespace-pre-wrap break-words text-sm">
                                       {parseMessageBody(msg.body_text, msg.is_outgoing)}
