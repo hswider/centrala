@@ -70,6 +70,9 @@ function CRMContent() {
   // Status dropdown state (shared across all modules - only one can be open)
   const [openStatusDropdown, setOpenStatusDropdown] = useState(null); // { module: 'gmail', threadId: '123' }
 
+  // Lightbox state for image preview
+  const [lightboxImage, setLightboxImage] = useState(null); // { url: '', filename: '' }
+
   // Gmail POOMKIDS (Shopify POOMKIDS) state
   const [poomkidsAuth, setPoomkidsAuth] = useState({ authenticated: false, user: null, loading: true });
   const [poomkidsThreads, setPoomkidsThreads] = useState([]);
@@ -4238,18 +4241,18 @@ function CRMContent() {
                                             const attUrl = `/api/gmail/attachments/${msg.id}/${att.id}?filename=${encodeURIComponent(att.filename)}&mimeType=${encodeURIComponent(att.mimeType)}`;
                                             const isImage = att.mimeType?.startsWith('image/');
                                             return isImage ? (
-                                              <a key={i} href={attUrl} target="_blank" rel="noopener noreferrer" className="block">
+                                              <div key={i} className="block cursor-pointer" onClick={() => setLightboxImage({ url: attUrl, filename: att.filename })}>
                                                 <img
                                                   src={attUrl}
                                                   alt={att.filename}
-                                                  className="max-w-full max-h-48 rounded border border-gray-200 dark:border-gray-600 cursor-pointer hover:opacity-80"
+                                                  className="max-w-full max-h-48 rounded border border-gray-200 dark:border-gray-600 hover:opacity-80 transition-opacity"
                                                   onError={(e) => { e.target.style.display = 'none'; if (e.target.nextSibling) e.target.nextSibling.style.display = 'flex'; }}
                                                 />
                                                 <div style={{display:'none'}} className={`items-center gap-1 px-2 py-1 rounded text-xs ${msg.is_outgoing ? 'bg-gray-700 text-white' : 'bg-gray-100 dark:bg-gray-600 text-gray-700 dark:text-gray-200'}`}>
                                                   <span>🖼️</span>
                                                   <span className="truncate max-w-[100px]">{att.filename}</span>
                                                 </div>
-                                              </a>
+                                              </div>
                                             ) : (
                                               <a
                                                 key={i}
@@ -4936,18 +4939,18 @@ function CRMContent() {
                                               const attUrl = `/api/gmail-poomkids/attachments/${msg.id}/${att.id}?filename=${encodeURIComponent(att.filename)}&mimeType=${encodeURIComponent(att.mimeType)}`;
                                               const isImage = att.mimeType?.startsWith('image/');
                                               return isImage ? (
-                                                <a key={i} href={attUrl} target="_blank" rel="noopener noreferrer" className="block">
+                                                <div key={i} className="block cursor-pointer" onClick={() => setLightboxImage({ url: attUrl, filename: att.filename })}>
                                                   <img
                                                     src={attUrl}
                                                     alt={att.filename}
-                                                    className="max-w-full max-h-48 rounded border border-gray-200 dark:border-gray-600 cursor-pointer hover:opacity-80"
+                                                    className="max-w-full max-h-48 rounded border border-gray-200 dark:border-gray-600 hover:opacity-80 transition-opacity"
                                                     onError={(e) => { e.target.style.display = 'none'; if (e.target.nextSibling) e.target.nextSibling.style.display = 'flex'; }}
                                                   />
                                                   <div style={{display:'none'}} className={`items-center gap-1 px-2 py-1 rounded text-xs ${msg.is_outgoing ? 'bg-gray-700 text-white' : 'bg-gray-100 dark:bg-gray-600 text-gray-700 dark:text-gray-200'}`}>
                                                     <span>🖼️</span>
                                                     <span className="truncate max-w-[100px]">{att.filename}</span>
                                                   </div>
-                                                </a>
+                                                </div>
                                               ) : (
                                                 <a
                                                   key={i}
@@ -5633,18 +5636,18 @@ function CRMContent() {
                                             const attUrl = `/api/gmail-allepoduszki/attachments/${msg.id}/${att.id}?filename=${encodeURIComponent(att.filename)}&mimeType=${encodeURIComponent(att.mimeType)}`;
                                             const isImage = att.mimeType?.startsWith('image/');
                                             return isImage ? (
-                                              <a key={i} href={attUrl} target="_blank" rel="noopener noreferrer" className="block">
+                                              <div key={i} className="block cursor-pointer" onClick={() => setLightboxImage({ url: attUrl, filename: att.filename })}>
                                                 <img
                                                   src={attUrl}
                                                   alt={att.filename}
-                                                  className="max-w-full max-h-48 rounded border border-gray-200 dark:border-gray-600 cursor-pointer hover:opacity-80"
+                                                  className="max-w-full max-h-48 rounded border border-gray-200 dark:border-gray-600 hover:opacity-80 transition-opacity"
                                                   onError={(e) => { e.target.style.display = 'none'; if (e.target.nextSibling) e.target.nextSibling.style.display = 'flex'; }}
                                                 />
                                                 <div style={{display:'none'}} className={`items-center gap-1 px-2 py-1 rounded text-xs ${msg.is_outgoing ? 'bg-gray-700 text-white' : 'bg-gray-100 dark:bg-gray-600 text-gray-700 dark:text-gray-200'}`}>
                                                   <span>🖼️</span>
                                                   <span className="truncate max-w-[100px]">{att.filename}</span>
                                                 </div>
-                                              </a>
+                                              </div>
                                             ) : (
                                               <a
                                                 key={i}
@@ -6329,18 +6332,18 @@ function CRMContent() {
                                             const attUrl = `/api/gmail-poomfurniture/attachments/${msg.id}/${att.id}?filename=${encodeURIComponent(att.filename)}&mimeType=${encodeURIComponent(att.mimeType)}`;
                                             const isImage = att.mimeType?.startsWith('image/');
                                             return isImage ? (
-                                              <a key={i} href={attUrl} target="_blank" rel="noopener noreferrer" className="block">
+                                              <div key={i} className="block cursor-pointer" onClick={() => setLightboxImage({ url: attUrl, filename: att.filename })}>
                                                 <img
                                                   src={attUrl}
                                                   alt={att.filename}
-                                                  className="max-w-full max-h-48 rounded border border-gray-200 dark:border-gray-600 cursor-pointer hover:opacity-80"
+                                                  className="max-w-full max-h-48 rounded border border-gray-200 dark:border-gray-600 hover:opacity-80 transition-opacity"
                                                   onError={(e) => { e.target.style.display = 'none'; if (e.target.nextSibling) e.target.nextSibling.style.display = 'flex'; }}
                                                 />
                                                 <div style={{display:'none'}} className={`items-center gap-1 px-2 py-1 rounded text-xs ${msg.is_outgoing ? 'bg-gray-700 text-white' : 'bg-gray-100 dark:bg-gray-600 text-gray-700 dark:text-gray-200'}`}>
                                                   <span>🖼️</span>
                                                   <span className="truncate max-w-[100px]">{att.filename}</span>
                                                 </div>
-                                              </a>
+                                              </div>
                                             ) : (
                                               <a
                                                 key={i}
@@ -6435,6 +6438,30 @@ function CRMContent() {
           )}
         </div>
       </main>
+
+      {/* Image Lightbox Modal */}
+      {lightboxImage && (
+        <div
+          className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4"
+          onClick={() => setLightboxImage(null)}
+        >
+          <div className="relative max-w-[90vw] max-h-[90vh]">
+            <button
+              onClick={() => setLightboxImage(null)}
+              className="absolute -top-10 right-0 text-white hover:text-gray-300 text-2xl font-bold"
+            >
+              ✕
+            </button>
+            <img
+              src={lightboxImage.url}
+              alt={lightboxImage.filename}
+              className="max-w-full max-h-[85vh] object-contain rounded-lg shadow-2xl"
+              onClick={(e) => e.stopPropagation()}
+            />
+            <p className="text-white text-center mt-2 text-sm opacity-75">{lightboxImage.filename}</p>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
