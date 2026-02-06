@@ -78,6 +78,8 @@ function CRMContent() {
   const [poomkidsThreadMessages, setPoomkidsThreadMessages] = useState([]);
   const [poomkidsMessagesLoading, setPoomkidsMessagesLoading] = useState(false);
   const [poomkidsReplyText, setPoomkidsReplyText] = useState('');
+  const [poomkidsReplyAll, setPoomkidsReplyAll] = useState(false);
+  const [poomkidsRefreshing, setPoomkidsRefreshing] = useState(false);
   const [poomkidsSending, setPoomkidsSending] = useState(false);
   const [poomkidsSyncing, setPoomkidsSyncing] = useState(false);
   const [poomkidsSyncStatus, setPoomkidsSyncStatus] = useState(null);
@@ -103,6 +105,8 @@ function CRMContent() {
   const [allepoduszkiThreadMessages, setAllepoduszkiThreadMessages] = useState([]);
   const [allepoduszkiMessagesLoading, setAllepoduszkiMessagesLoading] = useState(false);
   const [allepoduszkiReplyText, setAllepoduszkiReplyText] = useState('');
+  const [allepoduszkiReplyAll, setAllepoduszkiReplyAll] = useState(false);
+  const [allepoduszkiRefreshing, setAllepoduszkiRefreshing] = useState(false);
   const [allepoduszkiSending, setAllepoduszkiSending] = useState(false);
   const [allepoduszkiSyncing, setAllepoduszkiSyncing] = useState(false);
   const [allepoduszkiSyncStatus, setAllepoduszkiSyncStatus] = useState(null);
@@ -128,6 +132,8 @@ function CRMContent() {
   const [poomfurnitureThreadMessages, setPoomfurnitureThreadMessages] = useState([]);
   const [poomfurnitureMessagesLoading, setPoomfurnitureMessagesLoading] = useState(false);
   const [poomfurnitureReplyText, setPoomfurnitureReplyText] = useState('');
+  const [poomfurnitureReplyAll, setPoomfurnitureReplyAll] = useState(false);
+  const [poomfurnitureRefreshing, setPoomfurnitureRefreshing] = useState(false);
   const [poomfurnitureSending, setPoomfurnitureSending] = useState(false);
   const [poomfurnitureSyncing, setPoomfurnitureSyncing] = useState(false);
   const [poomfurnitureSyncStatus, setPoomfurnitureSyncStatus] = useState(null);
@@ -1326,6 +1332,26 @@ function CRMContent() {
     }
   };
 
+  // Refresh single POOMKIDS thread from server
+  const handleRefreshPoomkidsThread = async () => {
+    if (!poomkidsSelectedThread) return;
+    setPoomkidsRefreshing(true);
+    try {
+      const res = await fetch(`/api/gmail-poomkids/messages/${poomkidsSelectedThread.id}?refresh=true`);
+      const data = await res.json();
+      if (data.success) {
+        setPoomkidsThreadMessages(data.messages || []);
+        if (data.thread) {
+          setPoomkidsSelectedThread(prev => ({ ...prev, ...data.thread }));
+        }
+      }
+    } catch (err) {
+      console.error('Error refreshing POOMKIDS thread:', err);
+    } finally {
+      setPoomkidsRefreshing(false);
+    }
+  };
+
   // Send POOMKIDS reply
   const handlePoomkidsSendReply = async () => {
     if ((!poomkidsReplyText.trim() && poomkidsAttachments.length === 0) || !poomkidsSelectedThread) return;
@@ -1354,6 +1380,37 @@ function CRMContent() {
       }
     }
 
+    // Collect CC addresses for Reply All
+    let ccAddresses = null;
+    if (poomkidsReplyAll) {
+      const allEmails = new Set();
+      poomkidsThreadMessages.forEach(msg => {
+        if (msg.cc_email) {
+          msg.cc_email.split(',').forEach(email => {
+            const trimmed = email.trim().toLowerCase();
+            if (trimmed && trimmed !== ownEmail && trimmed !== replyTo?.toLowerCase()) {
+              allEmails.add(email.trim());
+            }
+          });
+        }
+        if (msg.to_email && !msg.is_outgoing) {
+          msg.to_email.split(',').forEach(email => {
+            const trimmed = email.trim().toLowerCase();
+            if (trimmed && trimmed !== ownEmail && trimmed !== replyTo?.toLowerCase()) {
+              allEmails.add(email.trim());
+            }
+          });
+        }
+      });
+      const origSender = poomkidsSelectedThread.from_email;
+      if (origSender && origSender.toLowerCase() !== ownEmail && origSender.toLowerCase() !== replyTo?.toLowerCase()) {
+        allEmails.add(origSender);
+      }
+      if (allEmails.size > 0) {
+        ccAddresses = Array.from(allEmails).join(', ');
+      }
+    }
+
     setPoomkidsSending(true);
     try {
       // Convert attachments to base64
@@ -1375,6 +1432,7 @@ function CRMContent() {
         body: JSON.stringify({
           text: poomkidsReplyText.trim(),
           to: replyTo,
+          cc: ccAddresses,
           subject: poomkidsSelectedThread.subject,
           attachments: attachmentData
         })
@@ -1389,6 +1447,7 @@ function CRMContent() {
 
       if (data.success) {
         setPoomkidsReplyText('');
+        setPoomkidsReplyAll(false);
         setPoomkidsAttachments([]);
         const msgRes = await fetch(`/api/gmail-poomkids/messages/${poomkidsSelectedThread.id}?refresh=true`);
         const msgData = await msgRes.json();
@@ -1916,6 +1975,26 @@ function CRMContent() {
     }
   };
 
+  // Refresh single ALLEPODUSZKI thread from server
+  const handleRefreshAllepoduszkiThread = async () => {
+    if (!allepoduszkiSelectedThread) return;
+    setAllepoduszkiRefreshing(true);
+    try {
+      const res = await fetch(`/api/gmail-allepoduszki/messages/${allepoduszkiSelectedThread.id}?refresh=true`);
+      const data = await res.json();
+      if (data.success) {
+        setAllepoduszkiThreadMessages(data.messages || []);
+        if (data.thread) {
+          setAllepoduszkiSelectedThread(prev => ({ ...prev, ...data.thread }));
+        }
+      }
+    } catch (err) {
+      console.error('Error refreshing ALLEPODUSZKI thread:', err);
+    } finally {
+      setAllepoduszkiRefreshing(false);
+    }
+  };
+
   // Send ALLEPODUSZKI reply
   const handleAllepoduszkiSendReply = async () => {
     if ((!allepoduszkiReplyText.trim() && allepoduszkiAttachments.length === 0) || !allepoduszkiSelectedThread) return;
@@ -1944,6 +2023,37 @@ function CRMContent() {
       }
     }
 
+    // Collect CC addresses for Reply All
+    let ccAddresses = null;
+    if (allepoduszkiReplyAll) {
+      const allEmails = new Set();
+      allepoduszkiThreadMessages.forEach(msg => {
+        if (msg.cc_email) {
+          msg.cc_email.split(',').forEach(email => {
+            const trimmed = email.trim().toLowerCase();
+            if (trimmed && trimmed !== ownEmail && trimmed !== replyTo?.toLowerCase()) {
+              allEmails.add(email.trim());
+            }
+          });
+        }
+        if (msg.to_email && !msg.is_outgoing) {
+          msg.to_email.split(',').forEach(email => {
+            const trimmed = email.trim().toLowerCase();
+            if (trimmed && trimmed !== ownEmail && trimmed !== replyTo?.toLowerCase()) {
+              allEmails.add(email.trim());
+            }
+          });
+        }
+      });
+      const origSender = allepoduszkiSelectedThread.from_email;
+      if (origSender && origSender.toLowerCase() !== ownEmail && origSender.toLowerCase() !== replyTo?.toLowerCase()) {
+        allEmails.add(origSender);
+      }
+      if (allEmails.size > 0) {
+        ccAddresses = Array.from(allEmails).join(', ');
+      }
+    }
+
     setAllepoduszkiSending(true);
     try {
       // Convert attachments to base64
@@ -1965,6 +2075,7 @@ function CRMContent() {
         body: JSON.stringify({
           text: allepoduszkiReplyText.trim(),
           to: replyTo,
+          cc: ccAddresses,
           subject: allepoduszkiSelectedThread.subject,
           attachments: attachmentData
         })
@@ -1979,6 +2090,7 @@ function CRMContent() {
 
       if (data.success) {
         setAllepoduszkiReplyText('');
+        setAllepoduszkiReplyAll(false);
         setAllepoduszkiAttachments([]);
         const msgRes = await fetch(`/api/gmail-allepoduszki/messages/${allepoduszkiSelectedThread.id}?refresh=true`);
         const msgData = await msgRes.json();
@@ -2254,6 +2366,26 @@ function CRMContent() {
     }
   };
 
+  // Refresh single POOMFURNITURE thread from server
+  const handleRefreshPoomfurnitureThread = async () => {
+    if (!poomfurnitureSelectedThread) return;
+    setPoomfurnitureRefreshing(true);
+    try {
+      const res = await fetch(`/api/gmail-poomfurniture/messages/${poomfurnitureSelectedThread.id}?refresh=true`);
+      const data = await res.json();
+      if (data.success) {
+        setPoomfurnitureThreadMessages(data.messages || []);
+        if (data.thread) {
+          setPoomfurnitureSelectedThread(prev => ({ ...prev, ...data.thread }));
+        }
+      }
+    } catch (err) {
+      console.error('Error refreshing POOMFURNITURE thread:', err);
+    } finally {
+      setPoomfurnitureRefreshing(false);
+    }
+  };
+
   // Send POOMFURNITURE reply
   const handlePoomfurnitureSendReply = async () => {
     if ((!poomfurnitureReplyText.trim() && poomfurnitureAttachments.length === 0) || !poomfurnitureSelectedThread) return;
@@ -2282,6 +2414,37 @@ function CRMContent() {
       }
     }
 
+    // Collect CC addresses for Reply All
+    let ccAddresses = null;
+    if (poomfurnitureReplyAll) {
+      const allEmails = new Set();
+      poomfurnitureThreadMessages.forEach(msg => {
+        if (msg.cc_email) {
+          msg.cc_email.split(',').forEach(email => {
+            const trimmed = email.trim().toLowerCase();
+            if (trimmed && trimmed !== ownEmail && trimmed !== replyTo?.toLowerCase()) {
+              allEmails.add(email.trim());
+            }
+          });
+        }
+        if (msg.to_email && !msg.is_outgoing) {
+          msg.to_email.split(',').forEach(email => {
+            const trimmed = email.trim().toLowerCase();
+            if (trimmed && trimmed !== ownEmail && trimmed !== replyTo?.toLowerCase()) {
+              allEmails.add(email.trim());
+            }
+          });
+        }
+      });
+      const origSender = poomfurnitureSelectedThread.from_email;
+      if (origSender && origSender.toLowerCase() !== ownEmail && origSender.toLowerCase() !== replyTo?.toLowerCase()) {
+        allEmails.add(origSender);
+      }
+      if (allEmails.size > 0) {
+        ccAddresses = Array.from(allEmails).join(', ');
+      }
+    }
+
     setPoomfurnitureSending(true);
     try {
       // Convert attachments to base64
@@ -2303,6 +2466,7 @@ function CRMContent() {
         body: JSON.stringify({
           text: poomfurnitureReplyText.trim(),
           to: replyTo,
+          cc: ccAddresses,
           subject: poomfurnitureSelectedThread.subject,
           attachments: attachmentData
         })
@@ -2317,6 +2481,7 @@ function CRMContent() {
 
       if (data.success) {
         setPoomfurnitureReplyText('');
+        setPoomfurnitureReplyAll(false);
         setPoomfurnitureAttachments([]);
         const msgRes = await fetch(`/api/gmail-poomfurniture/messages/${poomfurnitureSelectedThread.id}?refresh=true`);
         const msgData = await msgRes.json();
@@ -4543,21 +4708,44 @@ function CRMContent() {
                         {/* Thread header */}
                         <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-700">
                           <div className="flex items-center justify-between mb-2">
-                            <button
-                              onClick={() => { setPoomkidsSelectedThread(null); setPoomkidsSelectedMessages([]); }}
-                              className="lg:hidden text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
-                            >
-                              ← Wstecz
-                            </button>
+                            <div className="flex items-center gap-2">
+                              <button
+                                onClick={() => { setPoomkidsSelectedThread(null); setPoomkidsSelectedMessages([]); }}
+                                className="lg:hidden text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
+                              >
+                                ← Wstecz
+                              </button>
+                              <button
+                                onClick={handleRefreshPoomkidsThread}
+                                disabled={poomkidsRefreshing}
+                                className="p-1 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 disabled:opacity-50"
+                                title="Odswiez watek z serwera"
+                              >
+                                <svg className={`w-4 h-4 ${poomkidsRefreshing ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                                </svg>
+                              </button>
+                            </div>
                             <div className="flex items-center gap-2">
                               <button
                                 onClick={() => {
+                                  setPoomkidsReplyAll(false);
                                   setPoomkidsReplyText('');
                                   document.querySelector('#poomkids-reply-textarea')?.focus();
                                 }}
                                 className="px-2 py-1 text-xs font-medium bg-blue-100 text-blue-700 rounded hover:bg-blue-200"
                               >
                                 Odpowiedz
+                              </button>
+                              <button
+                                onClick={() => {
+                                  setPoomkidsReplyAll(true);
+                                  setPoomkidsReplyText('');
+                                  document.querySelector('#poomkids-reply-textarea')?.focus();
+                                }}
+                                className="px-2 py-1 text-xs font-medium bg-purple-100 text-purple-700 rounded hover:bg-purple-200"
+                              >
+                                Odp. wszystkim
                               </button>
                               <button
                                 onClick={async () => {
@@ -4603,18 +4791,29 @@ function CRMContent() {
                           <div className="flex items-center gap-3">
                             {(() => {
                               const ownEmail = poomkidsAuth.user?.email || '';
-                              const isOwn = ownEmail && poomkidsSelectedThread.from_email?.toLowerCase() === ownEmail.toLowerCase();
-                              const recipientMsg = isOwn && poomkidsThreadMessages.length > 0 ? poomkidsThreadMessages.find(m => m.to_email && m.to_email.toLowerCase() !== ownEmail.toLowerCase()) || poomkidsThreadMessages[0] : null;
-                              const dn = isOwn ? (recipientMsg?.to_email || poomkidsSelectedThread.from_email) : (poomkidsSelectedThread.from_name || poomkidsSelectedThread.from_email || 'Nieznany');
-                              const de = isOwn ? (recipientMsg?.to_email || poomkidsSelectedThread.from_email) : poomkidsSelectedThread.from_email;
+                              const firstIncomingMsg = poomkidsThreadMessages.find(m => !m.is_outgoing);
+                              const fromEmail = poomkidsSelectedThread.from_email || firstIncomingMsg?.from_email || '';
+                              const fromName = poomkidsSelectedThread.from_name || firstIncomingMsg?.from_name || fromEmail;
+                              const toEmail = firstIncomingMsg?.to_email || ownEmail;
+                              const ccEmail = firstIncomingMsg?.cc_email || '';
                               return (
                                 <>
                                   <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-medium">
-                                    {(dn || '?')[0].toUpperCase()}
+                                    {(fromName || '?')[0].toUpperCase()}
                                   </div>
-                                  <div className="flex-1">
-                                    <h3 className="font-semibold text-gray-900 dark:text-white">{dn}</h3>
-                                    <p className="text-sm text-gray-600 dark:text-gray-400">{de}</p>
+                                  <div className="flex-1 text-sm">
+                                    <p className="text-gray-900 dark:text-white">
+                                      <span className="text-gray-500 dark:text-gray-400">Od:</span> <span className="font-medium">{fromName}</span>
+                                      {fromName !== fromEmail && <span className="text-gray-500 dark:text-gray-400 ml-1">&lt;{fromEmail}&gt;</span>}
+                                    </p>
+                                    <p className="text-gray-600 dark:text-gray-400">
+                                      <span className="text-gray-500 dark:text-gray-400">Do:</span> {toEmail}
+                                    </p>
+                                    {ccEmail && (
+                                      <p className="text-gray-500 dark:text-gray-500 text-xs mt-0.5 break-all">
+                                        <span>DW:</span> {ccEmail}
+                                      </p>
+                                    )}
                                   </div>
                                 </>
                               );
@@ -4853,9 +5052,9 @@ function CRMContent() {
                               id="poomkids-reply-textarea"
                               value={poomkidsReplyText}
                               onChange={(e) => setPoomkidsReplyText(e.target.value)}
-                              placeholder="Napisz odpowiedz..."
+                              placeholder={poomkidsReplyAll ? "Odpowiedz wszystkim (wlacznie z DW)..." : "Napisz odpowiedz..."}
                               rows={2}
-                              className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 resize-none"
+                              className={`flex-1 px-3 py-2 border bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 resize-none ${poomkidsReplyAll ? 'border-purple-400 focus:ring-purple-500' : 'border-gray-300 dark:border-gray-600 focus:ring-green-500'}`}
                               onKeyDown={(e) => {
                                 if (e.key === 'Enter' && !e.shiftKey) {
                                   e.preventDefault();
@@ -5219,21 +5418,44 @@ function CRMContent() {
                         {/* Thread header */}
                         <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-700">
                           <div className="flex items-center justify-between mb-2">
-                            <button
-                              onClick={() => { setAllepoduszkiSelectedThread(null); setAllepoduszkiSelectedMessages([]); }}
-                              className="lg:hidden text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
-                            >
-                              ← Wstecz
-                            </button>
+                            <div className="flex items-center gap-2">
+                              <button
+                                onClick={() => { setAllepoduszkiSelectedThread(null); setAllepoduszkiSelectedMessages([]); }}
+                                className="lg:hidden text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
+                              >
+                                ← Wstecz
+                              </button>
+                              <button
+                                onClick={handleRefreshAllepoduszkiThread}
+                                disabled={allepoduszkiRefreshing}
+                                className="p-1 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 disabled:opacity-50"
+                                title="Odswiez watek z serwera"
+                              >
+                                <svg className={`w-4 h-4 ${allepoduszkiRefreshing ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                                </svg>
+                              </button>
+                            </div>
                             <div className="flex items-center gap-2">
                               <button
                                 onClick={() => {
+                                  setAllepoduszkiReplyAll(false);
                                   setAllepoduszkiReplyText('');
                                   document.querySelector('#allepoduszki-reply-textarea')?.focus();
                                 }}
                                 className="px-2 py-1 text-xs font-medium bg-blue-100 text-blue-700 rounded hover:bg-blue-200"
                               >
                                 Odpowiedz
+                              </button>
+                              <button
+                                onClick={() => {
+                                  setAllepoduszkiReplyAll(true);
+                                  setAllepoduszkiReplyText('');
+                                  document.querySelector('#allepoduszki-reply-textarea')?.focus();
+                                }}
+                                className="px-2 py-1 text-xs font-medium bg-purple-100 text-purple-700 rounded hover:bg-purple-200"
+                              >
+                                Odp. wszystkim
                               </button>
                               <button
                                 onClick={async () => {
@@ -5279,18 +5501,29 @@ function CRMContent() {
                           <div className="flex items-center gap-3">
                             {(() => {
                               const ownEmail = allepoduszkiAuth.user?.email || '';
-                              const isOwn = ownEmail && allepoduszkiSelectedThread.from_email?.toLowerCase() === ownEmail.toLowerCase();
-                              const recipientMsg = isOwn && allepoduszkiThreadMessages.length > 0 ? allepoduszkiThreadMessages.find(m => m.to_email && m.to_email.toLowerCase() !== ownEmail.toLowerCase()) || allepoduszkiThreadMessages[0] : null;
-                              const dn = isOwn ? (recipientMsg?.to_email || allepoduszkiSelectedThread.from_email) : (allepoduszkiSelectedThread.from_name || allepoduszkiSelectedThread.from_email || 'Nieznany');
-                              const de = isOwn ? (recipientMsg?.to_email || allepoduszkiSelectedThread.from_email) : allepoduszkiSelectedThread.from_email;
+                              const firstIncomingMsg = allepoduszkiThreadMessages.find(m => !m.is_outgoing);
+                              const fromEmail = allepoduszkiSelectedThread.from_email || firstIncomingMsg?.from_email || '';
+                              const fromName = allepoduszkiSelectedThread.from_name || firstIncomingMsg?.from_name || fromEmail;
+                              const toEmail = firstIncomingMsg?.to_email || ownEmail;
+                              const ccEmail = firstIncomingMsg?.cc_email || '';
                               return (
                                 <>
                                   <div className="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center text-purple-600 font-medium">
-                                    {(dn || '?')[0].toUpperCase()}
+                                    {(fromName || '?')[0].toUpperCase()}
                                   </div>
-                                  <div className="flex-1">
-                                    <h3 className="font-semibold text-gray-900 dark:text-white">{dn}</h3>
-                                    <p className="text-sm text-gray-600 dark:text-gray-400">{de}</p>
+                                  <div className="flex-1 text-sm">
+                                    <p className="text-gray-900 dark:text-white">
+                                      <span className="text-gray-500 dark:text-gray-400">Od:</span> <span className="font-medium">{fromName}</span>
+                                      {fromName !== fromEmail && <span className="text-gray-500 dark:text-gray-400 ml-1">&lt;{fromEmail}&gt;</span>}
+                                    </p>
+                                    <p className="text-gray-600 dark:text-gray-400">
+                                      <span className="text-gray-500 dark:text-gray-400">Do:</span> {toEmail}
+                                    </p>
+                                    {ccEmail && (
+                                      <p className="text-gray-500 dark:text-gray-500 text-xs mt-0.5 break-all">
+                                        <span>DW:</span> {ccEmail}
+                                      </p>
+                                    )}
                                   </div>
                                 </>
                               );
@@ -5527,9 +5760,9 @@ function CRMContent() {
                               id="allepoduszki-reply-textarea"
                               value={allepoduszkiReplyText}
                               onChange={(e) => setAllepoduszkiReplyText(e.target.value)}
-                              placeholder="Napisz odpowiedz..."
+                              placeholder={allepoduszkiReplyAll ? "Odpowiedz wszystkim (wlacznie z DW)..." : "Napisz odpowiedz..."}
                               rows={2}
-                              className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 resize-none"
+                              className={`flex-1 px-3 py-2 border bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 resize-none ${allepoduszkiReplyAll ? 'border-purple-400 focus:ring-purple-500' : 'border-gray-300 dark:border-gray-600 focus:ring-purple-500'}`}
                               onKeyDown={(e) => {
                                 if (e.key === 'Enter' && !e.shiftKey) {
                                   e.preventDefault();
@@ -5893,21 +6126,44 @@ function CRMContent() {
                         {/* Thread header */}
                         <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-700">
                           <div className="flex items-center justify-between mb-2">
-                            <button
-                              onClick={() => { setPoomfurnitureSelectedThread(null); setPoomfurnitureSelectedMessages([]); }}
-                              className="lg:hidden text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
-                            >
-                              ← Wstecz
-                            </button>
+                            <div className="flex items-center gap-2">
+                              <button
+                                onClick={() => { setPoomfurnitureSelectedThread(null); setPoomfurnitureSelectedMessages([]); }}
+                                className="lg:hidden text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
+                              >
+                                ← Wstecz
+                              </button>
+                              <button
+                                onClick={handleRefreshPoomfurnitureThread}
+                                disabled={poomfurnitureRefreshing}
+                                className="p-1 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 disabled:opacity-50"
+                                title="Odswiez watek z serwera"
+                              >
+                                <svg className={`w-4 h-4 ${poomfurnitureRefreshing ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                                </svg>
+                              </button>
+                            </div>
                             <div className="flex items-center gap-2">
                               <button
                                 onClick={() => {
+                                  setPoomfurnitureReplyAll(false);
                                   setPoomfurnitureReplyText('');
                                   document.querySelector('#poomfurniture-reply-textarea')?.focus();
                                 }}
                                 className="px-2 py-1 text-xs font-medium bg-blue-100 text-blue-700 rounded hover:bg-blue-200"
                               >
                                 Odpowiedz
+                              </button>
+                              <button
+                                onClick={() => {
+                                  setPoomfurnitureReplyAll(true);
+                                  setPoomfurnitureReplyText('');
+                                  document.querySelector('#poomfurniture-reply-textarea')?.focus();
+                                }}
+                                className="px-2 py-1 text-xs font-medium bg-purple-100 text-purple-700 rounded hover:bg-purple-200"
+                              >
+                                Odp. wszystkim
                               </button>
                               <button
                                 onClick={async () => {
@@ -5953,20 +6209,29 @@ function CRMContent() {
                           <div className="flex items-center gap-3">
                             {(() => {
                               const ownEmail = poomfurnitureAuth.user?.email || 'kontakt.poom@gmail.com';
-                              const isOwnThread = poomfurnitureSelectedThread.from_email?.toLowerCase() === ownEmail.toLowerCase();
-                              const recipientMsg = isOwnThread && poomfurnitureThreadMessages.length > 0 ? poomfurnitureThreadMessages.find(m => m.to_email && m.to_email.toLowerCase() !== ownEmail.toLowerCase()) || poomfurnitureThreadMessages[0] : null;
-                              const displayName = isOwnThread ? (recipientMsg?.to_email || poomfurnitureSelectedThread.from_email) : (poomfurnitureSelectedThread.from_name || poomfurnitureSelectedThread.from_email || 'Nieznany');
-                              const displayEmail = isOwnThread ? (recipientMsg?.to_email || poomfurnitureSelectedThread.from_email) : poomfurnitureSelectedThread.from_email;
+                              const firstIncomingMsg = poomfurnitureThreadMessages.find(m => !m.is_outgoing);
+                              const fromEmail = poomfurnitureSelectedThread.from_email || firstIncomingMsg?.from_email || '';
+                              const fromName = poomfurnitureSelectedThread.from_name || firstIncomingMsg?.from_name || fromEmail;
+                              const toEmail = firstIncomingMsg?.to_email || ownEmail;
+                              const ccEmail = firstIncomingMsg?.cc_email || '';
                               return (
                                 <>
                                   <div className="w-10 h-10 rounded-full bg-teal-100 flex items-center justify-center text-teal-600 font-medium">
-                                    {(displayName || '?')[0].toUpperCase()}
+                                    {(fromName || '?')[0].toUpperCase()}
                                   </div>
-                                  <div className="flex-1">
-                                    <h3 className="font-semibold text-gray-900 dark:text-white">
-                                      {displayName}
-                                    </h3>
-                                    <p className="text-sm text-gray-600 dark:text-gray-400">{displayEmail}</p>
+                                  <div className="flex-1 text-sm">
+                                    <p className="text-gray-900 dark:text-white">
+                                      <span className="text-gray-500 dark:text-gray-400">Od:</span> <span className="font-medium">{fromName}</span>
+                                      {fromName !== fromEmail && <span className="text-gray-500 dark:text-gray-400 ml-1">&lt;{fromEmail}&gt;</span>}
+                                    </p>
+                                    <p className="text-gray-600 dark:text-gray-400">
+                                      <span className="text-gray-500 dark:text-gray-400">Do:</span> {toEmail}
+                                    </p>
+                                    {ccEmail && (
+                                      <p className="text-gray-500 dark:text-gray-500 text-xs mt-0.5 break-all">
+                                        <span>DW:</span> {ccEmail}
+                                      </p>
+                                    )}
                                   </div>
                                 </>
                               );
@@ -6204,9 +6469,9 @@ function CRMContent() {
                               id="poomfurniture-reply-textarea"
                               value={poomfurnitureReplyText}
                               onChange={(e) => setPoomfurnitureReplyText(e.target.value)}
-                              placeholder="Napisz odpowiedz..."
+                              placeholder={poomfurnitureReplyAll ? "Odpowiedz wszystkim (wlacznie z DW)..." : "Napisz odpowiedz..."}
                               rows={2}
-                              className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 resize-none"
+                              className={`flex-1 px-3 py-2 border bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 resize-none ${poomfurnitureReplyAll ? 'border-purple-400 focus:ring-purple-500' : 'border-gray-300 dark:border-gray-600 focus:ring-teal-500'}`}
                               onKeyDown={(e) => {
                                 if (e.key === 'Enter' && !e.shiftKey) {
                                   e.preventDefault();
