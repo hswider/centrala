@@ -3186,19 +3186,20 @@ function CRMContent() {
                                           if (!att.url) return null;
                                           const attId = att.url.split('/').pop();
                                           const attUrl = `/api/allegro/attachments/${attId}?url=${encodeURIComponent(att.url)}`;
+                                          const filename = att.fileName || `Załącznik ${idx + 1}`;
                                           return (
-                                            <a key={attId || idx} href={attUrl} target="_blank" rel="noopener noreferrer" className="block">
+                                            <div key={attId || idx} className="block cursor-pointer" onClick={() => setLightboxImage({ url: attUrl, filename })}>
                                               <img
                                                 src={attUrl}
-                                                alt={att.fileName || `Załącznik ${idx + 1}`}
-                                                className="max-w-full max-h-64 rounded border border-gray-200 dark:border-gray-600 cursor-pointer hover:opacity-80"
+                                                alt={filename}
+                                                className="max-w-full max-h-64 rounded border border-gray-200 dark:border-gray-600 hover:opacity-80 transition-opacity"
                                                 onError={(e) => { e.target.style.display = 'none'; if (e.target.nextSibling) e.target.nextSibling.style.display = 'flex'; }}
                                               />
                                               <div style={{display:'none'}} className="items-center gap-2 px-3 py-2 bg-gray-100 dark:bg-gray-600 rounded text-sm">
                                                 <span>📎</span>
-                                                <span>{att.fileName || `Załącznik ${idx + 1}`}</span>
+                                                <span>{filename}</span>
                                               </div>
-                                            </a>
+                                            </div>
                                           );
                                         })}
                                       </div>
