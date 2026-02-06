@@ -27,6 +27,8 @@ export default function BazaDanychPage() {
   const [success, setSuccess] = useState(null);
   const [search, setSearch] = useState('');
   const [hasAccess, setHasAccess] = useState(null);
+  const [itemsPerPage, setItemsPerPage] = useState(50);
+  const [currentPage, setCurrentPage] = useState(1);
   const fileInputRef = useRef(null);
 
   // Check access on mount
@@ -198,6 +200,16 @@ export default function BazaDanychPage() {
     );
   });
 
+  // Pagination
+  const totalPages = Math.ceil(filteredData.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const paginatedData = filteredData.slice(startIndex, startIndex + itemsPerPage);
+
+  // Reset page when search or itemsPerPage changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [search, itemsPerPage, selectedMonth, selectedYear]);
+
   // Calculate totals
   const totalQuantity = filteredData.reduce((sum, item) => sum + (item.quantity || 0), 0);
   const productsWithSales = filteredData.filter(item => item.quantity > 0).length;
@@ -293,6 +305,21 @@ export default function BazaDanychPage() {
 
             <div className="flex-1" />
 
+            {/* Items per page */}
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-gray-500 dark:text-gray-400">Widok:</span>
+              <select
+                value={itemsPerPage}
+                onChange={(e) => setItemsPerPage(parseInt(e.target.value))}
+                className="px-2 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm"
+              >
+                <option value={50}>50</option>
+                <option value={100}>100</option>
+                <option value={150}>150</option>
+                <option value={250}>250</option>
+              </select>
+            </div>
+
             {/* Search */}
             <input
               type="text"
@@ -370,7 +397,7 @@ export default function BazaDanychPage() {
                     </td>
                   </tr>
                 ) : (
-                  filteredData.map((item, idx) => (
+                  paginatedData.map((item, idx) => (
                     <tr key={idx} className={item.quantity > 0 ? 'bg-green-50 dark:bg-green-900/10' : ''}>
                       <td className="px-4 py-3 text-sm text-gray-900 dark:text-white">
                         {item.nazwa || '-'}
@@ -392,23 +419,95 @@ export default function BazaDanychPage() {
               </tbody>
             </table>
           </div>
+
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="px-4 py-3 border-t border-gray-200 dark:border-gray-700 flex items-center justify-between">
+              <div className="text-sm text-gray-500 dark:text-gray-400">
+                Pokazuje {startIndex + 1}-{Math.min(startIndex + itemsPerPage, filteredData.length)} z {filteredData.length}
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setCurrentPage(1)}
+                  disabled={currentPage === 1}
+                  className="px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  ««
+                </button>
+                <button
+                  onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                  disabled={currentPage === 1}
+                  className="px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  «
+                </button>
+                <span className="px-3 py-1 text-sm font-medium">
+                  {currentPage} / {totalPages}
+                </span>
+                <button
+                  onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                  disabled={currentPage === totalPages}
+                  className="px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  »
+                </button>
+                <button
+                  onClick={() => setCurrentPage(totalPages)}
+                  disabled={currentPage === totalPages}
+                  className="px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  »»
+                </button>
+              </div>
+            </div>
+          )}
         </div>
 
-        {/* CSV Format Help */}
+        {/* Instructions */}
         <div className="mt-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4">
-          <h3 className="text-sm font-semibold text-blue-800 dark:text-blue-300 mb-2">Format pliku CSV</h3>
-          <p className="text-xs text-blue-700 dark:text-blue-400 mb-2">
-            Plik CSV powinien zawierac kolumny: <code className="bg-blue-100 dark:bg-blue-900/50 px-1 rounded">SKU</code> i <code className="bg-blue-100 dark:bg-blue-900/50 px-1 rounded">Sprzedaz</code> (lub Quantity/Ilosc)
-          </p>
-          <pre className="text-xs bg-white dark:bg-gray-800 p-2 rounded border border-blue-200 dark:border-blue-800 overflow-x-auto">
+          <h3 className="text-sm font-semibold text-blue-800 dark:text-blue-300 mb-3">Instrukcja importu danych z Amazon</h3>
+
+          <div className="space-y-3 text-xs text-blue-700 dark:text-blue-400">
+            <div>
+              <strong className="text-blue-800 dark:text-blue-300">1. Pobierz raport z Amazon Seller Central:</strong>
+              <ul className="list-disc ml-4 mt-1 space-y-1">
+                <li>Zaloguj sie do Amazon Seller Central</li>
+                <li>Przejdz do: Reports → Business Reports → Sales and Traffic</li>
+                <li>Wybierz zakres dat (np. caly miesiac)</li>
+                <li>Eksportuj do CSV</li>
+              </ul>
+            </div>
+
+            <div>
+              <strong className="text-blue-800 dark:text-blue-300">2. Przygotuj plik CSV:</strong>
+              <p className="mt-1">Plik musi zawierac dwie kolumny: <code className="bg-blue-100 dark:bg-blue-900/50 px-1 rounded">SKU</code> i <code className="bg-blue-100 dark:bg-blue-900/50 px-1 rounded">Sprzedaz</code> (lub Quantity/Ilosc/qty)</p>
+            </div>
+
+            <div>
+              <strong className="text-blue-800 dark:text-blue-300">3. Przykladowy format CSV:</strong>
+              <pre className="mt-1 bg-white dark:bg-gray-800 p-2 rounded border border-blue-200 dark:border-blue-800 overflow-x-auto">
 {`SKU;Sprzedaz
 PPI-SKU-109;100
 PPI-SKU-110;50
-PPI-SKU-111;75`}
-          </pre>
-          <p className="text-xs text-blue-700 dark:text-blue-400 mt-2">
-            Import <strong>dodaje</strong> wartosci do istniejacych (nie nadpisuje). Aby zresetowac, uzyj przycisku "Resetuj miesiac".
-          </p>
+PUFAPOKROWIEC-SKU-001;75
+LEGOWISKO-60-SZARY;120`}
+              </pre>
+            </div>
+
+            <div>
+              <strong className="text-blue-800 dark:text-blue-300">4. Importuj plik:</strong>
+              <ul className="list-disc ml-4 mt-1 space-y-1">
+                <li>Wybierz odpowiedni <strong>miesiac</strong> i <strong>rok</strong> u gory strony</li>
+                <li>Kliknij przycisk <strong>"Import CSV"</strong></li>
+                <li>Wybierz przygotowany plik</li>
+                <li>System automatycznie doda wartosci do istniejacych (mozesz importowac wiele plikow)</li>
+              </ul>
+            </div>
+
+            <div className="bg-yellow-100 dark:bg-yellow-900/30 p-2 rounded text-yellow-800 dark:text-yellow-300">
+              <strong>Uwaga:</strong> Import <strong>dodaje</strong> wartosci do istniejacych (nie nadpisuje). Jesli chcesz zaczac od nowa, najpierw kliknij "Resetuj miesiac".
+            </div>
+          </div>
         </div>
       </main>
     </div>
