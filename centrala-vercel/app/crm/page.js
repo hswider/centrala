@@ -4228,7 +4228,7 @@ function CRMContent() {
                                 className={`flex items-start gap-2 ${msg.is_outgoing ? 'justify-end' : 'justify-start'}`}
                               >
                                 {/* Message with avatar */}
-                                <div className="relative">
+                                <div className={`relative max-w-[80%] ${msg.is_outgoing ? 'mr-2' : 'ml-2'}`}>
                                   {/* Avatar overlapping corner */}
                                   {msg.is_outgoing ? (
                                     <div className="absolute -bottom-2 -right-2 w-8 h-8 rounded-full bg-white dark:bg-gray-800 border-2 border-gray-900 dark:border-gray-300 flex items-center justify-center overflow-hidden z-10">
@@ -4240,7 +4240,7 @@ function CRMContent() {
                                     </div>
                                   )}
                                   <div
-                                    className={`max-w-[80%] min-w-[200px] px-4 py-3 rounded-lg ${
+                                    className={`min-w-[200px] px-4 py-3 rounded-lg ${
                                       msg.is_outgoing
                                         ? 'bg-gray-900 text-white'
                                         : 'bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-900 dark:text-white'
@@ -4938,7 +4938,7 @@ function CRMContent() {
                                 key={msg.id}
                                 className={`flex items-start gap-2 ${msg.is_outgoing ? 'justify-end' : 'justify-start'}`}
                               >
-                                <div className="relative">
+                                <div className={`relative max-w-[80%] ${msg.is_outgoing ? 'mr-2' : 'ml-2'}`}>
                                   {msg.is_outgoing ? (
                                     <div className="absolute -bottom-2 -right-2 w-8 h-8 rounded-full bg-white dark:bg-gray-800 border-2 border-gray-900 dark:border-gray-300 flex items-center justify-center overflow-hidden z-10">
                                       <img src="/icons/poomkids.png" alt="" className="w-5 h-5 object-contain" />
@@ -4949,7 +4949,7 @@ function CRMContent() {
                                     </div>
                                   )}
                                   <div
-                                    className={`max-w-[80%] min-w-[200px] px-4 py-3 rounded-lg ${
+                                    className={`min-w-[200px] px-4 py-3 rounded-lg ${
                                       msg.is_outgoing
                                         ? 'bg-gray-900 text-white'
                                         : 'bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-900 dark:text-white'
@@ -5649,7 +5649,7 @@ function CRMContent() {
                                 key={msg.id}
                                 className={`flex items-start gap-2 ${msg.is_outgoing ? 'justify-end' : 'justify-start'}`}
                               >
-                                <div className="relative">
+                                <div className={`relative max-w-[80%] ${msg.is_outgoing ? 'mr-2' : 'ml-2'}`}>
                                   {msg.is_outgoing ? (
                                     <div className="absolute -bottom-2 -right-2 w-8 h-8 rounded-full bg-white dark:bg-gray-800 border-2 border-gray-900 dark:border-gray-300 flex items-center justify-center overflow-hidden z-10">
                                       <img src="/icons/allepoduszki.png" alt="" className="w-5 h-5 object-contain" />
@@ -5660,7 +5660,7 @@ function CRMContent() {
                                     </div>
                                   )}
                                   <div
-                                    className={`max-w-[80%] min-w-[200px] px-4 py-3 rounded-lg ${
+                                    className={`min-w-[200px] px-4 py-3 rounded-lg ${
                                       msg.is_outgoing
                                         ? 'bg-gray-900 text-white'
                                         : 'bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-900 dark:text-white'
@@ -6357,7 +6357,7 @@ function CRMContent() {
                                 key={msg.id}
                                 className={`flex items-start gap-2 ${msg.is_outgoing ? 'justify-end' : 'justify-start'}`}
                               >
-                                <div className="relative">
+                                <div className={`relative max-w-[80%] ${msg.is_outgoing ? 'mr-2' : 'ml-2'}`}>
                                   {msg.is_outgoing ? (
                                     <div className="absolute -bottom-2 -right-2 w-8 h-8 rounded-full bg-white dark:bg-gray-800 border-2 border-gray-900 dark:border-gray-300 flex items-center justify-center overflow-hidden z-10">
                                       <img src="/icons/poom-furniture.png" alt="" className="w-5 h-5 object-contain" />
@@ -6368,7 +6368,7 @@ function CRMContent() {
                                     </div>
                                   )}
                                   <div
-                                    className={`max-w-[80%] min-w-[200px] px-4 py-3 rounded-lg ${
+                                    className={`min-w-[200px] px-4 py-3 rounded-lg ${
                                       msg.is_outgoing
                                         ? 'bg-gray-900 text-white'
                                         : 'bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-900 dark:text-white'
