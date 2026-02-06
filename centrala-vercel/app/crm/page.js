@@ -47,6 +47,7 @@ function CRMContent() {
   const [gmailSelectedThread, setGmailSelectedThread] = useState(null);
   const [gmailThreadMessages, setGmailThreadMessages] = useState([]);
   const [gmailMessagesLoading, setGmailMessagesLoading] = useState(false);
+  const [gmailRefreshing, setGmailRefreshing] = useState(false);
   const [gmailReplyText, setGmailReplyText] = useState('');
   const [gmailReplyAll, setGmailReplyAll] = useState(false);
   const [gmailSending, setGmailSending] = useState(false);
@@ -884,6 +885,27 @@ function CRMContent() {
       console.error('Gmail open thread error:', err);
     } finally {
       setGmailMessagesLoading(false);
+    }
+  };
+
+  // Refresh single Gmail thread from server
+  const handleRefreshThread = async () => {
+    if (!gmailSelectedThread) return;
+    setGmailRefreshing(true);
+    try {
+      const res = await fetch(`/api/gmail/messages/${gmailSelectedThread.id}?refresh=true`);
+      const data = await res.json();
+      if (data.success) {
+        setGmailThreadMessages(data.messages || []);
+        // Update thread info if available
+        if (data.thread) {
+          setGmailSelectedThread(prev => ({ ...prev, ...data.thread }));
+        }
+      }
+    } catch (err) {
+      console.error('Error refreshing thread:', err);
+    } finally {
+      setGmailRefreshing(false);
     }
   };
 
@@ -3785,12 +3807,24 @@ function CRMContent() {
                         {/* Thread header */}
                         <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-700">
                           <div className="flex items-center justify-between mb-2">
-                            <button
-                              onClick={() => { setGmailSelectedThread(null); setGmailSelectedMessages([]); }}
-                              className="lg:hidden text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
-                            >
-                              ← Wstecz
-                            </button>
+                            <div className="flex items-center gap-2">
+                              <button
+                                onClick={() => { setGmailSelectedThread(null); setGmailSelectedMessages([]); }}
+                                className="lg:hidden text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
+                              >
+                                ← Wstecz
+                              </button>
+                              <button
+                                onClick={handleRefreshThread}
+                                disabled={gmailRefreshing}
+                                className="p-1 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 disabled:opacity-50"
+                                title="Odswiez watek z serwera"
+                              >
+                                <svg className={`w-4 h-4 ${gmailRefreshing ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                                </svg>
+                              </button>
+                            </div>
                             <div className="flex items-center gap-2">
                               <button
                                 onClick={() => {
