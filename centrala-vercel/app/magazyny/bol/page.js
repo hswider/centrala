@@ -21,6 +21,7 @@ export default function BOMPage() {
   const [perPage, setPerPage] = useState(50);
   const [currentPage, setCurrentPage] = useState(1);
   const [showInstructions, setShowInstructions] = useState(false);
+  const [showImportOptionsModal, setShowImportOptionsModal] = useState(false);
   const fileInputRef = useRef(null);
 
   const tabs = [
@@ -108,6 +109,32 @@ export default function BOMPage() {
       }
     });
     return Math.max(max, 5); // Minimum 5 columns for import template
+  };
+
+  // Generate sample CSV for download
+  const generateSampleCSV = () => {
+    const headers = [
+      'Nazwa', 'SKU',
+      'Skladnik1_SKU', 'Skladnik1_Nazwa', 'Skladnik1_Ilosc',
+      'Skladnik2_SKU', 'Skladnik2_Nazwa', 'Skladnik2_Ilosc',
+      'Skladnik3_SKU', 'Skladnik3_Nazwa', 'Skladnik3_Ilosc'
+    ];
+
+    const exampleRows = [
+      ['"Produkt przykladowy 1"', '"SKU-001"', '"POLPROD-001"', '"Polprodukt 1"', '2', '"SUROWIEC-001"', '"Surowiec 1"', '5', '', '', ''],
+      ['"Produkt przykladowy 2"', '"SKU-002"', '"WYKROJ-001"', '"Wykroj 1"', '1', '"POLPROD-002"', '"Polprodukt 2"', '3', '"SUROWIEC-002"', '"Surowiec 2"', '10'],
+      ['"Produkt tylko po nazwie"', '""', '""', '"Polprodukt po nazwie"', '4', '', '', '', '', '', ''],
+      ['"Produkt tylko po SKU"', '"SKU-003"', '"POLPROD-003"', '""', '2', '', '', '', '', '', '']
+    ];
+
+    const csv = [headers.join(','), ...exampleRows.map(row => row.join(','))].join('\n');
+    const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'BOM_import_przyklad.csv';
+    link.click();
+    URL.revokeObjectURL(url);
   };
 
   // Export to CSV (selected items or all if none selected)
@@ -365,7 +392,7 @@ export default function BOMPage() {
               ? Instrukcje
             </button>
             <button
-              onClick={() => fileInputRef.current?.click()}
+              onClick={() => setShowImportOptionsModal(true)}
               className="px-2.5 py-1.5 text-xs sm:text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700"
             >
               Import CSV
@@ -651,6 +678,72 @@ export default function BOMPage() {
                   {importing ? 'Importowanie...' : `Importuj ${importPreview.filter(r => r.matched && r.matchedIngredientsCount > 0).length} receptur (auto-dopasowane)`}
                 </button>
               </div>
+            </div>
+          </div>
+        )}
+
+        {/* Import Options Modal */}
+        {showImportOptionsModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl dark:shadow-gray-900 max-w-md w-full p-6">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Import CSV</h3>
+                <button
+                  onClick={() => setShowImportOptionsModal(false)}
+                  className="text-gray-400 hover:text-gray-600 text-2xl"
+                >
+                  &times;
+                </button>
+              </div>
+
+              <div className="space-y-4">
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  Wybierz plik CSV do importu receptur lub pobierz przykladowy plik CSV jako szablon.
+                </p>
+
+                <div className="grid gap-3">
+                  <button
+                    onClick={() => {
+                      setShowImportOptionsModal(false);
+                      fileInputRef.current?.click();
+                    }}
+                    className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                    </svg>
+                    Wybierz plik CSV do importu
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      generateSampleCSV();
+                    }}
+                    className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                    </svg>
+                    Pobierz przykladowa CSV
+                  </button>
+                </div>
+
+                <div className="mt-4 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                    <strong>Format CSV:</strong> Nazwa, SKU, Skladnik1_SKU, Skladnik1_Nazwa, Skladnik1_Ilosc, ...
+                  </p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                    Mozesz podac tylko SKU lub tylko Nazwe - system automatycznie dopasuje brakujace dane.
+                  </p>
+                </div>
+              </div>
+
+              <button
+                onClick={() => setShowImportOptionsModal(false)}
+                className="w-full mt-4 py-2 px-4 bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-white rounded-lg hover:bg-gray-300 dark:hover:bg-gray-500"
+              >
+                Anuluj
+              </button>
             </div>
           </div>
         )}
