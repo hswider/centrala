@@ -906,6 +906,76 @@ export async function initDatabase() {
   if (syncRows[0].count === '0') {
     await sql`INSERT INTO sync_status (id) VALUES (1)`;
   }
+
+  // Courier credentials table (DHL, InPost, UPS)
+  await sql`
+    CREATE TABLE IF NOT EXISTS courier_credentials (
+      id SERIAL PRIMARY KEY,
+      courier VARCHAR(20) NOT NULL UNIQUE,
+      api_key TEXT,
+      api_secret TEXT,
+      account_number TEXT,
+      environment VARCHAR(10) DEFAULT 'sandbox',
+      extra_config JSONB DEFAULT '{}',
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )
+  `;
+
+  // Shipments table (tracking all created shipments)
+  await sql`
+    CREATE TABLE IF NOT EXISTS shipments (
+      id SERIAL PRIMARY KEY,
+      order_id VARCHAR(20),
+      courier VARCHAR(20) NOT NULL,
+      tracking_number VARCHAR(100),
+      label_url TEXT,
+      label_data TEXT,
+      status VARCHAR(50) DEFAULT 'created',
+      status_description TEXT,
+      pickup_date DATE,
+      pickup_time_from TIME,
+      pickup_time_to TIME,
+      receiver_name TEXT,
+      receiver_address TEXT,
+      receiver_city TEXT,
+      receiver_postal_code VARCHAR(20),
+      receiver_country VARCHAR(3) DEFAULT 'PL',
+      receiver_phone VARCHAR(20),
+      receiver_email TEXT,
+      weight DECIMAL(10,2),
+      dimensions JSONB,
+      service_type VARCHAR(50),
+      courier_shipment_id VARCHAR(100),
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )
+  `;
+
+  // Courier rules table (automatic courier assignment)
+  await sql`
+    CREATE TABLE IF NOT EXISTS courier_rules (
+      id SERIAL PRIMARY KEY,
+      name VARCHAR(100),
+      priority INT DEFAULT 0,
+      channel_pattern VARCHAR(255),
+      country_codes TEXT[],
+      min_weight DECIMAL(10,2),
+      max_weight DECIMAL(10,2),
+      courier VARCHAR(20) NOT NULL,
+      service_type VARCHAR(50),
+      is_active BOOLEAN DEFAULT true,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )
+  `;
+
+  // Insert default courier credentials rows
+  const couriers = ['dhl_parcel', 'dhl_express', 'inpost', 'ups'];
+  for (const courier of couriers) {
+    const { rows: courierRows } = await sql`SELECT COUNT(*) as count FROM courier_credentials WHERE courier = ${courier}`;
+    if (courierRows[0].count === '0') {
+      await sql`INSERT INTO courier_credentials (courier) VALUES (${courier})`;
+    }
+  }
 }
 
 // Token operations
