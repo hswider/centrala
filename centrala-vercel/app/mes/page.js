@@ -21,11 +21,16 @@ export default function MESPage() {
   });
 
   const COURIERS = [
-    { id: 'inpost', name: 'InPost', services: ['inpost_courier_standard', 'inpost_locker_standard'] },
-    { id: 'dhl_parcel', name: 'DHL Parcel', services: ['V01PAK', 'V53WPAK'] },
-    { id: 'dhl_express', name: 'DHL Express', services: ['P', 'D'] },
-    { id: 'ups', name: 'UPS', services: ['11', '07', '65'] }
+    { id: 'inpost', name: 'InPost', logo: 'https://inpost.pl/sites/default/files/logo_inpost.svg', services: ['inpost_courier_standard', 'inpost_locker_standard'] },
+    { id: 'dhl_parcel', name: 'DHL Parcel', logo: 'https://www.dhl.com/content/dam/dhl/global/core/images/logos/dhl-logo.svg', services: ['V01PAK', 'V53WPAK'] },
+    { id: 'dhl_express', name: 'DHL Express', logo: 'https://www.dhl.com/content/dam/dhl/global/core/images/logos/dhl-logo.svg', services: ['P', 'D'] },
+    { id: 'ups', name: 'UPS', logo: 'https://www.ups.com/assets/resources/webcontent/images/ups-logo.svg', services: ['11', '07', '65'] }
   ];
+
+  const getCourierLogo = (courierId) => {
+    const courier = COURIERS.find(c => c.id === courierId);
+    return courier?.logo || null;
+  };
 
   const fetchShipments = async () => {
     try {
@@ -393,7 +398,7 @@ export default function MESPage() {
                         {shipments[order.id] ? (
                           // Show shipment info
                           <div className="flex items-center gap-2 bg-green-50 dark:bg-green-900/20 px-3 py-2 rounded-lg">
-                            <span className="text-green-600 dark:text-green-400 text-lg">📦</span>
+                            <img src={getCourierLogo(shipments[order.id].courier)} alt="" className="w-8 h-8 object-contain" />
                             <div className="text-xs">
                               <div className="font-medium text-green-700 dark:text-green-300">
                                 {shipments[order.id].courier?.toUpperCase()} • {shipments[order.id].status}
@@ -413,7 +418,8 @@ export default function MESPage() {
                             onClick={(e) => { e.stopPropagation(); setShowShipModal(order); }}
                             className="px-3 py-1.5 text-xs font-medium bg-green-600 text-white rounded hover:bg-green-700 flex items-center gap-1"
                           >
-                            <span>🚚</span> Wyslij z kurierem
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" /></svg>
+                            Wyslij z kurierem
                           </button>
                         ) : (
                           <button className="px-3 py-1.5 text-xs font-medium bg-blue-600 text-white rounded hover:bg-blue-700">

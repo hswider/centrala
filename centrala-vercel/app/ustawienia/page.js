@@ -133,10 +133,10 @@ export default function UstawieniaPage() {
   };
 
   const COURIER_INFO = {
-    inpost: { name: 'InPost', icon: '📦', color: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300' },
-    dhl_parcel: { name: 'DHL Parcel', icon: '🚛', color: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300' },
-    dhl_express: { name: 'DHL Express', icon: '✈️', color: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300' },
-    ups: { name: 'UPS', icon: '📮', color: 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300' }
+    inpost: { name: 'InPost', logo: 'https://inpost.pl/sites/default/files/logo_inpost.svg', color: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300' },
+    dhl_parcel: { name: 'DHL Parcel', logo: 'https://www.dhl.com/content/dam/dhl/global/core/images/logos/dhl-logo.svg', color: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300' },
+    dhl_express: { name: 'DHL Express', logo: 'https://www.dhl.com/content/dam/dhl/global/core/images/logos/dhl-logo.svg', color: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300' },
+    ups: { name: 'UPS', logo: 'https://www.ups.com/assets/resources/webcontent/images/ups-logo.svg', color: 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300' }
   };
 
   const isAdmin = user && ['it_admin', 'it_administrator', 'admin'].includes(user.role);
@@ -254,7 +254,7 @@ export default function UstawieniaPage() {
                     <div key={courier.courier} className="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
                       <div className="flex items-center justify-between mb-3">
                         <div className="flex items-center gap-3">
-                          <span className="text-2xl">{info.icon}</span>
+                          <img src={info.logo} alt={info.name} className="w-10 h-10 object-contain" />
                           <div>
                             <h3 className="font-medium text-gray-900 dark:text-white">{info.name}</h3>
                             <span className={`inline-block px-2 py-0.5 rounded text-xs font-medium ${courier.has_credentials ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300' : 'bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-400'}`}>
