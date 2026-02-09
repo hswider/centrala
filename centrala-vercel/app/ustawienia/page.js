@@ -87,13 +87,14 @@ export default function UstawieniaPage() {
 
   const fetchCouriers = async () => {
     try {
-      const res = await fetch('/api/couriers/credentials');
+      // Fetch carrier accounts from Apilo
+      const res = await fetch('/api/apilo/carriers?type=accounts');
       const data = await res.json();
       if (data.success) {
-        setCouriers(data.credentials || []);
+        setCouriers(data.accounts || []);
       }
     } catch (err) {
-      console.error('Error fetching couriers:', err);
+      console.error('Error fetching couriers from Apilo:', err);
     } finally {
       setCourierLoading(false);
     }
@@ -415,57 +416,115 @@ export default function UstawieniaPage() {
           </div>
         </div>
 
-        {/* Integracje kurierskie - tylko dla adminow */}
+        {/* Integracje kurierskie - przez Apilo */}
         {isAdmin && (
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
             <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
               <span>🚚</span> Integracje kurierskie
             </h2>
 
+            <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4 mb-4">
+              <div className="flex items-start gap-3">
+                <span className="text-blue-600 dark:text-blue-400 text-xl">ℹ️</span>
+                <div>
+                  <h3 className="font-medium text-blue-800 dark:text-blue-300 mb-1">Integracja przez Apilo</h3>
+                  <p className="text-sm text-blue-700 dark:text-blue-400">
+                    Kurierzy sa konfigurowani w panelu Apilo. Wszystkie przesylki tworzone w Centrali beda automatycznie
+                    synchronizowane z Apilo i wykorzystywac skonfigurowane tam integracje kurierskie.
+                  </p>
+                  <a
+                    href="https://poom.apilo.com/admin/courier"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 mt-3 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700"
+                  >
+                    Otworz panel Apilo
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                    </svg>
+                  </a>
+                </div>
+              </div>
+            </div>
+
             {courierLoading ? (
               <div className="flex items-center gap-3">
                 <div className="w-5 h-5 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-                <span className="text-sm text-gray-500 dark:text-gray-400">Ladowanie...</span>
+                <span className="text-sm text-gray-500 dark:text-gray-400">Ladowanie kurierow z Apilo...</span>
               </div>
+            ) : couriers.length === 0 ? (
+              <p className="text-sm text-gray-500 dark:text-gray-400">
+                Brak skonfigurowanych kurierow. Dodaj integracje w panelu Apilo.
+              </p>
             ) : (
-              <div className="space-y-4">
+              <div className="space-y-3">
+                <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">Skonfigurowane integracje:</h3>
                 {couriers.map(courier => {
-                  const info = COURIER_INFO[courier.courier] || { name: courier.courier, icon: '📦', color: 'bg-gray-100' };
-                  const isEditing = editingCourier === courier.courier;
+                  const info = COURIER_INFO[courier.courier] || { name: courier.courier || courier.name, logo: null, color: 'bg-gray-100' };
 
                   return (
-                    <div key={courier.courier} className="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
-                      <div className="flex items-center justify-between mb-3">
-                        <div className="flex items-center gap-3">
-                          <img src={info.logo} alt={info.name} className="w-10 h-10 object-contain" />
-                          <div>
-                            <h3 className="font-medium text-gray-900 dark:text-white">{info.name}</h3>
-                            <span className={`inline-block px-2 py-0.5 rounded text-xs font-medium ${courier.has_credentials ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300' : 'bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-400'}`}>
-                              {courier.has_credentials ? 'Skonfigurowany' : 'Nieskonfigurowany'}
-                            </span>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          {courier.has_credentials && (
-                            <button
-                              onClick={() => handleTestCourier(courier.courier)}
-                              disabled={testResult?.courier === courier.courier && testResult?.loading}
-                              className="px-3 py-1.5 text-xs font-medium text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg disabled:opacity-50"
-                            >
-                              {testResult?.courier === courier.courier && testResult?.loading ? 'Testowanie...' : 'Test'}
-                            </button>
-                          )}
-                          <button
-                            onClick={() => isEditing ? setEditingCourier(null) : handleEditCourier(courier)}
-                            className="px-3 py-1.5 text-xs font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg"
-                          >
-                            {isEditing ? 'Anuluj' : 'Edytuj'}
-                          </button>
+                    <div key={courier.courier || courier.id} className="flex items-center gap-3 p-3 border border-gray-200 dark:border-gray-700 rounded-lg">
+                      {info.logo ? (
+                        <img src={info.logo} alt={info.name} className="w-8 h-8 object-contain" />
+                      ) : (
+                        <div className="w-8 h-8 bg-gray-200 dark:bg-gray-600 rounded flex items-center justify-center text-xs">📦</div>
+                      )}
+                      <div>
+                        <div className="font-medium text-gray-900 dark:text-white">{courier.name || info.name}</div>
+                        {courier.environment && (
+                          <span className={`text-xs ${courier.environment === 'production' ? 'text-green-600' : 'text-yellow-600'}`}>
+                            {courier.environment === 'production' ? 'Produkcja' : 'Sandbox'}
+                          </span>
+                        )}
+                      </div>
+                      <span className="ml-auto px-2 py-0.5 text-xs font-medium bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300 rounded">
+                        Aktywny
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
+            {/* Legacy section - hidden but kept for backwards compatibility */}
+            <div className="hidden">
+              {couriers.map(courier => {
+                const info = COURIER_INFO[courier.courier] || { name: courier.courier, icon: '📦', color: 'bg-gray-100' };
+                const isEditing = editingCourier === courier.courier;
+
+                return (
+                  <div key={courier.courier} className="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center gap-3">
+                        <img src={info.logo} alt={info.name} className="w-10 h-10 object-contain" />
+                        <div>
+                          <h3 className="font-medium text-gray-900 dark:text-white">{info.name}</h3>
+                          <span className={`inline-block px-2 py-0.5 rounded text-xs font-medium ${courier.has_credentials ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300' : 'bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-400'}`}>
+                            {courier.has_credentials ? 'Skonfigurowany' : 'Nieskonfigurowany'}
+                          </span>
                         </div>
                       </div>
+                      <div className="flex items-center gap-2">
+                        {courier.has_credentials && (
+                          <button
+                            onClick={() => handleTestCourier(courier.courier)}
+                            disabled={testResult?.courier === courier.courier && testResult?.loading}
+                            className="px-3 py-1.5 text-xs font-medium text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg disabled:opacity-50"
+                          >
+                            {testResult?.courier === courier.courier && testResult?.loading ? 'Testowanie...' : 'Test'}
+                          </button>
+                        )}
+                        <button
+                          onClick={() => isEditing ? setEditingCourier(null) : handleEditCourier(courier)}
+                          className="px-3 py-1.5 text-xs font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg"
+                        >
+                          {isEditing ? 'Anuluj' : 'Edytuj'}
+                        </button>
+                      </div>
+                    </div>
 
-                      {/* Test result */}
-                      {testResult?.courier === courier.courier && !testResult.loading && (
+                    {/* Test result */}
+                    {testResult?.courier === courier.courier && !testResult.loading && (
                         <div className={`mb-3 p-3 rounded-lg text-sm ${testResult.success ? 'bg-green-50 text-green-700 dark:bg-green-900/20 dark:text-green-300' : 'bg-red-50 text-red-700 dark:bg-red-900/20 dark:text-red-300'}`}>
                           {testResult.success ? testResult.message : testResult.error}
                         </div>

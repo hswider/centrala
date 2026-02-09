@@ -16,25 +16,38 @@ export default function MESPage() {
   const [showShipModal, setShowShipModal] = useState(null);
   const [shipLoading, setShipLoading] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState(null);
+
+  // Apilo carriers state
+  const [carrierAccounts, setCarrierAccounts] = useState([]);
+  const [shippingMethods, setShippingMethods] = useState([]);
+  const [carriersLoading, setCarriersLoading] = useState(false);
+
   const [shipForm, setShipForm] = useState({
-    courier: 'inpost',
+    carrierAccountId: null,
+    methodUuid: '',
     weight: 1,
     length: 30,
     width: 20,
-    height: 10,
-    service_type: ''
+    height: 10
   });
 
-  const COURIERS = [
-    { id: 'inpost', name: 'InPost', logo: 'https://inpost.pl/sites/default/files/logo_inpost.svg', services: ['inpost_courier_standard', 'inpost_locker_standard'] },
-    { id: 'dhl_parcel', name: 'DHL Parcel', logo: 'https://www.dhl.com/content/dam/dhl/global/core/images/logos/dhl-logo.svg', services: ['V01PAK', 'V53WPAK'] },
-    { id: 'dhl_express', name: 'DHL Express', logo: 'https://www.dhl.com/content/dam/dhl/global/core/images/logos/dhl-logo.svg', services: ['P', 'D'] },
-    { id: 'ups', name: 'UPS', logo: 'https://www.ups.com/assets/resources/webcontent/images/ups-logo.svg', services: ['11', '07', '65'] }
-  ];
+  // Courier logo mapping
+  const COURIER_LOGOS = {
+    'inpost': 'https://inpost.pl/sites/default/files/logo_inpost.svg',
+    'dhl': 'https://www.dhl.com/content/dam/dhl/global/core/images/logos/dhl-logo.svg',
+    'ups': 'https://www.ups.com/assets/resources/webcontent/images/ups-logo.svg',
+    'dpd': 'https://www.dpd.com/group/wp-content/uploads/sites/77/2019/07/DPD-Logo.png',
+    'fedex': 'https://www.fedex.com/content/dam/fedex-com/logos/logo.png',
+    'gls': 'https://gls-group.eu/EU/media/images/logos/gls-logo.svg'
+  };
 
-  const getCourierLogo = (courierId) => {
-    const courier = COURIERS.find(c => c.id === courierId);
-    return courier?.logo || null;
+  const getCourierLogo = (courierName) => {
+    if (!courierName) return null;
+    const name = courierName.toLowerCase();
+    for (const [key, logo] of Object.entries(COURIER_LOGOS)) {
+      if (name.includes(key)) return logo;
+    }
+    return null;
   };
 
   const fetchShipments = async () => {
@@ -65,44 +78,112 @@ export default function MESPage() {
     }
   };
 
+  // Fetch carrier accounts from Apilo
+  const fetchCarrierAccounts = async () => {
+    setCarriersLoading(true);
+    try {
+      const res = await fetch('/api/apilo/carriers?type=accounts');
+      const data = await res.json();
+      if (data.success && data.accounts) {
+        setCarrierAccounts(data.accounts);
+        // Auto-select first carrier if available
+        if (data.accounts.length > 0 && !shipForm.carrierAccountId) {
+          const firstId = data.accounts[0].id;
+          setShipForm(prev => ({ ...prev, carrierAccountId: firstId }));
+          fetchShippingMethods(firstId);
+        }
+      }
+    } catch (err) {
+      console.error('Error fetching carrier accounts:', err);
+    } finally {
+      setCarriersLoading(false);
+    }
+  };
+
+  // Fetch shipping methods for selected carrier
+  const fetchShippingMethods = async (carrierAccountId) => {
+    if (!carrierAccountId) return;
+    try {
+      const res = await fetch(`/api/apilo/carriers?type=methods&carrierAccountId=${carrierAccountId}`);
+      const data = await res.json();
+      if (data.success && data.methods) {
+        setShippingMethods(data.methods);
+        // Auto-select first method if available
+        if (data.methods.length > 0) {
+          setShipForm(prev => ({ ...prev, methodUuid: data.methods[0].uuid || data.methods[0].id }));
+        }
+      }
+    } catch (err) {
+      console.error('Error fetching shipping methods:', err);
+    }
+  };
+
   const handleSelectTemplate = (template) => {
     setSelectedTemplate(template);
-    setShipForm({
-      courier: template.courier,
+    setShipForm(prev => ({
+      ...prev,
       weight: parseFloat(template.weight_kg) || 1,
       length: parseFloat(template.length_cm) || 30,
       width: parseFloat(template.width_cm) || 20,
-      height: parseFloat(template.height_cm) || 10,
-      service_type: template.service_type || ''
-    });
+      height: parseFloat(template.height_cm) || 10
+    }));
+  };
+
+  const handleCarrierChange = (carrierAccountId) => {
+    setShipForm(prev => ({ ...prev, carrierAccountId: parseInt(carrierAccountId), methodUuid: '' }));
+    setShippingMethods([]);
+    fetchShippingMethods(carrierAccountId);
   };
 
   const handleCreateShipment = async () => {
     if (!showShipModal) return;
+    if (!shipForm.carrierAccountId) {
+      alert('Wybierz kuriera');
+      return;
+    }
+
     setShipLoading(true);
     try {
-      const res = await fetch('/api/couriers/shipments', {
+      // Get order shipping address
+      const orderRes = await fetch(`/api/orders/${showShipModal.id}`);
+      const orderData = await orderRes.json();
+      const shipping = orderData.order?.shipping || {};
+
+      const res = await fetch('/api/apilo/shipping', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          order_id: showShipModal.id,
-          courier: shipForm.courier,
-          options: {
+          action: 'create',
+          carrierAccountId: shipForm.carrierAccountId,
+          orderId: showShipModal.id,
+          method: shipForm.methodUuid,
+          addressReceiver: {
+            type: 'house',
+            name: shipping.name || '',
+            streetName: shipping.street || '',
+            streetNumber: shipping.streetNumber || '',
+            zipCode: shipping.zipCode || '',
+            city: shipping.city || '',
+            country: shipping.country || 'PL',
+            phone: shipping.phone || '',
+            email: shipping.email || ''
+          },
+          parcels: [{
             weight: parseFloat(shipForm.weight) || 1,
             dimensions: {
               length: parseFloat(shipForm.length) || 30,
               width: parseFloat(shipForm.width) || 20,
               height: parseFloat(shipForm.height) || 10
-            },
-            service_type: shipForm.service_type
-          }
+            }
+          }]
         })
       });
       const data = await res.json();
       if (data.success) {
         setShowShipModal(null);
         fetchShipments();
-        alert(`Przesylka utworzona! Tracking: ${data.shipment?.tracking_number || '-'}`);
+        const shipmentId = data.result?.shipments?.[0]?.shipmentId;
+        alert(`Przesylka utworzona w Apilo! ID: ${shipmentId || '-'}`);
       } else {
         alert('Blad: ' + data.error);
       }
@@ -141,6 +222,7 @@ export default function MESPage() {
     fetchOrders();
     fetchShipments();
     fetchTemplates();
+    fetchCarrierAccounts();
   }, [filter]);
 
   const getStatusBadge = (status) => {
@@ -514,19 +596,44 @@ export default function MESPage() {
                 </div>
               )}
 
-              {/* Courier select */}
+              {/* Carrier select from Apilo */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Kurier</label>
-                <select
-                  value={shipForm.courier}
-                  onChange={e => { setShipForm({ ...shipForm, courier: e.target.value, service_type: '' }); setSelectedTemplate(null); }}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                >
-                  {COURIERS.map(c => (
-                    <option key={c.id} value={c.id}>{c.name}</option>
-                  ))}
-                </select>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Kurier (z Apilo)</label>
+                {carriersLoading ? (
+                  <div className="text-sm text-gray-500 py-2">Ladowanie kurierow...</div>
+                ) : carrierAccounts.length === 0 ? (
+                  <div className="text-sm text-yellow-600 dark:text-yellow-400 py-2">
+                    Brak skonfigurowanych kurierow w Apilo. Skonfiguruj integracje w panelu Apilo.
+                  </div>
+                ) : (
+                  <select
+                    value={shipForm.carrierAccountId || ''}
+                    onChange={e => handleCarrierChange(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  >
+                    <option value="">-- Wybierz kuriera --</option>
+                    {carrierAccounts.map(c => (
+                      <option key={c.id} value={c.id}>{c.name || c.carrierName || `Kurier #${c.id}`}</option>
+                    ))}
+                  </select>
+                )}
               </div>
+
+              {/* Shipping method select */}
+              {shipForm.carrierAccountId && shippingMethods.length > 0 && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Metoda wysylki</label>
+                  <select
+                    value={shipForm.methodUuid || ''}
+                    onChange={e => setShipForm({ ...shipForm, methodUuid: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  >
+                    {shippingMethods.map(m => (
+                      <option key={m.uuid || m.id} value={m.uuid || m.id}>{m.name || m.description || `Metoda ${m.id}`}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
 
               {/* Dimensions */}
               <div>

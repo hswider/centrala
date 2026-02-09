@@ -390,3 +390,155 @@ export async function fetchAllNewOrders(lastSyncDate = null, maxOrders = 500) {
   console.log('[Apilo] Total fetched:', allOrders.length, 'orders');
   return allOrders;
 }
+
+// ==================== SHIPPING / COURIER API ====================
+
+// Get list of available carriers
+export async function getCarriers() {
+  const data = await apiloRequest('GET', '/rest/api/orders/carrier/map/');
+  return data || [];
+}
+
+// Get carrier accounts (configured courier integrations)
+export async function getCarrierAccounts() {
+  const data = await apiloRequest('GET', '/rest/api/shipping/carrier-account/');
+  return data || [];
+}
+
+// Get shipping methods for a carrier account
+export async function getShippingMethods(carrierAccountId) {
+  const data = await apiloRequest('GET', `/rest/api/shipping/carrier-account/${carrierAccountId}/method/`);
+  return data || [];
+}
+
+// Get shipping method options/map
+export async function getShippingMethodOptions(carrierAccountId, methodUuid) {
+  const data = await apiloRequest('GET', `/rest/api/shipping/carrier-account/${carrierAccountId}/method/${methodUuid}/map/`);
+  return data || {};
+}
+
+// Create shipment through Apilo (using Apilo's courier integration)
+export async function createShipment(shipmentData) {
+  /*
+    shipmentData: {
+      carrierAccountId: number,        // ID konta kuriera w Apilo
+      orderId: string,                 // ID zamówienia
+      method: string,                  // UUID metody wysyłki
+      addressReceiver: {
+        type: 'house' | 'apartment',
+        name: string,
+        streetName: string,
+        streetNumber: string,
+        zipCode: string,
+        city: string,
+        country: string,               // 'PL'
+        phone: string,
+        email: string
+      },
+      parcels: [{
+        weight: number,                // waga w gramach
+        dimensions: { length, width, height }  // wymiary w cm
+      }],
+      options: [{                      // opcje kuriera
+        id: string,
+        type: string,
+        value: any
+      }],
+      postDate?: string                // data wysyłki ISO 8601
+    }
+  */
+
+  const payload = {
+    carrierAccountId: shipmentData.carrierAccountId,
+    orderId: shipmentData.orderId,
+    method: shipmentData.method,
+    postDate: shipmentData.postDate || new Date().toISOString(),
+    addressReceiver: shipmentData.addressReceiver,
+    parcels: shipmentData.parcels.map(p => ({
+      options: [
+        {
+          id: 'dimensions',
+          type: 'dimensions',
+          value: {
+            length: p.dimensions?.length || 30,
+            width: p.dimensions?.width || 20,
+            height: p.dimensions?.height || 10
+          }
+        },
+        {
+          id: 'weight',
+          type: 'integer',
+          value: Math.round((p.weight || 1) * 1000) // kg -> g
+        }
+      ]
+    })),
+    options: shipmentData.options || []
+  };
+
+  const result = await apiloRequest('POST', '/rest/api/shipping/shipment/', payload);
+  return result;
+}
+
+// Notify Apilo about shipment created externally (outside Apilo)
+export async function notifyShipmentCreated(orderId, shipmentInfo) {
+  /*
+    shipmentInfo: {
+      idExternal: string,              // zewnętrzny numer przesyłki
+      tracking: string,                // numer śledzenia
+      carrierProviderId: number,       // ID kuriera (z carrier/map, isBroker: false)
+      postDate?: string,               // data wysyłki ISO 8601
+      media?: string                   // UUID pliku z etykietą
+    }
+  */
+
+  const payload = {
+    idExternal: shipmentInfo.idExternal,
+    tracking: shipmentInfo.tracking,
+    carrierProviderId: shipmentInfo.carrierProviderId,
+    postDate: shipmentInfo.postDate || new Date().toISOString(),
+    ...(shipmentInfo.media && { media: shipmentInfo.media })
+  };
+
+  const result = await apiloRequest('POST', `/rest/api/orders/${orderId}/shipment/`, payload);
+  return result;
+}
+
+// Get shipment details for an order
+export async function getOrderShipments(orderId) {
+  const order = await apiloRequest('GET', `/rest/api/orders/${orderId}/`);
+  return order?.shipments || [];
+}
+
+// Upload file (for label) and get UUID
+export async function uploadFile(base64Data, filename, mimeType = 'application/pdf') {
+  // Apilo uses media upload endpoint
+  const payload = {
+    name: filename,
+    content: base64Data,
+    mimeType: mimeType
+  };
+
+  const result = await apiloRequest('POST', '/rest/api/media/', payload);
+  return result?.uuid || result?.id;
+}
+
+// Update order status
+export async function updateOrderStatus(orderId, status) {
+  const payload = {
+    status: status
+  };
+
+  const result = await apiloRequest('PATCH', `/rest/api/orders/${orderId}/`, payload);
+  return result;
+}
+
+// Get shipment label from Apilo (if available)
+export async function getShipmentLabel(shipmentId) {
+  try {
+    const data = await apiloRequest('GET', `/rest/api/shipping/shipment/${shipmentId}/label/`);
+    return data;
+  } catch (error) {
+    console.error('[Apilo] Failed to get label:', error.message);
+    return null;
+  }
+}

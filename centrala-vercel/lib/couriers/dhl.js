@@ -8,9 +8,8 @@
 import { getCourierCredentials, saveShipment } from './index';
 
 // API URLs
-// DHL Parcel PL uses WebAPI v2 (different from international DHL API)
-const DHL_PARCEL_PL_SANDBOX = 'https://sandbox.dhl24.com.pl/webapi2';
-const DHL_PARCEL_PL_PROD = 'https://dhl24.com.pl/webapi2';
+// DHL Parcel PL uses WebAPI v2 - no separate sandbox, uses production URL with test credentials
+const DHL_PARCEL_PL_URL = 'https://dhl24.com.pl/webapi2';
 
 const DHL_EXPRESS_SANDBOX = 'https://express.api.dhl.com/mydhlapi/test';
 const DHL_EXPRESS_PROD = 'https://express.api.dhl.com/mydhlapi';
@@ -20,7 +19,8 @@ const DHL_TRACKING_URL = 'https://api-eu.dhl.com/track/shipments';
 // Get base URL for API type
 function getBaseUrl(courierType, environment) {
   if (courierType === 'dhl_parcel') {
-    return environment === 'production' ? DHL_PARCEL_PL_PROD : DHL_PARCEL_PL_SANDBOX;
+    // DHL Parcel PL - always uses production URL (sandbox mode via test credentials)
+    return DHL_PARCEL_PL_URL;
   } else {
     return environment === 'production' ? DHL_EXPRESS_PROD : DHL_EXPRESS_SANDBOX;
   }
@@ -48,6 +48,16 @@ async function dhlParcelPlFetch(endpoint, payload, creds) {
     },
     body: JSON.stringify(authPayload)
   });
+
+  // Check if response is JSON
+  const contentType = response.headers.get('content-type');
+  if (!contentType || !contentType.includes('application/json')) {
+    const text = await response.text();
+    if (text.includes('<!DOCTYPE') || text.includes('<html')) {
+      throw new Error('DHL API zwrocilo strone HTML - sprawdz dane logowania');
+    }
+    throw new Error(`DHL API error: ${response.status} - ${text.substring(0, 100)}`);
+  }
 
   const data = await response.json();
 

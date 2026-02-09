@@ -226,12 +226,11 @@ async function testInpostConnection(creds, extraConfig) {
 // Test DHL Parcel PL connection (WebAPI v2)
 async function testDhlParcelConnection(creds, extraConfig) {
   try {
-    // DHL Parcel PL uses different authentication - login/password + SAP number
-    const baseUrl = creds.environment === 'production'
-      ? 'https://dhl24.com.pl/webapi2'
-      : 'https://sandbox.dhl24.com.pl/webapi2';
+    // DHL Parcel PL WebAPI v2 - only production URL exists
+    // Sandbox mode uses production URL with test credentials
+    const baseUrl = 'https://dhl24.com.pl/webapi2';
 
-    // Test with getVersion endpoint which doesn't require full auth
+    // Test with getVersion endpoint
     const response = await fetch(`${baseUrl}/rest/getVersion`, {
       method: 'POST',
       headers: {
@@ -245,12 +244,24 @@ async function testDhlParcelConnection(creds, extraConfig) {
       })
     });
 
+    // Check if response is JSON
+    const contentType = response.headers.get('content-type');
+    if (!contentType || !contentType.includes('application/json')) {
+      const text = await response.text();
+      if (text.includes('<!DOCTYPE') || text.includes('<html')) {
+        return { success: false, error: 'DHL Parcel: API zwrocilo strone HTML zamiast JSON. Sprawdz dane logowania.' };
+      }
+      return { success: false, error: `DHL Parcel: Nieoczekiwana odpowiedz (${response.status})` };
+    }
+
     const data = await response.json();
 
-    if (data.version || response.ok) {
-      return { success: true, message: `Polaczenie z DHL Parcel OK (SAP: ${extraConfig.sap_number})` };
+    if (data.getVersionResult) {
+      return { success: true, message: `Polaczenie z DHL Parcel OK - wersja API: ${data.getVersionResult}` };
+    } else if (data.error) {
+      return { success: false, error: `DHL Parcel: ${data.error}` };
     } else {
-      return { success: false, error: `DHL Parcel: ${data.error || JSON.stringify(data)}` };
+      return { success: true, message: `Polaczenie z DHL Parcel OK (SAP: ${extraConfig.sap_number})` };
     }
   } catch (error) {
     return { success: false, error: `DHL Parcel: ${error.message}` };
