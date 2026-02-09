@@ -5,6 +5,8 @@ function normalizeArray(data) {
   if (Array.isArray(data)) return data;
   if (data && typeof data === 'object') {
     // Check for common wrapper properties
+    if (Array.isArray(data.carrierAccounts)) return data.carrierAccounts;
+    if (Array.isArray(data.methods)) return data.methods;
     if (Array.isArray(data.items)) return data.items;
     if (Array.isArray(data.data)) return data.data;
     if (Array.isArray(data.results)) return data.results;
