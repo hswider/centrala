@@ -401,13 +401,13 @@ export async function getCarriers() {
 
 // Get carrier accounts (configured courier integrations)
 export async function getCarrierAccounts() {
-  const data = await apiloRequest('GET', '/rest/api/shipping/carrier-account/');
+  const data = await apiloRequest('GET', '/rest/api/shipping/carrier-account/map/');
   return data || [];
 }
 
 // Get shipping methods for a carrier account
 export async function getShippingMethods(carrierAccountId) {
-  const data = await apiloRequest('GET', `/rest/api/shipping/carrier-account/${carrierAccountId}/method/`);
+  const data = await apiloRequest('GET', `/rest/api/shipping/carrier-account/${carrierAccountId}/method/map/`);
   return data || [];
 }
 
