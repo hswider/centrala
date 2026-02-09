@@ -23,6 +23,7 @@ export default function BazaDanychPage() {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [importing, setImporting] = useState(false);
+  const [importProgress, setImportProgress] = useState({ current: 0, total: 0, percent: 0 });
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
   const [search, setSearch] = useState('');
@@ -142,38 +143,70 @@ LEGOWISKO-60-SZARY;120`;
       setImporting(true);
       setError(null);
       setSuccess(null);
+      setImportProgress({ current: 0, total: 0, percent: 0 });
 
       const text = await file.text();
       const parsedData = parseCSV(text);
 
       if (parsedData.length === 0) {
         setError('Nie znaleziono danych w pliku CSV');
+        setImporting(false);
         return;
       }
 
-      // Send to API
-      const res = await fetch('/api/historical-sales', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          year: selectedYear,
-          month: selectedMonth,
-          data: parsedData
-        })
-      });
-
-      const result = await res.json();
-      if (result.success) {
-        setSuccess(result.message);
-        setShowImportModal(false);
-        fetchData(); // Refresh data
-      } else {
-        setError(result.error);
+      // Split into batches for progress tracking
+      const BATCH_SIZE = 100;
+      const batches = [];
+      for (let i = 0; i < parsedData.length; i += BATCH_SIZE) {
+        batches.push(parsedData.slice(i, i + BATCH_SIZE));
       }
+
+      const total = parsedData.length;
+      let imported = 0;
+      let skipped = 0;
+      let errors = [];
+
+      setImportProgress({ current: 0, total, percent: 0 });
+
+      // Process batches sequentially
+      for (let i = 0; i < batches.length; i++) {
+        const batch = batches[i];
+
+        const res = await fetch('/api/historical-sales', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            year: selectedYear,
+            month: selectedMonth,
+            data: batch
+          })
+        });
+
+        const result = await res.json();
+        if (result.success) {
+          imported += result.imported || 0;
+          skipped += result.skipped || 0;
+          if (result.errors) errors.push(...result.errors);
+        } else {
+          errors.push(result.error);
+        }
+
+        // Update progress
+        const processed = Math.min((i + 1) * BATCH_SIZE, total);
+        const percent = Math.round((processed / total) * 100);
+        setImportProgress({ current: processed, total, percent });
+      }
+
+      // Final result
+      const message = `Zaimportowano ${imported} rekordow, pominieto ${skipped}${errors.length > 0 ? `, bledy: ${errors.length}` : ''}`;
+      setSuccess(message);
+      setShowImportModal(false);
+      fetchData(); // Refresh data
     } catch (err) {
       setError('Blad importu: ' + err.message);
     } finally {
       setImporting(false);
+      setImportProgress({ current: 0, total: 0, percent: 0 });
       if (fileInputRef.current) fileInputRef.current.value = '';
     }
   };
@@ -481,13 +514,14 @@ LEGOWISKO-60-SZARY;120`;
 
       {/* Import CSV Modal */}
       {showImportModal && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setShowImportModal(false)}>
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => !importing && setShowImportModal(false)}>
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-lg w-full max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
             <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Import danych sprzedazy</h3>
               <button
                 onClick={() => setShowImportModal(false)}
-                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 text-xl"
+                disabled={importing}
+                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 text-xl disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 ×
               </button>
@@ -532,30 +566,55 @@ PUFAPOKROWIEC-SKU-001;75`}
                 <strong>Uwaga:</strong> Import <strong>dodaje</strong> wartosci do istniejacych (nie nadpisuje).
               </div>
 
-              {/* File input */}
-              <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-6 text-center">
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept=".csv,.txt"
-                  onChange={handleFileSelect}
-                  className="hidden"
-                  id="csv-file-input"
-                  disabled={importing}
-                />
-                <label
-                  htmlFor="csv-file-input"
-                  className="cursor-pointer flex flex-col items-center gap-2"
-                >
-                  <span className="text-4xl">📁</span>
-                  <span className="text-sm text-gray-600 dark:text-gray-400">
-                    {importing ? 'Importowanie...' : 'Kliknij aby wybrac plik CSV'}
-                  </span>
-                  <span className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm font-medium">
-                    Wybierz plik
-                  </span>
-                </label>
-              </div>
+              {/* File input / Progress */}
+              {importing ? (
+                <div className="border-2 border-gray-300 dark:border-gray-600 rounded-lg p-6">
+                  <div className="flex flex-col items-center gap-3">
+                    <div className="text-4xl animate-pulse">⏳</div>
+                    <div className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                      Importowanie... {importProgress.current} / {importProgress.total}
+                    </div>
+                    {/* Progress bar */}
+                    <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-4 overflow-hidden">
+                      <div
+                        className="bg-green-600 h-4 rounded-full transition-all duration-300 flex items-center justify-center"
+                        style={{ width: `${importProgress.percent}%` }}
+                      >
+                        {importProgress.percent > 10 && (
+                          <span className="text-xs text-white font-medium">{importProgress.percent}%</span>
+                        )}
+                      </div>
+                    </div>
+                    <div className="text-xs text-gray-500 dark:text-gray-400">
+                      Prosze nie zamykac okna podczas importu
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-6 text-center">
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept=".csv,.txt"
+                    onChange={handleFileSelect}
+                    className="hidden"
+                    id="csv-file-input"
+                    disabled={importing}
+                  />
+                  <label
+                    htmlFor="csv-file-input"
+                    className="cursor-pointer flex flex-col items-center gap-2"
+                  >
+                    <span className="text-4xl">📁</span>
+                    <span className="text-sm text-gray-600 dark:text-gray-400">
+                      Kliknij aby wybrac plik CSV
+                    </span>
+                    <span className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm font-medium">
+                      Wybierz plik
+                    </span>
+                  </label>
+                </div>
+              )}
 
               {/* Error in modal */}
               {error && (
@@ -568,9 +627,10 @@ PUFAPOKROWIEC-SKU-001;75`}
             <div className="px-4 py-3 border-t border-gray-200 dark:border-gray-700 flex justify-end">
               <button
                 onClick={() => setShowImportModal(false)}
-                className="px-4 py-2 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200"
+                disabled={importing}
+                className="px-4 py-2 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Anuluj
+                {importing ? 'Importowanie...' : 'Anuluj'}
               </button>
             </div>
           </div>
