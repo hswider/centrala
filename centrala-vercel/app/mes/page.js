@@ -131,6 +131,35 @@ export default function MESPage() {
     }
   };
 
+  // Parse dimensions from carrier account name (e.g. "DHL 600x400x400" -> {length: 60, width: 40, height: 40})
+  const parseDimensionsFromName = (name) => {
+    if (!name) return null;
+    // Match patterns like "600x400x400", "60x40x40", "30x40x5"
+    const match = name.match(/(\d+)\s*[xX×]\s*(\d+)\s*[xX×]\s*(\d+)/);
+    if (match) {
+      let [, d1, d2, d3] = match.map(Number);
+      // If dimensions are > 100, they're probably in mm, convert to cm
+      // If dimensions look like mm (e.g. 600x400x400), divide by 10
+      if (d1 > 100 || d2 > 100 || d3 > 100) {
+        d1 = Math.round(d1 / 10);
+        d2 = Math.round(d2 / 10);
+        d3 = Math.round(d3 / 10);
+      }
+      return { length: d1, width: d2, height: d3 };
+    }
+    return null;
+  };
+
+  // Parse weight from carrier account name (e.g. "5kg" or "waga 2.5")
+  const parseWeightFromName = (name) => {
+    if (!name) return null;
+    const match = name.match(/(\d+(?:[.,]\d+)?)\s*kg/i);
+    if (match) {
+      return parseFloat(match[1].replace(',', '.'));
+    }
+    return null;
+  };
+
   const handleSelectTemplate = (template) => {
     setSelectedTemplate(template);
     setShipForm(prev => ({
@@ -143,7 +172,23 @@ export default function MESPage() {
   };
 
   const handleCarrierChange = (carrierAccountId) => {
-    setShipForm(prev => ({ ...prev, carrierAccountId: parseInt(carrierAccountId), methodUuid: '' }));
+    const carrier = carrierAccounts.find(c => c.id === parseInt(carrierAccountId));
+    const dimensions = parseDimensionsFromName(carrier?.name);
+    const weight = parseWeightFromName(carrier?.name);
+
+    setShipForm(prev => ({
+      ...prev,
+      carrierAccountId: parseInt(carrierAccountId),
+      methodUuid: '',
+      // Auto-fill dimensions from carrier name if available
+      ...(dimensions && {
+        length: dimensions.length,
+        width: dimensions.width,
+        height: dimensions.height
+      }),
+      // Auto-fill weight if found in name
+      ...(weight && { weight })
+    }));
     setShippingMethods([]);
     fetchShippingMethods(carrierAccountId);
   };
@@ -648,49 +693,40 @@ export default function MESPage() {
                 </div>
               )}
 
-              {/* Dimensions */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Wymiary (cm)</label>
-                <div className="grid grid-cols-3 gap-2">
-                  <input
-                    type="number"
-                    step="0.1"
-                    value={shipForm.length}
-                    onChange={e => setShipForm({ ...shipForm, length: e.target.value })}
-                    placeholder="Dlugosc"
-                    className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-center text-sm"
-                  />
-                  <input
-                    type="number"
-                    step="0.1"
-                    value={shipForm.width}
-                    onChange={e => setShipForm({ ...shipForm, width: e.target.value })}
-                    placeholder="Szerokosc"
-                    className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-center text-sm"
-                  />
-                  <input
-                    type="number"
-                    step="0.1"
-                    value={shipForm.height}
-                    onChange={e => setShipForm({ ...shipForm, height: e.target.value })}
-                    placeholder="Wysokosc"
-                    className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-center text-sm"
-                  />
+              {/* Dimensions - auto-filled from carrier name */}
+              {shipForm.carrierAccountId && (
+                <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-3">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Wymiary paczki (cm)
+                    <span className="ml-2 text-xs text-green-600 dark:text-green-400 font-normal">
+                      (z szablonu kuriera)
+                    </span>
+                  </label>
+                  <div className="grid grid-cols-3 gap-2 text-center">
+                    <div>
+                      <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">Dlugosc</div>
+                      <div className="px-3 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg font-medium text-gray-900 dark:text-white">
+                        {shipForm.length}
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">Szerokosc</div>
+                      <div className="px-3 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg font-medium text-gray-900 dark:text-white">
+                        {shipForm.width}
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">Wysokosc</div>
+                      <div className="px-3 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg font-medium text-gray-900 dark:text-white">
+                        {shipForm.height}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="mt-2 text-xs text-gray-500 dark:text-gray-400">
+                    Waga: <span className="font-medium text-gray-900 dark:text-white">{shipForm.weight} kg</span>
+                  </div>
                 </div>
-              </div>
-
-              {/* Weight */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Waga (kg)</label>
-                <input
-                  type="number"
-                  step="0.1"
-                  min="0.1"
-                  value={shipForm.weight}
-                  onChange={e => setShipForm({ ...shipForm, weight: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                />
-              </div>
+              )}
             </div>
 
             <div className="px-4 py-3 border-t border-gray-200 dark:border-gray-700 flex justify-end gap-2">
