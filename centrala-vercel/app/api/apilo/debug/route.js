@@ -1,10 +1,12 @@
 // Debug endpoint to see raw Apilo API responses
-import { getCarriers, getCarrierAccounts } from '../../../../lib/apilo';
+import { getCarriers, getCarrierAccounts, getShippingMethods, getShippingMethodOptions } from '../../../../lib/apilo';
 
 export async function GET(request) {
   try {
     const { searchParams } = new URL(request.url);
     const type = searchParams.get('type') || 'all';
+    const carrierAccountId = searchParams.get('carrierAccountId');
+    const methodUuid = searchParams.get('methodUuid');
 
     const results = {};
 
@@ -33,6 +35,31 @@ export async function GET(request) {
         };
       } catch (e) {
         results.accounts = { error: e.message };
+      }
+    }
+
+    if (type === 'methods' && carrierAccountId) {
+      try {
+        const methods = await getShippingMethods(carrierAccountId);
+        results.methods = {
+          raw: methods,
+          carrierAccountId
+        };
+      } catch (e) {
+        results.methods = { error: e.message };
+      }
+    }
+
+    if (type === 'options' && carrierAccountId && methodUuid) {
+      try {
+        const options = await getShippingMethodOptions(carrierAccountId, methodUuid);
+        results.options = {
+          raw: options,
+          carrierAccountId,
+          methodUuid
+        };
+      } catch (e) {
+        results.options = { error: e.message };
       }
     }
 
