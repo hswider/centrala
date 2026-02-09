@@ -12,11 +12,16 @@ export default function MESPage() {
 
   // Shipping state
   const [shipments, setShipments] = useState({});
+  const [templates, setTemplates] = useState([]);
   const [showShipModal, setShowShipModal] = useState(null);
   const [shipLoading, setShipLoading] = useState(false);
+  const [selectedTemplate, setSelectedTemplate] = useState(null);
   const [shipForm, setShipForm] = useState({
     courier: 'inpost',
     weight: 1,
+    length: 30,
+    width: 20,
+    height: 10,
     service_type: ''
   });
 
@@ -48,6 +53,30 @@ export default function MESPage() {
     }
   };
 
+  const fetchTemplates = async () => {
+    try {
+      const res = await fetch('/api/couriers/templates');
+      const data = await res.json();
+      if (data.success) {
+        setTemplates(data.templates || []);
+      }
+    } catch (err) {
+      console.error('Error fetching templates:', err);
+    }
+  };
+
+  const handleSelectTemplate = (template) => {
+    setSelectedTemplate(template);
+    setShipForm({
+      courier: template.courier,
+      weight: parseFloat(template.weight_kg) || 1,
+      length: parseFloat(template.length_cm) || 30,
+      width: parseFloat(template.width_cm) || 20,
+      height: parseFloat(template.height_cm) || 10,
+      service_type: template.service_type || ''
+    });
+  };
+
   const handleCreateShipment = async () => {
     if (!showShipModal) return;
     setShipLoading(true);
@@ -60,6 +89,11 @@ export default function MESPage() {
           courier: shipForm.courier,
           options: {
             weight: parseFloat(shipForm.weight) || 1,
+            dimensions: {
+              length: parseFloat(shipForm.length) || 30,
+              width: parseFloat(shipForm.width) || 20,
+              height: parseFloat(shipForm.height) || 10
+            },
             service_type: shipForm.service_type
           }
         })
@@ -106,6 +140,7 @@ export default function MESPage() {
   useEffect(() => {
     fetchOrders();
     fetchShipments();
+    fetchTemplates();
   }, [filter]);
 
   const getStatusBadge = (status) => {
@@ -445,7 +480,7 @@ export default function MESPage() {
       {/* Shipment Modal */}
       {showShipModal && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setShowShipModal(null)}>
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full" onClick={e => e.stopPropagation()}>
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-lg w-full max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
             <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Utworz przesylke</h3>
               <button onClick={() => setShowShipModal(null)} className="text-gray-400 hover:text-gray-600 text-xl">×</button>
@@ -460,12 +495,31 @@ export default function MESPage() {
                 </div>
               </div>
 
+              {/* Templates */}
+              {templates.length > 0 && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Wybierz szablon</label>
+                  <div className="grid grid-cols-2 gap-2">
+                    {templates.map(t => (
+                      <button
+                        key={t.id}
+                        onClick={() => handleSelectTemplate(t)}
+                        className={`p-2 text-left border rounded-lg text-xs ${selectedTemplate?.id === t.id ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20' : 'border-gray-200 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700'}`}
+                      >
+                        <div className="font-medium text-gray-900 dark:text-white truncate">{t.name}</div>
+                        <div className="text-gray-500 dark:text-gray-400">{t.length_cm}×{t.width_cm}×{t.height_cm} cm</div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               {/* Courier select */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Kurier</label>
                 <select
                   value={shipForm.courier}
-                  onChange={e => setShipForm({ ...shipForm, courier: e.target.value, service_type: '' })}
+                  onChange={e => { setShipForm({ ...shipForm, courier: e.target.value, service_type: '' }); setSelectedTemplate(null); }}
                   className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                 >
                   {COURIERS.map(c => (
@@ -474,19 +528,35 @@ export default function MESPage() {
                 </select>
               </div>
 
-              {/* Service type */}
+              {/* Dimensions */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Usluga</label>
-                <select
-                  value={shipForm.service_type}
-                  onChange={e => setShipForm({ ...shipForm, service_type: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                >
-                  <option value="">Domyslna</option>
-                  {COURIERS.find(c => c.id === shipForm.courier)?.services.map(s => (
-                    <option key={s} value={s}>{s}</option>
-                  ))}
-                </select>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Wymiary (cm)</label>
+                <div className="grid grid-cols-3 gap-2">
+                  <input
+                    type="number"
+                    step="0.1"
+                    value={shipForm.length}
+                    onChange={e => setShipForm({ ...shipForm, length: e.target.value })}
+                    placeholder="Dlugosc"
+                    className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-center text-sm"
+                  />
+                  <input
+                    type="number"
+                    step="0.1"
+                    value={shipForm.width}
+                    onChange={e => setShipForm({ ...shipForm, width: e.target.value })}
+                    placeholder="Szerokosc"
+                    className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-center text-sm"
+                  />
+                  <input
+                    type="number"
+                    step="0.1"
+                    value={shipForm.height}
+                    onChange={e => setShipForm({ ...shipForm, height: e.target.value })}
+                    placeholder="Wysokosc"
+                    className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-center text-sm"
+                  />
+                </div>
               </div>
 
               {/* Weight */}

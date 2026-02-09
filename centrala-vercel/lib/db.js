@@ -976,6 +976,24 @@ export async function initDatabase() {
       await sql`INSERT INTO courier_credentials (courier) VALUES (${courier})`;
     }
   }
+
+  // Shipping templates (package presets with dimensions, weight, etc.)
+  await sql`
+    CREATE TABLE IF NOT EXISTS shipping_templates (
+      id SERIAL PRIMARY KEY,
+      name VARCHAR(255) NOT NULL,
+      courier VARCHAR(20) NOT NULL,
+      service_type VARCHAR(50),
+      length_cm DECIMAL(10,2) DEFAULT 30,
+      width_cm DECIMAL(10,2) DEFAULT 20,
+      height_cm DECIMAL(10,2) DEFAULT 10,
+      weight_kg DECIMAL(10,2) DEFAULT 1,
+      content_description VARCHAR(255),
+      is_default BOOLEAN DEFAULT false,
+      is_active BOOLEAN DEFAULT true,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )
+  `;
 }
 
 // Token operations

@@ -55,6 +55,23 @@ export default function UstawieniaPage() {
   const [testResult, setTestResult] = useState(null);
   const [saving, setSaving] = useState(false);
 
+  // Templates state
+  const [templates, setTemplates] = useState([]);
+  const [templatesLoading, setTemplatesLoading] = useState(true);
+  const [showTemplateModal, setShowTemplateModal] = useState(false);
+  const [editingTemplate, setEditingTemplate] = useState(null);
+  const [templateForm, setTemplateForm] = useState({
+    name: '',
+    courier: 'dhl_parcel',
+    service_type: '',
+    length_cm: 30,
+    width_cm: 20,
+    height_cm: 10,
+    weight_kg: 1,
+    content_description: '',
+    is_default: false
+  });
+
   useEffect(() => {
     fetch('/api/auth/me')
       .then(res => res.json())
@@ -65,6 +82,7 @@ export default function UstawieniaPage() {
       .finally(() => setLoading(false));
 
     fetchCouriers();
+    fetchTemplates();
   }, []);
 
   const fetchCouriers = async () => {
@@ -78,6 +96,92 @@ export default function UstawieniaPage() {
       console.error('Error fetching couriers:', err);
     } finally {
       setCourierLoading(false);
+    }
+  };
+
+  const fetchTemplates = async () => {
+    try {
+      const res = await fetch('/api/couriers/templates');
+      const data = await res.json();
+      if (data.success) {
+        setTemplates(data.templates || []);
+      }
+    } catch (err) {
+      console.error('Error fetching templates:', err);
+    } finally {
+      setTemplatesLoading(false);
+    }
+  };
+
+  const handleNewTemplate = () => {
+    setEditingTemplate(null);
+    setTemplateForm({
+      name: '',
+      courier: 'dhl_parcel',
+      service_type: '',
+      length_cm: 30,
+      width_cm: 20,
+      height_cm: 10,
+      weight_kg: 1,
+      content_description: '',
+      is_default: false
+    });
+    setShowTemplateModal(true);
+  };
+
+  const handleEditTemplate = (template) => {
+    setEditingTemplate(template);
+    setTemplateForm({
+      name: template.name,
+      courier: template.courier,
+      service_type: template.service_type || '',
+      length_cm: parseFloat(template.length_cm) || 30,
+      width_cm: parseFloat(template.width_cm) || 20,
+      height_cm: parseFloat(template.height_cm) || 10,
+      weight_kg: parseFloat(template.weight_kg) || 1,
+      content_description: template.content_description || '',
+      is_default: template.is_default || false
+    });
+    setShowTemplateModal(true);
+  };
+
+  const handleSaveTemplate = async () => {
+    setSaving(true);
+    try {
+      const method = editingTemplate ? 'PUT' : 'POST';
+      const body = editingTemplate ? { id: editingTemplate.id, ...templateForm } : templateForm;
+
+      const res = await fetch('/api/couriers/templates', {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+      const data = await res.json();
+      if (data.success) {
+        setShowTemplateModal(false);
+        fetchTemplates();
+      } else {
+        alert('Blad: ' + data.error);
+      }
+    } catch (err) {
+      alert('Blad zapisu: ' + err.message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDeleteTemplate = async (id) => {
+    if (!confirm('Czy na pewno chcesz usunac ten szablon?')) return;
+    try {
+      const res = await fetch(`/api/couriers/templates?id=${id}`, { method: 'DELETE' });
+      const data = await res.json();
+      if (data.success) {
+        fetchTemplates();
+      } else {
+        alert('Blad: ' + data.error);
+      }
+    } catch (err) {
+      alert('Blad usuwania: ' + err.message);
     }
   };
 
@@ -360,7 +464,192 @@ export default function UstawieniaPage() {
             )}
           </div>
         )}
+
+        {/* Szablony paczek - tylko dla adminow */}
+        {isAdmin && (
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+                <span>📐</span> Szablony paczek
+              </h2>
+              <button
+                onClick={handleNewTemplate}
+                className="px-3 py-1.5 text-sm font-medium bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+              >
+                + Nowy szablon
+              </button>
+            </div>
+
+            {templatesLoading ? (
+              <div className="flex items-center gap-3">
+                <div className="w-5 h-5 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+                <span className="text-sm text-gray-500 dark:text-gray-400">Ladowanie...</span>
+              </div>
+            ) : templates.length === 0 ? (
+              <p className="text-sm text-gray-500 dark:text-gray-400">Brak szablonow. Kliknij "Nowy szablon" aby dodac.</p>
+            ) : (
+              <div className="space-y-2">
+                {templates.map(template => (
+                  <div key={template.id} className="flex items-center justify-between p-3 border border-gray-200 dark:border-gray-700 rounded-lg">
+                    <div className="flex items-center gap-3">
+                      <img src={COURIER_INFO[template.courier]?.logo} alt="" className="w-8 h-8 object-contain" />
+                      <div>
+                        <div className="font-medium text-gray-900 dark:text-white flex items-center gap-2">
+                          {template.name}
+                          {template.is_default && (
+                            <span className="px-1.5 py-0.5 text-[10px] font-medium bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300 rounded">Domyslny</span>
+                          )}
+                        </div>
+                        <div className="text-xs text-gray-500 dark:text-gray-400">
+                          {template.length_cm}×{template.width_cm}×{template.height_cm} cm • {template.weight_kg} kg
+                          {template.content_description && ` • ${template.content_description}`}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => handleEditTemplate(template)}
+                        className="px-2 py-1 text-xs text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded"
+                      >
+                        Edytuj
+                      </button>
+                      <button
+                        onClick={() => handleDeleteTemplate(template.id)}
+                        className="px-2 py-1 text-xs text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded"
+                      >
+                        Usun
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
       </div>
+
+      {/* Template Modal */}
+      {showTemplateModal && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setShowTemplateModal(false)}>
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full" onClick={e => e.stopPropagation()}>
+            <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                {editingTemplate ? 'Edytuj szablon' : 'Nowy szablon'}
+              </h3>
+              <button onClick={() => setShowTemplateModal(false)} className="text-gray-400 hover:text-gray-600 text-xl">×</button>
+            </div>
+
+            <div className="p-4 space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Nazwa szablonu *</label>
+                <input
+                  type="text"
+                  value={templateForm.name}
+                  onChange={e => setTemplateForm({ ...templateForm, name: e.target.value })}
+                  placeholder="np. DHL 30x40x5 foliopak"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Kurier *</label>
+                <select
+                  value={templateForm.courier}
+                  onChange={e => setTemplateForm({ ...templateForm, courier: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                >
+                  <option value="dhl_parcel">DHL Parcel</option>
+                  <option value="dhl_express">DHL Express</option>
+                  <option value="inpost">InPost</option>
+                  <option value="ups">UPS</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Wymiary (cm)</label>
+                <div className="grid grid-cols-3 gap-2">
+                  <input
+                    type="number"
+                    step="0.1"
+                    value={templateForm.length_cm}
+                    onChange={e => setTemplateForm({ ...templateForm, length_cm: e.target.value })}
+                    placeholder="Dlugosc"
+                    className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-center"
+                  />
+                  <input
+                    type="number"
+                    step="0.1"
+                    value={templateForm.width_cm}
+                    onChange={e => setTemplateForm({ ...templateForm, width_cm: e.target.value })}
+                    placeholder="Szerokosc"
+                    className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-center"
+                  />
+                  <input
+                    type="number"
+                    step="0.1"
+                    value={templateForm.height_cm}
+                    onChange={e => setTemplateForm({ ...templateForm, height_cm: e.target.value })}
+                    placeholder="Wysokosc"
+                    className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-center"
+                  />
+                </div>
+                <div className="text-xs text-gray-400 mt-1 text-center">dlugosc × szerokosc × wysokosc</div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Waga (kg)</label>
+                <input
+                  type="number"
+                  step="0.1"
+                  value={templateForm.weight_kg}
+                  onChange={e => setTemplateForm({ ...templateForm, weight_kg: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Zawartosc (opis)</label>
+                <input
+                  type="text"
+                  value={templateForm.content_description}
+                  onChange={e => setTemplateForm({ ...templateForm, content_description: e.target.value })}
+                  placeholder="np. pillows, toys, clothes"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                />
+              </div>
+
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="is_default"
+                  checked={templateForm.is_default}
+                  onChange={e => setTemplateForm({ ...templateForm, is_default: e.target.checked })}
+                  className="w-4 h-4"
+                />
+                <label htmlFor="is_default" className="text-sm text-gray-700 dark:text-gray-300">
+                  Domyslny szablon dla tego kuriera
+                </label>
+              </div>
+            </div>
+
+            <div className="px-4 py-3 border-t border-gray-200 dark:border-gray-700 flex justify-end gap-2">
+              <button
+                onClick={() => setShowTemplateModal(false)}
+                className="px-4 py-2 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-800"
+              >
+                Anuluj
+              </button>
+              <button
+                onClick={handleSaveTemplate}
+                disabled={saving || !templateForm.name}
+                className="px-4 py-2 text-sm font-medium bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
+              >
+                {saving ? 'Zapisywanie...' : 'Zapisz'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
