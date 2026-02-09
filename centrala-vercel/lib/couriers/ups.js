@@ -30,8 +30,12 @@ async function getAccessToken(creds) {
     return tokenCache.token;
   }
 
+  const extraConfig = creds.extra_config || {};
+  const clientId = extraConfig.client_id || creds.api_key;
+  const clientSecret = extraConfig.client_secret || creds.api_secret;
+
   const baseUrl = getBaseUrl(creds.environment);
-  const auth = Buffer.from(`${creds.api_key}:${creds.api_secret}`).toString('base64');
+  const auth = Buffer.from(`${clientId}:${clientSecret}`).toString('base64');
 
   const response = await fetch(`${baseUrl}/security/v1/oauth/token`, {
     method: 'POST',
@@ -91,6 +95,7 @@ async function upsFetch(endpoint, options = {}, creds = null) {
 export async function createShipment(shipmentData, options = {}) {
   const creds = await getCourierCredentials('ups');
   const extraConfig = creds.extra_config || {};
+  const accountNumber = extraConfig.account_number || creds.account_number;
 
   const payload = {
     ShipmentRequest: {
@@ -110,7 +115,7 @@ export async function createShipment(shipmentData, options = {}) {
           Phone: {
             Number: extraConfig.sender_phone || '123456789'
           },
-          ShipperNumber: creds.account_number,
+          ShipperNumber: accountNumber,
           Address: {
             AddressLine: [extraConfig.sender_street || 'ul. Przykladowa 1'],
             City: extraConfig.sender_city || 'Warsaw',
@@ -148,7 +153,7 @@ export async function createShipment(shipmentData, options = {}) {
           ShipmentCharge: [{
             Type: '01', // Transportation
             BillShipper: {
-              AccountNumber: creds.account_number
+              AccountNumber: accountNumber
             }
           }]
         },
@@ -283,6 +288,7 @@ export async function getLabel(trackingNumber) {
 export async function createPickup(options = {}) {
   const creds = await getCourierCredentials('ups');
   const extraConfig = creds.extra_config || {};
+  const accountNumber = extraConfig.account_number || creds.account_number;
 
   const pickupDate = options.pickup_date || new Date().toISOString().split('T')[0].replace(/-/g, '');
 
@@ -296,7 +302,7 @@ export async function createPickup(options = {}) {
       RatePickupIndicator: 'N',
       Shipper: {
         Account: {
-          AccountNumber: creds.account_number,
+          AccountNumber: accountNumber,
           AccountCountryCode: 'PL'
         }
       },

@@ -185,26 +185,105 @@ export default function UstawieniaPage() {
     }
   };
 
+  // Courier-specific form fields configuration
+  const COURIER_FIELDS = {
+    dhl_parcel: {
+      fields: [
+        { key: 'login', label: 'Login (WebAPI v2)', type: 'text', required: true, help: 'Login otrzymany w emailu od DHL po złożeniu wniosku' },
+        { key: 'password', label: 'Haslo (WebAPI v2)', type: 'password', required: true, help: 'Hasło do WebAPI v2' },
+        { key: 'sap_number', label: 'Numer klienta SAP', type: 'text', required: true, help: 'Numer klienta SAP z konta DHL24' },
+        { key: 'label_type', label: 'Typ etykiety', type: 'select', options: [
+          { value: 'BLP', label: 'Etykieta BLP' },
+          { value: 'ZBLP', label: 'Etykieta ZBLP' },
+          { value: 'LP', label: 'Etykieta LP' }
+        ], default: 'BLP' },
+        { key: 'permanent_pickup', label: 'Staly odbior', type: 'checkbox', help: 'Czy firma ma umowę na stały odbiór z DHL?' },
+        { key: 'auto_insurance', label: 'Auto ubezpieczenie', type: 'checkbox', help: 'Automatyczne uzupełnienie wartości ubezpieczenia' },
+        { key: 'multi_package', label: 'Obsługa multi-paczek', type: 'checkbox', help: 'Wysyłka wielu przesyłek jednocześnie' }
+      ]
+    },
+    dhl_express: {
+      fields: [
+        { key: 'api_key', label: 'API Key', type: 'password', required: true },
+        { key: 'api_secret', label: 'API Secret', type: 'password', required: true },
+        { key: 'account_number', label: 'Numer konta DHL Express', type: 'text', required: true }
+      ]
+    },
+    inpost: {
+      fields: [
+        { key: 'api_token', label: 'Token API (Bearer)', type: 'password', required: true, help: 'Token z panelu ShipX' },
+        { key: 'organization_id', label: 'ID organizacji', type: 'text', help: 'Opcjonalne - ID organizacji w ShipX' }
+      ]
+    },
+    ups: {
+      fields: [
+        { key: 'client_id', label: 'Client ID', type: 'password', required: true, help: 'OAuth2 Client ID' },
+        { key: 'client_secret', label: 'Client Secret', type: 'password', required: true, help: 'OAuth2 Client Secret' },
+        { key: 'account_number', label: 'Numer konta UPS', type: 'text', required: true }
+      ]
+    }
+  };
+
   const handleEditCourier = (courier) => {
     setEditingCourier(courier.courier);
-    setCourierForm({
-      api_key: '',
-      api_secret: '',
-      account_number: courier.account_number || '',
+    const extraConfig = courier.extra_config || {};
+    const courierFields = COURIER_FIELDS[courier.courier]?.fields || [];
+
+    // Initialize form with existing values or defaults
+    const initialForm = {
       environment: courier.environment || 'sandbox'
+    };
+
+    courierFields.forEach(field => {
+      if (field.type === 'checkbox') {
+        initialForm[field.key] = extraConfig[field.key] || false;
+      } else if (field.type === 'select') {
+        initialForm[field.key] = extraConfig[field.key] || field.default || '';
+      } else {
+        initialForm[field.key] = ''; // Don't show existing secrets
+      }
     });
+
+    // For display purposes, show masked values
+    initialForm._existing = {};
+    courierFields.forEach(field => {
+      if (extraConfig[field.key]) {
+        if (field.type === 'password' || field.type === 'text') {
+          initialForm._existing[field.key] = true;
+        }
+      }
+    });
+
+    setCourierForm(initialForm);
     setTestResult(null);
   };
 
   const handleSaveCourier = async () => {
     setSaving(true);
     try {
+      // Build extra_config from courier-specific fields
+      const courierFields = COURIER_FIELDS[editingCourier]?.fields || [];
+      const extra_config = {};
+
+      courierFields.forEach(field => {
+        const value = courierForm[field.key];
+        // Only include if value is set (for passwords, only if user entered something new)
+        if (field.type === 'checkbox') {
+          extra_config[field.key] = value;
+        } else if (field.type === 'select') {
+          extra_config[field.key] = value;
+        } else if (value && value.trim()) {
+          extra_config[field.key] = value.trim();
+        }
+      });
+
       const res = await fetch('/api/couriers/credentials', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           courier: editingCourier,
-          ...courierForm
+          environment: courierForm.environment,
+          extra_config
         })
       });
       const data = await res.json();
@@ -396,36 +475,56 @@ export default function UstawieniaPage() {
                       {isEditing && (
                         <div className="space-y-3 pt-3 border-t border-gray-200 dark:border-gray-700">
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                            <div>
-                              <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">API Key</label>
-                              <input
-                                type="password"
-                                value={courierForm.api_key}
-                                onChange={e => setCourierForm({ ...courierForm, api_key: e.target.value })}
-                                placeholder={courier.api_key || 'Wprowadz API Key'}
-                                className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                              />
-                            </div>
-                            <div>
-                              <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">API Secret</label>
-                              <input
-                                type="password"
-                                value={courierForm.api_secret}
-                                onChange={e => setCourierForm({ ...courierForm, api_secret: e.target.value })}
-                                placeholder={courier.api_secret || 'Wprowadz API Secret'}
-                                className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                              />
-                            </div>
-                            <div>
-                              <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Numer konta</label>
-                              <input
-                                type="text"
-                                value={courierForm.account_number}
-                                onChange={e => setCourierForm({ ...courierForm, account_number: e.target.value })}
-                                placeholder="Numer konta kuriera"
-                                className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                              />
-                            </div>
+                            {/* Dynamic courier-specific fields */}
+                            {(COURIER_FIELDS[courier.courier]?.fields || []).map(field => (
+                              <div key={field.key} className={field.type === 'checkbox' ? 'sm:col-span-2' : ''}>
+                                {field.type === 'checkbox' ? (
+                                  <label className="flex items-center gap-2 cursor-pointer">
+                                    <input
+                                      type="checkbox"
+                                      checked={courierForm[field.key] || false}
+                                      onChange={e => setCourierForm({ ...courierForm, [field.key]: e.target.checked })}
+                                      className="w-4 h-4 rounded border-gray-300 dark:border-gray-600"
+                                    />
+                                    <span className="text-sm text-gray-700 dark:text-gray-300">{field.label}</span>
+                                    {field.help && <span className="text-xs text-gray-400">({field.help})</span>}
+                                  </label>
+                                ) : field.type === 'select' ? (
+                                  <>
+                                    <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
+                                      {field.label}{field.required && ' *'}
+                                    </label>
+                                    <select
+                                      value={courierForm[field.key] || field.default || ''}
+                                      onChange={e => setCourierForm({ ...courierForm, [field.key]: e.target.value })}
+                                      className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                                    >
+                                      {field.options?.map(opt => (
+                                        <option key={opt.value} value={opt.value}>{opt.label}</option>
+                                      ))}
+                                    </select>
+                                  </>
+                                ) : (
+                                  <>
+                                    <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
+                                      {field.label}{field.required && ' *'}
+                                      {courierForm._existing?.[field.key] && (
+                                        <span className="ml-2 text-green-600 dark:text-green-400">(skonfigurowane)</span>
+                                      )}
+                                    </label>
+                                    <input
+                                      type={field.type}
+                                      value={courierForm[field.key] || ''}
+                                      onChange={e => setCourierForm({ ...courierForm, [field.key]: e.target.value })}
+                                      placeholder={courierForm._existing?.[field.key] ? 'Pozostaw puste aby zachowac' : `Wprowadz ${field.label}`}
+                                      className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                                    />
+                                    {field.help && <div className="text-xs text-gray-400 mt-1">{field.help}</div>}
+                                  </>
+                                )}
+                              </div>
+                            ))}
+                            {/* Environment selector - common for all */}
                             <div>
                               <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Srodowisko</label>
                               <select

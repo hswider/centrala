@@ -17,6 +17,9 @@ async function checkAdminAccess() {
   }
 }
 
+// Sensitive fields that should be masked
+const SENSITIVE_FIELDS = ['password', 'api_key', 'api_secret', 'api_token', 'client_id', 'client_secret'];
+
 // GET - Fetch all courier credentials
 export async function GET() {
   try {
@@ -34,12 +37,39 @@ export async function GET() {
     `;
 
     // Mask sensitive data for display
-    const masked = rows.map(row => ({
-      ...row,
-      api_key: row.api_key ? '***' + row.api_key.slice(-4) : null,
-      api_secret: row.api_secret ? '***' + row.api_secret.slice(-4) : null,
-      has_credentials: !!(row.api_key && row.api_secret)
-    }));
+    const masked = rows.map(row => {
+      const extraConfig = row.extra_config || {};
+
+      // Mask sensitive fields in extra_config
+      const maskedExtraConfig = {};
+      for (const [key, value] of Object.entries(extraConfig)) {
+        if (SENSITIVE_FIELDS.includes(key) && value) {
+          maskedExtraConfig[key] = '***' + String(value).slice(-4);
+        } else {
+          maskedExtraConfig[key] = value;
+        }
+      }
+
+      // Check if courier has required credentials based on type
+      let hasCredentials = false;
+      if (row.courier === 'dhl_parcel') {
+        hasCredentials = !!(extraConfig.login && extraConfig.password && extraConfig.sap_number);
+      } else if (row.courier === 'dhl_express') {
+        hasCredentials = !!(extraConfig.api_key && extraConfig.api_secret);
+      } else if (row.courier === 'inpost') {
+        hasCredentials = !!extraConfig.api_token;
+      } else if (row.courier === 'ups') {
+        hasCredentials = !!(extraConfig.client_id && extraConfig.client_secret);
+      }
+
+      return {
+        ...row,
+        api_key: row.api_key ? '***' + row.api_key.slice(-4) : null,
+        api_secret: row.api_secret ? '***' + row.api_secret.slice(-4) : null,
+        extra_config: maskedExtraConfig,
+        has_credentials: hasCredentials
+      };
+    });
 
     return Response.json({ success: true, credentials: masked });
   } catch (error) {
@@ -65,15 +95,36 @@ export async function PUT(request) {
       return Response.json({ success: false, error: 'Brak nazwy kuriera' }, { status: 400 });
     }
 
+    // Get existing extra_config to merge with new values
+    const { rows: existing } = await sql`
+      SELECT extra_config FROM courier_credentials WHERE courier = ${courier}
+    `;
+
+    const existingConfig = existing[0]?.extra_config || {};
+    const newConfig = extra_config || {};
+
+    // Merge configs - only update fields that have non-empty values
+    const mergedConfig = { ...existingConfig };
+    for (const [key, value] of Object.entries(newConfig)) {
+      // For booleans, always update
+      if (typeof value === 'boolean') {
+        mergedConfig[key] = value;
+      }
+      // For strings, only update if not empty
+      else if (value && String(value).trim()) {
+        mergedConfig[key] = value;
+      }
+    }
+
     // Update credentials
     await sql`
       UPDATE courier_credentials
       SET
-        api_key = COALESCE(${api_key}, api_key),
-        api_secret = COALESCE(${api_secret}, api_secret),
-        account_number = COALESCE(${account_number}, account_number),
-        environment = COALESCE(${environment}, environment),
-        extra_config = COALESCE(${JSON.stringify(extra_config || {})}::jsonb, extra_config),
+        api_key = COALESCE(${api_key || null}, api_key),
+        api_secret = COALESCE(${api_secret || null}, api_secret),
+        account_number = COALESCE(${account_number || null}, account_number),
+        environment = COALESCE(${environment || null}, environment),
+        extra_config = ${JSON.stringify(mergedConfig)}::jsonb,
         updated_at = CURRENT_TIMESTAMP
       WHERE courier = ${courier}
     `;
@@ -107,21 +158,36 @@ export async function POST(request) {
       SELECT * FROM courier_credentials WHERE courier = ${courier}
     `;
 
-    if (rows.length === 0 || !rows[0].api_key) {
+    if (rows.length === 0) {
       return Response.json({ success: false, error: 'Brak skonfigurowanych danych logowania' }, { status: 400 });
     }
 
     const creds = rows[0];
+    const extraConfig = creds.extra_config || {};
 
     // Test connection based on courier type
     let testResult = { success: false, message: 'Nieobslugiwany kurier' };
 
     if (courier === 'inpost') {
-      testResult = await testInpostConnection(creds);
-    } else if (courier === 'dhl_parcel' || courier === 'dhl_express') {
-      testResult = await testDhlConnection(creds, courier);
+      if (!extraConfig.api_token) {
+        return Response.json({ success: false, error: 'Brak tokenu API InPost' }, { status: 400 });
+      }
+      testResult = await testInpostConnection(creds, extraConfig);
+    } else if (courier === 'dhl_parcel') {
+      if (!extraConfig.login || !extraConfig.password || !extraConfig.sap_number) {
+        return Response.json({ success: false, error: 'Brak wymaganych danych DHL Parcel (login, hasło, SAP)' }, { status: 400 });
+      }
+      testResult = await testDhlParcelConnection(creds, extraConfig);
+    } else if (courier === 'dhl_express') {
+      if (!extraConfig.api_key || !extraConfig.api_secret) {
+        return Response.json({ success: false, error: 'Brak wymaganych danych DHL Express (API Key, Secret)' }, { status: 400 });
+      }
+      testResult = await testDhlExpressConnection(creds, extraConfig);
     } else if (courier === 'ups') {
-      testResult = await testUpsConnection(creds);
+      if (!extraConfig.client_id || !extraConfig.client_secret) {
+        return Response.json({ success: false, error: 'Brak wymaganych danych UPS (Client ID, Secret)' }, { status: 400 });
+      }
+      testResult = await testUpsConnection(creds, extraConfig);
     }
 
     return Response.json(testResult);
@@ -132,7 +198,7 @@ export async function POST(request) {
 }
 
 // Test InPost connection
-async function testInpostConnection(creds) {
+async function testInpostConnection(creds, extraConfig) {
   try {
     const baseUrl = creds.environment === 'production'
       ? 'https://api-shipx-pl.easypack24.net/v1'
@@ -140,7 +206,7 @@ async function testInpostConnection(creds) {
 
     const response = await fetch(`${baseUrl}/organizations`, {
       headers: {
-        'Authorization': `Bearer ${creds.api_key}`,
+        'Authorization': `Bearer ${extraConfig.api_token}`,
         'Content-Type': 'application/json'
       }
     });
@@ -157,10 +223,43 @@ async function testInpostConnection(creds) {
   }
 }
 
-// Test DHL connection
-async function testDhlConnection(creds, courierType) {
+// Test DHL Parcel PL connection (WebAPI v2)
+async function testDhlParcelConnection(creds, extraConfig) {
   try {
-    // DHL uses different APIs for Parcel and Express
+    // DHL Parcel PL uses different authentication - login/password + SAP number
+    const baseUrl = creds.environment === 'production'
+      ? 'https://dhl24.com.pl/webapi2'
+      : 'https://sandbox.dhl24.com.pl/webapi2';
+
+    // Test with getVersion endpoint which doesn't require full auth
+    const response = await fetch(`${baseUrl}/rest/getVersion`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        authData: {
+          username: extraConfig.login,
+          password: extraConfig.password
+        }
+      })
+    });
+
+    const data = await response.json();
+
+    if (data.version || response.ok) {
+      return { success: true, message: `Polaczenie z DHL Parcel OK (SAP: ${extraConfig.sap_number})` };
+    } else {
+      return { success: false, error: `DHL Parcel: ${data.error || JSON.stringify(data)}` };
+    }
+  } catch (error) {
+    return { success: false, error: `DHL Parcel: ${error.message}` };
+  }
+}
+
+// Test DHL Express connection
+async function testDhlExpressConnection(creds, extraConfig) {
+  try {
     const baseUrl = creds.environment === 'production'
       ? 'https://api-eu.dhl.com'
       : 'https://api-sandbox.dhl.com';
@@ -168,25 +267,25 @@ async function testDhlConnection(creds, courierType) {
     // Simple tracking test endpoint
     const response = await fetch(`${baseUrl}/track/shipments?trackingNumber=1234567890`, {
       headers: {
-        'DHL-API-Key': creds.api_key,
+        'DHL-API-Key': extraConfig.api_key,
         'Content-Type': 'application/json'
       }
     });
 
     // 404 means API is working but shipment not found (expected for test)
     if (response.ok || response.status === 404) {
-      return { success: true, message: `Polaczenie z ${courierType.toUpperCase()} OK` };
+      return { success: true, message: 'Polaczenie z DHL Express OK' };
     } else {
       const error = await response.text();
-      return { success: false, error: `DHL: ${response.status} - ${error}` };
+      return { success: false, error: `DHL Express: ${response.status} - ${error}` };
     }
   } catch (error) {
-    return { success: false, error: `DHL: ${error.message}` };
+    return { success: false, error: `DHL Express: ${error.message}` };
   }
 }
 
 // Test UPS connection
-async function testUpsConnection(creds) {
+async function testUpsConnection(creds, extraConfig) {
   try {
     const baseUrl = creds.environment === 'production'
       ? 'https://onlinetools.ups.com'
@@ -197,7 +296,7 @@ async function testUpsConnection(creds) {
       method: 'POST',
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',
-        'Authorization': `Basic ${Buffer.from(`${creds.api_key}:${creds.api_secret}`).toString('base64')}`
+        'Authorization': `Basic ${Buffer.from(`${extraConfig.client_id}:${extraConfig.client_secret}`).toString('base64')}`
       },
       body: 'grant_type=client_credentials'
     });

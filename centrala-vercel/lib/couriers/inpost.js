@@ -20,13 +20,15 @@ async function inpostFetch(endpoint, options = {}, creds = null) {
     creds = await getCourierCredentials('inpost');
   }
 
+  const extraConfig = creds.extra_config || {};
+  const apiToken = extraConfig.api_token || creds.api_key; // Fallback to old field
   const baseUrl = getBaseUrl(creds.environment);
   const url = `${baseUrl}${endpoint}`;
 
   const response = await fetch(url, {
     ...options,
     headers: {
-      'Authorization': `Bearer ${creds.api_key}`,
+      'Authorization': `Bearer ${apiToken}`,
       'Content-Type': 'application/json',
       ...options.headers
     }
@@ -180,11 +182,13 @@ export async function trackShipment(trackingNumber) {
 // Get shipment label (PDF)
 export async function getLabel(shipmentId, format = 'pdf') {
   const creds = await getCourierCredentials('inpost');
+  const extraConfig = creds.extra_config || {};
+  const apiToken = extraConfig.api_token || creds.api_key;
   const baseUrl = getBaseUrl(creds.environment);
 
   const response = await fetch(`${baseUrl}/shipments/${shipmentId}/label`, {
     headers: {
-      'Authorization': `Bearer ${creds.api_key}`,
+      'Authorization': `Bearer ${apiToken}`,
       'Accept': format === 'pdf' ? 'application/pdf' : 'image/png'
     }
   });
