@@ -191,9 +191,10 @@ export default function Navigation() {
     }
   };
 
-  // Podziel na 2 linie na mobile
-  const topRowItems = navItems.slice(0, 5); // Dashboard, Zamowienia, Magazyny, MES, MTS
-  const bottomRowItems = navItems.slice(5);  // DMS, CRM, Agent AI
+  // Podziel na 3 linie na mobile (dla lepszej responsywności)
+  const topRowItems = navItems.slice(0, 4); // Dashboard, OMS, WMS, MES
+  const middleRowItems = navItems.slice(4, 8); // MTS, Baza (optional), DMS, ECOM
+  const bottomRowItems = navItems.slice(8);  // CRM PL, CRM EU, RANK, Agent AI
 
   const renderNavItem = (item) => {
     const isActive = pathname === item.href ||
@@ -216,7 +217,7 @@ export default function Navigation() {
         key={item.href}
         href={item.href}
         onClick={(e) => handleRestrictedClick(e, item)}
-        className={`relative flex-1 flex flex-col md:flex-row items-center justify-center gap-0.5 md:gap-0.5 py-2 md:py-2 px-1 md:px-2 lg:px-3 text-xs font-medium transition-colors whitespace-nowrap ${
+        className={`relative flex-1 min-w-0 flex flex-col md:flex-row items-center justify-center gap-0 md:gap-0.5 py-1.5 md:py-2 px-0.5 md:px-2 lg:px-3 text-[10px] md:text-xs font-medium transition-colors ${
           !permitted
             ? 'text-red-500 dark:text-red-400 bg-red-50 dark:bg-red-900/20 cursor-not-allowed'
             : isActive
@@ -224,13 +225,13 @@ export default function Navigation() {
               : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700'
         }`}
       >
-        <span className="text-base md:text-xs lg:text-sm">{item.icon}</span>
-        <span className="truncate max-w-[60px] md:max-w-none">{item.label}</span>
+        <span className="text-sm md:text-xs lg:text-sm">{item.icon}</span>
+        <span className="truncate text-[9px] md:text-xs">{item.label}</span>
         {!permitted && (
-          <span className="absolute top-0.5 right-0.5 md:static md:ml-1 text-red-500 dark:text-red-400 text-xs">🔒</span>
+          <span className="absolute top-0 right-0 md:static md:ml-1 text-red-500 dark:text-red-400 text-[8px] md:text-xs">🔒</span>
         )}
         {permitted && item.badge > 0 && (
-          <span className="absolute top-1 right-1 md:static md:ml-1 w-4 h-4 md:w-5 md:h-5 flex items-center justify-center bg-red-500 text-white text-[9px] md:text-[10px] font-medium rounded-full leading-none">
+          <span className="absolute top-0 right-0 md:static md:ml-1 w-3.5 h-3.5 md:w-5 md:h-5 flex items-center justify-center bg-red-500 text-white text-[8px] md:text-[10px] font-medium rounded-full leading-none">
             {item.badge > 99 ? '99+' : item.badge}
           </span>
         )}
@@ -244,8 +245,8 @@ export default function Navigation() {
   }
 
   return (
-    <nav className="bg-white dark:bg-gray-800 shadow dark:shadow-gray-900 sticky top-0 z-50">
-      <div className="max-w-7xl mx-auto px-1 sm:px-2 lg:px-4">
+    <nav className="bg-white dark:bg-gray-800 shadow dark:shadow-gray-900 sticky top-0 z-50 overflow-hidden">
+      <div className="max-w-7xl mx-auto px-0 sm:px-2 lg:px-4">
         {/* Desktop: jedna linia */}
         <div className="hidden md:flex items-center justify-center">
           {navItems.map(renderNavItem)}
@@ -275,36 +276,42 @@ export default function Navigation() {
           </button>
         </div>
 
-        {/* Mobile/Tablet: dwie linie */}
+        {/* Mobile/Tablet: trzy linie dla lepszej responsywności */}
         <div className="md:hidden">
+          {/* Pierwszy rząd: Dashboard, OMS, WMS, MES */}
           <div className="flex items-center border-b border-gray-100 dark:border-gray-700">
             {topRowItems.map(renderNavItem)}
           </div>
+          {/* Drugi rząd: MTS, Baza, DMS, ECOM */}
+          <div className="flex items-center border-b border-gray-100 dark:border-gray-700">
+            {middleRowItems.map(renderNavItem)}
+          </div>
+          {/* Trzeci rząd: CRM PL, CRM EU, RANK, Agent + akcje */}
           <div className="flex items-center">
             {bottomRowItems.map(renderNavItem)}
             <button
               onClick={toggleDarkMode}
-              className="flex-1 flex flex-col items-center justify-center gap-0.5 py-2 text-xs font-medium text-gray-400 dark:text-gray-500 hover:text-yellow-600 dark:hover:text-yellow-400 hover:bg-yellow-50 dark:hover:bg-yellow-900/20 transition-colors"
+              className="flex-1 min-w-0 flex flex-col items-center justify-center gap-0 py-1.5 px-0.5 text-[10px] font-medium text-gray-400 dark:text-gray-500 hover:text-yellow-600 dark:hover:text-yellow-400 hover:bg-yellow-50 dark:hover:bg-yellow-900/20 transition-colors"
               title={darkMode ? 'Tryb jasny' : 'Tryb ciemny'}
             >
-              <span className="text-lg">{darkMode ? '☀️' : '🌙'}</span>
-              <span>{darkMode ? 'Jasny' : 'Ciemny'}</span>
+              <span className="text-sm">{darkMode ? '☀️' : '🌙'}</span>
+              <span className="text-[9px]">{darkMode ? 'Jasny' : 'Ciemny'}</span>
             </button>
             <a
               href="/ustawienia"
-              className="flex-1 flex flex-col items-center justify-center gap-0.5 py-2 text-xs font-medium text-gray-400 dark:text-gray-500 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors"
+              className="flex-1 min-w-0 flex flex-col items-center justify-center gap-0 py-1.5 px-0.5 text-[10px] font-medium text-gray-400 dark:text-gray-500 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors"
               title="Ustawienia"
             >
-              <span className="text-lg">⚙️</span>
-              <span>Ustawienia</span>
+              <span className="text-sm">⚙️</span>
+              <span className="text-[9px]">Ustaw.</span>
             </a>
             <button
               onClick={handleLogout}
-              className="flex-1 flex flex-col items-center justify-center gap-0.5 py-2 text-xs font-medium text-gray-400 dark:text-gray-500 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+              className="flex-1 min-w-0 flex flex-col items-center justify-center gap-0 py-1.5 px-0.5 text-[10px] font-medium text-gray-400 dark:text-gray-500 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
               title="Wyloguj"
             >
-              <span className="text-lg">🚪</span>
-              <span>Wyloguj</span>
+              <span className="text-sm">🚪</span>
+              <span className="text-[9px]">Wyloguj</span>
             </button>
           </div>
         </div>
