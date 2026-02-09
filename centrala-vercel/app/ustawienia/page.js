@@ -433,7 +433,7 @@ export default function UstawieniaPage() {
                     synchronizowane z Apilo i wykorzystywac skonfigurowane tam integracje kurierskie.
                   </p>
                   <a
-                    href="https://poom.apilo.com/admin/courier"
+                    href="https://poom.apilo.com/admin/carrier-account/"
                     target="_blank"
                     rel="noopener noreferrer"
                     className="inline-flex items-center gap-1 mt-3 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700"
