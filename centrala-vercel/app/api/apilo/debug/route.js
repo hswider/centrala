@@ -1,5 +1,5 @@
 // Debug endpoint to see raw Apilo API responses
-import { getCarriers, getCarrierAccounts, getShippingMethods, getShippingMethodOptions } from '../../../../lib/apilo';
+import { getCarriers, getCarrierAccounts, getShippingMethods, getShippingMethodOptions, apiloRequestDirect } from '../../../../lib/apilo';
 
 export async function GET(request) {
   try {
@@ -66,6 +66,40 @@ export async function GET(request) {
         };
       } catch (e) {
         results.options = { error: e.message };
+      }
+    }
+
+    // Test carrier account details - try to find weight definitions
+    if (type === 'account-details' && carrierAccountId) {
+      const endpoints = [
+        `/rest/api/shipping/carrier-account/${carrierAccountId}/`,
+        `/rest/api/shipping/carrier-account/${carrierAccountId}/weight/`,
+        `/rest/api/shipping/carrier-account/${carrierAccountId}/details/`,
+        `/rest/api/shipping/carrier-account/${carrierAccountId}/config/`
+      ];
+
+      for (const endpoint of endpoints) {
+        try {
+          const data = await apiloRequestDirect('GET', endpoint);
+          results[endpoint] = { success: true, data };
+        } catch (e) {
+          results[endpoint] = { error: e.message };
+        }
+      }
+    }
+
+    // Raw endpoint test
+    if (type === 'raw') {
+      const endpoint = searchParams.get('endpoint');
+      if (endpoint) {
+        try {
+          const data = await apiloRequestDirect('GET', endpoint);
+          results.raw = { endpoint, data };
+        } catch (e) {
+          results.raw = { endpoint, error: e.message };
+        }
+      } else {
+        results.raw = { error: 'Missing endpoint parameter' };
       }
     }
 

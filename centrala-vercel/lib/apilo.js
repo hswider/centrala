@@ -65,6 +65,11 @@ async function getAccessToken() {
   throw new Error('Cannot refresh token - no refresh token available');
 }
 
+// Exported for debugging
+export async function apiloRequestDirect(method, endpoint, data = null) {
+  return apiloRequest(method, endpoint, data);
+}
+
 async function apiloRequest(method, endpoint, data = null) {
   const token = await getAccessToken();
 
