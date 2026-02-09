@@ -172,6 +172,7 @@ export default function Navigation() {
     { href: '/crm', label: 'CRM 🇵🇱', icon: '👥', badge: unreadCount, permission: 'crm' },
     { href: '/crm-eu', label: 'CRM 🇪🇺', icon: '👥', badge: unreadCountEU, permission: 'crm-eu' },
     { href: '/rank', label: 'RANK', icon: '📈', permission: 'rank' },
+    { href: '/app', label: 'APP', icon: '💻', permission: 'app' },
     { href: '/agent', label: 'Asystent AI', icon: '🤖', permission: 'agent' },
   ];
 
@@ -208,6 +209,7 @@ export default function Navigation() {
       (item.href === '/crm' && pathname === '/crm') ||
       (item.href === '/crm-eu' && pathname.startsWith('/crm-eu')) ||
       (item.href === '/rank' && pathname.startsWith('/rank')) ||
+      (item.href === '/app' && pathname.startsWith('/app')) ||
       (item.href === '/agent' && pathname.startsWith('/agent'));
 
     const permitted = hasPermission(item.permission);
