@@ -38,15 +38,21 @@ export async function GET(request) {
       }
     }
 
-    if (type === 'methods' && carrierAccountId) {
-      try {
-        const methods = await getShippingMethods(carrierAccountId);
-        results.methods = {
-          raw: methods,
-          carrierAccountId
-        };
-      } catch (e) {
-        results.methods = { error: e.message };
+    if (type === 'methods') {
+      if (!carrierAccountId) {
+        results.methods = { error: 'Missing carrierAccountId parameter' };
+      } else {
+        try {
+          const methods = await getShippingMethods(carrierAccountId);
+          results.methods = {
+            raw: methods,
+            carrierAccountId,
+            type: typeof methods,
+            isArray: Array.isArray(methods)
+          };
+        } catch (e) {
+          results.methods = { error: e.message, stack: e.stack };
+        }
       }
     }
 
