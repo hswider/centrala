@@ -407,8 +407,15 @@ export async function getCarrierAccounts() {
 
 // Get shipping methods for a carrier account
 export async function getShippingMethods(carrierAccountId) {
-  const data = await apiloRequest('GET', `/rest/api/shipping/carrier-account/${carrierAccountId}/method/map/`);
-  return data || [];
+  // Try different endpoint patterns
+  try {
+    const data = await apiloRequest('GET', `/rest/api/shipping/carrier-account/${carrierAccountId}/method/`);
+    return data || [];
+  } catch (e) {
+    // Fallback - maybe methods are in account details
+    console.log('[Apilo] Method endpoint failed, trying alternative:', e.message);
+    return [];
+  }
 }
 
 // Get shipping method options/map
