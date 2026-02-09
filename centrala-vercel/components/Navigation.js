@@ -228,7 +228,7 @@ export default function Navigation() {
         }`}
       >
         <span className="text-sm md:text-xs lg:text-sm">{item.icon}</span>
-        <span className="truncate text-[9px] md:text-xs">{item.label}</span>
+        <span className="truncate md:overflow-visible md:text-ellipsis text-[9px] md:text-xs md:whitespace-nowrap">{item.label}</span>
         {!permitted && (
           <span className="absolute top-0 right-0 md:static md:ml-1 text-red-500 dark:text-red-400 text-[8px] md:text-xs">🔒</span>
         )}
@@ -248,7 +248,7 @@ export default function Navigation() {
 
   return (
     <nav className="bg-white dark:bg-gray-800 shadow dark:shadow-gray-900 sticky top-0 z-50 overflow-hidden">
-      <div className="max-w-7xl mx-auto px-0 sm:px-2 lg:px-4">
+      <div className="mx-auto px-0 sm:px-2 lg:px-4">
         {/* Desktop: jedna linia */}
         <div className="hidden md:flex items-center justify-center">
           {navItems.map(renderNavItem)}
