@@ -619,7 +619,8 @@ export default function UstawieniaPage() {
                   );
                 })}
               </div>
-            )}
+            {/* End of hidden legacy section */}
+            </div>
           </div>
         )}
 
