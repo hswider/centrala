@@ -84,17 +84,24 @@ export default function MESPage() {
     try {
       const res = await fetch('/api/apilo/carriers?type=accounts');
       const data = await res.json();
-      if (data.success && data.accounts) {
+      console.log('Carrier accounts response:', data);
+      if (data.success && Array.isArray(data.accounts)) {
         setCarrierAccounts(data.accounts);
         // Auto-select first carrier if available
         if (data.accounts.length > 0 && !shipForm.carrierAccountId) {
-          const firstId = data.accounts[0].id;
-          setShipForm(prev => ({ ...prev, carrierAccountId: firstId }));
-          fetchShippingMethods(firstId);
+          const firstId = data.accounts[0]?.id;
+          if (firstId) {
+            setShipForm(prev => ({ ...prev, carrierAccountId: firstId }));
+            fetchShippingMethods(firstId);
+          }
         }
+      } else {
+        console.warn('No carrier accounts found or invalid response:', data);
+        setCarrierAccounts([]);
       }
     } catch (err) {
       console.error('Error fetching carrier accounts:', err);
+      setCarrierAccounts([]);
     } finally {
       setCarriersLoading(false);
     }
@@ -106,15 +113,21 @@ export default function MESPage() {
     try {
       const res = await fetch(`/api/apilo/carriers?type=methods&carrierAccountId=${carrierAccountId}`);
       const data = await res.json();
-      if (data.success && data.methods) {
+      console.log('Shipping methods response:', data);
+      if (data.success && Array.isArray(data.methods)) {
         setShippingMethods(data.methods);
         // Auto-select first method if available
         if (data.methods.length > 0) {
-          setShipForm(prev => ({ ...prev, methodUuid: data.methods[0].uuid || data.methods[0].id }));
+          const firstMethod = data.methods[0];
+          setShipForm(prev => ({ ...prev, methodUuid: firstMethod?.uuid || firstMethod?.id || '' }));
         }
+      } else {
+        console.warn('No shipping methods found:', data);
+        setShippingMethods([]);
       }
     } catch (err) {
       console.error('Error fetching shipping methods:', err);
+      setShippingMethods([]);
     }
   };
 
