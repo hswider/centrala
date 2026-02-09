@@ -10,6 +10,78 @@ export default function MESPage() {
   const [expandedOrder, setExpandedOrder] = useState(null);
   const [expandedItem, setExpandedItem] = useState(null);
 
+  // Shipping state
+  const [shipments, setShipments] = useState({});
+  const [showShipModal, setShowShipModal] = useState(null);
+  const [shipLoading, setShipLoading] = useState(false);
+  const [shipForm, setShipForm] = useState({
+    courier: 'inpost',
+    weight: 1,
+    service_type: ''
+  });
+
+  const COURIERS = [
+    { id: 'inpost', name: 'InPost', services: ['inpost_courier_standard', 'inpost_locker_standard'] },
+    { id: 'dhl_parcel', name: 'DHL Parcel', services: ['V01PAK', 'V53WPAK'] },
+    { id: 'dhl_express', name: 'DHL Express', services: ['P', 'D'] },
+    { id: 'ups', name: 'UPS', services: ['11', '07', '65'] }
+  ];
+
+  const fetchShipments = async () => {
+    try {
+      const res = await fetch('/api/couriers/shipments?limit=500');
+      const data = await res.json();
+      if (data.success && data.shipments) {
+        const byOrder = {};
+        data.shipments.forEach(s => {
+          if (s.order_id) byOrder[s.order_id] = s;
+        });
+        setShipments(byOrder);
+      }
+    } catch (err) {
+      console.error('Error fetching shipments:', err);
+    }
+  };
+
+  const handleCreateShipment = async () => {
+    if (!showShipModal) return;
+    setShipLoading(true);
+    try {
+      const res = await fetch('/api/couriers/shipments', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          order_id: showShipModal.id,
+          courier: shipForm.courier,
+          options: {
+            weight: parseFloat(shipForm.weight) || 1,
+            service_type: shipForm.service_type
+          }
+        })
+      });
+      const data = await res.json();
+      if (data.success) {
+        setShowShipModal(null);
+        fetchShipments();
+        alert(`Przesylka utworzona! Tracking: ${data.shipment?.tracking_number || '-'}`);
+      } else {
+        alert('Blad: ' + data.error);
+      }
+    } catch (err) {
+      alert('Blad tworzenia przesylki: ' + err.message);
+    } finally {
+      setShipLoading(false);
+    }
+  };
+
+  const getTrackingUrl = (courier, tracking) => {
+    if (!tracking) return null;
+    if (courier === 'inpost') return `https://inpost.pl/sledzenie-przesylek?number=${tracking}`;
+    if (courier?.startsWith('dhl')) return `https://www.dhl.com/pl-pl/home/tracking.html?tracking-id=${tracking}`;
+    if (courier === 'ups') return `https://www.ups.com/track?tracknum=${tracking}`;
+    return null;
+  };
+
   const fetchOrders = async () => {
     try {
       setLoading(true);
@@ -28,6 +100,7 @@ export default function MESPage() {
 
   useEffect(() => {
     fetchOrders();
+    fetchShipments();
   }, [filter]);
 
   const getStatusBadge = (status) => {
@@ -316,19 +389,43 @@ export default function MESPage() {
                       </div>
 
                       {/* Akcje */}
-                      <div className="mt-3 flex items-center gap-2">
-                        {order.orderStatus === 'ready_to_ship' ? (
-                          <button className="px-3 py-1.5 text-xs font-medium bg-green-600 text-white rounded hover:bg-green-700">
-                            Oznacz jako wyslane
+                      <div className="mt-3 flex items-center gap-2 flex-wrap">
+                        {shipments[order.id] ? (
+                          // Show shipment info
+                          <div className="flex items-center gap-2 bg-green-50 dark:bg-green-900/20 px-3 py-2 rounded-lg">
+                            <span className="text-green-600 dark:text-green-400 text-lg">📦</span>
+                            <div className="text-xs">
+                              <div className="font-medium text-green-700 dark:text-green-300">
+                                {shipments[order.id].courier?.toUpperCase()} • {shipments[order.id].status}
+                              </div>
+                              <a
+                                href={getTrackingUrl(shipments[order.id].courier, shipments[order.id].tracking_number)}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-blue-600 hover:underline font-mono"
+                              >
+                                {shipments[order.id].tracking_number}
+                              </a>
+                            </div>
+                          </div>
+                        ) : order.orderStatus === 'ready_to_ship' ? (
+                          <button
+                            onClick={(e) => { e.stopPropagation(); setShowShipModal(order); }}
+                            className="px-3 py-1.5 text-xs font-medium bg-green-600 text-white rounded hover:bg-green-700 flex items-center gap-1"
+                          >
+                            <span>🚚</span> Wyslij z kurierem
                           </button>
                         ) : (
                           <button className="px-3 py-1.5 text-xs font-medium bg-blue-600 text-white rounded hover:bg-blue-700">
                             Rozpocznij produkcje
                           </button>
                         )}
-                        <button className="px-3 py-1.5 text-xs font-medium bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-200 rounded hover:bg-gray-300 dark:hover:bg-gray-500">
+                        <a
+                          href={`/zamowienia/${order.id}`}
+                          className="px-3 py-1.5 text-xs font-medium bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-200 rounded hover:bg-gray-300 dark:hover:bg-gray-500"
+                        >
                           Szczegoly zamowienia
-                        </button>
+                        </a>
                       </div>
                     </div>
                   )}
@@ -338,6 +435,86 @@ export default function MESPage() {
           )}
         </div>
       </main>
+
+      {/* Shipment Modal */}
+      {showShipModal && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setShowShipModal(null)}>
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full" onClick={e => e.stopPropagation()}>
+            <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Utworz przesylke</h3>
+              <button onClick={() => setShowShipModal(null)} className="text-gray-400 hover:text-gray-600 text-xl">×</button>
+            </div>
+
+            <div className="p-4 space-y-4">
+              {/* Order info */}
+              <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-3">
+                <div className="text-sm font-medium text-gray-900 dark:text-white">Zamowienie #{showShipModal.id}</div>
+                <div className="text-xs text-gray-500 dark:text-gray-400">
+                  {showShipModal.itemsCount} produktow • {showShipModal.totalGross} {showShipModal.currency}
+                </div>
+              </div>
+
+              {/* Courier select */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Kurier</label>
+                <select
+                  value={shipForm.courier}
+                  onChange={e => setShipForm({ ...shipForm, courier: e.target.value, service_type: '' })}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                >
+                  {COURIERS.map(c => (
+                    <option key={c.id} value={c.id}>{c.name}</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Service type */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Usluga</label>
+                <select
+                  value={shipForm.service_type}
+                  onChange={e => setShipForm({ ...shipForm, service_type: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                >
+                  <option value="">Domyslna</option>
+                  {COURIERS.find(c => c.id === shipForm.courier)?.services.map(s => (
+                    <option key={s} value={s}>{s}</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Weight */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Waga (kg)</label>
+                <input
+                  type="number"
+                  step="0.1"
+                  min="0.1"
+                  value={shipForm.weight}
+                  onChange={e => setShipForm({ ...shipForm, weight: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                />
+              </div>
+            </div>
+
+            <div className="px-4 py-3 border-t border-gray-200 dark:border-gray-700 flex justify-end gap-2">
+              <button
+                onClick={() => setShowShipModal(null)}
+                className="px-4 py-2 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-800"
+              >
+                Anuluj
+              </button>
+              <button
+                onClick={handleCreateShipment}
+                disabled={shipLoading}
+                className="px-4 py-2 text-sm font-medium bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50"
+              >
+                {shipLoading ? 'Tworzenie...' : 'Utworz przesylke'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
