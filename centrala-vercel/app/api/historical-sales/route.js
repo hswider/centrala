@@ -11,7 +11,7 @@ async function checkITAdminAccess() {
 
   try {
     const user = JSON.parse(userCookie);
-    return user.role === 'it_administrator';
+    return user.role === 'it_admin' || user.role === 'it_administrator' || user.role === 'admin';
   } catch (e) {
     return false;
   }

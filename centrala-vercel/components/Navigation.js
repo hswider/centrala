@@ -166,7 +166,7 @@ export default function Navigation() {
     { href: '/magazyny', label: 'WMS', icon: '🏭', permission: 'wms' },
     { href: '/mes', label: 'MES', icon: '⚙️', permission: 'mes' },
     { href: '/mts', label: 'MTS', icon: '📋', permission: 'mts' },
-    ...(userRole === 'it_administrator' ? [{ href: '/baza-danych', label: 'Baza', icon: '💾', permission: null }] : []),
+    ...(['it_admin', 'it_administrator', 'admin'].includes(userRole) ? [{ href: '/baza-danych', label: 'Baza', icon: '💾', permission: null }] : []),
     { href: '/dms', label: 'DMS', icon: '📄', permission: 'dms' },
     { href: '/ecom', label: 'ECOM', icon: '🖥️', permission: 'ecom' },
     { href: '/crm', label: 'CRM 🇵🇱', icon: '👥', badge: unreadCount, permission: 'crm' },

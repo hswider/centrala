@@ -4,15 +4,16 @@ import { cookies } from 'next/headers';
 // Check if user is IT Administrator
 async function checkITAdminAccess() {
   const cookieStore = await cookies();
-  const username = cookieStore.get('username')?.value;
+  const userCookie = cookieStore.get('poom_user')?.value;
 
-  if (!username) return false;
+  if (!userCookie) return false;
 
-  const { rows } = await sql`
-    SELECT role FROM users WHERE username = ${username}
-  `;
-
-  return rows.length > 0 && rows[0].role === 'it_administrator';
+  try {
+    const user = JSON.parse(userCookie);
+    return ['it_admin', 'it_administrator', 'admin'].includes(user.role);
+  } catch (e) {
+    return false;
+  }
 }
 
 // GET - Fetch MTS SKU configurations
