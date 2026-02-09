@@ -166,7 +166,6 @@ export default function Navigation() {
     { href: '/magazyny', label: 'WMS', icon: '🏭', permission: 'wms' },
     { href: '/mes', label: 'MES', icon: '⚙️', permission: 'mes' },
     { href: '/mts', label: 'MTS', icon: '📋', permission: 'mts' },
-    ...(['it_admin', 'it_administrator', 'admin'].includes(userRole) ? [{ href: '/baza-danych', label: 'Baza', icon: '💾', permission: null }] : []),
     { href: '/dms', label: 'DMS', icon: '📄', permission: 'dms' },
     { href: '/ecom', label: 'ECOM', icon: '🖥️', permission: 'ecom' },
     { href: '/crm', label: 'CRM 🇵🇱', icon: '👥', badge: unreadCount, permission: 'crm' },
@@ -203,7 +202,6 @@ export default function Navigation() {
       (item.href === '/magazyny' && pathname.startsWith('/magazyny')) ||
       (item.href === '/mes' && pathname.startsWith('/mes')) ||
       (item.href === '/mts' && pathname.startsWith('/mts')) ||
-      (item.href === '/baza-danych' && pathname.startsWith('/baza-danych')) ||
       (item.href === '/dms' && pathname.startsWith('/dms')) ||
       (item.href === '/ecom' && pathname.startsWith('/ecom')) ||
       (item.href === '/crm' && pathname === '/crm') ||
