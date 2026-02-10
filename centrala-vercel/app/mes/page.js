@@ -681,6 +681,11 @@ export default function MESPage() {
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
+                          {order.shipping?.country && (
+                            <span className="text-base" title={order.shipping.country}>
+                              {getCountryFlag(order.shipping.country)}
+                            </span>
+                          )}
                           <span className="font-mono text-sm font-medium text-gray-900 dark:text-white">
                             #{order.id}
                           </span>
@@ -692,11 +697,6 @@ export default function MESPage() {
                           <span className="text-xs text-gray-500 dark:text-gray-400">
                             {order.channelLabel || order.channelPlatform}
                           </span>
-                          {order.shipping?.country && (
-                            <span className="text-sm" title={order.shipping.country}>
-                              {getCountryFlag(order.shipping.country)}
-                            </span>
-                          )}
                           {getStatusBadge(order.orderStatus)}
                           {/* Department badge */}
                           {order.department && DEPT_BADGE_COLORS[order.department] && (
@@ -897,7 +897,7 @@ export default function MESPage() {
 
             <div className="p-4 space-y-4">
               <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-3">
-                <div className="text-sm font-medium text-gray-900 dark:text-white">Zamowienie #{showShipModal.id}</div>
+                <div className="text-sm font-medium text-gray-900 dark:text-white">{showShipModal.shipping?.country ? getCountryFlag(showShipModal.shipping.country) + ' ' : ''}Zamowienie #{showShipModal.id}</div>
                 <div className="text-xs text-gray-500 dark:text-gray-400">
                   {showShipModal.itemsCount} produktow • {showShipModal.totalGross} {showShipModal.currency}
                 </div>
