@@ -74,7 +74,11 @@ export async function apiloRequestDirect(method, endpoint, data = null) {
 export async function apiloRequestBinary(endpoint) {
   const token = await getAccessToken();
   const response = await axios.get(`${APILO_BASE_URL}${endpoint}`, {
-    headers: { 'Authorization': `Bearer ${token}` },
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json',
+      'Accept': '*/*'
+    },
     responseType: 'arraybuffer'
   });
   return response.data;
