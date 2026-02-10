@@ -71,17 +71,21 @@ export async function apiloRequestDirect(method, endpoint, data = null) {
 }
 
 // Fetch binary data (PDF labels etc.) from Apilo
+// Returns the full axios response so caller can access data + headers
 export async function apiloRequestBinary(endpoint) {
   const token = await getAccessToken();
-  const response = await axios.get(`${APILO_BASE_URL}${endpoint}`, {
+  const response = await axios({
+    method: 'GET',
+    url: `${APILO_BASE_URL}${endpoint}`,
     headers: {
       'Authorization': `Bearer ${token}`,
       'Content-Type': 'application/json',
-      'Accept': '*/*'
+      'Accept': 'application/json'
     },
-    responseType: 'arraybuffer'
+    responseType: 'arraybuffer',
+    transformResponse: [] // don't transform, keep raw buffer
   });
-  return response.data;
+  return response;
 }
 
 async function apiloRequest(method, endpoint, data = null) {
