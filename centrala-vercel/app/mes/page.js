@@ -366,7 +366,8 @@ export default function MESPage() {
       doc.rect(margin, y - 5, contentWidth, 8, 'F');
       doc.setFontSize(11);
       doc.setFont('helvetica', 'bold');
-      doc.text(`#${order.id}  |  ${order.channelPlatform || ''} - ${order.channelLabel || ''}`, margin + 2, y);
+      const countryTag = order.shipping?.country ? ` [${order.shipping.country.toUpperCase()}]` : '';
+      doc.text(`#${order.id}  |  ${order.channelLabel || order.channelPlatform || ''}${countryTag}`, margin + 2, y);
       y += 8;
 
       // Items table header
