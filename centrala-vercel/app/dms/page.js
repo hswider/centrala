@@ -2545,6 +2545,47 @@ export default function DMSPage() {
                     Resetuj implementację
                   </button>
                 )}
+                {(previewDoc.docType === 'WZ' || previewDoc.docType === 'RW') && previewDoc.status === 'completed' && (
+                  <button
+                    onClick={async () => {
+                      if (!window.confirm(`Czy na pewno chcesz zresetować i ponownie zaimplementować dokument ${previewDoc.docType} ${previewDoc.number}? Stany magazynowe zostaną przeliczone od nowa.`)) return;
+                      try {
+                        // 1. Reset
+                        const resetRes = await fetch(`/api/dms/documents/${previewDoc.id}/implement`, {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ action: 'reset' })
+                        });
+                        const resetData = await resetRes.json();
+                        if (!resetData.success) {
+                          alert('Błąd resetu: ' + (resetData.error || 'Nieznany błąd'));
+                          return;
+                        }
+                        // 2. Re-implement
+                        const implRes = await fetch(`/api/dms/documents/${previewDoc.id}/implement`, {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ action: 'implement' })
+                        });
+                        const implData = await implRes.json();
+                        if (implData.success) {
+                          alert('Dokument został zresetowany i ponownie zaimplementowany. Stany magazynowe zaktualizowane.');
+                          setPreviewDoc(prev => ({ ...prev, status: 'completed' }));
+                          loadDocuments();
+                        } else {
+                          alert('Reset OK, ale błąd reimplementacji: ' + (implData.error || 'Nieznany błąd'));
+                          setPreviewDoc(prev => ({ ...prev, status: 'reset' }));
+                          loadDocuments();
+                        }
+                      } catch (err) {
+                        alert('Błąd: ' + err.message);
+                      }
+                    }}
+                    className="px-4 py-2 text-sm font-medium text-white bg-amber-600 rounded-lg hover:bg-amber-700"
+                  >
+                    Resetuj i zaimplementuj ponownie
+                  </button>
+                )}
                 {(previewDoc.docType === 'WZ' || previewDoc.docType === 'RW') && previewDoc.status === 'reset' && (
                   <button
                     onClick={async () => {
