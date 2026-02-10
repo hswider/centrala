@@ -1,84 +1,65 @@
-import { getShipmentLabel, apiloRequestDirect } from '../../../../../../lib/apilo';
+import { apiloRequestDirect, apiloRequestBinary } from '../../../../../../lib/apilo';
+import { sql } from '@vercel/postgres';
 
-// GET - Download shipment label
+// GET - Download shipment label PDF
+// Apilo stores labels as media files. Flow:
+// 1. Get shipment details from /rest/api/orders/{orderId}/shipment/{shipmentId}/
+// 2. Read media UUID from shipment
+// 3. Fetch PDF binary from /rest/api/media/{uuid}/
 export async function GET(request, { params }) {
   try {
     const { shipmentId } = await params;
+    const { searchParams } = new URL(request.url);
+    const orderId = searchParams.get('orderId');
 
     if (!shipmentId) {
       return Response.json({ success: false, error: 'Missing shipmentId' }, { status: 400 });
     }
 
-    const { searchParams } = new URL(request.url);
-    const debug = searchParams.get('debug') === 'true';
+    let mediaUuid = null;
 
-    // Try multiple label endpoint patterns
-    const endpoints = [
-      `/rest/api/shipping/shipment/${shipmentId}/label/`,
-      `/rest/api/shipping/shipment/${shipmentId}/labels/`,
-      `/rest/api/shipping/label/${shipmentId}/`,
-    ];
-
-    let label = null;
-    let lastError = null;
-    let debugInfo = [];
-
-    for (const endpoint of endpoints) {
+    // Strategy 1: orderId provided in query param
+    if (orderId) {
       try {
-        const data = await apiloRequestDirect('GET', endpoint);
-        debugInfo.push({ endpoint, status: 'ok', dataKeys: data ? Object.keys(data) : null, dataType: typeof data });
-        if (data) {
-          label = data;
-          break;
-        }
+        const shipment = await apiloRequestDirect('GET', `/rest/api/orders/${orderId}/shipment/${shipmentId}/`);
+        mediaUuid = shipment?.media;
       } catch (e) {
-        lastError = e;
-        debugInfo.push({ endpoint, error: e.message, status: e.response?.status });
+        console.warn('[Label] Shipment fetch via orderId param failed:', e.message);
       }
     }
 
-    if (debug) {
-      return Response.json({ shipmentId, debugInfo, label: label ? Object.keys(label) : null });
+    // Strategy 2: look up orderId from local DB
+    if (!mediaUuid) {
+      try {
+        const { rows } = await sql`
+          SELECT order_id FROM shipments WHERE courier_shipment_id = ${shipmentId.toString()} LIMIT 1
+        `;
+        if (rows.length > 0) {
+          const shipment = await apiloRequestDirect('GET', `/rest/api/orders/${rows[0].order_id}/shipment/${shipmentId}/`);
+          mediaUuid = shipment?.media;
+        }
+      } catch (e) {
+        console.warn('[Label] Shipment fetch via local DB failed:', e.message);
+      }
     }
 
-    if (!label) {
+    if (!mediaUuid) {
       return Response.json({
         success: false,
-        error: 'Label not found',
-        shipmentId,
-        tried: debugInfo
+        error: 'Nie znaleziono etykiety. Sprawdz czy przesylka ma wygenerowana etykiete w Apilo.',
+        shipmentId
       }, { status: 404 });
     }
 
-    // If label is base64 encoded, return as PDF
-    if (label.content) {
-      const buffer = Buffer.from(label.content, 'base64');
-      return new Response(buffer, {
-        headers: {
-          'Content-Type': 'application/pdf',
-          'Content-Disposition': `attachment; filename="label-${shipmentId}.pdf"`,
-          'Content-Length': buffer.length.toString()
-        }
-      });
-    }
+    // Fetch PDF binary from Apilo media endpoint
+    const pdfBuffer = await apiloRequestBinary(`/rest/api/media/${mediaUuid}/`);
 
-    // If label has a file/url field, try to fetch it
-    if (label.file || label.url || label.labelUrl) {
-      const labelUrl = label.file || label.url || label.labelUrl;
-      const pdfRes = await fetch(labelUrl);
-      if (pdfRes.ok) {
-        const buffer = await pdfRes.arrayBuffer();
-        return new Response(buffer, {
-          headers: {
-            'Content-Type': 'application/pdf',
-            'Content-Disposition': `attachment; filename="label-${shipmentId}.pdf"`
-          }
-        });
+    return new Response(pdfBuffer, {
+      headers: {
+        'Content-Type': 'application/pdf',
+        'Content-Disposition': `inline; filename="label-${shipmentId}.pdf"`
       }
-    }
-
-    // Return label data as JSON for inspection
-    return Response.json({ success: true, label });
+    });
   } catch (error) {
     console.error('Error getting label:', error);
     return Response.json({ success: false, error: error.message }, { status: 500 });

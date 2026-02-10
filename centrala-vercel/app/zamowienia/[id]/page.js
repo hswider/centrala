@@ -569,7 +569,7 @@ export default function OrderDetailsPage() {
                       </div>
                       {s.shipmentId && (
                         <a
-                          href={`/api/apilo/shipping/${s.shipmentId}/label`}
+                          href={`/api/apilo/shipping/${s.shipmentId}/label?orderId=${order.id}`}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex-shrink-0"
