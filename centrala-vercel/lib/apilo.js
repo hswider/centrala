@@ -464,7 +464,7 @@ export async function createShipment(shipmentData) {
     carrierAccountId: shipmentData.carrierAccountId,
     orderId: shipmentData.orderId,
     method: shipmentData.method,
-    postDate: shipmentData.postDate || new Date().toISOString(),
+    postDate: shipmentData.postDate || new Date().toISOString().replace(/\.\d{3}Z$/, '+00:00'),
     addressReceiver: shipmentData.addressReceiver,
     parcels: shipmentData.parcels.map(p => {
       const options = [
