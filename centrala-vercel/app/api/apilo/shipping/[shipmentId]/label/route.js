@@ -61,7 +61,9 @@ export async function GET(request, { params }) {
     // Use native fetch to get binary PDF - axios corrupts binary data
     const pdfResponse = await fetch(`${baseUrl}/rest/api/media/${mediaUuid}/`, {
       headers: {
-        'Authorization': `Bearer ${token}`
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
       }
     });
 
