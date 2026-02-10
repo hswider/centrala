@@ -67,7 +67,8 @@ export default function OrderDetailsPage() {
     methodUuid: '',
     length: 30,
     width: 20,
-    height: 10
+    height: 10,
+    weight: 16
   });
   const [shipLoading, setShipLoading] = useState(false);
 
@@ -209,6 +210,7 @@ export default function OrderDetailsPage() {
             email: shipping.email || ''
           },
           parcels: [{
+            weight: parseFloat(shipForm.weight) || 1,
             dimensions: {
               length: parseFloat(shipForm.length) || 30,
               width: parseFloat(shipForm.width) || 20,
@@ -744,14 +746,13 @@ export default function OrderDetailsPage() {
                 </div>
               )}
 
-              {/* Dimensions */}
+              {/* Dimensions & Weight */}
               {shipForm.carrierAccountId && (
                 <div className="bg-gray-50 rounded-lg p-3">
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Wymiary paczki (cm)
-                    <span className="ml-2 text-xs text-green-600 font-normal">(z szablonu kuriera)</span>
+                    Wymiary paczki (cm) i waga (kg)
                   </label>
-                  <div className="grid grid-cols-3 gap-2 text-center">
+                  <div className="grid grid-cols-4 gap-2 text-center">
                     <div>
                       <div className="text-xs text-gray-500 mb-1">Dlugosc</div>
                       <div className="px-3 py-2 bg-white border border-gray-200 rounded-lg font-medium text-gray-900">
@@ -770,9 +771,17 @@ export default function OrderDetailsPage() {
                         {shipForm.height}
                       </div>
                     </div>
-                  </div>
-                  <div className="mt-2 text-xs text-green-600">
-                    Waga zostanie pobrana z szablonu Apilo (Definicje wag)
+                    <div>
+                      <div className="text-xs text-gray-500 mb-1">Waga (kg)</div>
+                      <input
+                        type="number"
+                        min="0.1"
+                        step="0.1"
+                        value={shipForm.weight}
+                        onChange={e => setShipForm(prev => ({ ...prev, weight: e.target.value }))}
+                        className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg font-medium text-gray-900 text-center"
+                      />
+                    </div>
                   </div>
                 </div>
               )}

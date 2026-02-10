@@ -508,26 +508,25 @@ export async function createShipment(shipmentData) {
     postDate: shipmentData.postDate || new Date().toISOString().replace(/\.\d{3}Z$/, '+00:00'),
     addressReceiver: shipmentData.addressReceiver,
     parcels: shipmentData.parcels.map(p => {
-      const options = [
-        {
-          id: 'dimensions',
-          type: 'dimensions',
-          value: {
-            length: p.dimensions?.length || 30,
-            width: p.dimensions?.width || 20,
-            height: p.dimensions?.height || 10
+      const weightKg = p.weight || 1;
+      return {
+        options: [
+          {
+            id: 'dimensions',
+            type: 'dimensions',
+            value: {
+              length: p.dimensions?.length || 30,
+              width: p.dimensions?.width || 20,
+              height: p.dimensions?.height || 10
+            }
+          },
+          {
+            id: 'weight',
+            type: 'integer',
+            value: Math.round(weightKg * 1000) // kg -> g
           }
-        }
-      ];
-      // Only send weight if explicitly provided - otherwise Apilo uses template "Definicje wag"
-      if (p.weight) {
-        options.push({
-          id: 'weight',
-          type: 'integer',
-          value: Math.round(p.weight * 1000) // kg -> g
-        });
-      }
-      return { options };
+        ]
+      };
     }),
     options: shipmentOptions
   };
