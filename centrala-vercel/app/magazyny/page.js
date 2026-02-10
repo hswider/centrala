@@ -34,6 +34,7 @@ export default function MagazynyPage() {
   const [historyFilterAction, setHistoryFilterAction] = useState('');
   const [historyFilterDateFrom, setHistoryFilterDateFrom] = useState('');
   const [historyFilterDateTo, setHistoryFilterDateTo] = useState('');
+  const [historyPerPage, setHistoryPerPage] = useState(200);
   const [recipeIngredients, setRecipeIngredients] = useState([]);
   const [loadingRecipe, setLoadingRecipe] = useState(false);
   const [ingredientSearchPolprodukty, setIngredientSearchPolprodukty] = useState('');
@@ -1436,10 +1437,10 @@ export default function MagazynyPage() {
   };
 
   // Pobierz historie zmian
-  const fetchHistory = useCallback(async (page = 1, username = '', actionType = '', dateFrom = '', dateTo = '') => {
+  const fetchHistory = useCallback(async (page = 1, username = '', actionType = '', dateFrom = '', dateTo = '', perPage = 200) => {
     try {
       setHistoryLoading(true);
-      const params = new URLSearchParams({ page, perPage: 50 });
+      const params = new URLSearchParams({ page, perPage });
       if (username) params.append('username', username);
       if (actionType) params.append('actionType', actionType);
       if (dateFrom) params.append('dateFrom', dateFrom);
@@ -1463,7 +1464,7 @@ export default function MagazynyPage() {
 
   const handleOpenHistory = () => {
     setShowHistoryModal(true);
-    fetchHistory(1, '', '', '', '');
+    fetchHistory(1, '', '', '', '', historyPerPage);
   };
 
   const handleExportHistoryCSV = async () => {
@@ -3648,7 +3649,7 @@ export default function MagazynyPage() {
                   value={historyFilterUser}
                   onChange={(e) => {
                     setHistoryFilterUser(e.target.value);
-                    fetchHistory(1, e.target.value, historyFilterAction, historyFilterDateFrom, historyFilterDateTo);
+                    fetchHistory(1, e.target.value, historyFilterAction, historyFilterDateFrom, historyFilterDateTo, historyPerPage);
                   }}
                   className="px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                 >
@@ -3661,7 +3662,7 @@ export default function MagazynyPage() {
                   value={historyFilterAction}
                   onChange={(e) => {
                     setHistoryFilterAction(e.target.value);
-                    fetchHistory(1, historyFilterUser, e.target.value, historyFilterDateFrom, historyFilterDateTo);
+                    fetchHistory(1, historyFilterUser, e.target.value, historyFilterDateFrom, historyFilterDateTo, historyPerPage);
                   }}
                   className="px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                 >
@@ -3679,7 +3680,7 @@ export default function MagazynyPage() {
                     value={historyFilterDateFrom}
                     onChange={(e) => {
                       setHistoryFilterDateFrom(e.target.value);
-                      fetchHistory(1, historyFilterUser, historyFilterAction, e.target.value, historyFilterDateTo);
+                      fetchHistory(1, historyFilterUser, historyFilterAction, e.target.value, historyFilterDateTo, historyPerPage);
                     }}
                     className="px-2 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                   />
@@ -3691,7 +3692,7 @@ export default function MagazynyPage() {
                     value={historyFilterDateTo}
                     onChange={(e) => {
                       setHistoryFilterDateTo(e.target.value);
-                      fetchHistory(1, historyFilterUser, historyFilterAction, historyFilterDateFrom, e.target.value);
+                      fetchHistory(1, historyFilterUser, historyFilterAction, historyFilterDateFrom, e.target.value, historyPerPage);
                     }}
                     className="px-2 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                   />
@@ -3702,7 +3703,22 @@ export default function MagazynyPage() {
                 >
                   CSV ({historyTotal})
                 </button>
-                <span className="text-sm text-gray-500 dark:text-gray-400 self-center ml-auto">
+                <div className="flex items-center gap-1 ml-auto">
+                  <span className="text-xs text-gray-400 mr-1">Na stronie:</span>
+                  {[50, 200, 500].map(n => (
+                    <button
+                      key={n}
+                      onClick={() => {
+                        setHistoryPerPage(n);
+                        fetchHistory(1, historyFilterUser, historyFilterAction, historyFilterDateFrom, historyFilterDateTo, n);
+                      }}
+                      className={`px-2 py-0.5 text-xs rounded ${historyPerPage === n ? 'bg-purple-600 text-white' : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'}`}
+                    >
+                      {n}
+                    </button>
+                  ))}
+                </div>
+                <span className="text-sm text-gray-500 dark:text-gray-400 self-center">
                   Razem: {historyTotal} zmian
                 </span>
               </div>
@@ -3798,21 +3814,21 @@ export default function MagazynyPage() {
               </div>
 
               {/* Paginacja */}
-              {historyTotal > 50 && (
+              {historyTotal > historyPerPage && (
                 <div className="flex justify-center gap-2 mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
                   <button
-                    onClick={() => fetchHistory(historyPage - 1, historyFilterUser, historyFilterAction, historyFilterDateFrom, historyFilterDateTo)}
+                    onClick={() => fetchHistory(historyPage - 1, historyFilterUser, historyFilterAction, historyFilterDateFrom, historyFilterDateTo, historyPerPage)}
                     disabled={historyPage <= 1}
                     className="px-3 py-1 text-sm bg-gray-200 dark:bg-gray-700 rounded disabled:opacity-50"
                   >
                     Poprzednia
                   </button>
                   <span className="px-3 py-1 text-sm text-gray-600 dark:text-gray-300">
-                    Strona {historyPage} z {Math.ceil(historyTotal / 50)}
+                    Strona {historyPage} z {Math.ceil(historyTotal / historyPerPage)}
                   </span>
                   <button
-                    onClick={() => fetchHistory(historyPage + 1, historyFilterUser, historyFilterAction, historyFilterDateFrom, historyFilterDateTo)}
-                    disabled={historyPage >= Math.ceil(historyTotal / 50)}
+                    onClick={() => fetchHistory(historyPage + 1, historyFilterUser, historyFilterAction, historyFilterDateFrom, historyFilterDateTo, historyPerPage)}
+                    disabled={historyPage >= Math.ceil(historyTotal / historyPerPage)}
                     className="px-3 py-1 text-sm bg-gray-200 dark:bg-gray-700 rounded disabled:opacity-50"
                   >
                     Nastepna
