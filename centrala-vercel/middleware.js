@@ -33,6 +33,7 @@ const publicRoutes = [
   '/api/baselinker/debug', // Baselinker debug
   '/api/debug',          // Apilo debug
   '/api/apilo/debug',    // Apilo shipping debug
+  '/api/apilo/shipping', // Apilo shipping (for label download)
   '/api/integrations/status', // Integrations status (for dashboard)
   '/api/weather/sync',   // Weather sync cron
   '/api/dms/init',        // DMS table initialization
