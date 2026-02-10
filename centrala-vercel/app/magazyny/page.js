@@ -1176,15 +1176,21 @@ export default function MagazynyPage() {
 
     setSavingDocument(true);
     try {
-      // Aktualizuj stany magazynowe - DODAJ ilosci (WZ = przyjecie)
+      // Sumuj ilosci per produkt, potem dodaj raz (WZ = przyjecie)
+      const deltaMap = {};
       for (const pozycja of validPozycje) {
-        const item = magazyny.surowce.find(s => s.id === pozycja.produktId);
+        const id = pozycja.produktId;
+        const delta = parseFloat(String(pozycja.ilosc).replace(',', '.'));
+        deltaMap[id] = (deltaMap[id] || 0) + delta;
+      }
+      for (const [id, delta] of Object.entries(deltaMap)) {
+        const item = magazyny.surowce.find(s => s.id === parseInt(id));
         if (item) {
-          const newStan = parseFloat(item.stan) + parseFloat(String(pozycja.ilosc).replace(',', '.'));
+          const newStan = Math.round((parseFloat(item.stan) + delta) * 100) / 100;
           await fetch('/api/inventory', {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ id: pozycja.produktId, stan: newStan })
+            body: JSON.stringify({ id: parseInt(id), stan: newStan })
           });
         }
       }
@@ -1252,29 +1258,38 @@ export default function MagazynyPage() {
       return;
     }
 
-    // Sprawdz czy starczy stanow
+    // Sprawdz czy starczy stanow (sumuj wszystkie pozycje per produkt)
+    const checkMap = {};
     for (const pozycja of validPozycje) {
-      const item = magazyny.surowce.find(s => s.id === pozycja.produktId);
-      if (item) {
-        const iloscDoOdjecia = parseFloat(String(pozycja.ilosc).replace(',', '.'));
-        if (parseFloat(item.stan) < iloscDoOdjecia) {
-          alert(`Niewystarczajacy stan dla "${item.nazwa}". Dostepne: ${item.stan}, wymagane: ${iloscDoOdjecia}`);
-          return;
-        }
+      const id = pozycja.produktId;
+      const delta = parseFloat(String(pozycja.ilosc).replace(',', '.'));
+      checkMap[id] = (checkMap[id] || 0) + delta;
+    }
+    for (const [id, totalDelta] of Object.entries(checkMap)) {
+      const item = magazyny.surowce.find(s => s.id === parseInt(id));
+      if (item && parseFloat(item.stan) < totalDelta) {
+        alert(`Niewystarczajacy stan dla "${item.nazwa}". Dostepne: ${item.stan}, wymagane: ${totalDelta}`);
+        return;
       }
     }
 
     setSavingDocument(true);
     try {
-      // Aktualizuj stany magazynowe - ODEJMIJ ilosci (RW = rozchod)
+      // Sumuj ilosci per produkt, potem odejmij raz (RW = rozchod)
+      const deltaMap = {};
       for (const pozycja of validPozycje) {
-        const item = magazyny.surowce.find(s => s.id === pozycja.produktId);
+        const id = pozycja.produktId;
+        const delta = parseFloat(String(pozycja.ilosc).replace(',', '.'));
+        deltaMap[id] = (deltaMap[id] || 0) + delta;
+      }
+      for (const [id, delta] of Object.entries(deltaMap)) {
+        const item = magazyny.surowce.find(s => s.id === parseInt(id));
         if (item) {
-          const newStan = parseFloat(item.stan) - parseFloat(String(pozycja.ilosc).replace(',', '.'));
+          const newStan = Math.round(Math.max(0, parseFloat(item.stan) - delta) * 100) / 100;
           await fetch('/api/inventory', {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ id: pozycja.produktId, stan: Math.max(0, newStan) })
+            body: JSON.stringify({ id: parseInt(id), stan: newStan })
           });
         }
       }
