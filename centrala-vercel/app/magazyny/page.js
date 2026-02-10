@@ -3773,51 +3773,52 @@ export default function MagazynyPage() {
                           'MANUAL': 'Reczna zmiana',
                           'API': 'API'
                         };
+                        const isVoided = new Date(entry.created_at) >= new Date('2026-02-03T00:00:00');
 
                         return (
-                          <tr key={entry.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
-                            <td className="px-3 py-2 text-xs text-gray-600 dark:text-gray-300 whitespace-nowrap">
+                          <tr key={entry.id} className={`${isVoided ? 'bg-red-50 dark:bg-red-900/20' : 'hover:bg-gray-50 dark:hover:bg-gray-700'}`}>
+                            <td className={`px-3 py-2 text-xs whitespace-nowrap ${isVoided ? 'line-through text-red-400 dark:text-red-500' : 'text-gray-600 dark:text-gray-300'}`}>
                               {new Date(entry.created_at).toLocaleString('pl-PL', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
                             </td>
-                            <td className="px-3 py-2 text-xs text-gray-900 dark:text-white font-medium">
+                            <td className={`px-3 py-2 text-xs font-medium ${isVoided ? 'line-through text-red-400 dark:text-red-500' : 'text-gray-900 dark:text-white'}`}>
                               {entry.username || '-'}
                             </td>
                             <td className="px-3 py-2">
-                              <span className={`px-2 py-0.5 text-xs font-medium rounded ${action.color}`}>
+                              <span className={`px-2 py-0.5 text-xs font-medium rounded ${isVoided ? 'line-through bg-red-100 text-red-400 dark:bg-red-900/40 dark:text-red-500' : action.color}`}>
                                 {action.label}
                               </span>
                             </td>
-                            <td className="px-3 py-2 text-xs text-gray-600 dark:text-gray-300">
-                              <div className="font-medium">{entry.sku}</div>
-                              <div className="text-gray-400 truncate max-w-[150px]">{entry.nazwa}</div>
+                            <td className={`px-3 py-2 text-xs ${isVoided ? 'line-through text-red-400 dark:text-red-500' : 'text-gray-600 dark:text-gray-300'}`}>
+                              <div className={isVoided ? '' : 'font-medium'}>{entry.sku}</div>
+                              <div className={`truncate max-w-[150px] ${isVoided ? '' : 'text-gray-400'}`}>{entry.nazwa}</div>
                             </td>
-                            <td className="px-3 py-2 text-xs">
+                            <td className={`px-3 py-2 text-xs ${isVoided ? 'line-through text-red-400 dark:text-red-500' : ''}`}>
                               {entry.field_changed === 'stan' && (
-                                <span className="text-gray-600 dark:text-gray-300">
-                                  {parseFloat(entry.old_value || 0).toFixed(2)} → <span className="font-bold text-blue-600">{parseFloat(entry.new_value || 0).toFixed(2)}</span>
+                                <span className={isVoided ? '' : 'text-gray-600 dark:text-gray-300'}>
+                                  {parseFloat(entry.old_value || 0).toFixed(2)} → <span className={isVoided ? '' : 'font-bold text-blue-600'}>{parseFloat(entry.new_value || 0).toFixed(2)}</span>
                                   {parseFloat(entry.new_value) > parseFloat(entry.old_value) ? (
-                                    <span className="ml-1 text-green-600">(+{(parseFloat(entry.new_value) - parseFloat(entry.old_value)).toFixed(2)})</span>
+                                    <span className={`ml-1 ${isVoided ? '' : 'text-green-600'}`}>(+{(parseFloat(entry.new_value) - parseFloat(entry.old_value)).toFixed(2)})</span>
                                   ) : (
-                                    <span className="ml-1 text-red-600">({(parseFloat(entry.new_value) - parseFloat(entry.old_value)).toFixed(2)})</span>
+                                    <span className={`ml-1 ${isVoided ? '' : 'text-red-600'}`}>({(parseFloat(entry.new_value) - parseFloat(entry.old_value)).toFixed(2)})</span>
                                   )}
                                 </span>
                               )}
                               {entry.field_changed === 'cena' && (
-                                <span className="text-gray-600 dark:text-gray-300">
-                                  {parseFloat(entry.old_value || 0).toFixed(2)} zl → <span className="font-bold text-yellow-600">{parseFloat(entry.new_value || 0).toFixed(2)} zl</span>
+                                <span className={isVoided ? '' : 'text-gray-600 dark:text-gray-300'}>
+                                  {parseFloat(entry.old_value || 0).toFixed(2)} zl → <span className={isVoided ? '' : 'font-bold text-yellow-600'}>{parseFloat(entry.new_value || 0).toFixed(2)} zl</span>
                                 </span>
                               )}
                               {entry.action_type === 'PRODUCT_ADD' && (
-                                <span className="text-green-600">Nowy produkt</span>
+                                <span className={isVoided ? '' : 'text-green-600'}>Nowy produkt</span>
                               )}
                               {entry.action_type === 'PRODUCT_DELETE' && (
-                                <span className="text-red-600">Usuniety</span>
+                                <span className={isVoided ? '' : 'text-red-600'}>Usuniety</span>
                               )}
                               {entry.action_type === 'PRODUCT_MODIFY' && !entry.field_changed && (
-                                <span className="text-purple-600">Dane zaktualizowane</span>
+                                <span className={isVoided ? '' : 'text-purple-600'}>Dane zaktualizowane</span>
                               )}
                             </td>
-                            <td className="px-3 py-2 text-xs text-gray-400">
+                            <td className={`px-3 py-2 text-xs ${isVoided ? 'line-through text-red-400 dark:text-red-500' : 'text-gray-400'}`}>
                               {sourceLabels[entry.source] || entry.source || '-'}
                             </td>
                           </tr>
