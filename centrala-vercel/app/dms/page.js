@@ -21,6 +21,7 @@ export default function DMSPage() {
   const [history, setHistory] = useState([]); // document history
   const [historyLoading, setHistoryLoading] = useState(false);
   const [previewDoc, setPreviewDoc] = useState(null); // document preview modal for WZ/RW
+  const [selectedDocs, setSelectedDocs] = useState(new Set());
   const invoiceRef = useRef(null);
 
   // Load user and documents on mount
@@ -28,6 +29,11 @@ export default function DMSPage() {
     fetchUser();
     loadDocuments();
   }, []);
+
+  // Clear doc selection when filters change
+  useEffect(() => {
+    setSelectedDocs(new Set());
+  }, [docsTypeFilter, docsSearch]);
 
   const fetchUser = async () => {
     try {
@@ -526,6 +532,88 @@ export default function DMSPage() {
       month: '2-digit',
       year: 'numeric'
     });
+  };
+
+  // Get filtered WZ/RW docs for selection
+  const getFilteredWzRwDocs = () => {
+    return generatedDocs
+      .filter(doc => {
+        if (!['WZ', 'RW'].includes(doc.docType)) return false;
+        if (docsTypeFilter !== 'all' && doc.docType?.toLowerCase() !== docsTypeFilter.toLowerCase()) return false;
+        if (!docsSearch.trim()) return true;
+        const searchLower = docsSearch.toLowerCase();
+        return (
+          (doc.number || '').toLowerCase().includes(searchLower) ||
+          (doc.customer || '').toLowerCase().includes(searchLower) ||
+          (doc.orderId && String(doc.orderId).includes(searchLower))
+        );
+      });
+  };
+
+  const toggleSelectDoc = (id) => {
+    setSelectedDocs(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const toggleSelectAllDocs = () => {
+    const wzRwDocs = getFilteredWzRwDocs();
+    const allIds = wzRwDocs.map(d => d.id);
+    const allSelected = allIds.length > 0 && allIds.every(id => selectedDocs.has(id));
+    if (allSelected) {
+      setSelectedDocs(new Set());
+    } else {
+      setSelectedDocs(new Set(allIds));
+    }
+  };
+
+  const handleExportDocsCSV = () => {
+    const selected = generatedDocs.filter(d => selectedDocs.has(d.id));
+    if (selected.length === 0) return;
+
+    const headers = ['Typ dokumentu', 'Numer dokumentu', 'Data wystawienia', 'Firma', 'Status', 'Lp.', 'Nazwa artykulu', 'Ilosc', 'Jednostka'];
+    const rows = [headers.join(';')];
+
+    selected.forEach(doc => {
+      const pozycje = doc.data?.pozycje || [];
+      if (pozycje.length === 0) {
+        rows.push([
+          doc.docType,
+          doc.number || '',
+          formatDatePL(doc.data?.dataWystawienia || doc.date),
+          (doc.customer || doc.data?.firma || '').replace(/;/g, ','),
+          doc.status || '',
+          '', '', '', ''
+        ].join(';'));
+      } else {
+        pozycje.forEach((poz, idx) => {
+          rows.push([
+            doc.docType,
+            doc.number || '',
+            formatDatePL(doc.data?.dataWystawienia || doc.date),
+            (doc.customer || doc.data?.firma || '').replace(/;/g, ','),
+            doc.status || '',
+            idx + 1,
+            (poz.nazwa || '').replace(/;/g, ','),
+            typeof poz.ilosc === 'number' ? poz.ilosc.toFixed(2) : (poz.ilosc || ''),
+            poz.jednostka || 'szt'
+          ].join(';'));
+        });
+      }
+    });
+
+    const csvContent = '\uFEFF' + rows.join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.setAttribute('href', URL.createObjectURL(blob));
+    link.setAttribute('download', `dms_dokumenty_${new Date().toISOString().slice(0, 10)}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   const generatePDF = () => {
@@ -1703,6 +1791,38 @@ export default function DMSPage() {
                 )}
               </div>
             </div>
+            {/* Selection toolbar for WZ/RW */}
+            {!docsLoading && generatedDocs.some(d => ['WZ', 'RW'].includes(d.docType)) && (
+              <div className="px-4 py-2 border-b border-gray-100 dark:border-gray-700 flex items-center gap-3 flex-wrap bg-gray-50 dark:bg-gray-700/30">
+                <input
+                  type="checkbox"
+                  checked={(() => { const ids = getFilteredWzRwDocs().map(d => d.id); return ids.length > 0 && ids.every(id => selectedDocs.has(id)); })()}
+                  onChange={toggleSelectAllDocs}
+                  className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
+                  title="Zaznacz wszystkie WZ/RW"
+                />
+                <span className="text-xs text-gray-500 dark:text-gray-400">Zaznacz WZ/RW</span>
+                {selectedDocs.size > 0 && (
+                  <>
+                    <span className="text-xs font-medium text-blue-700 dark:text-blue-300">
+                      Zaznaczono: {selectedDocs.size}
+                    </span>
+                    <button
+                      onClick={() => setSelectedDocs(new Set())}
+                      className="text-xs text-gray-500 hover:text-gray-700 dark:text-gray-400 underline"
+                    >
+                      Wyczysc
+                    </button>
+                    <button
+                      onClick={handleExportDocsCSV}
+                      className="px-3 py-1 text-xs font-medium bg-green-600 text-white rounded hover:bg-green-700"
+                    >
+                      CSV ({selectedDocs.size})
+                    </button>
+                  </>
+                )}
+              </div>
+            )}
             {docsLoading ? (
               <div className="p-12 text-center">
                 <div className="inline-block w-8 h-8 border-2 border-blue-600 border-t-transparent rounded-full animate-spin mb-3"></div>
@@ -1763,9 +1883,17 @@ export default function DMSPage() {
                     }
                   })
                   .map((doc) => (
-                  <div key={doc.id} className="p-4 hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                  <div key={doc.id} className={`p-4 ${selectedDocs.has(doc.id) ? 'bg-blue-50 dark:bg-blue-900/20' : 'hover:bg-gray-50 dark:hover:bg-gray-700/50'}`}>
                     <div className="flex items-center justify-between gap-4">
                       <div className="flex items-center gap-3 min-w-0">
+                        {['WZ', 'RW'].includes(doc.docType) && (
+                          <input
+                            type="checkbox"
+                            checked={selectedDocs.has(doc.id)}
+                            onChange={() => toggleSelectDoc(doc.id)}
+                            className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500 flex-shrink-0"
+                          />
+                        )}
                         {doc.docType === 'invoice' ? (
                           <div className="w-10 h-10 bg-green-100 dark:bg-green-900/30 rounded-lg flex items-center justify-center flex-shrink-0">
                             <img src="/icons/gutekissen.png" alt="GuteKissen" className="w-7 h-7 rounded-full" />
