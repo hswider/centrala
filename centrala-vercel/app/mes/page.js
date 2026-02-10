@@ -6,7 +6,7 @@ export default function MESPage() {
   const [orders, setOrders] = useState([]);
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState('pending');
+  const [filter, setFilter] = useState('all');
   const [expandedOrder, setExpandedOrder] = useState(null);
   const [expandedItem, setExpandedItem] = useState(null);
 
@@ -25,7 +25,7 @@ export default function MESPage() {
   const [shipForm, setShipForm] = useState({
     carrierAccountId: null,
     methodUuid: '',
-    weight: 1,
+    // Weight is handled by Apilo template "Definicje wag"
     length: 30,
     width: 20,
     height: 10
@@ -150,21 +150,14 @@ export default function MESPage() {
     return null;
   };
 
-  // Parse weight from carrier account name (e.g. "5kg" or "waga 2.5")
-  const parseWeightFromName = (name) => {
-    if (!name) return null;
-    const match = name.match(/(\d+(?:[.,]\d+)?)\s*kg/i);
-    if (match) {
-      return parseFloat(match[1].replace(',', '.'));
-    }
-    return null;
-  };
+  // Weight is configured in Apilo's "Definicje wag" tab for each carrier template
+  // Apilo will automatically use the configured weight when creating shipments
 
   const handleSelectTemplate = (template) => {
     setSelectedTemplate(template);
     setShipForm(prev => ({
       ...prev,
-      weight: parseFloat(template.weight_kg) || 1,
+      // Weight is handled by Apilo template "Definicje wag"
       length: parseFloat(template.length_cm) || 30,
       width: parseFloat(template.width_cm) || 20,
       height: parseFloat(template.height_cm) || 10
@@ -174,7 +167,6 @@ export default function MESPage() {
   const handleCarrierChange = (carrierAccountId) => {
     const carrier = carrierAccounts.find(c => c.id === parseInt(carrierAccountId));
     const dimensions = parseDimensionsFromName(carrier?.name);
-    const weight = parseWeightFromName(carrier?.name);
 
     setShipForm(prev => ({
       ...prev,
@@ -185,9 +177,7 @@ export default function MESPage() {
         length: dimensions.length,
         width: dimensions.width,
         height: dimensions.height
-      }),
-      // Auto-fill weight if found in name
-      ...(weight && { weight })
+      })
     }));
     setShippingMethods([]);
     fetchShippingMethods(carrierAccountId);
@@ -227,7 +217,7 @@ export default function MESPage() {
             email: shipping.email || ''
           },
           parcels: [{
-            weight: parseFloat(shipForm.weight) || 1,
+            // Weight is taken from Apilo template "Definicje wag" - don't send it
             dimensions: {
               length: parseFloat(shipForm.length) || 30,
               width: parseFloat(shipForm.width) || 20,
@@ -243,7 +233,12 @@ export default function MESPage() {
         const shipmentId = data.result?.shipments?.[0]?.shipmentId;
         alert(`Przesylka utworzona w Apilo! ID: ${shipmentId || '-'}`);
       } else {
-        alert('Blad: ' + data.error);
+        // Show detailed error info
+        const errorMsg = data.details?.responseData
+          ? `Blad: ${data.error}\n\nSzczegoly: ${JSON.stringify(data.details.responseData, null, 2)}`
+          : `Blad: ${data.error}`;
+        console.error('Shipment error:', data);
+        alert(errorMsg);
       }
     } catch (err) {
       alert('Blad tworzenia przesylki: ' + err.message);
@@ -263,7 +258,7 @@ export default function MESPage() {
   const fetchOrders = async () => {
     try {
       setLoading(true);
-      const res = await fetch(`/api/mes/orders?status=${filter}&limit=100`);
+      const res = await fetch(`/api/mes/orders?status=${filter}&limit=500`);
       const data = await res.json();
       if (data.success) {
         setOrders(data.orders);
@@ -287,6 +282,12 @@ export default function MESPage() {
     switch (status) {
       case 'ready_to_ship':
         return <span className="px-2 py-0.5 text-xs font-bold bg-green-100 text-green-800 rounded">GOTOWE DO WYSYLKI</span>;
+      case 'shipped':
+        return <span className="px-2 py-0.5 text-xs font-bold bg-blue-100 text-blue-800 rounded">WYSLANE</span>;
+      case 'canceled':
+        return <span className="px-2 py-0.5 text-xs font-bold bg-gray-200 text-gray-600 rounded line-through">ANULOWANE</span>;
+      case 'unpaid':
+        return <span className="px-2 py-0.5 text-xs font-bold bg-yellow-100 text-yellow-800 rounded">NIEOPLACONE</span>;
       case 'ready':
         return <span className="px-2 py-0.5 text-xs font-bold bg-green-100 text-green-800 rounded">DOSTEPNE</span>;
       case 'partial':
@@ -371,7 +372,7 @@ export default function MESPage() {
               className={`rounded-lg shadow p-3 cursor-pointer transition-colors ${filter === 'all' ? 'bg-blue-100 dark:bg-blue-900/30 ring-2 ring-blue-500' : 'bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700'}`}
               onClick={() => setFilter('all')}
             >
-              <p className="text-xs text-gray-500 dark:text-gray-400">Wszystkie</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400">Wszystkie (luty)</p>
               <p className="text-xl font-bold text-gray-900 dark:text-white">{stats.total}</p>
             </div>
             <div
@@ -388,9 +389,12 @@ export default function MESPage() {
               <p className="text-xs text-green-600 dark:text-green-400">Gotowe do wysylki</p>
               <p className="text-xl font-bold text-green-700 dark:text-green-300">{stats.readyToShip}</p>
             </div>
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-3">
-              <p className="text-xs text-gray-500 dark:text-gray-400">Czesciowe</p>
-              <p className="text-xl font-bold text-yellow-600 dark:text-yellow-400">{stats.partial}</p>
+            <div
+              className={`rounded-lg shadow p-3 cursor-pointer transition-colors ${filter === 'shipped' ? 'bg-blue-100 dark:bg-blue-900/30 ring-2 ring-blue-500' : 'bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700'}`}
+              onClick={() => setFilter('shipped')}
+            >
+              <p className="text-xs text-blue-600 dark:text-blue-400">Wyslane</p>
+              <p className="text-xl font-bold text-blue-700 dark:text-blue-300">{stats.shipped || 0}</p>
             </div>
           </div>
         )}
@@ -588,17 +592,30 @@ export default function MESPage() {
                               </a>
                             </div>
                           </div>
-                        ) : order.orderStatus === 'ready_to_ship' ? (
+                        ) : order.isCanceled ? (
+                          // Canceled order
+                          <span className="px-3 py-1.5 text-xs font-medium bg-gray-200 text-gray-500 rounded line-through">
+                            Anulowane
+                          </span>
+                        ) : order.isShipped ? (
+                          // Shipped but no local shipment record
+                          <span className="px-3 py-1.5 text-xs font-medium bg-blue-100 text-blue-700 rounded">
+                            Wyslane (status: {order.deliveryStatus})
+                          </span>
+                        ) : (
+                          // Show ship button for ALL orders (not just ready_to_ship)
                           <button
                             onClick={(e) => { e.stopPropagation(); setShowShipModal(order); }}
-                            className="px-3 py-1.5 text-xs font-medium bg-green-600 text-white rounded hover:bg-green-700 flex items-center gap-1"
+                            className={`px-3 py-1.5 text-xs font-medium rounded flex items-center gap-1 ${
+                              order.orderStatus === 'ready_to_ship'
+                                ? 'bg-green-600 text-white hover:bg-green-700'
+                                : order.orderStatus === 'unpaid'
+                                ? 'bg-yellow-500 text-white hover:bg-yellow-600'
+                                : 'bg-orange-500 text-white hover:bg-orange-600'
+                            }`}
                           >
                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" /></svg>
-                            Wyslij z kurierem
-                          </button>
-                        ) : (
-                          <button className="px-3 py-1.5 text-xs font-medium bg-blue-600 text-white rounded hover:bg-blue-700">
-                            Rozpocznij produkcje
+                            {order.orderStatus === 'ready_to_ship' ? 'Wyslij z kurierem' : 'Przygotuj przesylke'}
                           </button>
                         )}
                         <a
@@ -722,8 +739,8 @@ export default function MESPage() {
                       </div>
                     </div>
                   </div>
-                  <div className="mt-2 text-xs text-gray-500 dark:text-gray-400">
-                    Waga: <span className="font-medium text-gray-900 dark:text-white">{shipForm.weight} kg</span>
+                  <div className="mt-2 text-xs text-green-600 dark:text-green-400">
+                    Waga zostanie pobrana z szablonu Apilo (Definicje wag)
                   </div>
                 </div>
               )}

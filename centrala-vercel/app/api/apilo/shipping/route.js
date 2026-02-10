@@ -22,6 +22,39 @@ export async function GET(request) {
 
       // Also get local shipments from our database
       await initDatabase();
+
+      // Sync Apilo shipments to local DB for badge display on order list
+      if (shipments && shipments.length > 0) {
+        for (const s of shipments) {
+          const courierShipmentId = (s.shipmentId || s.id || '').toString();
+          const trackingNumber = s.tracking || s.trackingNumber || '';
+          const courier = s.courierName || s.carrier || 'apilo';
+          const status = s.status || 'created';
+
+          if (courierShipmentId) {
+            // Check if exists
+            const { rows: existing } = await sql`
+              SELECT id FROM shipments WHERE order_id = ${orderId} AND courier_shipment_id = ${courierShipmentId}
+            `;
+            if (existing.length > 0) {
+              await sql`
+                UPDATE shipments SET
+                  tracking_number = ${trackingNumber},
+                  courier = ${courier},
+                  status = ${status},
+                  updated_at = CURRENT_TIMESTAMP
+                WHERE id = ${existing[0].id}
+              `;
+            } else {
+              await sql`
+                INSERT INTO shipments (order_id, courier, courier_shipment_id, tracking_number, status, created_at)
+                VALUES (${orderId}, ${courier}, ${courierShipmentId}, ${trackingNumber}, ${status}, CURRENT_TIMESTAMP)
+              `;
+            }
+          }
+        }
+      }
+
       const { rows: localShipments } = await sql`
         SELECT * FROM shipments WHERE order_id = ${orderId}
       `;
@@ -137,6 +170,17 @@ export async function POST(request) {
 
   } catch (error) {
     console.error('Error creating shipment:', error);
-    return Response.json({ success: false, error: error.message }, { status: 500 });
+    // Return more details about the error
+    const errorDetails = {
+      message: error.message,
+      responseData: error.response?.data,
+      responseStatus: error.response?.status
+    };
+    console.error('Error details:', JSON.stringify(errorDetails));
+    return Response.json({
+      success: false,
+      error: error.message,
+      details: errorDetails
+    }, { status: 500 });
   }
 }

@@ -3,7 +3,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 
-export default function OrderItem({ order }) {
+export default function OrderItem({ order, shipment }) {
   const formatDate = (dateStr) => {
     if (!dateStr) return '-';
     return new Date(dateStr).toLocaleDateString('pl-PL', {
@@ -250,6 +250,14 @@ export default function OrderItem({ order }) {
                 }`}>
                   {order.status?.paymentStatus === 'PAID' ? 'Zaplac.' : 'Niezapl.'}
                 </span>
+                {shipment && (
+                  <span className="px-1.5 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800 inline-flex items-center gap-1">
+                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
+                    </svg>
+                    {shipment.tracking_number || shipment.courier || 'Przesylka'}
+                  </span>
+                )}
                 {(order.dates?.sendDateMin || order.dates?.sendDateMax) && (
                   <span className="text-xs text-blue-600 dark:text-blue-400">
                     Wys: {order.dates?.sendDateMax ? formatDate(order.dates.sendDateMax) : formatDate(order.dates.sendDateMin)}

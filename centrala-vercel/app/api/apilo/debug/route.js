@@ -103,6 +103,64 @@ export async function GET(request) {
       }
     }
 
+    // Test shipment creation - dry run to see what Apilo expects
+    if (type === 'test-shipment' && carrierAccountId) {
+      const orderId = searchParams.get('orderId') || '12345';
+      const method = searchParams.get('method') || methodUuid;
+
+      const testPayload = {
+        carrierAccountId: parseInt(carrierAccountId),
+        orderId: orderId,
+        method: method,
+        postDate: new Date().toISOString(),
+        addressReceiver: {
+          type: 'house',
+          name: 'Test Receiver',
+          streetName: 'Test Street',
+          streetNumber: '1',
+          zipCode: '00-001',
+          city: 'Warsaw',
+          country: 'PL',
+          phone: '123456789',
+          email: 'test@test.com'
+        },
+        parcels: [{
+          options: [
+            {
+              id: 'dimensions',
+              type: 'dimensions',
+              value: { length: 30, width: 20, height: 10 }
+            },
+            {
+              id: 'weight',
+              type: 'integer',
+              value: 1000 // 1kg in grams
+            }
+          ]
+        }],
+        options: []
+      };
+
+      results.testShipment = {
+        payload: testPayload,
+        note: 'This shows what would be sent to Apilo'
+      };
+
+      // Try to create (will likely fail with test data but shows exact error)
+      if (searchParams.get('execute') === 'true') {
+        try {
+          const data = await apiloRequestDirect('POST', '/rest/api/shipping/shipment/', testPayload);
+          results.testShipment.result = { success: true, data };
+        } catch (e) {
+          results.testShipment.result = {
+            error: e.message,
+            status: e.response?.status,
+            responseData: e.response?.data
+          };
+        }
+      }
+    }
+
     return Response.json({ success: true, debug: results });
   } catch (error) {
     return Response.json({ success: false, error: error.message, stack: error.stack }, { status: 500 });

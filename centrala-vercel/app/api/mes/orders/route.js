@@ -7,32 +7,63 @@ export async function GET(request) {
     await initDatabase();
 
     const { searchParams } = new URL(request.url);
-    const status = searchParams.get('status') || 'pending'; // pending, in_progress, completed
-    const limit = parseInt(searchParams.get('limit')) || 50;
+    const status = searchParams.get('status') || 'all'; // pending, ready, all, shipped
+    const limit = parseInt(searchParams.get('limit')) || 500;
+    const includeAll = status === 'all';
 
-    // Pobierz zamówienia które nie są wysłane (delivery_status != 13)
-    // i są opłacone (payment_status = 'PAID')
-    const orders = await sql`
-      SELECT
-        id,
-        external_id,
-        channel_label,
-        channel_platform,
-        ordered_at,
-        items,
-        customer,
-        shipping,
-        total_gross,
-        currency,
-        delivery_status,
-        payment_status
-      FROM orders
-      WHERE payment_status = 'PAID'
-        AND (delivery_status IS NULL OR delivery_status < 13)
-        AND is_canceled = false
-      ORDER BY ordered_at DESC
-      LIMIT ${limit}
-    `;
+    // Data początku lutego 2026
+    const februaryStart = '2026-02-01';
+
+    console.log('[MES API] Request params:', { status, limit, includeAll });
+
+    // Pobierz zamówienia od początku lutego
+    // Dla 'all' - pobierz WSZYSTKIE zamówienia bez filtrów (włącznie z wysłanymi, anulowanymi, nieopłaconymi)
+    const orders = includeAll
+      ? await sql`
+          SELECT
+            id,
+            external_id,
+            channel_label,
+            channel_platform,
+            ordered_at,
+            items,
+            customer,
+            shipping,
+            total_gross,
+            currency,
+            delivery_status,
+            payment_status,
+            is_canceled
+          FROM orders
+          WHERE ordered_at >= ${februaryStart}
+          ORDER BY ordered_at DESC
+          LIMIT ${limit}
+        `
+      : await sql`
+          SELECT
+            id,
+            external_id,
+            channel_label,
+            channel_platform,
+            ordered_at,
+            items,
+            customer,
+            shipping,
+            total_gross,
+            currency,
+            delivery_status,
+            payment_status,
+            is_canceled
+          FROM orders
+          WHERE payment_status = 'PAID'
+            AND ordered_at >= ${februaryStart}
+            AND (delivery_status IS NULL OR delivery_status NOT IN (13, 19, 16))
+            AND is_canceled = false
+          ORDER BY ordered_at DESC
+          LIMIT ${limit}
+        `;
+
+    console.log('[MES API] Orders from DB:', orders.rows.length);
 
     // Pobierz wszystkie produkty z inventory pogrupowane po kategorii
     const inventory = await sql`
@@ -181,8 +212,21 @@ export async function GET(request) {
         ['needs_production', 'from_surowce', 'from_wykroje', 'from_polprodukty'].includes(i.productionStatus)
       );
 
+      // Sprawdź czy zamówienie jest już wysłane lub anulowane
+      // Status 13 = Wysłane, 19 = Anulowane, 16 = Zduplikowane
+      // Statusy > 13 to zazwyczaj statusy produktowe (PALETY, PIKÓWKI, etc.) - NIE oznaczają wysłane!
+      const isShipped = order.delivery_status === 13;
+      const isCanceled = order.is_canceled === true || order.delivery_status === 19 || order.delivery_status === 16;
+      const isPaid = order.payment_status === 'PAID';
+
       let orderStatus = 'ready_to_ship';
-      if (anyNeedsProduction) {
+      if (isCanceled) {
+        orderStatus = 'canceled';
+      } else if (isShipped) {
+        orderStatus = 'shipped';
+      } else if (!isPaid) {
+        orderStatus = 'unpaid';
+      } else if (anyNeedsProduction) {
         orderStatus = 'needs_production';
       } else if (!allReady) {
         orderStatus = 'partial';
@@ -195,10 +239,16 @@ export async function GET(request) {
         channelPlatform: order.channel_platform,
         orderedAt: order.ordered_at,
         customer: order.customer,
+        shipping: order.shipping,
         totalGross: order.total_gross,
         currency: order.currency,
+        deliveryStatus: order.delivery_status,
+        paymentStatus: order.payment_status,
+        isCanceled,
+        isPaid,
         items: processedItems,
         orderStatus,
+        isShipped,
         itemsCount: processedItems.length,
         readyCount: processedItems.filter(i => i.productionStatus === 'ready').length,
         needsProductionCount: processedItems.filter(i => i.productionStatus !== 'ready').length
@@ -208,17 +258,27 @@ export async function GET(request) {
     // Filtruj po statusie
     let filteredOrders = processedOrders;
     if (status === 'pending') {
-      filteredOrders = processedOrders.filter(o => o.orderStatus !== 'ready_to_ship');
+      filteredOrders = processedOrders.filter(o => !['ready_to_ship', 'shipped', 'canceled', 'unpaid'].includes(o.orderStatus));
     } else if (status === 'ready') {
       filteredOrders = processedOrders.filter(o => o.orderStatus === 'ready_to_ship');
+    } else if (status === 'shipped') {
+      filteredOrders = processedOrders.filter(o => o.orderStatus === 'shipped');
+    } else if (status === 'canceled') {
+      filteredOrders = processedOrders.filter(o => o.orderStatus === 'canceled');
+    } else if (status === 'unpaid') {
+      filteredOrders = processedOrders.filter(o => o.orderStatus === 'unpaid');
     }
+    // status === 'all' - zwróć wszystkie
 
     // Statystyki
     const stats = {
       total: processedOrders.length,
       readyToShip: processedOrders.filter(o => o.orderStatus === 'ready_to_ship').length,
       needsProduction: processedOrders.filter(o => o.orderStatus === 'needs_production').length,
-      partial: processedOrders.filter(o => o.orderStatus === 'partial').length
+      partial: processedOrders.filter(o => o.orderStatus === 'partial').length,
+      shipped: processedOrders.filter(o => o.orderStatus === 'shipped').length,
+      canceled: processedOrders.filter(o => o.orderStatus === 'canceled').length,
+      unpaid: processedOrders.filter(o => o.orderStatus === 'unpaid').length
     };
 
     return NextResponse.json({

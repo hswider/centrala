@@ -466,8 +466,8 @@ export async function createShipment(shipmentData) {
     method: shipmentData.method,
     postDate: shipmentData.postDate || new Date().toISOString(),
     addressReceiver: shipmentData.addressReceiver,
-    parcels: shipmentData.parcels.map(p => ({
-      options: [
+    parcels: shipmentData.parcels.map(p => {
+      const options = [
         {
           id: 'dimensions',
           type: 'dimensions',
@@ -480,15 +480,28 @@ export async function createShipment(shipmentData) {
         {
           id: 'weight',
           type: 'integer',
-          value: Math.round((p.weight || 1) * 1000) // kg -> g
+          // Weight from template "Definicje wag" in Apilo - send default, Apilo may override
+          value: Math.round((p.weight || 1) * 1000) // kg -> g, default 1kg
         }
-      ]
-    })),
+      ];
+      return { options };
+    }),
     options: shipmentData.options || []
   };
 
-  const result = await apiloRequest('POST', '/rest/api/shipping/shipment/', payload);
-  return result;
+  console.log('[Apilo createShipment] Sending payload:', JSON.stringify(payload, null, 2));
+
+  try {
+    const result = await apiloRequest('POST', '/rest/api/shipping/shipment/', payload);
+    return result;
+  } catch (error) {
+    console.error('[Apilo createShipment] Error:', error.message);
+    if (error.response) {
+      console.error('[Apilo createShipment] Response data:', JSON.stringify(error.response.data));
+      console.error('[Apilo createShipment] Response status:', error.response.status);
+    }
+    throw error;
+  }
 }
 
 // Notify Apilo about shipment created externally (outside Apilo)

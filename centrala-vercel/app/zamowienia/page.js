@@ -97,8 +97,9 @@ export default function ZamowieniaPage() {
   const [expandedCategories, setExpandedCategories] = useState({});
   const [todayStats, setTodayStats] = useState({ total: 0, byPlatform: [] });
   const [dailyOrdersChart, setDailyOrdersChart] = useState([]);
+  const [orderShipments, setOrderShipments] = useState({});
 
-  // Fetch available channels, statuses and today stats
+  // Fetch available channels, statuses, today stats, and shipments
   useEffect(() => {
     async function loadFilters() {
       try {
@@ -129,7 +130,23 @@ export default function ZamowieniaPage() {
         console.error('Failed to load filters:', err);
       }
     }
+    async function loadShipments() {
+      try {
+        const res = await fetch('/api/couriers/shipments?limit=500');
+        const data = await res.json();
+        if (data.success && data.shipments) {
+          const byOrder = {};
+          data.shipments.forEach(s => {
+            if (s.order_id) byOrder[s.order_id] = s;
+          });
+          setOrderShipments(byOrder);
+        }
+      } catch (err) {
+        console.error('Failed to load shipments:', err);
+      }
+    }
     loadFilters();
+    loadShipments();
   }, []);
 
   const fetchOrders = useCallback(async (page = 1, search = '', itemsPerPage = 20, channel = '', status = null) => {
@@ -468,7 +485,7 @@ export default function ZamowieniaPage() {
           </div>
         ) : (
           <>
-            <OrderList orders={orders} />
+            <OrderList orders={orders} shipments={orderShipments} />
             {pagination && pagination.totalPages > 1 && (
               <Pagination
                 pagination={pagination}
