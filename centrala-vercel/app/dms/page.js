@@ -2521,7 +2521,8 @@ export default function DMSPage() {
                 {(previewDoc.docType === 'WZ' || previewDoc.docType === 'RW') && previewDoc.status === 'completed' && (
                   <button
                     onClick={async () => {
-                      if (!window.confirm(`Czy na pewno chcesz zresetować implementację dokumentu ${previewDoc.docType} ${previewDoc.number}? Zmiany stanów magazynowych zostaną cofnięte.`)) return;
+                      const docLabel = previewDoc.docType === 'RW' ? 'Cofnięcie RW doda stany z powrotem' : 'Cofnięcie WZ odejmie dodane stany';
+                      if (!window.confirm(`Cofnąć operację dokumentu ${previewDoc.docType} ${previewDoc.number}?\n${docLabel}.`)) return;
                       try {
                         const res = await fetch(`/api/dms/documents/${previewDoc.id}/implement`, {
                           method: 'POST',
@@ -2530,7 +2531,7 @@ export default function DMSPage() {
                         });
                         const data = await res.json();
                         if (data.success) {
-                          alert('Implementacja została zresetowana. Stany magazynowe przywrócone.');
+                          alert('Operacja cofnięta. Stany magazynowe przywrócone.');
                           setPreviewDoc(prev => ({ ...prev, status: 'reset' }));
                           loadDocuments();
                         } else {
@@ -2542,54 +2543,40 @@ export default function DMSPage() {
                     }}
                     className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700"
                   >
-                    Resetuj implementację
+                    Cofnij operację
                   </button>
                 )}
                 {(previewDoc.docType === 'WZ' || previewDoc.docType === 'RW') && previewDoc.status === 'completed' && (
                   <button
                     onClick={async () => {
-                      if (!window.confirm(`Czy na pewno chcesz zresetować i ponownie zaimplementować dokument ${previewDoc.docType} ${previewDoc.number}? Stany magazynowe zostaną przeliczone od nowa.`)) return;
+                      const docLabel = previewDoc.docType === 'RW' ? 'RW ponownie odejmie stany' : 'WZ ponownie doda stany';
+                      if (!window.confirm(`Ponowić operację dokumentu ${previewDoc.docType} ${previewDoc.number}?\n${docLabel}.`)) return;
                       try {
-                        // 1. Reset
-                        const resetRes = await fetch(`/api/dms/documents/${previewDoc.id}/implement`, {
+                        const res = await fetch(`/api/dms/documents/${previewDoc.id}/implement`, {
                           method: 'POST',
                           headers: { 'Content-Type': 'application/json' },
-                          body: JSON.stringify({ action: 'reset' })
+                          body: JSON.stringify({ action: 'reapply' })
                         });
-                        const resetData = await resetRes.json();
-                        if (!resetData.success) {
-                          alert('Błąd resetu: ' + (resetData.error || 'Nieznany błąd'));
-                          return;
-                        }
-                        // 2. Re-implement
-                        const implRes = await fetch(`/api/dms/documents/${previewDoc.id}/implement`, {
-                          method: 'POST',
-                          headers: { 'Content-Type': 'application/json' },
-                          body: JSON.stringify({ action: 'implement' })
-                        });
-                        const implData = await implRes.json();
-                        if (implData.success) {
-                          alert('Dokument został zresetowany i ponownie zaimplementowany. Stany magazynowe zaktualizowane.');
-                          setPreviewDoc(prev => ({ ...prev, status: 'completed' }));
+                        const data = await res.json();
+                        if (data.success) {
+                          alert('Operacja ponowiona. Stany magazynowe zaktualizowane.');
                           loadDocuments();
                         } else {
-                          alert('Reset OK, ale błąd reimplementacji: ' + (implData.error || 'Nieznany błąd'));
-                          setPreviewDoc(prev => ({ ...prev, status: 'reset' }));
-                          loadDocuments();
+                          alert('Błąd: ' + (data.error || 'Nieznany błąd'));
                         }
                       } catch (err) {
                         alert('Błąd: ' + err.message);
                       }
                     }}
-                    className="px-4 py-2 text-sm font-medium text-white bg-amber-600 rounded-lg hover:bg-amber-700"
+                    className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700"
                   >
-                    Resetuj i zaimplementuj ponownie
+                    Ponów operację
                   </button>
                 )}
                 {(previewDoc.docType === 'WZ' || previewDoc.docType === 'RW') && previewDoc.status === 'reset' && (
                   <button
                     onClick={async () => {
-                      if (!window.confirm(`Czy na pewno chcesz ponownie zaimplementować dokument ${previewDoc.docType} ${previewDoc.number}? Stany magazynowe zostaną zmienione.`)) return;
+                      if (!window.confirm(`Zaimplementować ponownie dokument ${previewDoc.docType} ${previewDoc.number}?`)) return;
                       try {
                         const res = await fetch(`/api/dms/documents/${previewDoc.id}/implement`, {
                           method: 'POST',
@@ -2598,7 +2585,7 @@ export default function DMSPage() {
                         });
                         const data = await res.json();
                         if (data.success) {
-                          alert('Dokument został ponownie zaimplementowany. Stany magazynowe zaktualizowane.');
+                          alert('Dokument ponownie zaimplementowany. Stany magazynowe zaktualizowane.');
                           setPreviewDoc(prev => ({ ...prev, status: 'completed' }));
                           loadDocuments();
                         } else {

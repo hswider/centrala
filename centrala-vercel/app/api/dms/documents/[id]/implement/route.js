@@ -36,8 +36,8 @@ export async function POST(request, { params }) {
     const userName = user?.username || 'System';
     const userId = user?.id || null;
 
-    if (!['reset', 'implement'].includes(action)) {
-      return NextResponse.json({ success: false, error: 'Invalid action. Use "reset" or "implement".' }, { status: 400 });
+    if (!['reset', 'implement', 'reapply'].includes(action)) {
+      return NextResponse.json({ success: false, error: 'Invalid action. Use "reset", "implement" or "reapply".' }, { status: 400 });
     }
 
     // 1. Pobierz dokument
@@ -62,6 +62,9 @@ export async function POST(request, { params }) {
     }
     if (action === 'implement' && doc.status !== 'reset') {
       return NextResponse.json({ success: false, error: 'Can only implement reset documents' }, { status: 400 });
+    }
+    if (action === 'reapply' && doc.status !== 'completed') {
+      return NextResponse.json({ success: false, error: 'Can only reapply completed documents' }, { status: 400 });
     }
 
     const data = typeof doc.data === 'string' ? JSON.parse(doc.data) : doc.data;
@@ -129,16 +132,16 @@ export async function POST(request, { params }) {
       let newStan;
 
       if (action === 'reset') {
-        // Cofnij operację
+        // Cofnij operację (odwróć efekt dokumentu)
         if (docType === 'WZ') {
-          // WZ dodało stan → reset odejmuje
+          // WZ dodało stan → cofnij = odejmij
           newStan = Math.round((currentStan - delta) * 100) / 100;
         } else {
-          // RW odjęło stan → reset dodaje z powrotem
+          // RW odjęło stan → cofnij = dodaj z powrotem
           newStan = Math.round((currentStan + delta) * 100) / 100;
         }
-      } else {
-        // Implement — zastosuj operację
+      } else if (action === 'implement' || action === 'reapply') {
+        // Zastosuj operację dokumentu (ponów efekt)
         if (docType === 'WZ') {
           // WZ = przyjęcie → dodaj
           newStan = Math.round((currentStan + delta) * 100) / 100;
@@ -156,6 +159,8 @@ export async function POST(request, { params }) {
       // Loguj do inventory_history
       const actionType = action === 'reset'
         ? `DMS_reset_${docType}`
+        : action === 'reapply'
+        ? `DMS_reapply_${docType}`
         : `DMS_implement_${docType}`;
 
       await sql`
@@ -177,14 +182,21 @@ export async function POST(request, { params }) {
       });
     }
 
-    // 5. Zmień status dokumentu
+    // 5. Zmień status dokumentu (reapply nie zmienia statusu)
     const newStatus = action === 'reset' ? 'reset' : 'completed';
-    await sql`
-      UPDATE generated_documents SET status = ${newStatus}, updated_at = CURRENT_TIMESTAMP WHERE id = ${id}
-    `;
+    if (action !== 'reapply') {
+      await sql`
+        UPDATE generated_documents SET status = ${newStatus}, updated_at = CURRENT_TIMESTAMP WHERE id = ${id}
+      `;
+    } else {
+      await sql`
+        UPDATE generated_documents SET updated_at = CURRENT_TIMESTAMP WHERE id = ${id}
+      `;
+    }
 
     // 6. Loguj do document_history
-    const historyAction = action === 'reset' ? 'implementation_reset' : 'reimplemented';
+    const historyAction = action === 'reset' ? 'implementation_reset' :
+                          action === 'reapply' ? 'reapplied' : 'reimplemented';
     await logDocumentHistory(id, historyAction, {
       docType,
       docNumber: doc.doc_number,
