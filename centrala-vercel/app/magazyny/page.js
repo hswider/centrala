@@ -3773,7 +3773,7 @@ export default function MagazynyPage() {
                           'MANUAL': 'Reczna zmiana',
                           'API': 'API'
                         };
-                        const isVoided = new Date(entry.created_at) >= new Date('2026-02-03T00:00:00');
+                        const isVoided = new Date(entry.created_at) >= new Date('2026-02-03T00:00:00') && entry.username === 'AnnaB' && entry.kategoria === 'surowce';
 
                         return (
                           <tr key={entry.id} className={`${isVoided ? 'bg-red-50 dark:bg-red-900/20' : 'hover:bg-gray-50 dark:hover:bg-gray-700'}`}>
