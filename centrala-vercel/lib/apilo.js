@@ -517,14 +517,16 @@ export async function createShipment(shipmentData) {
             width: p.dimensions?.width || 20,
             height: p.dimensions?.height || 10
           }
-        },
-        {
-          id: 'weight',
-          type: 'integer',
-          // Weight from template "Definicje wag" in Apilo - send default, Apilo may override
-          value: Math.round((p.weight || 1) * 1000) // kg -> g, default 1kg
         }
       ];
+      // Only send weight if explicitly provided - otherwise Apilo uses template "Definicje wag"
+      if (p.weight) {
+        options.push({
+          id: 'weight',
+          type: 'integer',
+          value: Math.round(p.weight * 1000) // kg -> g
+        });
+      }
       return { options };
     }),
     options: shipmentOptions
