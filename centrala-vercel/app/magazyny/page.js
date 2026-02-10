@@ -1220,6 +1220,7 @@ export default function MagazynyPage() {
             typ: 'Przyjecie zewnetrzne',
             firma: wzDocument.firma,
             pozycje: validPozycje.map(p => ({
+              produktId: p.produktId,
               nazwa: p.nazwa,
               ilosc: parseFloat(String(p.ilosc).replace(',', '.')),
               jednostka: p.jednostka
@@ -1319,6 +1320,7 @@ export default function MagazynyPage() {
             typ: 'Rozchod wewnetrzny',
             firma: rwDocument.firma,
             pozycje: validPozycje.map(p => ({
+              produktId: p.produktId,
               nazwa: p.nazwa,
               ilosc: parseFloat(String(p.ilosc).replace(',', '.')),
               jednostka: p.jednostka

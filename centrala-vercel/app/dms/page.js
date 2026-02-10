@@ -1928,12 +1928,14 @@ export default function DMSPage() {
                             <span className={`px-2 py-0.5 text-xs font-medium rounded ${
                               doc.status === 'sent' ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300' :
                               doc.status === 'completed' ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300' :
+                              doc.status === 'reset' ? 'bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300' :
                               doc.status === 'cancelled' ? 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300' :
                               'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300'
                             }`}>
                               {doc.status === 'draft' ? 'Wersja robocza' :
                                doc.status === 'sent' ? 'Wysłany' :
                                doc.status === 'completed' ? 'Zakończony' :
+                               doc.status === 'reset' ? 'Zresetowany' :
                                doc.status === 'cancelled' ? 'Anulowany' : doc.status}
                             </span>
                             {doc.docType === 'WZ' && doc.invoiceStatus && (
@@ -1966,6 +1968,7 @@ export default function DMSPage() {
                           <option value="draft">Wersja robocza</option>
                           <option value="sent">Wysłany</option>
                           <option value="completed">Zakończony</option>
+                          <option value="reset">Zresetowany</option>
                           <option value="cancelled">Anulowany</option>
                         </select>
                         {doc.docType === 'WZ' && (
@@ -2465,10 +2468,12 @@ export default function DMSPage() {
                   <span className={`px-2 py-1 text-xs font-medium rounded ${
                     previewDoc.status === 'completed' ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300' :
                     previewDoc.status === 'sent' ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300' :
+                    previewDoc.status === 'reset' ? 'bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300' :
                     'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300'
                   }`}>
                     {previewDoc.status === 'completed' ? 'Zakończony' :
                      previewDoc.status === 'sent' ? 'Wysłany' :
+                     previewDoc.status === 'reset' ? 'Zresetowany' :
                      previewDoc.status === 'draft' ? 'Wersja robocza' : previewDoc.status}
                   </span>
                 </div>
@@ -2511,7 +2516,63 @@ export default function DMSPage() {
             </div>
 
             {/* Footer */}
-            <div className="px-6 py-4 border-t border-gray-200 dark:border-gray-700 flex justify-end gap-3">
+            <div className="px-6 py-4 border-t border-gray-200 dark:border-gray-700 flex justify-between">
+              <div className="flex gap-2">
+                {(previewDoc.docType === 'WZ' || previewDoc.docType === 'RW') && previewDoc.status === 'completed' && (
+                  <button
+                    onClick={async () => {
+                      if (!window.confirm(`Czy na pewno chcesz zresetować implementację dokumentu ${previewDoc.docType} ${previewDoc.number}? Zmiany stanów magazynowych zostaną cofnięte.`)) return;
+                      try {
+                        const res = await fetch(`/api/dms/documents/${previewDoc.id}/implement`, {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ action: 'reset' })
+                        });
+                        const data = await res.json();
+                        if (data.success) {
+                          alert('Implementacja została zresetowana. Stany magazynowe przywrócone.');
+                          setPreviewDoc(prev => ({ ...prev, status: 'reset' }));
+                          loadDocuments();
+                        } else {
+                          alert('Błąd: ' + (data.error || 'Nieznany błąd'));
+                        }
+                      } catch (err) {
+                        alert('Błąd: ' + err.message);
+                      }
+                    }}
+                    className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700"
+                  >
+                    Resetuj implementację
+                  </button>
+                )}
+                {(previewDoc.docType === 'WZ' || previewDoc.docType === 'RW') && previewDoc.status === 'reset' && (
+                  <button
+                    onClick={async () => {
+                      if (!window.confirm(`Czy na pewno chcesz ponownie zaimplementować dokument ${previewDoc.docType} ${previewDoc.number}? Stany magazynowe zostaną zmienione.`)) return;
+                      try {
+                        const res = await fetch(`/api/dms/documents/${previewDoc.id}/implement`, {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ action: 'implement' })
+                        });
+                        const data = await res.json();
+                        if (data.success) {
+                          alert('Dokument został ponownie zaimplementowany. Stany magazynowe zaktualizowane.');
+                          setPreviewDoc(prev => ({ ...prev, status: 'completed' }));
+                          loadDocuments();
+                        } else {
+                          alert('Błąd: ' + (data.error || 'Nieznany błąd'));
+                        }
+                      } catch (err) {
+                        alert('Błąd: ' + err.message);
+                      }
+                    }}
+                    className="px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700"
+                  >
+                    Zaimplementuj ponownie
+                  </button>
+                )}
+              </div>
               <button
                 onClick={() => setPreviewDoc(null)}
                 className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600"
