@@ -460,6 +460,29 @@ export async function createShipment(shipmentData) {
     }
   */
 
+  // Auto-fetch method options to get required template value
+  let shipmentOptions = shipmentData.options || [];
+  if (!Array.isArray(shipmentOptions) || shipmentOptions.length === 0) {
+    try {
+      const methodOpts = await getShippingMethodOptions(shipmentData.carrierAccountId, shipmentData.method);
+      const optionsDef = methodOpts?.options?.properties || [];
+      shipmentOptions = [];
+      for (const prop of optionsDef) {
+        if (prop.id === 'template' && prop.choices && prop.choices.length > 0) {
+          shipmentOptions.push({
+            id: 'template',
+            type: 'choice',
+            value: prop.choices[0].value
+          });
+        }
+      }
+      console.log('[Apilo createShipment] Auto-resolved options:', JSON.stringify(shipmentOptions));
+    } catch (e) {
+      console.warn('[Apilo createShipment] Could not fetch method options:', e.message);
+      shipmentOptions = [];
+    }
+  }
+
   const payload = {
     carrierAccountId: shipmentData.carrierAccountId,
     orderId: shipmentData.orderId,
@@ -486,7 +509,7 @@ export async function createShipment(shipmentData) {
       ];
       return { options };
     }),
-    options: shipmentData.options || { template: shipmentData.carrierAccountId }
+    options: shipmentOptions
   };
 
   console.log('[Apilo createShipment] Sending payload:', JSON.stringify(payload, null, 2));
