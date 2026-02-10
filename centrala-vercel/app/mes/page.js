@@ -473,6 +473,24 @@ export default function MESPage() {
     });
   };
 
+  const getCountryFlag = (countryCode) => {
+    if (!countryCode) return '';
+    const code = countryCode.toUpperCase();
+    const flags = {
+      DE: '\u{1F1E9}\u{1F1EA}', FR: '\u{1F1EB}\u{1F1F7}', PL: '\u{1F1F5}\u{1F1F1}',
+      IT: '\u{1F1EE}\u{1F1F9}', ES: '\u{1F1EA}\u{1F1F8}', NL: '\u{1F1F3}\u{1F1F1}',
+      BE: '\u{1F1E7}\u{1F1EA}', AT: '\u{1F1E6}\u{1F1F9}', GB: '\u{1F1EC}\u{1F1E7}',
+      US: '\u{1F1FA}\u{1F1F8}', CZ: '\u{1F1E8}\u{1F1FF}', SK: '\u{1F1F8}\u{1F1F0}',
+      SE: '\u{1F1F8}\u{1F1EA}', DK: '\u{1F1E9}\u{1F1F0}', FI: '\u{1F1EB}\u{1F1EE}',
+      PT: '\u{1F1F5}\u{1F1F9}', IE: '\u{1F1EE}\u{1F1EA}', LU: '\u{1F1F1}\u{1F1FA}',
+      HU: '\u{1F1ED}\u{1F1FA}', RO: '\u{1F1F7}\u{1F1F4}', BG: '\u{1F1E7}\u{1F1EC}',
+      HR: '\u{1F1ED}\u{1F1F7}', SI: '\u{1F1F8}\u{1F1EE}', LT: '\u{1F1F1}\u{1F1F9}',
+      LV: '\u{1F1F1}\u{1F1FB}', EE: '\u{1F1EA}\u{1F1EA}', GR: '\u{1F1EC}\u{1F1F7}',
+      CH: '\u{1F1E8}\u{1F1ED}', NO: '\u{1F1F3}\u{1F1F4}',
+    };
+    return flags[code] || '';
+  };
+
   const getDeptCount = (key) => {
     if (!stats?.departments) return 0;
     return stats.departments[key] || 0;
@@ -671,8 +689,13 @@ export default function MESPage() {
                             </span>
                           )}
                           <span className="text-xs text-gray-500 dark:text-gray-400">
-                            {order.channelPlatform}
+                            {order.channelLabel || order.channelPlatform}
                           </span>
+                          {order.shipping?.country && (
+                            <span className="text-sm" title={order.shipping.country}>
+                              {getCountryFlag(order.shipping.country)}
+                            </span>
+                          )}
                           {getStatusBadge(order.orderStatus)}
                           {/* Department badge */}
                           {order.department && DEPT_BADGE_COLORS[order.department] && (
