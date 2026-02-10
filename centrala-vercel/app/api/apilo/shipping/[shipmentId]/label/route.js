@@ -3,9 +3,8 @@ import { sql } from '@vercel/postgres';
 
 // GET - Download shipment label PDF
 // Apilo stores labels as media files. Flow:
-// 1. Get shipment details from /rest/api/orders/{orderId}/shipment/{shipmentId}/
-// 2. Read media UUID from shipment
-// 3. Fetch PDF from /rest/api/media/{uuid}/ using same JSON API (returns raw PDF string)
+// 1. Get shipment details -> read media UUID
+// 2. Fetch PDF binary from /rest/api/media/{uuid}/ using fetch (not axios, to preserve binary)
 export async function GET(request, { params }) {
   try {
     const { shipmentId } = await params;
@@ -48,37 +47,34 @@ export async function GET(request, { params }) {
     if (!mediaUuid) {
       return Response.json({
         success: false,
-        error: 'Nie znaleziono etykiety. Sprawdz czy przesylka ma wygenerowana etykiete w Apilo.',
+        error: 'Nie znaleziono etykiety.',
         shipmentId,
         orderId: resolvedOrderId
       }, { status: 404 });
     }
 
-    // Fetch PDF from Apilo media endpoint using the standard JSON API
-    // apiloRequestDirect returns the response data directly - for media it's the raw PDF content
-    const pdfContent = await apiloRequestDirect('GET', `/rest/api/media/${mediaUuid}/`);
+    // Get access token for Apilo API
+    const { getAccessToken } = await import('../../../../../../lib/apilo');
+    const token = await getAccessToken();
+    const baseUrl = process.env.APILO_BASE_URL || 'https://poom.apilo.com';
 
-    if (!pdfContent) {
-      return Response.json({ success: false, error: 'Label media empty' }, { status: 404 });
-    }
-
-    // pdfContent is the raw PDF as a string from axios JSON parsing
-    // Convert to buffer - if it starts with %PDF it's raw PDF text
-    let buffer;
-    if (typeof pdfContent === 'string') {
-      buffer = Buffer.from(pdfContent, 'binary');
-    } else if (pdfContent instanceof ArrayBuffer || Buffer.isBuffer(pdfContent)) {
-      buffer = Buffer.from(pdfContent);
-    } else {
-      // If it's an object, it might have content field
-      if (pdfContent.content) {
-        buffer = Buffer.from(pdfContent.content, 'base64');
-      } else {
-        return Response.json({ success: true, label: pdfContent, note: 'Unexpected format' });
+    // Use native fetch to get binary PDF - axios corrupts binary data
+    const pdfResponse = await fetch(`${baseUrl}/rest/api/media/${mediaUuid}/`, {
+      headers: {
+        'Authorization': `Bearer ${token}`
       }
+    });
+
+    if (!pdfResponse.ok) {
+      return Response.json({
+        success: false,
+        error: `Media fetch failed: ${pdfResponse.status} ${pdfResponse.statusText}`
+      }, { status: pdfResponse.status });
     }
 
-    return new Response(buffer, {
+    const pdfBuffer = await pdfResponse.arrayBuffer();
+
+    return new Response(pdfBuffer, {
       headers: {
         'Content-Type': 'application/pdf',
         'Content-Disposition': `inline; filename="label-${shipmentId}.pdf"`

@@ -35,7 +35,7 @@ async function refreshTokens(refreshToken) {
   return accessToken;
 }
 
-async function getAccessToken() {
+export async function getAccessToken() {
   const tokens = await getTokens();
 
   if (!tokens || !tokens.access_token) {
