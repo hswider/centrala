@@ -32,6 +32,7 @@ const publicRoutes = [
   '/api/kaufland/debug', // Kaufland debug
   '/api/baselinker/debug', // Baselinker debug
   '/api/debug',          // Apilo debug
+  '/api/apilo/debug',    // Apilo shipping debug
   '/api/integrations/status', // Integrations status (for dashboard)
   '/api/weather/sync',   // Weather sync cron
   '/api/dms/init',        // DMS table initialization
