@@ -2,11 +2,38 @@
 
 import { useState, useEffect } from 'react';
 
+const DEPARTMENTS = [
+  { key: 'wszystkie', label: 'Wszystkie', color: 'blue', desc: 'Aktywne zamowienia' },
+  { key: 'krojownia', label: 'Krojownia', color: 'red', desc: 'Brak w magazynach' },
+  { key: 'szwalnia', label: 'Szwalnia', color: 'purple', desc: 'Dostepne wykroje' },
+  { key: 'polprodukty', label: 'Polprodukty', color: 'amber', desc: 'Dostepne polprodukty' },
+  { key: 'gotowe', label: 'Gotowe produkty', color: 'green', desc: 'Gotowe do wysylki' },
+  { key: 'wielopak', label: 'Wielopak', color: 'orange', desc: 'Wiele produktow' },
+];
+
+const DEPT_STYLES = {
+  wszystkie: { bg: 'bg-blue-50 dark:bg-blue-900/20', ring: 'ring-blue-500', text: 'text-blue-700 dark:text-blue-300', count: 'text-blue-800 dark:text-blue-200' },
+  krojownia: { bg: 'bg-red-50 dark:bg-red-900/20', ring: 'ring-red-500', text: 'text-red-700 dark:text-red-300', count: 'text-red-800 dark:text-red-200' },
+  szwalnia: { bg: 'bg-purple-50 dark:bg-purple-900/20', ring: 'ring-purple-500', text: 'text-purple-700 dark:text-purple-300', count: 'text-purple-800 dark:text-purple-200' },
+  polprodukty: { bg: 'bg-amber-50 dark:bg-amber-900/20', ring: 'ring-amber-500', text: 'text-amber-700 dark:text-amber-300', count: 'text-amber-800 dark:text-amber-200' },
+  gotowe: { bg: 'bg-green-50 dark:bg-green-900/20', ring: 'ring-green-500', text: 'text-green-700 dark:text-green-300', count: 'text-green-800 dark:text-green-200' },
+  wielopak: { bg: 'bg-orange-50 dark:bg-orange-900/20', ring: 'ring-orange-500', text: 'text-orange-700 dark:text-orange-300', count: 'text-orange-800 dark:text-orange-200' },
+};
+
+const DEPT_BADGE_COLORS = {
+  krojownia: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400',
+  szwalnia: 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400',
+  polprodukty: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400',
+  gotowe: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',
+  wielopak: 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400',
+};
+
 export default function MESPage() {
   const [orders, setOrders] = useState([]);
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState('all');
+  const [department, setDepartment] = useState('wszystkie');
+  const [secondaryFilter, setSecondaryFilter] = useState(null); // 'shipped', 'canceled', 'unpaid'
   const [expandedOrder, setExpandedOrder] = useState(null);
   const [expandedItem, setExpandedItem] = useState(null);
 
@@ -25,13 +52,11 @@ export default function MESPage() {
   const [shipForm, setShipForm] = useState({
     carrierAccountId: null,
     methodUuid: '',
-    // Weight is handled by Apilo template "Definicje wag"
     length: 30,
     width: 20,
     height: 10
   });
 
-  // Courier logo mapping
   const COURIER_LOGOS = {
     'inpost': 'https://inpost.pl/sites/default/files/logo_inpost.svg',
     'dhl': 'https://www.dhl.com/content/dam/dhl/global/core/images/logos/dhl-logo.svg',
@@ -78,16 +103,13 @@ export default function MESPage() {
     }
   };
 
-  // Fetch carrier accounts from Apilo
   const fetchCarrierAccounts = async () => {
     setCarriersLoading(true);
     try {
       const res = await fetch('/api/apilo/carriers?type=accounts');
       const data = await res.json();
-      console.log('Carrier accounts response:', data);
       if (data.success && Array.isArray(data.accounts)) {
         setCarrierAccounts(data.accounts);
-        // Auto-select first carrier if available
         if (data.accounts.length > 0 && !shipForm.carrierAccountId) {
           const firstId = data.accounts[0]?.id;
           if (firstId) {
@@ -96,7 +118,6 @@ export default function MESPage() {
           }
         }
       } else {
-        console.warn('No carrier accounts found or invalid response:', data);
         setCarrierAccounts([]);
       }
     } catch (err) {
@@ -107,22 +128,18 @@ export default function MESPage() {
     }
   };
 
-  // Fetch shipping methods for selected carrier
   const fetchShippingMethods = async (carrierAccountId) => {
     if (!carrierAccountId) return;
     try {
       const res = await fetch(`/api/apilo/carriers?type=methods&carrierAccountId=${carrierAccountId}`);
       const data = await res.json();
-      console.log('Shipping methods response:', data);
       if (data.success && Array.isArray(data.methods)) {
         setShippingMethods(data.methods);
-        // Auto-select first method if available
         if (data.methods.length > 0) {
           const firstMethod = data.methods[0];
           setShipForm(prev => ({ ...prev, methodUuid: firstMethod?.uuid || firstMethod?.id || '' }));
         }
       } else {
-        console.warn('No shipping methods found:', data);
         setShippingMethods([]);
       }
     } catch (err) {
@@ -131,15 +148,11 @@ export default function MESPage() {
     }
   };
 
-  // Parse dimensions from carrier account name (e.g. "DHL 600x400x400" -> {length: 60, width: 40, height: 40})
   const parseDimensionsFromName = (name) => {
     if (!name) return null;
-    // Match patterns like "600x400x400", "60x40x40", "30x40x5"
     const match = name.match(/(\d+)\s*[xX×]\s*(\d+)\s*[xX×]\s*(\d+)/);
     if (match) {
       let [, d1, d2, d3] = match.map(Number);
-      // If dimensions are > 100, they're probably in mm, convert to cm
-      // If dimensions look like mm (e.g. 600x400x400), divide by 10
       if (d1 > 100 || d2 > 100 || d3 > 100) {
         d1 = Math.round(d1 / 10);
         d2 = Math.round(d2 / 10);
@@ -150,14 +163,10 @@ export default function MESPage() {
     return null;
   };
 
-  // Weight is configured in Apilo's "Definicje wag" tab for each carrier template
-  // Apilo will automatically use the configured weight when creating shipments
-
   const handleSelectTemplate = (template) => {
     setSelectedTemplate(template);
     setShipForm(prev => ({
       ...prev,
-      // Weight is handled by Apilo template "Definicje wag"
       length: parseFloat(template.length_cm) || 30,
       width: parseFloat(template.width_cm) || 20,
       height: parseFloat(template.height_cm) || 10
@@ -167,12 +176,10 @@ export default function MESPage() {
   const handleCarrierChange = (carrierAccountId) => {
     const carrier = carrierAccounts.find(c => c.id === parseInt(carrierAccountId));
     const dimensions = parseDimensionsFromName(carrier?.name);
-
     setShipForm(prev => ({
       ...prev,
       carrierAccountId: parseInt(carrierAccountId),
       methodUuid: '',
-      // Auto-fill dimensions from carrier name if available
       ...(dimensions && {
         length: dimensions.length,
         width: dimensions.width,
@@ -192,7 +199,6 @@ export default function MESPage() {
 
     setShipLoading(true);
     try {
-      // Get order shipping address
       const orderRes = await fetch(`/api/orders/${showShipModal.id}`);
       const orderData = await orderRes.json();
       const shipping = orderData.order?.shipping || {};
@@ -217,7 +223,6 @@ export default function MESPage() {
             email: shipping.email || ''
           },
           parcels: [{
-            // Weight is taken from Apilo template "Definicje wag" - don't send it
             dimensions: {
               length: parseFloat(shipForm.length) || 30,
               width: parseFloat(shipForm.width) || 20,
@@ -233,11 +238,9 @@ export default function MESPage() {
         const shipmentId = data.result?.shipments?.[0]?.shipmentId;
         alert(`Przesylka utworzona w Apilo! ID: ${shipmentId || '-'}`);
       } else {
-        // Show detailed error info
         const errorMsg = data.details?.responseData
           ? `Blad: ${data.error}\n\nSzczegoly: ${JSON.stringify(data.details.responseData, null, 2)}`
           : `Blad: ${data.error}`;
-        console.error('Shipment error:', data);
         alert(errorMsg);
       }
     } catch (err) {
@@ -258,7 +261,7 @@ export default function MESPage() {
   const fetchOrders = async () => {
     try {
       setLoading(true);
-      const res = await fetch(`/api/mes/orders?status=${filter}&limit=500`);
+      const res = await fetch('/api/mes/orders?status=all&limit=500');
       const data = await res.json();
       if (data.success) {
         setOrders(data.orders);
@@ -276,7 +279,21 @@ export default function MESPage() {
     fetchShipments();
     fetchTemplates();
     fetchCarrierAccounts();
-  }, [filter]);
+  }, []);
+
+  // Client-side filtering by department or secondary filter
+  const filteredOrders = (() => {
+    if (secondaryFilter) {
+      if (secondaryFilter === 'shipped') return orders.filter(o => o.isShipped);
+      if (secondaryFilter === 'canceled') return orders.filter(o => o.isCanceled);
+      if (secondaryFilter === 'unpaid') return orders.filter(o => !o.isPaid && !o.isCanceled && !o.isShipped);
+      return orders;
+    }
+    if (department === 'wszystkie') {
+      return orders.filter(o => o.department !== null);
+    }
+    return orders.filter(o => o.department === department);
+  })();
 
   const getStatusBadge = (status) => {
     switch (status) {
@@ -316,12 +333,7 @@ export default function MESPage() {
       surowce: isAvailable ? 'bg-orange-500' : isPartial ? 'bg-orange-300' : 'bg-gray-300'
     };
 
-    const labels = {
-      gotowe: 'GOT',
-      polprodukty: 'POL',
-      wykroje: 'WYK',
-      surowce: 'SUR'
-    };
+    const labels = { gotowe: 'GOT', polprodukty: 'POL', wykroje: 'WYK', surowce: 'SUR' };
 
     return (
       <div
@@ -336,11 +348,13 @@ export default function MESPage() {
   const formatDate = (dateStr) => {
     if (!dateStr) return '-';
     return new Date(dateStr).toLocaleDateString('pl-PL', {
-      day: '2-digit',
-      month: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit'
+      day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit'
     });
+  };
+
+  const getDeptCount = (key) => {
+    if (!stats?.departments) return 0;
+    return stats.departments[key] || 0;
   };
 
   return (
@@ -350,10 +364,10 @@ export default function MESPage() {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
           <div>
             <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">
-              MES - Manufacturing Execution System
+              MES - Dzialy produkcyjne
             </h1>
             <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">
-              Zarzadzanie produkcja i realizacja zamowien
+              Zamowienia posortowane wg etapu produkcji
             </p>
           </div>
           <button
@@ -365,36 +379,57 @@ export default function MESPage() {
           </button>
         </div>
 
-        {/* Stats */}
+        {/* Department tabs */}
         {stats && (
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
-            <div
-              className={`rounded-lg shadow p-3 cursor-pointer transition-colors ${filter === 'all' ? 'bg-blue-100 dark:bg-blue-900/30 ring-2 ring-blue-500' : 'bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700'}`}
-              onClick={() => setFilter('all')}
-            >
-              <p className="text-xs text-gray-500 dark:text-gray-400">Wszystkie (luty)</p>
-              <p className="text-xl font-bold text-gray-900 dark:text-white">{stats.total}</p>
+          <div className="mb-4">
+            <div className="flex gap-2 overflow-x-auto pb-2 -mx-3 px-3 sm:mx-0 sm:px-0">
+              {DEPARTMENTS.map(dept => {
+                const s = DEPT_STYLES[dept.key];
+                const count = getDeptCount(dept.key);
+                const isActive = !secondaryFilter && department === dept.key;
+                return (
+                  <div
+                    key={dept.key}
+                    className={`flex-shrink-0 rounded-lg shadow p-3 cursor-pointer transition-all min-w-[120px] ${
+                      isActive ? `${s.bg} ring-2 ${s.ring}` : 'bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700'
+                    }`}
+                    onClick={() => { setDepartment(dept.key); setSecondaryFilter(null); }}
+                  >
+                    <p className={`text-xs font-medium ${isActive ? s.text : 'text-gray-500 dark:text-gray-400'}`}>
+                      {dept.label}
+                    </p>
+                    <p className={`text-xl font-bold ${isActive ? s.count : 'text-gray-900 dark:text-white'}`}>
+                      {count}
+                    </p>
+                    <p className="text-[10px] text-gray-400 dark:text-gray-500 mt-0.5 hidden sm:block">
+                      {dept.desc}
+                    </p>
+                  </div>
+                );
+              })}
             </div>
-            <div
-              className={`rounded-lg shadow p-3 cursor-pointer transition-colors ${filter === 'pending' ? 'bg-red-100 dark:bg-red-900/30 ring-2 ring-red-500' : 'bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700'}`}
-              onClick={() => setFilter('pending')}
-            >
-              <p className="text-xs text-red-600 dark:text-red-400">Do produkcji</p>
-              <p className="text-xl font-bold text-red-700 dark:text-red-300">{stats.needsProduction + stats.partial}</p>
-            </div>
-            <div
-              className={`rounded-lg shadow p-3 cursor-pointer transition-colors ${filter === 'ready' ? 'bg-green-100 dark:bg-green-900/30 ring-2 ring-green-500' : 'bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700'}`}
-              onClick={() => setFilter('ready')}
-            >
-              <p className="text-xs text-green-600 dark:text-green-400">Gotowe do wysylki</p>
-              <p className="text-xl font-bold text-green-700 dark:text-green-300">{stats.readyToShip}</p>
-            </div>
-            <div
-              className={`rounded-lg shadow p-3 cursor-pointer transition-colors ${filter === 'shipped' ? 'bg-blue-100 dark:bg-blue-900/30 ring-2 ring-blue-500' : 'bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700'}`}
-              onClick={() => setFilter('shipped')}
-            >
-              <p className="text-xs text-blue-600 dark:text-blue-400">Wyslane</p>
-              <p className="text-xl font-bold text-blue-700 dark:text-blue-300">{stats.shipped || 0}</p>
+
+            {/* Secondary filters: shipped / canceled / unpaid */}
+            <div className="flex items-center gap-3 mt-2 text-xs">
+              <span className="text-gray-400 dark:text-gray-500">Inne:</span>
+              <button
+                onClick={() => { setSecondaryFilter(secondaryFilter === 'shipped' ? null : 'shipped'); }}
+                className={`px-2 py-0.5 rounded ${secondaryFilter === 'shipped' ? 'bg-blue-100 text-blue-700 font-bold' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400'}`}
+              >
+                Wyslane ({stats.shipped || 0})
+              </button>
+              <button
+                onClick={() => { setSecondaryFilter(secondaryFilter === 'canceled' ? null : 'canceled'); }}
+                className={`px-2 py-0.5 rounded ${secondaryFilter === 'canceled' ? 'bg-gray-200 text-gray-700 font-bold' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400'}`}
+              >
+                Anulowane ({stats.canceled || 0})
+              </button>
+              <button
+                onClick={() => { setSecondaryFilter(secondaryFilter === 'unpaid' ? null : 'unpaid'); }}
+                className={`px-2 py-0.5 rounded ${secondaryFilter === 'unpaid' ? 'bg-yellow-100 text-yellow-700 font-bold' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400'}`}
+              >
+                Nieoplacone ({stats.unpaid || 0})
+              </button>
             </div>
           </div>
         )}
@@ -431,7 +466,11 @@ export default function MESPage() {
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow dark:shadow-gray-900 overflow-hidden">
           <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-700">
             <h2 className="font-semibold text-gray-900 dark:text-white">
-              Zamowienia ({orders.length})
+              {secondaryFilter
+                ? secondaryFilter === 'shipped' ? 'Wyslane' : secondaryFilter === 'canceled' ? 'Anulowane' : 'Nieoplacone'
+                : DEPARTMENTS.find(d => d.key === department)?.label || 'Zamowienia'
+              }
+              {' '}({filteredOrders.length})
             </h2>
           </div>
 
@@ -439,196 +478,223 @@ export default function MESPage() {
             <div className="px-4 py-12 text-center text-gray-500 dark:text-gray-400">
               Ladowanie zamowien...
             </div>
-          ) : orders.length === 0 ? (
+          ) : filteredOrders.length === 0 ? (
             <div className="px-4 py-12 text-center text-gray-500 dark:text-gray-400">
-              Brak zamowien do wyswietlenia
+              Brak zamowien w tym dziale
             </div>
           ) : (
             <div className="divide-y divide-gray-100 dark:divide-gray-700">
-              {orders.map((order) => (
-                <div key={order.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
-                  {/* Naglowek zamowienia */}
-                  <div
-                    className="px-4 py-3 cursor-pointer flex items-center gap-3"
-                    onClick={() => setExpandedOrder(expandedOrder === order.id ? null : order.id)}
-                  >
-                    <div className="flex-shrink-0">
-                      <span className={`text-lg ${expandedOrder === order.id ? 'rotate-90' : ''} transition-transform inline-block`}>
-                        ▶
-                      </span>
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className="font-mono text-sm font-medium text-gray-900 dark:text-white">
-                          #{order.id}
+              {filteredOrders.map((order) => {
+                const hasAlerts = order.items?.some(i => i.alerts && i.alerts.length > 0);
+                return (
+                  <div key={order.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                    {/* Naglowek zamowienia */}
+                    <div
+                      className="px-4 py-3 cursor-pointer flex items-center gap-3"
+                      onClick={() => setExpandedOrder(expandedOrder === order.id ? null : order.id)}
+                    >
+                      <div className="flex-shrink-0">
+                        <span className={`text-lg ${expandedOrder === order.id ? 'rotate-90' : ''} transition-transform inline-block`}>
+                          ▶
                         </span>
-                        {order.externalId && (
-                          <span className="text-xs text-gray-400 dark:text-gray-500">
-                            ({order.externalId})
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="font-mono text-sm font-medium text-gray-900 dark:text-white">
+                            #{order.id}
                           </span>
+                          {order.externalId && (
+                            <span className="text-xs text-gray-400 dark:text-gray-500">
+                              ({order.externalId})
+                            </span>
+                          )}
+                          <span className="text-xs text-gray-500 dark:text-gray-400">
+                            {order.channelPlatform}
+                          </span>
+                          {getStatusBadge(order.orderStatus)}
+                          {/* Department badge */}
+                          {order.department && DEPT_BADGE_COLORS[order.department] && (
+                            <span className={`px-1.5 py-0.5 text-[10px] font-bold rounded ${DEPT_BADGE_COLORS[order.department]}`}>
+                              {order.department === 'wielopak' ? 'WIELOPAK' : order.department.toUpperCase()}
+                            </span>
+                          )}
+                          {/* Alert indicator */}
+                          {hasAlerts && (
+                            <span className="text-yellow-500 text-sm" title="Zamowienie wymaga uwagi">⚠</span>
+                          )}
+                        </div>
+                        <div className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                          {formatDate(order.orderedAt)} • {order.itemsCount} prod. • {order.totalGross} {order.currency}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-1 text-xs">
+                        <span className="text-green-600 font-medium">{order.readyCount} ✓</span>
+                        {order.needsProductionCount > 0 && (
+                          <span className="text-red-600 font-medium">{order.needsProductionCount} ✗</span>
                         )}
-                        <span className="text-xs text-gray-500 dark:text-gray-400">
-                          {order.channelPlatform}
-                        </span>
-                        {getStatusBadge(order.orderStatus)}
-                      </div>
-                      <div className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-                        {formatDate(order.orderedAt)} • {order.itemsCount} produktow • {order.totalGross} {order.currency}
                       </div>
                     </div>
-                    <div className="flex items-center gap-1 text-xs">
-                      <span className="text-green-600 font-medium">{order.readyCount} ✓</span>
-                      {order.needsProductionCount > 0 && (
-                        <span className="text-red-600 font-medium">{order.needsProductionCount} ✗</span>
-                      )}
-                    </div>
-                  </div>
 
-                  {/* Rozwinięte szczegoly */}
-                  {expandedOrder === order.id && (
-                    <div className="px-4 pb-4 bg-gray-50 dark:bg-gray-700/30">
-                      <div className="space-y-2">
-                        {order.items.map((item, idx) => (
-                          <div
-                            key={idx}
-                            className={`bg-white dark:bg-gray-800 rounded-lg p-3 border ${
-                              item.productionStatus === 'ready' ? 'border-green-200 dark:border-green-800' :
-                              item.productionStatus === 'partial' ? 'border-yellow-200 dark:border-yellow-800' :
-                              'border-red-200 dark:border-red-800'
-                            }`}
-                          >
-                            <div className="flex items-start gap-3">
-                              {/* Obrazek */}
-                              <div className="w-12 h-12 flex-shrink-0 bg-gray-100 dark:bg-gray-700 rounded overflow-hidden">
-                                {item.image ? (
-                                  <img src={item.image} alt="" className="w-full h-full object-cover" />
-                                ) : (
-                                  <div className="w-full h-full flex items-center justify-center text-gray-400 text-[8px]">brak</div>
-                                )}
-                              </div>
-
-                              {/* Info */}
-                              <div className="flex-1 min-w-0">
-                                <div className="flex items-start justify-between gap-2">
-                                  <div>
-                                    <div className="text-sm font-medium text-gray-900 dark:text-white line-clamp-1">
-                                      {item.name}
-                                    </div>
-                                    <div className="text-xs text-gray-400 dark:text-gray-500">
-                                      SKU: {item.sku || '-'} • {item.quantity} szt.
-                                    </div>
-                                  </div>
-                                  {getStatusBadge(item.productionStatus)}
-                                </div>
-
-                                {/* Dostepnosc magazynowa */}
-                                <div className="mt-2 flex items-center gap-1">
-                                  {getMagazynBadge('gotowe', item.availability.gotowe, item.quantity)}
-                                  {getMagazynBadge('polprodukty', item.availability.polprodukty, item.quantity)}
-                                  {getMagazynBadge('wykroje', item.availability.wykroje, item.quantity)}
-                                  {getMagazynBadge('surowce', item.availability.surowce, item.quantity)}
-
-                                  {item.missingQty > 0 && (
-                                    <span className="ml-2 text-xs text-red-600 dark:text-red-400 font-medium">
-                                      Brakuje: {item.missingQty} szt.
-                                    </span>
+                    {/* Rozwiniete szczegoly */}
+                    {expandedOrder === order.id && (
+                      <div className="px-4 pb-4 bg-gray-50 dark:bg-gray-700/30">
+                        <div className="space-y-2">
+                          {order.items.map((item, idx) => (
+                            <div
+                              key={idx}
+                              className={`bg-white dark:bg-gray-800 rounded-lg p-3 border ${
+                                item.productionStatus === 'ready' ? 'border-green-200 dark:border-green-800' :
+                                item.productionStatus === 'partial' ? 'border-yellow-200 dark:border-yellow-800' :
+                                'border-red-200 dark:border-red-800'
+                              }`}
+                            >
+                              <div className="flex items-start gap-3">
+                                {/* Obrazek */}
+                                <div className="w-12 h-12 flex-shrink-0 bg-gray-100 dark:bg-gray-700 rounded overflow-hidden">
+                                  {item.image ? (
+                                    <img src={item.image} alt="" className="w-full h-full object-cover" />
+                                  ) : (
+                                    <div className="w-full h-full flex items-center justify-center text-gray-400 text-[8px]">brak</div>
                                   )}
                                 </div>
 
-                                {/* Receptura */}
-                                {item.recipe && item.recipe.length > 0 && (
-                                  <div className="mt-2">
-                                    <button
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        setExpandedItem(expandedItem === `${order.id}-${idx}` ? null : `${order.id}-${idx}`);
-                                      }}
-                                      className="text-xs text-blue-600 hover:text-blue-800 font-medium"
-                                    >
-                                      {expandedItem === `${order.id}-${idx}` ? '▼ Ukryj recepture' : '▶ Pokaz recepture'}
-                                    </button>
-
-                                    {expandedItem === `${order.id}-${idx}` && (
-                                      <div className="mt-2 p-2 bg-gray-50 dark:bg-gray-700 rounded text-xs space-y-1">
-                                        <div className="font-medium text-gray-700 dark:text-gray-300 mb-1">Skladniki:</div>
-                                        {item.recipe.map((ing, ingIdx) => (
-                                          <div key={ingIdx} className="flex items-center justify-between">
-                                            <span className="text-gray-600 dark:text-gray-400">
-                                              {ing.nazwa}
-                                              <span className="text-gray-400 dark:text-gray-500 ml-1">({ing.kategoria})</span>
-                                            </span>
-                                            <span className={`font-medium ${ing.stan >= ing.quantity * item.quantity ? 'text-green-600' : 'text-red-600'}`}>
-                                              {ing.quantity * item.quantity} szt. (stan: {ing.stan})
-                                            </span>
-                                          </div>
-                                        ))}
+                                {/* Info */}
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-start justify-between gap-2">
+                                    <div>
+                                      <div className="text-sm font-medium text-gray-900 dark:text-white line-clamp-1">
+                                        {item.name}
                                       </div>
+                                      <div className="text-xs text-gray-400 dark:text-gray-500">
+                                        SKU: {item.sku || '-'} • {item.quantity} szt.
+                                      </div>
+                                    </div>
+                                    {getStatusBadge(item.productionStatus)}
+                                  </div>
+
+                                  {/* Alerty */}
+                                  {item.alerts && item.alerts.length > 0 && (
+                                    <div className="flex gap-1 mt-1 flex-wrap">
+                                      {item.alerts.map((alert, alertIdx) => (
+                                        <span
+                                          key={alertIdx}
+                                          className={`px-1.5 py-0.5 text-[10px] font-bold rounded ${
+                                            alert.type === 'error'
+                                              ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
+                                              : 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400'
+                                          }`}
+                                        >
+                                          ⚠ {alert.message}
+                                        </span>
+                                      ))}
+                                    </div>
+                                  )}
+
+                                  {/* Dostepnosc magazynowa */}
+                                  <div className="mt-2 flex items-center gap-1">
+                                    {getMagazynBadge('gotowe', item.availability.gotowe, item.quantity)}
+                                    {getMagazynBadge('polprodukty', item.availability.polprodukty, item.quantity)}
+                                    {getMagazynBadge('wykroje', item.availability.wykroje, item.quantity)}
+                                    {getMagazynBadge('surowce', item.availability.surowce, item.quantity)}
+
+                                    {item.missingQty > 0 && (
+                                      <span className="ml-2 text-xs text-red-600 dark:text-red-400 font-medium">
+                                        Brakuje: {item.missingQty} szt.
+                                      </span>
                                     )}
                                   </div>
-                                )}
-                              </div>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
 
-                      {/* Akcje */}
-                      <div className="mt-3 flex items-center gap-2 flex-wrap">
-                        {shipments[order.id] ? (
-                          // Show shipment info
-                          <div className="flex items-center gap-2 bg-green-50 dark:bg-green-900/20 px-3 py-2 rounded-lg">
-                            <img src={getCourierLogo(shipments[order.id].courier)} alt="" className="w-8 h-8 object-contain" />
-                            <div className="text-xs">
-                              <div className="font-medium text-green-700 dark:text-green-300">
-                                {shipments[order.id].courier?.toUpperCase()} • {shipments[order.id].status}
+                                  {/* Receptura */}
+                                  {item.recipe && item.recipe.length > 0 && (
+                                    <div className="mt-2">
+                                      <button
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          setExpandedItem(expandedItem === `${order.id}-${idx}` ? null : `${order.id}-${idx}`);
+                                        }}
+                                        className="text-xs text-blue-600 hover:text-blue-800 font-medium"
+                                      >
+                                        {expandedItem === `${order.id}-${idx}` ? '▼ Ukryj recepture' : '▶ Pokaz recepture'}
+                                      </button>
+
+                                      {expandedItem === `${order.id}-${idx}` && (
+                                        <div className="mt-2 p-2 bg-gray-50 dark:bg-gray-700 rounded text-xs space-y-1">
+                                          <div className="font-medium text-gray-700 dark:text-gray-300 mb-1">Skladniki:</div>
+                                          {item.recipe.map((ing, ingIdx) => (
+                                            <div key={ingIdx} className="flex items-center justify-between">
+                                              <span className="text-gray-600 dark:text-gray-400">
+                                                {ing.nazwa}
+                                                <span className="text-gray-400 dark:text-gray-500 ml-1">({ing.kategoria})</span>
+                                              </span>
+                                              <span className={`font-medium ${ing.stan >= ing.quantity * item.quantity ? 'text-green-600' : 'text-red-600'}`}>
+                                                {ing.quantity * item.quantity} szt. (stan: {ing.stan})
+                                              </span>
+                                            </div>
+                                          ))}
+                                        </div>
+                                      )}
+                                    </div>
+                                  )}
+                                </div>
                               </div>
-                              <a
-                                href={getTrackingUrl(shipments[order.id].courier, shipments[order.id].tracking_number)}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-blue-600 hover:underline font-mono"
-                              >
-                                {shipments[order.id].tracking_number}
-                              </a>
                             </div>
-                          </div>
-                        ) : order.isCanceled ? (
-                          // Canceled order
-                          <span className="px-3 py-1.5 text-xs font-medium bg-gray-200 text-gray-500 rounded line-through">
-                            Anulowane
-                          </span>
-                        ) : order.isShipped ? (
-                          // Shipped but no local shipment record
-                          <span className="px-3 py-1.5 text-xs font-medium bg-blue-100 text-blue-700 rounded">
-                            Wyslane (status: {order.deliveryStatus})
-                          </span>
-                        ) : (
-                          // Show ship button for ALL orders (not just ready_to_ship)
-                          <button
-                            onClick={(e) => { e.stopPropagation(); setShowShipModal(order); }}
-                            className={`px-3 py-1.5 text-xs font-medium rounded flex items-center gap-1 ${
-                              order.orderStatus === 'ready_to_ship'
-                                ? 'bg-green-600 text-white hover:bg-green-700'
-                                : order.orderStatus === 'unpaid'
-                                ? 'bg-yellow-500 text-white hover:bg-yellow-600'
-                                : 'bg-orange-500 text-white hover:bg-orange-600'
-                            }`}
+                          ))}
+                        </div>
+
+                        {/* Akcje */}
+                        <div className="mt-3 flex items-center gap-2 flex-wrap">
+                          {shipments[order.id] ? (
+                            <div className="flex items-center gap-2 bg-green-50 dark:bg-green-900/20 px-3 py-2 rounded-lg">
+                              <img src={getCourierLogo(shipments[order.id].courier)} alt="" className="w-8 h-8 object-contain" />
+                              <div className="text-xs">
+                                <div className="font-medium text-green-700 dark:text-green-300">
+                                  {shipments[order.id].courier?.toUpperCase()} • {shipments[order.id].status}
+                                </div>
+                                <a
+                                  href={getTrackingUrl(shipments[order.id].courier, shipments[order.id].tracking_number)}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-blue-600 hover:underline font-mono"
+                                >
+                                  {shipments[order.id].tracking_number}
+                                </a>
+                              </div>
+                            </div>
+                          ) : order.isCanceled ? (
+                            <span className="px-3 py-1.5 text-xs font-medium bg-gray-200 text-gray-500 rounded line-through">
+                              Anulowane
+                            </span>
+                          ) : order.isShipped ? (
+                            <span className="px-3 py-1.5 text-xs font-medium bg-blue-100 text-blue-700 rounded">
+                              Wyslane (status: {order.deliveryStatus})
+                            </span>
+                          ) : (
+                            <button
+                              onClick={(e) => { e.stopPropagation(); setShowShipModal(order); }}
+                              className={`px-3 py-1.5 text-xs font-medium rounded flex items-center gap-1 ${
+                                order.orderStatus === 'ready_to_ship'
+                                  ? 'bg-green-600 text-white hover:bg-green-700'
+                                  : order.orderStatus === 'unpaid'
+                                  ? 'bg-yellow-500 text-white hover:bg-yellow-600'
+                                  : 'bg-orange-500 text-white hover:bg-orange-600'
+                              }`}
+                            >
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" /></svg>
+                              {order.orderStatus === 'ready_to_ship' ? 'Wyslij z kurierem' : 'Przygotuj przesylke'}
+                            </button>
+                          )}
+                          <a
+                            href={`/zamowienia/${order.id}`}
+                            className="px-3 py-1.5 text-xs font-medium bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-200 rounded hover:bg-gray-300 dark:hover:bg-gray-500"
                           >
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" /></svg>
-                            {order.orderStatus === 'ready_to_ship' ? 'Wyslij z kurierem' : 'Przygotuj przesylke'}
-                          </button>
-                        )}
-                        <a
-                          href={`/zamowienia/${order.id}`}
-                          className="px-3 py-1.5 text-xs font-medium bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-200 rounded hover:bg-gray-300 dark:hover:bg-gray-500"
-                        >
-                          Szczegoly zamowienia
-                        </a>
+                            Szczegoly
+                          </a>
+                        </div>
                       </div>
-                    </div>
-                  )}
-                </div>
-              ))}
+                    )}
+                  </div>
+                );
+              })}
             </div>
           )}
         </div>
@@ -640,11 +706,10 @@ export default function MESPage() {
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-lg w-full max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
             <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Utworz przesylke</h3>
-              <button onClick={() => setShowShipModal(null)} className="text-gray-400 hover:text-gray-600 text-xl">×</button>
+              <button onClick={() => setShowShipModal(null)} className="text-gray-400 hover:text-gray-600 text-xl">&times;</button>
             </div>
 
             <div className="p-4 space-y-4">
-              {/* Order info */}
               <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-3">
                 <div className="text-sm font-medium text-gray-900 dark:text-white">Zamowienie #{showShipModal.id}</div>
                 <div className="text-xs text-gray-500 dark:text-gray-400">
@@ -652,7 +717,6 @@ export default function MESPage() {
                 </div>
               </div>
 
-              {/* Templates */}
               {templates.length > 0 && (
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Wybierz szablon</label>
@@ -664,21 +728,20 @@ export default function MESPage() {
                         className={`p-2 text-left border rounded-lg text-xs ${selectedTemplate?.id === t.id ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20' : 'border-gray-200 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700'}`}
                       >
                         <div className="font-medium text-gray-900 dark:text-white truncate">{t.name}</div>
-                        <div className="text-gray-500 dark:text-gray-400">{t.length_cm}×{t.width_cm}×{t.height_cm} cm</div>
+                        <div className="text-gray-500 dark:text-gray-400">{t.length_cm}x{t.width_cm}x{t.height_cm} cm</div>
                       </button>
                     ))}
                   </div>
                 </div>
               )}
 
-              {/* Carrier select from Apilo */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Kurier (z Apilo)</label>
                 {carriersLoading ? (
                   <div className="text-sm text-gray-500 py-2">Ladowanie kurierow...</div>
                 ) : carrierAccounts.length === 0 ? (
                   <div className="text-sm text-yellow-600 dark:text-yellow-400 py-2">
-                    Brak skonfigurowanych kurierow w Apilo. Skonfiguruj integracje w panelu Apilo.
+                    Brak skonfigurowanych kurierow w Apilo.
                   </div>
                 ) : (
                   <select
@@ -694,7 +757,6 @@ export default function MESPage() {
                 )}
               </div>
 
-              {/* Shipping method select */}
               {shipForm.carrierAccountId && shippingMethods.length > 0 && (
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Metoda wysylki</label>
@@ -710,14 +772,10 @@ export default function MESPage() {
                 </div>
               )}
 
-              {/* Dimensions - auto-filled from carrier name */}
               {shipForm.carrierAccountId && (
                 <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-3">
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Wymiary paczki (cm)
-                    <span className="ml-2 text-xs text-green-600 dark:text-green-400 font-normal">
-                      (z szablonu kuriera)
-                    </span>
                   </label>
                   <div className="grid grid-cols-3 gap-2 text-center">
                     <div>
@@ -738,9 +796,6 @@ export default function MESPage() {
                         {shipForm.height}
                       </div>
                     </div>
-                  </div>
-                  <div className="mt-2 text-xs text-green-600 dark:text-green-400">
-                    Waga zostanie pobrana z szablonu Apilo (Definicje wag)
                   </div>
                 </div>
               )}

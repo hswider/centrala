@@ -7,33 +7,20 @@ export async function GET(request) {
     await initDatabase();
 
     const { searchParams } = new URL(request.url);
-    const status = searchParams.get('status') || 'all'; // pending, ready, all, shipped
+    const status = searchParams.get('status') || 'all';
     const limit = parseInt(searchParams.get('limit')) || 500;
     const includeAll = status === 'all';
 
-    // Data początku lutego 2026
     const februaryStart = '2026-02-01';
 
     console.log('[MES API] Request params:', { status, limit, includeAll });
 
-    // Pobierz zamówienia od początku lutego
-    // Dla 'all' - pobierz WSZYSTKIE zamówienia bez filtrów (włącznie z wysłanymi, anulowanymi, nieopłaconymi)
     const orders = includeAll
       ? await sql`
           SELECT
-            id,
-            external_id,
-            channel_label,
-            channel_platform,
-            ordered_at,
-            items,
-            customer,
-            shipping,
-            total_gross,
-            currency,
-            delivery_status,
-            payment_status,
-            is_canceled
+            id, external_id, channel_label, channel_platform,
+            ordered_at, items, customer, shipping,
+            total_gross, currency, delivery_status, payment_status, is_canceled
           FROM orders
           WHERE ordered_at >= ${februaryStart}
           ORDER BY ordered_at DESC
@@ -41,19 +28,9 @@ export async function GET(request) {
         `
       : await sql`
           SELECT
-            id,
-            external_id,
-            channel_label,
-            channel_platform,
-            ordered_at,
-            items,
-            customer,
-            shipping,
-            total_gross,
-            currency,
-            delivery_status,
-            payment_status,
-            is_canceled
+            id, external_id, channel_label, channel_platform,
+            ordered_at, items, customer, shipping,
+            total_gross, currency, delivery_status, payment_status, is_canceled
           FROM orders
           WHERE payment_status = 'PAID'
             AND ordered_at >= ${februaryStart}
@@ -65,14 +42,18 @@ export async function GET(request) {
 
     console.log('[MES API] Orders from DB:', orders.rows.length);
 
-    // Pobierz wszystkie produkty z inventory pogrupowane po kategorii
+    // Pobierz produkty z inventory ze stanem > 0
     const inventory = await sql`
       SELECT id, sku, nazwa, stan, kategoria, cena
       FROM inventory
       WHERE stan > 0
     `;
 
-    // Zbuduj mapę inventory po SKU i kategorii
+    // Pobierz WSZYSTKIE gotowe produkty (nawet stan=0) do lookup receptur
+    const gotoweAll = await sql`
+      SELECT id, sku FROM inventory WHERE kategoria = 'gotowe'
+    `;
+
     const inventoryMap = {
       gotowe: {},
       polprodukty: {},
@@ -93,21 +74,23 @@ export async function GET(request) {
       }
     });
 
-    // Pobierz receptury dla produktów gotowych
+    // Mapa gotowe po SKU do lookup receptur (wlacznie ze stanem 0)
+    const gotoweRecipeLookup = {};
+    gotoweAll.rows.forEach(item => {
+      const key = (item.sku || '').toUpperCase().trim();
+      gotoweRecipeLookup[key] = { id: item.id };
+    });
+
+    // Pobierz receptury
     const recipes = await sql`
       SELECT
-        r.product_id,
-        r.ingredient_id,
-        r.quantity,
-        i.sku as ingredient_sku,
-        i.nazwa as ingredient_nazwa,
-        i.kategoria as ingredient_kategoria,
-        i.stan as ingredient_stan
+        r.product_id, r.ingredient_id, r.quantity,
+        i.sku as ingredient_sku, i.nazwa as ingredient_nazwa,
+        i.kategoria as ingredient_kategoria, i.stan as ingredient_stan
       FROM recipes r
       JOIN inventory i ON r.ingredient_id = i.id
     `;
 
-    // Zbuduj mapę receptur po product_id
     const recipeMap = {};
     recipes.rows.forEach(r => {
       if (!recipeMap[r.product_id]) {
@@ -123,7 +106,7 @@ export async function GET(request) {
       });
     });
 
-    // Przetwórz zamówienia
+    // Przetworz zamowienia
     const processedOrders = orders.rows.map(order => {
       const items = order.items || [];
 
@@ -133,15 +116,13 @@ export async function GET(request) {
           const sku = (item.sku || '').toUpperCase().trim();
           const quantity = parseInt(item.quantity) || 1;
 
-          // Sprawdź dostępność na każdym poziomie
           const availability = {
             gotowe: inventoryMap.gotowe[sku] || null,
-            polprodukty: null, // Szukamy po części SKU lub nazwie
+            polprodukty: null,
             wykroje: null,
             surowce: null
           };
 
-          // Znajdź pasujące półprodukty, wykroje (po części nazwy/sku)
           const nameLower = (item.name || '').toLowerCase();
 
           Object.keys(inventoryMap.polprodukty).forEach(key => {
@@ -162,7 +143,7 @@ export async function GET(request) {
             }
           });
 
-          // Określ status produkcji
+          // Status produkcji
           let productionStatus = 'needs_production';
           let availableFrom = null;
           let missingQty = quantity;
@@ -186,10 +167,20 @@ export async function GET(request) {
             availableFrom = 'surowce';
           }
 
-          // Pobierz recepturę jeśli produkt jest w inventory gotowe
+          // Receptura - szukaj w gotowe (takze ze stanem 0)
           let recipe = null;
-          if (availability.gotowe) {
-            recipe = recipeMap[availability.gotowe.id] || null;
+          const gotoweEntry = availability.gotowe || gotoweRecipeLookup[sku];
+          if (gotoweEntry) {
+            recipe = recipeMap[gotoweEntry.id] || null;
+          }
+
+          // Alerty
+          const alerts = [];
+          if (!sku || sku === '') {
+            alerts.push({ type: 'error', message: 'Brak SKU' });
+          }
+          if (sku && productionStatus !== 'ready' && !recipe) {
+            alerts.push({ type: 'warning', message: 'Brak receptury' });
           }
 
           return {
@@ -202,19 +193,17 @@ export async function GET(request) {
             productionStatus,
             availableFrom,
             missingQty,
-            recipe
+            recipe,
+            alerts
           };
         });
 
-      // Określ ogólny status zamówienia
+      // Status zamowienia
       const allReady = processedItems.every(i => i.productionStatus === 'ready');
       const anyNeedsProduction = processedItems.some(i =>
         ['needs_production', 'from_surowce', 'from_wykroje', 'from_polprodukty'].includes(i.productionStatus)
       );
 
-      // Sprawdź czy zamówienie jest już wysłane lub anulowane
-      // Status 13 = Wysłane, 19 = Anulowane, 16 = Zduplikowane
-      // Statusy > 13 to zazwyczaj statusy produktowe (PALETY, PIKÓWKI, etc.) - NIE oznaczają wysłane!
       const isShipped = order.delivery_status === 13;
       const isCanceled = order.is_canceled === true || order.delivery_status === 19 || order.delivery_status === 16;
       const isPaid = order.payment_status === 'PAID';
@@ -230,6 +219,43 @@ export async function GET(request) {
         orderStatus = 'needs_production';
       } else if (!allReady) {
         orderStatus = 'partial';
+      }
+
+      // Przypisanie dzialu produkcyjnego
+      let department = null;
+      if (!isCanceled && !isShipped && isPaid) {
+        if (processedItems.length > 1) {
+          department = 'wielopak';
+        } else {
+          // Ustal dzial na podstawie najgorszego statusu
+          let worstDept = 'gotowe';
+          for (const item of processedItems) {
+            // Brak SKU -> krojownia
+            if (!item.sku || item.sku.trim() === '') {
+              worstDept = 'krojownia';
+              break;
+            }
+            // Brak receptury (nie gotowe) -> krojownia
+            if (item.productionStatus !== 'ready' && !item.recipe) {
+              worstDept = 'krojownia';
+              break;
+            }
+            // Z surowcow / do produkcji -> krojownia
+            if (['from_surowce', 'needs_production'].includes(item.productionStatus)) {
+              worstDept = 'krojownia';
+              break;
+            }
+            // Z wykrojow -> szwalnia
+            if (item.productionStatus === 'from_wykroje') {
+              if (worstDept !== 'krojownia') worstDept = 'szwalnia';
+            }
+            // Z polproduktow lub czesciowo -> polprodukty
+            if (item.productionStatus === 'from_polprodukty' || item.productionStatus === 'partial') {
+              if (!['krojownia', 'szwalnia'].includes(worstDept)) worstDept = 'polprodukty';
+            }
+          }
+          department = worstDept;
+        }
       }
 
       return {
@@ -249,6 +275,7 @@ export async function GET(request) {
         items: processedItems,
         orderStatus,
         isShipped,
+        department,
         itemsCount: processedItems.length,
         readyCount: processedItems.filter(i => i.productionStatus === 'ready').length,
         needsProductionCount: processedItems.filter(i => i.productionStatus !== 'ready').length
@@ -268,9 +295,9 @@ export async function GET(request) {
     } else if (status === 'unpaid') {
       filteredOrders = processedOrders.filter(o => o.orderStatus === 'unpaid');
     }
-    // status === 'all' - zwróć wszystkie
 
     // Statystyki
+    const activeOrders = processedOrders.filter(o => o.department !== null);
     const stats = {
       total: processedOrders.length,
       readyToShip: processedOrders.filter(o => o.orderStatus === 'ready_to_ship').length,
@@ -278,7 +305,15 @@ export async function GET(request) {
       partial: processedOrders.filter(o => o.orderStatus === 'partial').length,
       shipped: processedOrders.filter(o => o.orderStatus === 'shipped').length,
       canceled: processedOrders.filter(o => o.orderStatus === 'canceled').length,
-      unpaid: processedOrders.filter(o => o.orderStatus === 'unpaid').length
+      unpaid: processedOrders.filter(o => o.orderStatus === 'unpaid').length,
+      departments: {
+        wszystkie: activeOrders.length,
+        krojownia: activeOrders.filter(o => o.department === 'krojownia').length,
+        szwalnia: activeOrders.filter(o => o.department === 'szwalnia').length,
+        polprodukty: activeOrders.filter(o => o.department === 'polprodukty').length,
+        gotowe: activeOrders.filter(o => o.department === 'gotowe').length,
+        wielopak: activeOrders.filter(o => o.department === 'wielopak').length,
+      }
     };
 
     return NextResponse.json({
