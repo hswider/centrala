@@ -27,6 +27,7 @@ export default function MESPage() {
   const [secondaryFilter, setSecondaryFilter] = useState(null); // 'shipped', 'canceled', 'unpaid'
   const [expandedOrder, setExpandedOrder] = useState(null);
   const [expandedItem, setExpandedItem] = useState(null);
+  const [selectedOrders, setSelectedOrders] = useState(new Set());
 
   // Shipping state
   const [shipments, setShipments] = useState({});
@@ -272,6 +273,132 @@ export default function MESPage() {
     fetchCarrierAccounts();
   }, []);
 
+  // Clear selection when department/filter changes
+  useEffect(() => {
+    setSelectedOrders(new Set());
+  }, [department, secondaryFilter]);
+
+  const toggleSelectOrder = (id) => {
+    setSelectedOrders(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const toggleSelectAll = () => {
+    const allIds = filteredOrders.map(o => o.id);
+    const allSelected = allIds.length > 0 && allIds.every(id => selectedOrders.has(id));
+    if (allSelected) {
+      setSelectedOrders(new Set());
+    } else {
+      setSelectedOrders(new Set(allIds));
+    }
+  };
+
+  const getSelectedOrdersData = () => {
+    return filteredOrders.filter(o => selectedOrders.has(o.id));
+  };
+
+  const handleExportCSV = () => {
+    const selected = getSelectedOrdersData();
+    if (selected.length === 0) return;
+
+    const headers = ['Nr zamowienia', 'Kanal sprzedazy', 'Platforma', 'Nazwa produktu', 'SKU', 'Ilosc'];
+    const rows = [headers.join(';')];
+
+    selected.forEach(order => {
+      (order.items || []).forEach(item => {
+        if (item.isShipping) return;
+        rows.push([
+          order.id,
+          order.channelLabel || '',
+          order.channelPlatform || '',
+          (item.name || '').replace(/;/g, ','),
+          item.sku || '',
+          item.quantity || 1
+        ].join(';'));
+      });
+    });
+
+    const csvContent = '\uFEFF' + rows.join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', `mes_zamowienia_${new Date().toISOString().slice(0, 10)}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const handleExportPDF = async () => {
+    const selected = getSelectedOrdersData();
+    if (selected.length === 0) return;
+
+    const { jsPDF } = await import('jspdf');
+    const doc = new jsPDF('p', 'mm', 'a4');
+    const pageWidth = 210;
+    const margin = 15;
+    const contentWidth = pageWidth - margin * 2;
+    let y = 20;
+
+    // Title
+    doc.setFontSize(16);
+    doc.text('MES - Zamowienia do produkcji', margin, y);
+    y += 8;
+    doc.setFontSize(10);
+    doc.text(`Data: ${new Date().toLocaleDateString('pl-PL')} | Zamowien: ${selected.length}`, margin, y);
+    y += 10;
+
+    selected.forEach((order, orderIdx) => {
+      // Check if we need a new page
+      if (y > 260) {
+        doc.addPage();
+        y = 20;
+      }
+
+      // Order header
+      doc.setFillColor(240, 240, 240);
+      doc.rect(margin, y - 5, contentWidth, 8, 'F');
+      doc.setFontSize(11);
+      doc.setFont('helvetica', 'bold');
+      doc.text(`#${order.id}  |  ${order.channelPlatform || ''} - ${order.channelLabel || ''}`, margin + 2, y);
+      y += 8;
+
+      // Items table header
+      doc.setFillColor(220, 220, 220);
+      doc.rect(margin, y - 4, contentWidth, 6, 'F');
+      doc.setFontSize(8);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Nazwa produktu', margin + 2, y);
+      doc.text('SKU', margin + 120, y);
+      doc.text('Ilosc', margin + 160, y);
+      y += 5;
+
+      doc.setFont('helvetica', 'normal');
+      (order.items || []).forEach(item => {
+        if (item.isShipping) return;
+        if (y > 275) {
+          doc.addPage();
+          y = 20;
+        }
+        doc.setFontSize(8);
+        const name = (item.name || '').substring(0, 70);
+        doc.text(name, margin + 2, y);
+        doc.text(item.sku || '-', margin + 120, y);
+        doc.text(String(item.quantity || 1), margin + 160, y);
+        y += 5;
+      });
+
+      y += 5;
+    });
+
+    doc.save(`mes_zamowienia_${new Date().toISOString().slice(0, 10)}.pdf`);
+  };
+
   // Client-side filtering by department or secondary filter
   const filteredOrders = (() => {
     if (secondaryFilter) {
@@ -448,14 +575,48 @@ export default function MESPage() {
 
         {/* Lista zamowien */}
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow dark:shadow-gray-900 overflow-hidden">
-          <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-700">
-            <h2 className="font-semibold text-gray-900 dark:text-white">
-              {secondaryFilter
-                ? secondaryFilter === 'shipped' ? 'Wyslane' : secondaryFilter === 'canceled' ? 'Anulowane' : 'Nieoplacone'
-                : DEPARTMENTS.find(d => d.key === department)?.label || 'Zamowienia'
-              }
-              {' '}({filteredOrders.length})
-            </h2>
+          <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between gap-3 flex-wrap">
+            <div className="flex items-center gap-3">
+              <input
+                type="checkbox"
+                checked={filteredOrders.length > 0 && filteredOrders.every(o => selectedOrders.has(o.id))}
+                onChange={toggleSelectAll}
+                className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
+                title="Zaznacz wszystkie"
+              />
+              <h2 className="font-semibold text-gray-900 dark:text-white">
+                {secondaryFilter
+                  ? secondaryFilter === 'shipped' ? 'Wyslane' : secondaryFilter === 'canceled' ? 'Anulowane' : 'Nieoplacone'
+                  : DEPARTMENTS.find(d => d.key === department)?.label || 'Zamowienia'
+                }
+                {' '}({filteredOrders.length})
+              </h2>
+            </div>
+            {selectedOrders.size > 0 && (
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-sm text-blue-700 dark:text-blue-300 font-medium">
+                  Zaznaczono: {selectedOrders.size}
+                </span>
+                <button
+                  onClick={() => setSelectedOrders(new Set())}
+                  className="text-xs text-gray-500 hover:text-gray-700 dark:text-gray-400 underline"
+                >
+                  Wyczysc
+                </button>
+                <button
+                  onClick={handleExportCSV}
+                  className="px-3 py-1.5 text-xs font-medium bg-green-600 text-white rounded hover:bg-green-700 flex items-center gap-1"
+                >
+                  CSV ({selectedOrders.size})
+                </button>
+                <button
+                  onClick={handleExportPDF}
+                  className="px-3 py-1.5 text-xs font-medium bg-red-600 text-white rounded hover:bg-red-700 flex items-center gap-1"
+                >
+                  PDF ({selectedOrders.size})
+                </button>
+              </div>
+            )}
           </div>
 
           {loading ? (
@@ -471,16 +632,19 @@ export default function MESPage() {
               {filteredOrders.map((order) => {
                 const hasAlerts = order.items?.some(i => i.alerts && i.alerts.length > 0);
                 return (
-                  <div key={order.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                  <div key={order.id} className={`${selectedOrders.has(order.id) ? 'bg-blue-50 dark:bg-blue-900/20' : 'hover:bg-gray-50 dark:hover:bg-gray-700/50'}`}>
                     {/* Naglowek zamowienia */}
                     <div
                       className="px-4 py-3 cursor-pointer flex items-center gap-3"
                       onClick={() => setExpandedOrder(expandedOrder === order.id ? null : order.id)}
                     >
-                      <div className="flex-shrink-0">
-                        <span className={`text-lg ${expandedOrder === order.id ? 'rotate-90' : ''} transition-transform inline-block`}>
-                          ▶
-                        </span>
+                      <div className="flex-shrink-0" onClick={e => e.stopPropagation()}>
+                        <input
+                          type="checkbox"
+                          checked={selectedOrders.has(order.id)}
+                          onChange={() => toggleSelectOrder(order.id)}
+                          className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
+                        />
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
