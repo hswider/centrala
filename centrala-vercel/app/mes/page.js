@@ -28,6 +28,7 @@ export default function MESPage() {
   const [expandedOrder, setExpandedOrder] = useState(null);
   const [expandedItem, setExpandedItem] = useState(null);
   const [selectedOrders, setSelectedOrders] = useState(new Set());
+  const [visibleCount, setVisibleCount] = useState(50);
 
   // Shipping state
   const [shipments, setShipments] = useState({});
@@ -288,7 +289,7 @@ export default function MESPage() {
   };
 
   const toggleSelectAll = () => {
-    const allIds = filteredOrders.map(o => o.id);
+    const allIds = visibleOrders.map(o => o.id);
     const allSelected = allIds.length > 0 && allIds.every(id => selectedOrders.has(id));
     if (allSelected) {
       setSelectedOrders(new Set());
@@ -412,6 +413,8 @@ export default function MESPage() {
     }
     return orders.filter(o => o.department === department);
   })();
+
+  const visibleOrders = filteredOrders.slice(0, visibleCount);
 
   const getStatusBadge = (status) => {
     switch (status) {
@@ -579,7 +582,7 @@ export default function MESPage() {
             <div className="flex items-center gap-3">
               <input
                 type="checkbox"
-                checked={filteredOrders.length > 0 && filteredOrders.every(o => selectedOrders.has(o.id))}
+                checked={visibleOrders.length > 0 && visibleOrders.every(o => selectedOrders.has(o.id))}
                 onChange={toggleSelectAll}
                 className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
                 title="Zaznacz wszystkie"
@@ -589,8 +592,19 @@ export default function MESPage() {
                   ? secondaryFilter === 'shipped' ? 'Wyslane' : secondaryFilter === 'canceled' ? 'Anulowane' : 'Nieoplacone'
                   : DEPARTMENTS.find(d => d.key === department)?.label || 'Zamowienia'
                 }
-                {' '}({filteredOrders.length})
+                {' '}({visibleOrders.length}{filteredOrders.length > visibleCount ? ` z ${filteredOrders.length}` : ''})
               </h2>
+              <div className="flex items-center gap-1 ml-2">
+                {[50, 100, 250, 500].map(n => (
+                  <button
+                    key={n}
+                    onClick={() => setVisibleCount(n)}
+                    className={`px-2 py-0.5 text-xs rounded ${visibleCount === n ? 'bg-blue-600 text-white' : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'}`}
+                  >
+                    {n}
+                  </button>
+                ))}
+              </div>
             </div>
             {selectedOrders.size > 0 && (
               <div className="flex items-center gap-2 flex-wrap">
@@ -623,13 +637,13 @@ export default function MESPage() {
             <div className="px-4 py-12 text-center text-gray-500 dark:text-gray-400">
               Ladowanie zamowien...
             </div>
-          ) : filteredOrders.length === 0 ? (
+          ) : visibleOrders.length === 0 ? (
             <div className="px-4 py-12 text-center text-gray-500 dark:text-gray-400">
               Brak zamowien w tym dziale
             </div>
           ) : (
             <div className="divide-y divide-gray-100 dark:divide-gray-700">
-              {filteredOrders.map((order) => {
+              {visibleOrders.map((order) => {
                 const hasAlerts = order.items?.some(i => i.alerts && i.alerts.length > 0);
                 return (
                   <div key={order.id} className={`${selectedOrders.has(order.id) ? 'bg-blue-50 dark:bg-blue-900/20' : 'hover:bg-gray-50 dark:hover:bg-gray-700/50'}`}>
