@@ -516,6 +516,7 @@ export async function createShipment(shipmentData) {
 
   try {
     const result = await apiloRequest('POST', '/rest/api/shipping/shipment/', payload);
+    console.log('[Apilo createShipment] Response:', JSON.stringify(result));
     return result;
   } catch (error) {
     console.error('[Apilo createShipment] Error:', error.message);
@@ -553,8 +554,20 @@ export async function notifyShipmentCreated(orderId, shipmentInfo) {
 
 // Get shipment details for an order
 export async function getOrderShipments(orderId) {
-  const order = await apiloRequest('GET', `/rest/api/orders/${orderId}/`);
-  return order?.shipments || [];
+  try {
+    // Use the order shipment list endpoint
+    const data = await apiloRequest('GET', `/rest/api/orders/${orderId}/shipment/`);
+    return data?.list || data?.shipments || [];
+  } catch (e) {
+    console.warn('[Apilo] getOrderShipments failed:', e.message);
+    // Fallback: check order object
+    try {
+      const order = await apiloRequest('GET', `/rest/api/orders/${orderId}/`);
+      return order?.shipments || [];
+    } catch (e2) {
+      return [];
+    }
+  }
 }
 
 // Upload file (for label) and get UUID

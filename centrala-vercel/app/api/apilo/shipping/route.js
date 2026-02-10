@@ -107,9 +107,18 @@ export async function POST(request) {
         options: options || []
       });
 
-      // Save to local database
-      if (result?.shipments?.[0]?.shipmentId) {
-        const shipmentId = result.shipments[0].shipmentId;
+      // Save to local database - try multiple response structures
+      const shipmentId = result?.shipments?.[0]?.shipmentId
+        || result?.shipments?.[0]?.id
+        || result?.shipmentId
+        || result?.id
+        || result?.list?.[0]?.shipmentId
+        || result?.list?.[0]?.id;
+
+      console.log('[Shipping] Create result keys:', JSON.stringify(Object.keys(result || {})));
+      console.log('[Shipping] Resolved shipmentId:', shipmentId);
+
+      if (shipmentId) {
 
         // Check if record exists, then insert or update
         const { rows: existing } = await sql`
