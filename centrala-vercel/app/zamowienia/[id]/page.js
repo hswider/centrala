@@ -190,6 +190,10 @@ export default function OrderDetailsPage() {
     try {
       const shipping = order.shipping || {};
 
+      // Get carrier and method names for local DB storage
+      const selectedCarrier = carrierAccounts.find(c => c.id === shipForm.carrierAccountId);
+      const selectedMethod = shippingMethods.find(m => (m.uuid || m.id) === shipForm.methodUuid);
+
       const res = await fetch('/api/apilo/shipping', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -198,6 +202,8 @@ export default function OrderDetailsPage() {
           carrierAccountId: shipForm.carrierAccountId,
           orderId: order.id,
           method: shipForm.methodUuid,
+          carrierName: selectedCarrier?.name || '',
+          methodName: selectedMethod?.name || selectedMethod?.description || '',
           addressReceiver: {
             type: 'house',
             name: shipping.name || '',
@@ -362,22 +368,40 @@ export default function OrderDetailsPage() {
   // Determine if there are existing shipments (from Apilo or local)
   const hasShipments = shipments.length > 0 || localShipments.length > 0;
 
-  // Get best shipment data: prefer Apilo shipments, fallback to local
+  // Get best shipment data: merge Apilo and local data
   const getDisplayShipments = () => {
+    // Build a map from local shipments for enrichment
+    const localMap = {};
+    for (const ls of localShipments) {
+      if (ls.courier_shipment_id) {
+        localMap[ls.courier_shipment_id] = ls;
+      }
+    }
+
     if (shipments.length > 0) {
-      return shipments.map(s => ({
-        id: s.shipmentId || s.id,
-        tracking: s.tracking || s.trackingNumber || '',
-        courier: s.courierName || s.carrier || '',
-        status: s.status || '',
-        shipmentId: s.shipmentId || s.id
-      }));
+      return shipments.map(s => {
+        const sid = (s.shipmentId || s.id || '').toString();
+        const local = localMap[sid] || {};
+        // Try nested objects (Apilo sometimes returns { carrierAccount: { name }, carrierProvider: { name } })
+        const courierName = s.carrierAccount?.name || s.carrierProvider?.name || s.courierName || s.carrier || local.courier || '';
+        const methodName = s.method?.name || s.methodName || '';
+        const tracking = s.tracking || s.trackingNumber || s.idExternal || local.tracking_number || '';
+        return {
+          id: sid,
+          tracking,
+          courier: courierName,
+          method: methodName,
+          status: s.status || local.status || '',
+          shipmentId: sid
+        };
+      });
     }
     if (localShipments.length > 0) {
       return localShipments.map(s => ({
         id: s.id,
         tracking: s.tracking_number || '',
         courier: s.courier || '',
+        method: '',
         status: s.status || '',
         shipmentId: s.courier_shipment_id
       }));
@@ -549,25 +573,32 @@ export default function OrderDetailsPage() {
                       )}
                       <div className="flex-grow min-w-0">
                         <div className="text-sm font-medium text-green-800">
-                          {s.courier?.toUpperCase() || 'Kurier'}
+                          {s.courier || 'Kurier'}
                           {s.status && <span className="ml-2 text-xs font-normal text-green-600">({s.status})</span>}
                         </div>
-                        {s.tracking ? (
-                          trackingUrl ? (
-                            <a
-                              href={trackingUrl}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-sm text-blue-600 hover:underline font-mono"
-                            >
-                              {s.tracking}
-                            </a>
-                          ) : (
-                            <span className="text-sm font-mono text-gray-700">{s.tracking}</span>
-                          )
-                        ) : (
-                          <span className="text-xs text-gray-500">Brak numeru sledzenia</span>
+                        {s.method && (
+                          <div className="text-xs text-green-700">{s.method}</div>
                         )}
+                        {s.tracking ? (
+                          <div className="flex items-center gap-1 mt-0.5">
+                            <span className="text-xs text-gray-500">Tracking:</span>
+                            {trackingUrl ? (
+                              <a
+                                href={trackingUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-sm text-blue-600 hover:underline font-mono"
+                              >
+                                {s.tracking}
+                              </a>
+                            ) : (
+                              <span className="text-sm font-mono text-gray-700">{s.tracking}</span>
+                            )}
+                          </div>
+                        ) : (
+                          <div className="text-xs text-gray-500 mt-0.5">Tracking: oczekiwanie...</div>
+                        )}
+                        <div className="text-xs text-gray-400 mt-0.5">ID: {s.shipmentId}</div>
                       </div>
                       {s.shipmentId && (
                         <a
@@ -579,7 +610,7 @@ export default function OrderDetailsPage() {
                           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                           </svg>
-                          Pobierz etykiete
+                          Etykieta
                         </a>
                       )}
                     </div>

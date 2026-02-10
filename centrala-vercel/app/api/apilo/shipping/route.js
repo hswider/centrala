@@ -23,12 +23,18 @@ export async function GET(request) {
       // Also get local shipments from our database
       await initDatabase();
 
+      // Log raw Apilo shipment data for debugging field names
+      if (shipments && shipments.length > 0) {
+        console.log('[Shipping GET] Raw Apilo shipment keys:', JSON.stringify(Object.keys(shipments[0] || {})));
+        console.log('[Shipping GET] Raw first shipment:', JSON.stringify(shipments[0]));
+      }
+
       // Sync Apilo shipments to local DB for badge display on order list
       if (shipments && shipments.length > 0) {
         for (const s of shipments) {
           const courierShipmentId = (s.shipmentId || s.id || '').toString();
-          const trackingNumber = s.tracking || s.trackingNumber || '';
-          const courier = s.courierName || s.carrier || 'apilo';
+          const trackingNumber = s.tracking || s.trackingNumber || s.idExternal || '';
+          const courier = s.carrierAccount?.name || s.carrierProvider?.name || s.courierName || s.carrier || 'apilo';
           const status = s.status || 'created';
 
           if (courierShipmentId) {
@@ -86,6 +92,8 @@ export async function POST(request) {
         carrierAccountId,
         orderId,
         method,
+        carrierName,
+        methodName,
         addressReceiver,
         parcels,
         options
@@ -118,25 +126,36 @@ export async function POST(request) {
       console.log('[Shipping] Create result keys:', JSON.stringify(Object.keys(result || {})));
       console.log('[Shipping] Resolved shipmentId:', shipmentId);
 
-      if (shipmentId) {
+      // Extract tracking from result
+      const firstShipment = result?.shipments?.[0] || result?.list?.[0] || result || {};
+      const trackingNumber = firstShipment.tracking || firstShipment.trackingNumber || firstShipment.idExternal || '';
+      const courierLabel = carrierName || firstShipment.carrierName || firstShipment.carrier || 'apilo';
 
+      console.log('[Shipping] Raw first shipment:', JSON.stringify(firstShipment));
+      console.log('[Shipping] Tracking:', trackingNumber, 'Carrier:', courierLabel);
+
+      if (shipmentId) {
         // Check if record exists, then insert or update
         const { rows: existing } = await sql`
           SELECT id FROM shipments WHERE order_id = ${orderId} AND courier_shipment_id = ${shipmentId.toString()}
         `;
         if (existing.length > 0) {
           await sql`
-            UPDATE shipments SET status = 'created', updated_at = CURRENT_TIMESTAMP
+            UPDATE shipments SET
+              status = 'created',
+              courier = ${courierLabel},
+              tracking_number = ${trackingNumber},
+              updated_at = CURRENT_TIMESTAMP
             WHERE id = ${existing[0].id}
           `;
         } else {
           await sql`
             INSERT INTO shipments (
-              order_id, courier, courier_shipment_id, status,
+              order_id, courier, courier_shipment_id, tracking_number, status,
               receiver_name, receiver_address, receiver_city, receiver_postal_code,
               weight, dimensions, created_at
             ) VALUES (
-              ${orderId}, 'apilo', ${shipmentId.toString()}, 'created',
+              ${orderId}, ${courierLabel}, ${shipmentId.toString()}, ${trackingNumber}, 'created',
               ${addressReceiver?.name || ''}, ${addressReceiver?.streetName || ''},
               ${addressReceiver?.city || ''}, ${addressReceiver?.zipCode || ''},
               ${parcels?.[0]?.weight || 1}, ${JSON.stringify(parcels?.[0]?.dimensions || {})}::jsonb,
