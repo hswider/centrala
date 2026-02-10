@@ -111,23 +111,30 @@ export async function POST(request) {
       if (result?.shipments?.[0]?.shipmentId) {
         const shipmentId = result.shipments[0].shipmentId;
 
-        await sql`
-          INSERT INTO shipments (
-            order_id, courier, courier_shipment_id, status,
-            receiver_name, receiver_address, receiver_city, receiver_postal_code,
-            weight, dimensions, created_at
-          ) VALUES (
-            ${orderId}, 'apilo', ${shipmentId.toString()}, 'created',
-            ${addressReceiver?.name || ''}, ${addressReceiver?.streetName || ''},
-            ${addressReceiver?.city || ''}, ${addressReceiver?.zipCode || ''},
-            ${parcels?.[0]?.weight || 1}, ${JSON.stringify(parcels?.[0]?.dimensions || {})}::jsonb,
-            CURRENT_TIMESTAMP
-          )
-          ON CONFLICT (order_id, courier) DO UPDATE SET
-            courier_shipment_id = ${shipmentId.toString()},
-            status = 'created',
-            updated_at = CURRENT_TIMESTAMP
+        // Check if record exists, then insert or update
+        const { rows: existing } = await sql`
+          SELECT id FROM shipments WHERE order_id = ${orderId} AND courier_shipment_id = ${shipmentId.toString()}
         `;
+        if (existing.length > 0) {
+          await sql`
+            UPDATE shipments SET status = 'created', updated_at = CURRENT_TIMESTAMP
+            WHERE id = ${existing[0].id}
+          `;
+        } else {
+          await sql`
+            INSERT INTO shipments (
+              order_id, courier, courier_shipment_id, status,
+              receiver_name, receiver_address, receiver_city, receiver_postal_code,
+              weight, dimensions, created_at
+            ) VALUES (
+              ${orderId}, 'apilo', ${shipmentId.toString()}, 'created',
+              ${addressReceiver?.name || ''}, ${addressReceiver?.streetName || ''},
+              ${addressReceiver?.city || ''}, ${addressReceiver?.zipCode || ''},
+              ${parcels?.[0]?.weight || 1}, ${JSON.stringify(parcels?.[0]?.dimensions || {})}::jsonb,
+              CURRENT_TIMESTAMP
+            )
+          `;
+        }
       }
 
       return Response.json({ success: true, result });
