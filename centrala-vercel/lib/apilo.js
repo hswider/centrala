@@ -486,7 +486,7 @@ export async function createShipment(shipmentData) {
       ];
       return { options };
     }),
-    options: shipmentData.options || []
+    options: shipmentData.options || { template: shipmentData.carrierAccountId }
   };
 
   console.log('[Apilo createShipment] Sending payload:', JSON.stringify(payload, null, 2));
