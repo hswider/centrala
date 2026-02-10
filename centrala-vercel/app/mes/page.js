@@ -3,22 +3,13 @@
 import { useState, useEffect } from 'react';
 
 const DEPARTMENTS = [
-  { key: 'wszystkie', label: 'Wszystkie', color: 'blue', desc: 'Aktywne zamowienia' },
-  { key: 'krojownia', label: 'Krojownia', color: 'red', desc: 'Brak w magazynach' },
-  { key: 'szwalnia', label: 'Szwalnia', color: 'purple', desc: 'Dostepne wykroje' },
-  { key: 'polprodukty', label: 'Polprodukty', color: 'amber', desc: 'Dostepne polprodukty' },
-  { key: 'gotowe', label: 'Gotowe produkty', color: 'green', desc: 'Gotowe do wysylki' },
-  { key: 'wielopak', label: 'Wielopak', color: 'orange', desc: 'Wiele produktow' },
+  { key: 'wszystkie', label: 'Wszystkie', icon: '📋', desc: 'Aktywne zamowienia', textColor: 'text-blue-600', borderColor: 'border-blue-500', bgLight: 'bg-blue-50' },
+  { key: 'krojownia', label: 'Krojownia', icon: '✂️', desc: 'Brak w magazynach GOT/POL/WYK', textColor: 'text-red-600', borderColor: 'border-red-500', bgLight: 'bg-red-50' },
+  { key: 'szwalnia', label: 'Szwalnia', icon: '🧵', desc: 'Dostepne w wykrojach', textColor: 'text-purple-600', borderColor: 'border-purple-500', bgLight: 'bg-purple-50' },
+  { key: 'polprodukty', label: 'Polprodukty', icon: '🔧', desc: 'Dostepne w polproduktach', textColor: 'text-amber-600', borderColor: 'border-amber-500', bgLight: 'bg-amber-50' },
+  { key: 'gotowe', label: 'Gotowe produkty', icon: '📦', desc: 'Gotowe do wysylki', textColor: 'text-green-600', borderColor: 'border-green-500', bgLight: 'bg-green-50' },
+  { key: 'wielopak', label: 'Wielopak', icon: '📑', desc: 'Wiecej niz 1 produkt', textColor: 'text-orange-600', borderColor: 'border-orange-500', bgLight: 'bg-orange-50' },
 ];
-
-const DEPT_STYLES = {
-  wszystkie: { bg: 'bg-blue-50 dark:bg-blue-900/20', ring: 'ring-blue-500', text: 'text-blue-700 dark:text-blue-300', count: 'text-blue-800 dark:text-blue-200' },
-  krojownia: { bg: 'bg-red-50 dark:bg-red-900/20', ring: 'ring-red-500', text: 'text-red-700 dark:text-red-300', count: 'text-red-800 dark:text-red-200' },
-  szwalnia: { bg: 'bg-purple-50 dark:bg-purple-900/20', ring: 'ring-purple-500', text: 'text-purple-700 dark:text-purple-300', count: 'text-purple-800 dark:text-purple-200' },
-  polprodukty: { bg: 'bg-amber-50 dark:bg-amber-900/20', ring: 'ring-amber-500', text: 'text-amber-700 dark:text-amber-300', count: 'text-amber-800 dark:text-amber-200' },
-  gotowe: { bg: 'bg-green-50 dark:bg-green-900/20', ring: 'ring-green-500', text: 'text-green-700 dark:text-green-300', count: 'text-green-800 dark:text-green-200' },
-  wielopak: { bg: 'bg-orange-50 dark:bg-orange-900/20', ring: 'ring-orange-500', text: 'text-orange-700 dark:text-orange-300', count: 'text-orange-800 dark:text-orange-200' },
-};
 
 const DEPT_BADGE_COLORS = {
   krojownia: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400',
@@ -379,87 +370,80 @@ export default function MESPage() {
           </button>
         </div>
 
-        {/* Department tabs */}
+        {/* Summary stat cards - like /magazyny */}
         {stats && (
-          <div className="mb-4">
-            <div className="flex gap-2 overflow-x-auto pb-2 -mx-3 px-3 sm:mx-0 sm:px-0">
-              {DEPARTMENTS.map(dept => {
-                const s = DEPT_STYLES[dept.key];
-                const count = getDeptCount(dept.key);
-                const isActive = !secondaryFilter && department === dept.key;
-                return (
-                  <div
-                    key={dept.key}
-                    className={`flex-shrink-0 rounded-lg shadow p-3 cursor-pointer transition-all min-w-[120px] ${
-                      isActive ? `${s.bg} ring-2 ${s.ring}` : 'bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700'
-                    }`}
-                    onClick={() => { setDepartment(dept.key); setSecondaryFilter(null); }}
-                  >
-                    <p className={`text-xs font-medium ${isActive ? s.text : 'text-gray-500 dark:text-gray-400'}`}>
-                      {dept.label}
-                    </p>
-                    <p className={`text-xl font-bold ${isActive ? s.count : 'text-gray-900 dark:text-white'}`}>
-                      {count}
-                    </p>
-                    <p className="text-[10px] text-gray-400 dark:text-gray-500 mt-0.5 hidden sm:block">
-                      {dept.desc}
-                    </p>
-                  </div>
-                );
-              })}
-            </div>
+          <div className="grid grid-cols-2 lg:grid-cols-6 gap-3 mb-4">
+            {DEPARTMENTS.map(dept => {
+              const count = getDeptCount(dept.key);
+              return (
+                <div
+                  key={dept.key}
+                  className={`bg-white dark:bg-gray-800 rounded-lg shadow dark:shadow-gray-900 p-3 lg:p-4 border-l-4 ${dept.borderColor} cursor-pointer transition-colors hover:bg-gray-50 dark:hover:bg-gray-700`}
+                  onClick={() => { setDepartment(dept.key); setSecondaryFilter(null); }}
+                >
+                  <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{dept.icon} {dept.label}</p>
+                  <p className={`text-xl lg:text-2xl font-bold ${dept.textColor}`}>{count}</p>
+                  <p className="text-[10px] text-gray-400 dark:text-gray-500 -mt-1">{dept.desc}</p>
+                </div>
+              );
+            })}
+          </div>
+        )}
 
-            {/* Secondary filters: shipped / canceled / unpaid */}
-            <div className="flex items-center gap-3 mt-2 text-xs">
-              <span className="text-gray-400 dark:text-gray-500">Inne:</span>
+        {/* Tab bar - like /magazyny */}
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow dark:shadow-gray-900 mb-4">
+          <div className="flex border-b border-gray-100 dark:border-gray-700 overflow-x-auto">
+            {DEPARTMENTS.map(dept => (
               <button
-                onClick={() => { setSecondaryFilter(secondaryFilter === 'shipped' ? null : 'shipped'); }}
-                className={`px-2 py-0.5 rounded ${secondaryFilter === 'shipped' ? 'bg-blue-100 text-blue-700 font-bold' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400'}`}
+                key={dept.key}
+                onClick={() => { setDepartment(dept.key); setSecondaryFilter(null); }}
+                className={`flex-1 flex items-center justify-center gap-2 py-3 text-sm font-medium transition-colors whitespace-nowrap px-4 ${
+                  !secondaryFilter && department === dept.key
+                    ? `${dept.textColor} border-b-2 ${dept.borderColor} ${dept.bgLight}`
+                    : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
+                }`}
+              >
+                <span>{dept.icon}</span>
+                <span className="hidden sm:inline">{dept.label}</span>
+                <span className={`text-xs ${!secondaryFilter && department === dept.key ? dept.textColor : 'text-gray-400'}`}>
+                  ({getDeptCount(dept.key)})
+                </span>
+              </button>
+            ))}
+          </div>
+          {/* Secondary filters row inside the tab bar */}
+          {stats && (
+            <div className="flex items-center gap-3 px-4 py-2 border-t border-gray-50 dark:border-gray-700/50 text-xs">
+              <span className="text-gray-400 dark:text-gray-500 font-medium">Inne:</span>
+              <button
+                onClick={() => setSecondaryFilter(secondaryFilter === 'shipped' ? null : 'shipped')}
+                className={`px-2.5 py-1 rounded transition-colors ${secondaryFilter === 'shipped' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 font-bold' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'}`}
               >
                 Wyslane ({stats.shipped || 0})
               </button>
               <button
-                onClick={() => { setSecondaryFilter(secondaryFilter === 'canceled' ? null : 'canceled'); }}
-                className={`px-2 py-0.5 rounded ${secondaryFilter === 'canceled' ? 'bg-gray-200 text-gray-700 font-bold' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400'}`}
+                onClick={() => setSecondaryFilter(secondaryFilter === 'canceled' ? null : 'canceled')}
+                className={`px-2.5 py-1 rounded transition-colors ${secondaryFilter === 'canceled' ? 'bg-gray-200 text-gray-700 dark:bg-gray-600 dark:text-gray-200 font-bold' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'}`}
               >
                 Anulowane ({stats.canceled || 0})
               </button>
               <button
-                onClick={() => { setSecondaryFilter(secondaryFilter === 'unpaid' ? null : 'unpaid'); }}
-                className={`px-2 py-0.5 rounded ${secondaryFilter === 'unpaid' ? 'bg-yellow-100 text-yellow-700 font-bold' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400'}`}
+                onClick={() => setSecondaryFilter(secondaryFilter === 'unpaid' ? null : 'unpaid')}
+                className={`px-2.5 py-1 rounded transition-colors ${secondaryFilter === 'unpaid' ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400 font-bold' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'}`}
               >
                 Nieoplacone ({stats.unpaid || 0})
               </button>
+              <span className="text-gray-300 dark:text-gray-600">|</span>
+              <span className="text-gray-400 dark:text-gray-500">Magazyny:</span>
+              <div className="flex items-center gap-0.5">
+                <div className="w-5 h-5 rounded bg-green-500 flex items-center justify-center text-white text-[7px] font-bold">GOT</div>
+                <div className="w-5 h-5 rounded bg-blue-500 flex items-center justify-center text-white text-[7px] font-bold">POL</div>
+                <div className="w-5 h-5 rounded bg-purple-500 flex items-center justify-center text-white text-[7px] font-bold">WYK</div>
+                <div className="w-5 h-5 rounded bg-orange-500 flex items-center justify-center text-white text-[7px] font-bold">SUR</div>
+                <div className="w-4 h-4 rounded bg-gray-300 ml-0.5"></div>
+              </div>
             </div>
-          </div>
-        )}
-
-        {/* Legenda magazynow */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow dark:shadow-gray-900 p-3 mb-4">
-          <div className="flex flex-wrap items-center gap-4 text-xs">
-            <span className="text-gray-500 dark:text-gray-400 font-medium">Magazyny:</span>
-            <div className="flex items-center gap-1">
-              <div className="w-6 h-6 rounded bg-green-500 flex items-center justify-center text-white text-[8px] font-bold">GOT</div>
-              <span className="text-gray-600 dark:text-gray-300">Gotowe</span>
-            </div>
-            <div className="flex items-center gap-1">
-              <div className="w-6 h-6 rounded bg-blue-500 flex items-center justify-center text-white text-[8px] font-bold">POL</div>
-              <span className="text-gray-600 dark:text-gray-300">Polprodukty</span>
-            </div>
-            <div className="flex items-center gap-1">
-              <div className="w-6 h-6 rounded bg-purple-500 flex items-center justify-center text-white text-[8px] font-bold">WYK</div>
-              <span className="text-gray-600 dark:text-gray-300">Wykroje</span>
-            </div>
-            <div className="flex items-center gap-1">
-              <div className="w-6 h-6 rounded bg-orange-500 flex items-center justify-center text-white text-[8px] font-bold">SUR</div>
-              <span className="text-gray-600 dark:text-gray-300">Surowce</span>
-            </div>
-            <span className="text-gray-400 dark:text-gray-500">|</span>
-            <div className="flex items-center gap-1">
-              <div className="w-4 h-4 rounded bg-gray-300"></div>
-              <span className="text-gray-500 dark:text-gray-400">Brak</span>
-            </div>
-          </div>
+          )}
         </div>
 
         {/* Lista zamowien */}
