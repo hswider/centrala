@@ -988,7 +988,7 @@ export default function MESPage() {
                             href={`/zamowienia/${order.id}`}
                             className="px-3 py-1.5 text-xs font-medium bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-200 rounded hover:bg-gray-300 dark:hover:bg-gray-500"
                           >
-                            Szczegoly
+                            Szczegoly zamowienia
                           </a>
                         </div>
                       </div>
