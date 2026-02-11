@@ -302,11 +302,14 @@ export default function MESPage() {
   };
 
   useEffect(() => {
-    fetchOrders();
     fetchShipments();
     fetchTemplates();
     fetchCarrierAccounts();
   }, []);
+
+  useEffect(() => {
+    fetchOrders();
+  }, [dateFrom, dateTo]);
 
   // Clear selection and reset page when department/filter changes
   useEffect(() => {
