@@ -5,7 +5,6 @@ import { useState, useEffect } from 'react';
 const TABS_GENERAL = [
   { key: 'wszystkie', label: 'Wszystkie', icon: '📋', desc: 'Wszystkie zamowienia', textColor: 'text-blue-600', borderColor: 'border-blue-500', bgLight: 'bg-blue-50' },
   { key: 'poczekalnia', label: 'Poczekalnia', icon: '⏳', desc: 'Anulowane / Nieoplacone', textColor: 'text-gray-600', borderColor: 'border-gray-400', bgLight: 'bg-gray-50' },
-  { key: 'wielopak', label: 'Wielopak', icon: '📑', desc: 'Wiecej niz 1 produkt', textColor: 'text-orange-600', borderColor: 'border-orange-500', bgLight: 'bg-orange-50' },
 ];
 
 const TABS_PRODUCTION = [
@@ -13,6 +12,7 @@ const TABS_PRODUCTION = [
   { key: 'szwalnia', label: 'Szwalnia', icon: '🧵', desc: 'Dostepne w wykrojach', textColor: 'text-purple-600', borderColor: 'border-purple-500', bgLight: 'bg-purple-50' },
   { key: 'polprodukty', label: 'Polprodukty', icon: '🔧', desc: 'Dostepne w polproduktach', textColor: 'text-amber-600', borderColor: 'border-amber-500', bgLight: 'bg-amber-50' },
   { key: 'gotowe', label: 'Gotowe produkty', icon: '📦', desc: 'Gotowe do wysylki', textColor: 'text-green-600', borderColor: 'border-green-500', bgLight: 'bg-green-50' },
+  { key: 'wielopak', label: 'Weryfikacja wielopakow', icon: '📑', desc: 'Wiecej niz 1 produkt', textColor: 'text-orange-600', borderColor: 'border-orange-500', bgLight: 'bg-orange-50' },
 ];
 
 const DEPARTMENTS = [...TABS_GENERAL, ...TABS_PRODUCTION];
