@@ -1166,7 +1166,7 @@ export default function MESPage() {
                                         {item.name}
                                       </div>
                                       <div className="text-xs text-gray-400 dark:text-gray-500">
-                                        SKU: {item.sku || '-'} • {item.quantity} szt.
+                                        SKU: {item.sku || '-'} • <span className="font-bold text-gray-900 dark:text-white bg-yellow-100 dark:bg-yellow-900/30 px-1.5 py-0.5 rounded">{item.quantity} szt.</span>
                                       </div>
                                     </div>
                                     {getStatusBadge(item.productionStatus)}
