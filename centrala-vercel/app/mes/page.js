@@ -20,28 +20,28 @@ const DEPT_BADGE_COLORS = {
 };
 
 const CHANNEL_FLAGS = {
-  'Dobrelegowiska': '🇵🇱',
-  'POOMKIDS': '🇵🇱',
-  'POOM-furniture': '🇵🇱',
-  'Somilo': '🇵🇱',
-  'allegro dobrelegowiska': '🇵🇱',
-  'Amazon DE Agnieszka': '🇩🇪',
-  'Gutekissen OTTO': '🇩🇪',
-  'Gutekissen': '🇩🇪',
-  'Amazon FR Agnieszka': '🇫🇷',
-  'Amazon ES Agnieszka': '🇪🇸',
-  'Amazon BE Agnieszka': '🇧🇪',
-  'Amazon IT Agnieszka': '🇮🇹',
-  'Amazon SE Agnieszka': '🇸🇪',
-  'Amazon NL Agnieszka': '🇳🇱',
+  'dobrelegowiska': 'pl',
+  'poomkids': 'pl',
+  'poom-furniture': 'pl',
+  'somilo': 'pl',
+  'allegro': 'pl',
+  'amazon de': 'de',
+  'gutekissen': 'de',
+  'amazon fr': 'fr',
+  'amazon es': 'es',
+  'amazon be': 'be',
+  'amazon it': 'it',
+  'amazon se': 'se',
+  'amazon nl': 'nl',
 };
 
-function getChannelFlag(channelLabel) {
-  if (!channelLabel) return '';
-  for (const [key, flag] of Object.entries(CHANNEL_FLAGS)) {
-    if (channelLabel.toLowerCase().includes(key.toLowerCase())) return flag;
+function getChannelFlagCode(channelLabel) {
+  if (!channelLabel) return null;
+  const lower = channelLabel.toLowerCase();
+  for (const [key, code] of Object.entries(CHANNEL_FLAGS)) {
+    if (lower.includes(key)) return code;
   }
-  return '';
+  return null;
 }
 
 export default function MESPage() {
@@ -734,6 +734,13 @@ export default function MESPage() {
                               {getCountryFlag(order.shipping.country)}
                             </span>
                           )}
+                          {getChannelFlagCode(order.channelLabel) && (
+                            <img
+                              src={`https://flagcdn.com/20x15/${getChannelFlagCode(order.channelLabel)}.png`}
+                              alt={getChannelFlagCode(order.channelLabel)}
+                              className="w-5 h-3.5 object-cover rounded-sm"
+                            />
+                          )}
                           <span className="font-mono text-sm font-medium text-gray-900 dark:text-white">
                             #{order.id}
                           </span>
@@ -743,7 +750,7 @@ export default function MESPage() {
                             </span>
                           )}
                           <span className="text-xs text-gray-500 dark:text-gray-400">
-                            {getChannelFlag(order.channelLabel)} {order.channelLabel || order.channelPlatform}
+                            {order.channelLabel || order.channelPlatform}
                           </span>
                           {getStatusBadge(order.orderStatus)}
                           {/* Department badge */}
