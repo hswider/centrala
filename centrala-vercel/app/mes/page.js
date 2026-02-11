@@ -292,7 +292,7 @@ export default function MESPage() {
   const fetchOrders = async () => {
     try {
       setLoading(true);
-      const params = new URLSearchParams({ status: 'all', limit: '500', dateFrom });
+      const params = new URLSearchParams({ status: 'all', limit: '5000', dateFrom });
       if (dateTo) params.set('dateTo', dateTo);
       const res = await fetch(`/api/mes/orders?${params}`);
       const data = await res.json();
@@ -569,13 +569,10 @@ export default function MESPage() {
     <div className="min-h-screen bg-gray-100 dark:bg-gray-900">
       <main className="w-full px-3 py-4 sm:px-6 sm:py-6 lg:px-8">
         {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
-          <div>
-            <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">
-              MES
-            </h1>
-          </div>
-          <div className="flex items-center gap-2 flex-wrap">
+        <div className="flex items-center justify-between mb-4">
+          <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">MES</h1>
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-medium text-gray-600 dark:text-gray-300">Wybierz okres:</span>
             <label className="text-xs text-gray-500 dark:text-gray-400">Od:</label>
             <input
               type="date"

@@ -69,7 +69,7 @@ export async function GET(request) {
 
     const { searchParams } = new URL(request.url);
     const status = searchParams.get('status') || 'all';
-    const limit = parseInt(searchParams.get('limit')) || 500;
+    const limit = Math.min(parseInt(searchParams.get('limit')) || 5000, 5000);
     const includeAll = status === 'all';
 
     // Dynamic date range (default: last 30 days)
