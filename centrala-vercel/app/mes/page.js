@@ -1128,7 +1128,7 @@ export default function MESPage() {
 
                     {/* Szczegoly produktow */}
                     {(
-                      <div className="px-4 pb-4 bg-gray-50 dark:bg-gray-700/30">
+                      <div className={`px-4 pb-4 ${doneOrders.has(order.id) ? 'bg-green-50 dark:bg-green-900/20' : 'bg-gray-50 dark:bg-gray-700/30'}`}>
                         {/* Uwagi klienta */}
                         {order.notes && order.notes.length > 0 && (
                           <div className="mb-2 p-2 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded text-xs">
