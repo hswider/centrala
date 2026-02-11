@@ -51,12 +51,58 @@ function getChannelFlagCode(channelLabel) {
   return null;
 }
 
+function getChannelIcon(platform, channelLabel) {
+  const label = (channelLabel || '').toLowerCase();
+  if (platform === 'Allegro') return 'https://a.allegroimg.com/original/12c30c/0d4b068640de9b0daf22af9d97c5';
+  if (platform === 'Amazon') return '/icons/amazon.png';
+  if (platform === 'eBay' || platform === 'Ebay') return '/icons/ebay.png';
+  if (platform === 'Kaufland') return 'https://upload.wikimedia.org/wikipedia/commons/6/65/Kaufland_Deutschland.png';
+  if (label.includes('otto')) return '/icons/otto.png';
+  if (label.includes('poom business')) return '/icons/poom-business.png';
+  if (platform === 'Shopify' || platform === 'shopify' || platform === 'shop') {
+    if (label.includes('poom kids') || label.includes('poomkids')) return '/icons/poomkids.png';
+    if (label.includes('dobrelegowiska') || label.includes('dobre legowiska')) return '/icons/dobrelegowiska.png';
+    if (label.includes('allepoduszki')) return '/icons/allepoduszki.png';
+    if (label.includes('poom-furniture') || label.includes('poom furniture')) return '/icons/poom-furniture.png';
+    return '/icons/gutekissen.png';
+  }
+  return null;
+}
+
+function getChannelKey(platform, channelLabel) {
+  const label = (channelLabel || '').toLowerCase();
+  if (platform === 'Allegro') return 'Allegro';
+  if (platform === 'Amazon') {
+    if (label.includes(' de')) return 'Amazon DE';
+    if (label.includes(' fr')) return 'Amazon FR';
+    if (label.includes(' es')) return 'Amazon ES';
+    if (label.includes(' it')) return 'Amazon IT';
+    if (label.includes(' be')) return 'Amazon BE';
+    if (label.includes(' se')) return 'Amazon SE';
+    if (label.includes(' nl')) return 'Amazon NL';
+    return 'Amazon';
+  }
+  if (platform === 'eBay' || platform === 'Ebay') return 'eBay';
+  if (platform === 'Kaufland') return 'Kaufland';
+  if (label.includes('otto')) return 'OTTO';
+  if (label.includes('poom business')) return 'POOM Business';
+  if (platform === 'Shopify' || platform === 'shopify' || platform === 'shop') {
+    if (label.includes('poom kids') || label.includes('poomkids')) return 'POOM Kids';
+    if (label.includes('dobrelegowiska') || label.includes('dobre legowiska')) return 'Dobrelegowiska';
+    if (label.includes('allepoduszki')) return 'Allepoduszki';
+    if (label.includes('poom-furniture') || label.includes('poom furniture')) return 'POOM Furniture';
+    return 'Gutekissen';
+  }
+  return channelLabel || platform || 'Inne';
+}
+
 export default function MESPage() {
   const [orders, setOrders] = useState([]);
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [department, setDepartment] = useState('wszystkie');
-  const [secondaryFilter, setSecondaryFilter] = useState(null); // 'shipped', 'canceled', 'unpaid'
+  const [secondaryFilter, setSecondaryFilter] = useState(null);
+  const [channelFilter, setChannelFilter] = useState(null);
   const [expandedOrder, setExpandedOrder] = useState(null);
   const [expandedItem, setExpandedItem] = useState(null);
   const [selectedOrders, setSelectedOrders] = useState(new Set());
@@ -321,7 +367,7 @@ export default function MESPage() {
   useEffect(() => {
     setSelectedOrders(new Set());
     setCurrentPage(1);
-  }, [department, secondaryFilter]);
+  }, [department, secondaryFilter, channelFilter]);
 
   const toggleSelectOrder = (id) => {
     setSelectedOrders(prev => {
@@ -448,13 +494,30 @@ export default function MESPage() {
   // Client-side filtering: department first, then secondary filter on top
   const departmentOrders = department === 'wszystkie' ? orders : department === 'poczekalnia' ? orders.filter(o => o.department === null) : orders.filter(o => o.department === department);
 
-  const filteredOrders = (() => {
-    if (!secondaryFilter) return departmentOrders;
-    if (['shipped', 'canceled', 'unpaid', 'needs_production', 'partial', 'ready_to_ship'].includes(secondaryFilter)) {
-      return departmentOrders.filter(o => o.orderStatus === secondaryFilter);
+  // Channel counts scoped to department
+  const channelCounts = (() => {
+    const counts = {};
+    for (const o of departmentOrders) {
+      const key = getChannelKey(o.channelPlatform, o.channelLabel);
+      if (!counts[key]) {
+        counts[key] = { key, icon: getChannelIcon(o.channelPlatform, o.channelLabel), count: 0 };
+      }
+      counts[key].count++;
     }
-    if (typeof secondaryFilter === 'number') return departmentOrders.filter(o => o.deliveryStatus === secondaryFilter);
-    return departmentOrders;
+    return Object.values(counts).sort((a, b) => b.count - a.count);
+  })();
+
+  const afterChannelFilter = channelFilter
+    ? departmentOrders.filter(o => getChannelKey(o.channelPlatform, o.channelLabel) === channelFilter)
+    : departmentOrders;
+
+  const filteredOrders = (() => {
+    if (!secondaryFilter) return afterChannelFilter;
+    if (['shipped', 'canceled', 'unpaid', 'needs_production', 'partial', 'ready_to_ship'].includes(secondaryFilter)) {
+      return afterChannelFilter.filter(o => o.orderStatus === secondaryFilter);
+    }
+    if (typeof secondaryFilter === 'number') return afterChannelFilter.filter(o => o.deliveryStatus === secondaryFilter);
+    return afterChannelFilter;
   })();
 
   // Status counts scoped to current department tab
@@ -738,6 +801,32 @@ export default function MESPage() {
                   </button>
                 );
               })}
+            </div>
+          )}
+          {/* Channel filter bar */}
+          {channelCounts.length > 1 && (
+            <div className="flex items-center gap-1.5 px-4 py-2 border-b border-gray-100 dark:border-gray-700 text-xs flex-wrap">
+              <span className="text-gray-400 dark:text-gray-500 font-medium mr-1">Kanal:</span>
+              <button
+                onClick={() => setChannelFilter(null)}
+                className={`px-2 py-1 rounded transition-colors flex items-center gap-1 ${!channelFilter ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 font-bold' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'}`}
+              >
+                Wszystkie ({departmentOrders.length})
+              </button>
+              {channelCounts.map(ch => (
+                <button
+                  key={ch.key}
+                  onClick={() => setChannelFilter(channelFilter === ch.key ? null : ch.key)}
+                  className={`px-2 py-1 rounded transition-colors flex items-center gap-1 ${channelFilter === ch.key ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 font-bold' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'}`}
+                >
+                  {ch.icon ? (
+                    <img src={ch.icon} alt={ch.key} className="w-4 h-4 rounded-full object-cover" />
+                  ) : (
+                    <span className="w-4 h-4 bg-gray-400 rounded-full flex items-center justify-center text-white text-[8px] font-bold">{ch.key.charAt(0)}</span>
+                  )}
+                  {ch.key} ({ch.count})
+                </button>
+              ))}
             </div>
           )}
           <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between gap-3 flex-wrap">
