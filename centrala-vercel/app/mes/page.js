@@ -3,7 +3,8 @@
 import { useState, useEffect } from 'react';
 
 const DEPARTMENTS = [
-  { key: 'wszystkie', label: 'Wszystkie', icon: '📋', desc: 'Aktywne zamowienia', textColor: 'text-blue-600', borderColor: 'border-blue-500', bgLight: 'bg-blue-50' },
+  { key: 'wszystkie', label: 'Wszystkie', icon: '📋', desc: 'Wszystkie zamowienia', textColor: 'text-blue-600', borderColor: 'border-blue-500', bgLight: 'bg-blue-50' },
+  { key: 'poczekalnia', label: 'Poczekalnia', icon: '⏳', desc: 'Anulowane / Nieoplacone', textColor: 'text-gray-600', borderColor: 'border-gray-400', bgLight: 'bg-gray-50' },
   { key: 'krojownia', label: 'Krojownia', icon: '✂️', desc: 'Brak w magazynach GOT/POL/WYK', textColor: 'text-red-600', borderColor: 'border-red-500', bgLight: 'bg-red-50' },
   { key: 'szwalnia', label: 'Szwalnia', icon: '🧵', desc: 'Dostepne w wykrojach', textColor: 'text-purple-600', borderColor: 'border-purple-500', bgLight: 'bg-purple-50' },
   { key: 'polprodukty', label: 'Polprodukty', icon: '🔧', desc: 'Dostepne w polproduktach', textColor: 'text-amber-600', borderColor: 'border-amber-500', bgLight: 'bg-amber-50' },
@@ -440,7 +441,7 @@ export default function MESPage() {
   };
 
   // Client-side filtering: department first, then secondary filter on top
-  const departmentOrders = department === 'wszystkie' ? orders : orders.filter(o => o.department === department);
+  const departmentOrders = department === 'wszystkie' ? orders : department === 'poczekalnia' ? orders.filter(o => o.department === null) : orders.filter(o => o.department === department);
 
   const filteredOrders = (() => {
     if (!secondaryFilter) return departmentOrders;

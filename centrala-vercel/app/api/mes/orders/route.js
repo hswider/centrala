@@ -412,6 +412,7 @@ export async function GET(request) {
       omsStatuses: Object.values(omsStatusCounts).sort((a, b) => b.count - a.count),
       departments: {
         wszystkie: processedOrders.length,
+        poczekalnia: processedOrders.filter(o => o.department === null).length,
         krojownia: activeOrders.filter(o => o.department === 'krojownia').length,
         szwalnia: activeOrders.filter(o => o.department === 'szwalnia').length,
         polprodukty: activeOrders.filter(o => o.department === 'polprodukty').length,
