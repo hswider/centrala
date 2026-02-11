@@ -567,7 +567,8 @@ export default function MESPage() {
       y += 5;
     });
 
-    doc.save(`mes_zamowienia_${new Date().toISOString().slice(0, 10)}.pdf`);
+    const pdfUrl = doc.output('bloburl');
+    window.open(pdfUrl, '_blank');
   };
 
   // Client-side filtering: department first, then secondary filter on top
