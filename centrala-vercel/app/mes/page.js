@@ -836,8 +836,8 @@ export default function MESPage() {
                       </div>
                     </div>
 
-                    {/* Rozwiniete szczegoly */}
-                    {expandedOrder === order.id && (
+                    {/* Szczegoly produktow */}
+                    {(
                       <div className="px-4 pb-4 bg-gray-50 dark:bg-gray-700/30">
                         <div className="space-y-2">
                           {order.items.map((item, idx) => (
