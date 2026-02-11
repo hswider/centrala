@@ -446,7 +446,7 @@ export default function MESPage() {
       return orders;
     }
     if (department === 'wszystkie') {
-      return orders.filter(o => o.department !== null);
+      return orders;
     }
     return orders.filter(o => o.department === department);
   })();

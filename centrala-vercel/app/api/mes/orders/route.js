@@ -305,7 +305,7 @@ export async function GET(request) {
 
       // Przypisanie dzialu produkcyjnego
       let department = null;
-      if (!isCanceled && !isShipped && isPaid) {
+      if (!isCanceled && isPaid) {
         if (processedItems.length > 1) {
           department = 'wielopak';
         } else {
@@ -411,7 +411,7 @@ export async function GET(request) {
       unpaid: processedOrders.filter(o => o.orderStatus === 'unpaid').length,
       omsStatuses: Object.values(omsStatusCounts).sort((a, b) => b.count - a.count),
       departments: {
-        wszystkie: activeOrders.length,
+        wszystkie: processedOrders.length,
         krojownia: activeOrders.filter(o => o.department === 'krojownia').length,
         szwalnia: activeOrders.filter(o => o.department === 'szwalnia').length,
         polprodukty: activeOrders.filter(o => o.department === 'polprodukty').length,
