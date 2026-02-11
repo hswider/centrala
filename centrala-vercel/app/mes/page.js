@@ -542,11 +542,8 @@ export default function MESPage() {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
           <div>
             <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">
-              MES - Dzialy produkcyjne
+              MES
             </h1>
-            <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">
-              Zamowienia posortowane wg etapu produkcji
-            </p>
           </div>
           <div className="flex items-center gap-2 flex-wrap">
             <label className="text-xs text-gray-500 dark:text-gray-400">Od:</label>
