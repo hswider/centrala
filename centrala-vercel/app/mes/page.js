@@ -811,7 +811,7 @@ export default function MESPage() {
           <div className="px-4 pt-2 pb-0">
             <span className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Gniazda produkcyjne</span>
           </div>
-          <div className="grid grid-cols-2 lg:grid-cols-4">
+          <div className="flex flex-wrap lg:flex-nowrap">
             {TABS_PRODUCTION.map(dept => {
               const isActive = department === dept.key;
               const count = getDeptCount(dept.key);
@@ -819,13 +819,13 @@ export default function MESPage() {
                 <button
                   key={dept.key}
                   onClick={() => { setDepartment(dept.key); setSecondaryFilter(null); setColorFilter(null); }}
-                  className={`flex flex-col items-start p-3 lg:p-4 transition-colors border-b-2 text-left ${
+                  className={`flex-1 min-w-0 flex flex-col items-start p-3 lg:p-4 transition-colors border-b-2 text-left ${
                     isActive
                       ? `${dept.borderColor} ${dept.bgLight}`
                       : 'border-transparent hover:bg-gray-50 dark:hover:bg-gray-700'
                   }`}
                 >
-                  <span className={`text-xs truncate ${isActive ? dept.textColor : 'text-gray-500 dark:text-gray-400'}`}>
+                  <span className={`text-xs truncate w-full ${isActive ? dept.textColor : 'text-gray-500 dark:text-gray-400'}`}>
                     {dept.icon} {dept.label}
                   </span>
                   <span className={`text-xl lg:text-2xl font-bold ${isActive ? dept.textColor : 'text-gray-400 dark:text-gray-500'}`}>
