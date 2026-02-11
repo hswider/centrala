@@ -635,39 +635,6 @@ export default function MESPage() {
               >
                 Nieoplacone ({stats.unpaid || 0})
               </button>
-              {stats.omsStatuses && stats.omsStatuses.length > 0 && (
-                <>
-                  <span className="text-gray-300 dark:text-gray-600">|</span>
-                  <span className="text-gray-400 dark:text-gray-500 font-medium">Apilo/BL:</span>
-                  <div className="flex items-center gap-1 flex-wrap">
-                    {stats.omsStatuses.map(s => {
-                      const colorMap = {
-                        blue: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
-                        yellow: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400',
-                        green: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',
-                        red: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400',
-                        orange: 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400',
-                        purple: 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400',
-                        gray: 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300',
-                      };
-                      const isActive = secondaryFilter === s.status;
-                      return (
-                        <button
-                          key={s.status}
-                          onClick={() => setSecondaryFilter(isActive ? null : s.status)}
-                          className={`px-1.5 py-0.5 rounded transition-colors whitespace-nowrap ${
-                            isActive
-                              ? `${colorMap[s.color] || colorMap.gray} font-bold ring-1 ring-current`
-                              : `${colorMap[s.color] || colorMap.gray} opacity-70 hover:opacity-100`
-                          }`}
-                        >
-                          {s.label} ({s.count})
-                        </button>
-                      );
-                    })}
-                  </div>
-                </>
-              )}
               <span className="text-gray-300 dark:text-gray-600">|</span>
               <span className="text-gray-400 dark:text-gray-500">Magazyny:</span>
               <div className="flex items-center gap-0.5">
@@ -677,6 +644,37 @@ export default function MESPage() {
                 <div className="w-5 h-5 rounded bg-orange-500 flex items-center justify-center text-white text-[7px] font-bold">SUR</div>
                 <div className="w-4 h-4 rounded bg-gray-300 ml-0.5"></div>
               </div>
+            </div>
+          )}
+          {/* Apilo/BL status bar */}
+          {stats?.omsStatuses && stats.omsStatuses.length > 0 && (
+            <div className="flex items-center gap-1.5 px-4 py-2 border-t border-gray-100 dark:border-gray-700/50 text-xs flex-wrap">
+              <span className="text-gray-400 dark:text-gray-500 font-medium mr-1">Apilo/BL:</span>
+              {stats.omsStatuses.map(s => {
+                const colorMap = {
+                  blue: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
+                  yellow: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400',
+                  green: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',
+                  red: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400',
+                  orange: 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400',
+                  purple: 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400',
+                  gray: 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300',
+                };
+                const isActive = secondaryFilter === s.status;
+                return (
+                  <button
+                    key={s.status}
+                    onClick={() => setSecondaryFilter(isActive ? null : s.status)}
+                    className={`px-1.5 py-0.5 rounded transition-colors whitespace-nowrap ${
+                      isActive
+                        ? `${colorMap[s.color] || colorMap.gray} font-bold ring-1 ring-current`
+                        : `${colorMap[s.color] || colorMap.gray} opacity-70 hover:opacity-100`
+                    }`}
+                  >
+                    {s.label} ({s.count})
+                  </button>
+                );
+              })}
             </div>
           )}
         </div>
