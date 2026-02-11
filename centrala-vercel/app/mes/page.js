@@ -106,43 +106,52 @@ const COLOR_MAP = {
   'weiß': 'Bialy', 'weiss': 'Bialy', 'bílá': 'Bialy', 'bianco': 'Bialy', 'blanco': 'Bialy', 'blanc': 'Bialy', 'wit': 'Bialy',
   // Kremowy
   'kremowy': 'Kremowy', 'kremowa': 'Kremowy', 'krem': 'Kremowy', 'cream': 'Kremowy', 'creme': 'Kremowy', 'ecru': 'Kremowy',
-  // Szary
+  // Szary - odcienie
   'jasnoszary': 'Jasnoszary', 'j.szary': 'Jasnoszary', 'j.sz': 'Jasnoszary', 'light grey': 'Jasnoszary', 'light gray': 'Jasnoszary', 'hellgrau': 'Jasnoszary',
   'ciemnoszary': 'Ciemnoszary', 'c.szary': 'Ciemnoszary', 'c.sz': 'Ciemnoszary', 'c. szary': 'Ciemnoszary', 'dark grey': 'Ciemnoszary', 'dark gray': 'Ciemnoszary', 'dunkelgrau': 'Ciemnoszary', 'antracyt': 'Ciemnoszary', 'anthrazit': 'Ciemnoszary', 'pepper': 'Ciemnoszary',
   'szary': 'Szary', 'szara': 'Szary', 'szare': 'Szary', 'grey': 'Szary', 'gray': 'Szary',
   'grau': 'Szary', 'šedá': 'Szary', 'grigio': 'Szary', 'gris': 'Szary', 'grijs': 'Szary',
-  'silver': 'Szary', 'srebro': 'Szary', 'srebrny': 'Szary', 'silber': 'Szary', 'platyna': 'Szary',
+  'silver': 'Srebrny', 'srebro': 'Srebrny', 'srebrny': 'Srebrny', 'silber': 'Srebrny', 'platyna': 'Srebrny',
   'blue-grey': 'Szary',
   // Bezowy
   'beżowy': 'Bezowy', 'beżowa': 'Bezowy', 'beż': 'Bezowy', 'beige': 'Bezowy', 'sand': 'Bezowy',
-  // Brazowy
+  // Brazowy - odcienie
+  'ciemnobrązowy': 'Ciemnobrazowy', 'ciemny brązowy': 'Ciemnobrazowy', 'dark brown': 'Ciemnobrazowy', 'dunkelbraun': 'Ciemnobrazowy',
+  'chocolate': 'Ciemnobrazowy', 'czekoladowy': 'Ciemnobrazowy', 'czekolada': 'Ciemnobrazowy',
+  'jasnobrązowy': 'Jasnobrazowy', 'jasny brązowy': 'Jasnobrazowy', 'light brown': 'Jasnobrazowy', 'hellbraun': 'Jasnobrazowy',
+  'camel': 'Jasnobrazowy', 'cynamon': 'Jasnobrazowy', 'cinnamon': 'Jasnobrazowy',
   'brązowy': 'Brazowy', 'brązowa': 'Brazowy', 'brąz': 'Brazowy', 'brown': 'Brazowy',
   'braun': 'Brazowy', 'hnědá': 'Brazowy', 'marrone': 'Brazowy', 'marrón': 'Brazowy', 'brun': 'Brazowy', 'bruin': 'Brazowy',
-  'camel': 'Brazowy', 'chocolate': 'Brazowy', 'cynamon': 'Brazowy', 'cinnamon': 'Brazowy',
   // Czerwony
   'czerwony': 'Czerwony', 'czerwona': 'Czerwony', 'czerwone': 'Czerwony', 'red': 'Czerwony',
   'rot': 'Czerwony', 'červená': 'Czerwony', 'rosso': 'Czerwony', 'rojo': 'Czerwony', 'rouge': 'Czerwony', 'rood': 'Czerwony',
   'bordo': 'Bordowy', 'bordowy': 'Bordowy', 'burgundy': 'Bordowy', 'bordeaux': 'Bordowy',
-  // Niebieski
+  // Niebieski - odcienie
+  'jasnoniebieski': 'Jasnoniebieski', 'jasny niebieski': 'Jasnoniebieski', 'light blue': 'Jasnoniebieski', 'hellblau': 'Jasnoniebieski', 'baby blue': 'Jasnoniebieski',
   'niebieski': 'Niebieski', 'niebieska': 'Niebieski', 'blue': 'Niebieski',
   'blau': 'Niebieski', 'modrá': 'Niebieski', 'blu': 'Niebieski', 'azul': 'Niebieski', 'bleu': 'Niebieski', 'blauw': 'Niebieski',
   'cobalt': 'Niebieski', 'kobalt': 'Niebieski',
   // Granatowy
   'granatowy': 'Granatowy', 'granat': 'Granatowy', 'navy': 'Granatowy', 'dark blue': 'Granatowy', 'morski': 'Granatowy',
   'dunkelblau': 'Granatowy', 'marine': 'Granatowy',
-  // Zielony
+  // Zielony - odcienie
+  'ciemnozielony': 'Ciemnozielony', 'ciemny zielony': 'Ciemnozielony', 'dark green': 'Ciemnozielony', 'dunkelgrün': 'Ciemnozielony',
+  'butelka': 'Ciemnozielony', 'butelkowy': 'Ciemnozielony', 'szmaragd': 'Ciemnozielony', 'szmaragdowy': 'Ciemnozielony',
+  'jasnozielony': 'Jasnozielony', 'jasny zielony': 'Jasnozielony', 'light green': 'Jasnozielony', 'hellgrün': 'Jasnozielony', 'lime': 'Jasnozielony',
+  'oliwkowy': 'Oliwkowy', 'olive': 'Oliwkowy', 'oliv': 'Oliwkowy', 'khaki': 'Oliwkowy',
   'zielony': 'Zielony', 'zielona': 'Zielony', 'green': 'Zielony',
   'grün': 'Zielony', 'zelená': 'Zielony', 'verde': 'Zielony', 'vert': 'Zielony', 'groen': 'Zielony',
-  'butelka': 'Zielony', 'ciemnozielony': 'Zielony', 'szmaragd': 'Zielony', 'szmaragdowy': 'Zielony', 'lime': 'Zielony', 'olive': 'Zielony', 'oliwkowy': 'Zielony',
-  // Rozowy
-  'różowy': 'Rozowy', 'różowa': 'Rozowy', 'pink': 'Rozowy', 'rosa': 'Rozowy',
-  'flamingo': 'Rozowy', 'pudrowy': 'Rozowy', 'brzoskwiniowy': 'Rozowy', 'peach': 'Rozowy',
-  // Zolty
+  // Rozowy - odcienie
+  'pudrowy': 'Pudrowy roz', 'pudrowy róż': 'Pudrowy roz', 'powder pink': 'Pudrowy roz',
+  'brzoskwiniowy': 'Brzoskwiniowy', 'peach': 'Brzoskwiniowy', 'pfirsich': 'Brzoskwiniowy',
+  'różowy': 'Rozowy', 'różowa': 'Rozowy', 'pink': 'Rozowy', 'rosa': 'Rozowy', 'flamingo': 'Rozowy',
+  // Zolty - odcienie
+  'musztardowy': 'Musztardowy', 'mustard': 'Musztardowy', 'senf': 'Musztardowy',
   'żółty': 'Zolty', 'żółta': 'Zolty', 'yellow': 'Zolty', 'gelb': 'Zolty', 'giallo': 'Zolty', 'amarillo': 'Zolty', 'jaune': 'Zolty', 'geel': 'Zolty',
-  'musztardowy': 'Zolty', 'mustard': 'Zolty',
   // Pomaranczowy
   'pomarańczowy': 'Pomaranczowy', 'orange': 'Pomaranczowy', 'arancione': 'Pomaranczowy',
-  // Fioletowy
+  // Fioletowy - odcienie
+  'lawendowy': 'Lawendowy', 'lavender': 'Lawendowy', 'lavendel': 'Lawendowy',
   'fioletowy': 'Fioletowy', 'fioletowa': 'Fioletowy', 'purple': 'Fioletowy', 'violet': 'Fioletowy', 'lila': 'Fioletowy',
 };
 
@@ -150,10 +159,16 @@ const COLOR_SORTED_KEYS = Object.keys(COLOR_MAP).sort((a, b) => b.length - a.len
 
 const COLOR_DOT = {
   'Czarny': 'bg-gray-900', 'Bialy': 'bg-white border border-gray-300', 'Kremowy': 'bg-amber-50 border border-amber-200',
-  'Szary': 'bg-gray-400', 'Jasnoszary': 'bg-gray-300', 'Ciemnoszary': 'bg-gray-600',
-  'Bezowy': 'bg-amber-200', 'Brazowy': 'bg-amber-800', 'Czerwony': 'bg-red-500', 'Bordowy': 'bg-red-900',
-  'Niebieski': 'bg-blue-500', 'Granatowy': 'bg-blue-900', 'Zielony': 'bg-green-600',
-  'Rozowy': 'bg-pink-400', 'Zolty': 'bg-yellow-400', 'Pomaranczowy': 'bg-orange-500', 'Fioletowy': 'bg-purple-500',
+  'Szary': 'bg-gray-400', 'Jasnoszary': 'bg-gray-300', 'Ciemnoszary': 'bg-gray-600', 'Srebrny': 'bg-gray-350 border border-gray-300',
+  'Bezowy': 'bg-amber-200',
+  'Brazowy': 'bg-amber-800', 'Ciemnobrazowy': 'bg-amber-950', 'Jasnobrazowy': 'bg-amber-500',
+  'Czerwony': 'bg-red-500', 'Bordowy': 'bg-red-900',
+  'Niebieski': 'bg-blue-500', 'Jasnoniebieski': 'bg-blue-300', 'Granatowy': 'bg-blue-900',
+  'Zielony': 'bg-green-500', 'Ciemnozielony': 'bg-green-800', 'Jasnozielony': 'bg-green-300', 'Oliwkowy': 'bg-yellow-700',
+  'Rozowy': 'bg-pink-400', 'Pudrowy roz': 'bg-pink-200', 'Brzoskwiniowy': 'bg-orange-300',
+  'Zolty': 'bg-yellow-400', 'Musztardowy': 'bg-yellow-600',
+  'Pomaranczowy': 'bg-orange-500',
+  'Fioletowy': 'bg-purple-500', 'Lawendowy': 'bg-purple-300',
 };
 
 function extractColor(productName) {
