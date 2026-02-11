@@ -930,31 +930,32 @@ export default function MESPage() {
                 </>
               )}
 
-              {/* Kolor - only for krojownia */}
-              {department === 'krojownia' && colorCounts.length > 0 && (
-                <>
-                  <span className="text-gray-300 dark:text-gray-600 flex-shrink-0">|</span>
-                  <span className="text-gray-400 dark:text-gray-500 font-medium flex-shrink-0">Kolor:</span>
-                  <button
-                    onClick={() => setColorFilter(null)}
-                    className={`px-2 py-1 rounded transition-colors flex items-center gap-1 flex-shrink-0 ${!colorFilter ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 font-bold' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'}`}
-                  >
-                    Wszystkie
-                  </button>
-                  {colorCounts.map(c => (
-                    <button
-                      key={c.key}
-                      onClick={() => setColorFilter(colorFilter === c.key ? null : c.key)}
-                      className={`px-2 py-1 rounded transition-colors flex items-center gap-1.5 flex-shrink-0 ${colorFilter === c.key ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 font-bold' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'}`}
-                    >
-                      <span className={`w-3 h-3 rounded-full flex-shrink-0 ${COLOR_DOT[c.key] || 'bg-gray-400'}`}></span>
-                      {c.key} ({c.count})
-                    </button>
-                  ))}
-                </>
-              )}
             </div>
           </div>
+          {/* Color filter bar - only for krojownia */}
+          {department === 'krojownia' && colorCounts.length > 0 && (
+            <div className="overflow-x-auto border-b border-gray-100 dark:border-gray-700">
+              <div className="flex items-center gap-1.5 px-4 py-2 text-xs whitespace-nowrap min-w-0">
+                <span className="text-gray-400 dark:text-gray-500 font-medium flex-shrink-0">Kolor:</span>
+                <button
+                  onClick={() => setColorFilter(null)}
+                  className={`px-2 py-1 rounded transition-colors flex items-center gap-1 flex-shrink-0 ${!colorFilter ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 font-bold' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'}`}
+                >
+                  Wszystkie
+                </button>
+                {colorCounts.map(c => (
+                  <button
+                    key={c.key}
+                    onClick={() => setColorFilter(colorFilter === c.key ? null : c.key)}
+                    className={`px-2 py-1 rounded transition-colors flex items-center gap-1.5 flex-shrink-0 ${colorFilter === c.key ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 font-bold' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'}`}
+                  >
+                    <span className={`w-3 h-3 rounded-full flex-shrink-0 ${COLOR_DOT[c.key] || 'bg-gray-400'}`}></span>
+                    {c.key} ({c.count})
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
           <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between gap-3 flex-wrap">
             <div className="flex items-center gap-3">
               <input
