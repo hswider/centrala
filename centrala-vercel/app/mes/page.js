@@ -879,6 +879,9 @@ export default function MESPage() {
                         </div>
                         <div className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
                           {formatDate(order.orderedAt)} • {order.itemsCount} prod. • {order.totalGross} {order.currency}
+                          {order.shippingDate && (
+                            <span className="text-blue-500 dark:text-blue-400"> • Wys: {new Date(order.shippingDate).toLocaleDateString('pl-PL', { day: '2-digit', month: '2-digit', year: 'numeric' })}</span>
+                          )}
                         </div>
                       </div>
                       <div className="flex items-center gap-1 text-xs">

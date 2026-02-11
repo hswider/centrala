@@ -83,7 +83,7 @@ export async function GET(request) {
         ? await sql`
             SELECT
               id, external_id, channel_label, channel_platform,
-              ordered_at, items, customer, shipping,
+              ordered_at, shipping_date, items, customer, shipping,
               total_gross, currency, delivery_status, payment_status, is_canceled
             FROM orders
             WHERE ordered_at >= ${dateFrom} AND ordered_at < ${dateTo + 'T23:59:59'}
@@ -93,7 +93,7 @@ export async function GET(request) {
         : await sql`
             SELECT
               id, external_id, channel_label, channel_platform,
-              ordered_at, items, customer, shipping,
+              ordered_at, shipping_date, items, customer, shipping,
               total_gross, currency, delivery_status, payment_status, is_canceled
             FROM orders
             WHERE ordered_at >= ${dateFrom}
@@ -104,7 +104,7 @@ export async function GET(request) {
         ? await sql`
             SELECT
               id, external_id, channel_label, channel_platform,
-              ordered_at, items, customer, shipping,
+              ordered_at, shipping_date, items, customer, shipping,
               total_gross, currency, delivery_status, payment_status, is_canceled
             FROM orders
             WHERE ordered_at >= ${dateFrom} AND ordered_at < ${dateTo + 'T23:59:59'}
@@ -114,7 +114,7 @@ export async function GET(request) {
         : await sql`
             SELECT
               id, external_id, channel_label, channel_platform,
-              ordered_at, items, customer, shipping,
+              ordered_at, shipping_date, items, customer, shipping,
               total_gross, currency, delivery_status, payment_status, is_canceled
             FROM orders
             WHERE ordered_at >= ${dateFrom}
@@ -346,6 +346,7 @@ export async function GET(request) {
         channelLabel: order.channel_label,
         channelPlatform: order.channel_platform,
         orderedAt: order.ordered_at,
+        shippingDate: order.shipping_date,
         customer: order.customer,
         shipping: order.shipping,
         totalGross: order.total_gross,
