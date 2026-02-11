@@ -131,9 +131,9 @@ export async function GET(request) {
       WHERE stan > 0
     `;
 
-    // Pobierz WSZYSTKIE gotowe produkty (nawet stan=0) do lookup receptur
-    const gotoweAll = await sql`
-      SELECT id, sku FROM inventory WHERE kategoria = 'gotowe'
+    // Pobierz WSZYSTKIE produkty (nawet stan=0) do lookup receptur kaskadowych
+    const allInventory = await sql`
+      SELECT id, sku, nazwa, stan, kategoria, cena FROM inventory
     `;
 
     const inventoryMap = {
@@ -142,6 +142,9 @@ export async function GET(request) {
       wykroje: {},
       surowce: {}
     };
+
+    // Mapa ALL inventory by id (do kaskadowych receptur)
+    const inventoryById = {};
 
     inventory.rows.forEach(item => {
       const key = (item.sku || '').toUpperCase().trim();
@@ -156,9 +159,20 @@ export async function GET(request) {
       }
     });
 
+    allInventory.rows.forEach(item => {
+      inventoryById[item.id] = {
+        id: item.id,
+        sku: item.sku,
+        nazwa: item.nazwa,
+        kategoria: item.kategoria,
+        stan: parseFloat(item.stan) || 0,
+        cena: parseFloat(item.cena) || 0
+      };
+    });
+
     // Mapa gotowe po SKU do lookup receptur (wlacznie ze stanem 0)
     const gotoweRecipeLookup = {};
-    gotoweAll.rows.forEach(item => {
+    allInventory.rows.filter(i => i.kategoria === 'gotowe').forEach(item => {
       const key = (item.sku || '').toUpperCase().trim();
       gotoweRecipeLookup[key] = { id: item.id };
     });
@@ -205,25 +219,93 @@ export async function GET(request) {
             surowce: null
           };
 
+          // Kaskadowe rozwiazanie receptur: gotowe -> polprodukty -> wykroje -> surowce
+          const gotoweEntry = inventoryMap.gotowe[sku] || gotoweRecipeLookup[sku];
+          if (gotoweEntry) {
+            const gotoweRecipe = recipeMap[gotoweEntry.id] || [];
+            for (const ing of gotoweRecipe) {
+              const ingItem = inventoryById[ing.ingredientId];
+              if (!ingItem) continue;
+              if (ingItem.kategoria === 'polprodukty') {
+                if (!availability.polprodukty || ingItem.stan > availability.polprodukty.stan) {
+                  availability.polprodukty = { id: ingItem.id, sku: ingItem.sku, nazwa: ingItem.nazwa, stan: ingItem.stan, cena: ingItem.cena };
+                }
+                // Kaskada: polprodukt -> wykroje
+                const polRecipe = recipeMap[ingItem.id] || [];
+                for (const polIng of polRecipe) {
+                  const polIngItem = inventoryById[polIng.ingredientId];
+                  if (!polIngItem) continue;
+                  if (polIngItem.kategoria === 'wykroje') {
+                    if (!availability.wykroje || polIngItem.stan > availability.wykroje.stan) {
+                      availability.wykroje = { id: polIngItem.id, sku: polIngItem.sku, nazwa: polIngItem.nazwa, stan: polIngItem.stan, cena: polIngItem.cena };
+                    }
+                    // Kaskada: wykroj -> surowce
+                    const wykRecipe = recipeMap[polIngItem.id] || [];
+                    for (const wykIng of wykRecipe) {
+                      const wykIngItem = inventoryById[wykIng.ingredientId];
+                      if (!wykIngItem) continue;
+                      if (wykIngItem.kategoria === 'surowce') {
+                        if (!availability.surowce || wykIngItem.stan > availability.surowce.stan) {
+                          availability.surowce = { id: wykIngItem.id, sku: wykIngItem.sku, nazwa: wykIngItem.nazwa, stan: wykIngItem.stan, cena: wykIngItem.cena };
+                        }
+                      }
+                    }
+                  }
+                  if (polIngItem.kategoria === 'surowce') {
+                    if (!availability.surowce || polIngItem.stan > availability.surowce.stan) {
+                      availability.surowce = { id: polIngItem.id, sku: polIngItem.sku, nazwa: polIngItem.nazwa, stan: polIngItem.stan, cena: polIngItem.cena };
+                    }
+                  }
+                }
+              }
+              if (ingItem.kategoria === 'wykroje') {
+                if (!availability.wykroje || ingItem.stan > availability.wykroje.stan) {
+                  availability.wykroje = { id: ingItem.id, sku: ingItem.sku, nazwa: ingItem.nazwa, stan: ingItem.stan, cena: ingItem.cena };
+                }
+                // Kaskada: wykroj -> surowce
+                const wykRecipe = recipeMap[ingItem.id] || [];
+                for (const wykIng of wykRecipe) {
+                  const wykIngItem = inventoryById[wykIng.ingredientId];
+                  if (!wykIngItem) continue;
+                  if (wykIngItem.kategoria === 'surowce') {
+                    if (!availability.surowce || wykIngItem.stan > availability.surowce.stan) {
+                      availability.surowce = { id: wykIngItem.id, sku: wykIngItem.sku, nazwa: wykIngItem.nazwa, stan: wykIngItem.stan, cena: wykIngItem.cena };
+                    }
+                  }
+                }
+              }
+              if (ingItem.kategoria === 'surowce') {
+                if (!availability.surowce || ingItem.stan > availability.surowce.stan) {
+                  availability.surowce = { id: ingItem.id, sku: ingItem.sku, nazwa: ingItem.nazwa, stan: ingItem.stan, cena: ingItem.cena };
+                }
+              }
+            }
+          }
+
+          // Fallback: szukaj po SKU/nazwie jesli kaskada nie znalazla
           const nameLower = (item.name || '').toLowerCase();
 
-          Object.keys(inventoryMap.polprodukty).forEach(key => {
-            const inv = inventoryMap.polprodukty[key];
-            if (key.includes(sku) || inv.nazwa.toLowerCase().includes(nameLower.slice(0, 20))) {
-              if (!availability.polprodukty || inv.stan > availability.polprodukty.stan) {
-                availability.polprodukty = inv;
+          if (!availability.polprodukty) {
+            Object.keys(inventoryMap.polprodukty).forEach(key => {
+              const inv = inventoryMap.polprodukty[key];
+              if (key.includes(sku) || inv.nazwa.toLowerCase().includes(nameLower.slice(0, 20))) {
+                if (!availability.polprodukty || inv.stan > availability.polprodukty.stan) {
+                  availability.polprodukty = inv;
+                }
               }
-            }
-          });
+            });
+          }
 
-          Object.keys(inventoryMap.wykroje).forEach(key => {
-            const inv = inventoryMap.wykroje[key];
-            if (key.includes(sku) || inv.nazwa.toLowerCase().includes(nameLower.slice(0, 20))) {
-              if (!availability.wykroje || inv.stan > availability.wykroje.stan) {
-                availability.wykroje = inv;
+          if (!availability.wykroje) {
+            Object.keys(inventoryMap.wykroje).forEach(key => {
+              const inv = inventoryMap.wykroje[key];
+              if (key.includes(sku) || inv.nazwa.toLowerCase().includes(nameLower.slice(0, 20))) {
+                if (!availability.wykroje || inv.stan > availability.wykroje.stan) {
+                  availability.wykroje = inv;
+                }
               }
-            }
-          });
+            });
+          }
 
           // Status produkcji
           let productionStatus = 'needs_production';
@@ -249,11 +331,11 @@ export async function GET(request) {
             availableFrom = 'surowce';
           }
 
-          // Receptura - szukaj w gotowe (takze ze stanem 0)
+          // Receptura - szukaj w gotowe (takze ze stanem 0) - gotoweEntry juz resolved wyzej
           let recipe = null;
-          const gotoweEntry = availability.gotowe || gotoweRecipeLookup[sku];
-          if (gotoweEntry) {
-            recipe = recipeMap[gotoweEntry.id] || null;
+          const gotoweEntryForRecipe = availability.gotowe || gotoweRecipeLookup[sku];
+          if (gotoweEntryForRecipe) {
+            recipe = recipeMap[gotoweEntryForRecipe.id] || null;
           }
 
           // Alerty
