@@ -200,6 +200,7 @@ export default function MESPage() {
   const [expandedOrder, setExpandedOrder] = useState(null);
   const [expandedItem, setExpandedItem] = useState(null);
   const [selectedOrders, setSelectedOrders] = useState(new Set());
+  const [doneOrders, setDoneOrders] = useState(new Set());
   const [perPage, setPerPage] = useState(50);
   const [currentPage, setCurrentPage] = useState(1);
   const [dateFrom, setDateFrom] = useState(() => {
@@ -1047,7 +1048,7 @@ export default function MESPage() {
               {visibleOrders.map((order) => {
                 const hasAlerts = order.items?.some(i => i.alerts && i.alerts.length > 0);
                 return (
-                  <div key={order.id} className={`${selectedOrders.has(order.id) ? 'bg-blue-50 dark:bg-blue-900/20' : 'hover:bg-gray-50 dark:hover:bg-gray-700/50'}`}>
+                  <div key={order.id} className={`${doneOrders.has(order.id) ? 'bg-green-50 dark:bg-green-900/20' : selectedOrders.has(order.id) ? 'bg-blue-50 dark:bg-blue-900/20' : 'hover:bg-gray-50 dark:hover:bg-gray-700/50'}`}>
                     {/* Naglowek zamowienia */}
                     <div
                       className="px-4 py-3 cursor-pointer flex items-center gap-3"
@@ -1281,6 +1282,20 @@ export default function MESPage() {
                           >
                             Szczegoly zamowienia
                           </a>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setDoneOrders(prev => {
+                                const next = new Set(prev);
+                                if (next.has(order.id)) next.delete(order.id);
+                                else next.add(order.id);
+                                return next;
+                              });
+                            }}
+                            className={`px-3 py-1.5 text-xs font-medium rounded flex items-center gap-1 ${doneOrders.has(order.id) ? 'bg-green-600 text-white hover:bg-green-700' : 'bg-green-100 text-green-700 hover:bg-green-200 dark:bg-green-900/30 dark:text-green-400 dark:hover:bg-green-900/50'}`}
+                          >
+                            ✓ Wykonane
+                          </button>
                         </div>
                       </div>
                     )}
