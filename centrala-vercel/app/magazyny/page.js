@@ -3353,7 +3353,7 @@ export default function MagazynyPage() {
                 const laborCost = productionTime * MINUTE_RATE;
                 const totalCost = ingredientsCost + laborCost;
                 const margin = recipeItem.cena - totalCost;
-                const marginPercent = totalCost > 0 ? ((margin / totalCost) * 100) : (recipeItem.cena > 0 ? 100 : 0);
+                const marginPercent = recipeItem.cena > 0 ? ((margin / recipeItem.cena) * 100) : 0;
 
                 return (
                   <div className="bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg mb-4 p-3">
