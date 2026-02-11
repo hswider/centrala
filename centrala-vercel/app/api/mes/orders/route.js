@@ -382,6 +382,25 @@ export async function GET(request) {
 
     // Statystyki
     const activeOrders = processedOrders.filter(o => o.department !== null);
+
+    // OMS status counts
+    const omsStatusCounts = {};
+    for (const o of processedOrders) {
+      if (o.deliveryStatus != null) {
+        const key = o.deliveryStatus;
+        if (!omsStatusCounts[key]) {
+          const info = OMS_STATUS_MAP[key];
+          omsStatusCounts[key] = {
+            status: key,
+            label: info?.label || `#${key}`,
+            color: info?.color || 'gray',
+            count: 0
+          };
+        }
+        omsStatusCounts[key].count++;
+      }
+    }
+
     const stats = {
       total: processedOrders.length,
       readyToShip: processedOrders.filter(o => o.orderStatus === 'ready_to_ship').length,
@@ -390,6 +409,7 @@ export async function GET(request) {
       shipped: processedOrders.filter(o => o.orderStatus === 'shipped').length,
       canceled: processedOrders.filter(o => o.orderStatus === 'canceled').length,
       unpaid: processedOrders.filter(o => o.orderStatus === 'unpaid').length,
+      omsStatuses: Object.values(omsStatusCounts).sort((a, b) => b.count - a.count),
       departments: {
         wszystkie: activeOrders.length,
         krojownia: activeOrders.filter(o => o.department === 'krojownia').length,
