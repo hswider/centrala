@@ -22,6 +22,7 @@ const DEPT_BADGE_COLORS = {
 const CHANNEL_FLAGS = {
   'dobrelegowiska': 'pl',
   'poomkids': 'pl',
+  'poom kids': 'pl',
   'poom-furniture': 'pl',
   'somilo': 'pl',
   'allegro': 'pl',
@@ -911,7 +912,8 @@ export default function MESPage() {
                                         }}
                                         className="text-xs text-blue-600 hover:text-blue-800 font-medium"
                                       >
-                                        {expandedItem === `${order.id}-${idx}` ? '▼ Ukryj recepture' : '▶ Pokaz recepture'}
+                                        <span className="inline-block w-2 h-2 rounded-full bg-blue-500 mr-1.5"></span>
+                                        {expandedItem === `${order.id}-${idx}` ? 'Ukryj recepture' : 'Pokaz recepture'}
                                       </button>
 
                                       {expandedItem === `${order.id}-${idx}` && (
