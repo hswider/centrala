@@ -729,18 +729,17 @@ export default function MESPage() {
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
-                          {order.shipping?.country && (
-                            <span className="text-base" title={order.shipping.country}>
-                              {getCountryFlag(order.shipping.country)}
-                            </span>
-                          )}
-                          {getChannelFlagCode(order.channelLabel) && (
-                            <img
-                              src={`https://flagcdn.com/20x15/${getChannelFlagCode(order.channelLabel)}.png`}
-                              alt={getChannelFlagCode(order.channelLabel)}
-                              className="w-5 h-3.5 object-cover rounded-sm"
-                            />
-                          )}
+                          {(() => {
+                            const flagCode = getChannelFlagCode(order.channelLabel) || (order.shipping?.country?.toLowerCase());
+                            return flagCode ? (
+                              <img
+                                src={`https://flagcdn.com/20x15/${flagCode}.png`}
+                                alt={flagCode}
+                                title={order.shipping?.country?.toUpperCase() || flagCode.toUpperCase()}
+                                className="w-5 h-3.5 object-cover rounded-sm"
+                              />
+                            ) : null;
+                          })()}
                           <span className="font-mono text-sm font-medium text-gray-900 dark:text-white">
                             #{order.id}
                           </span>
@@ -952,7 +951,7 @@ export default function MESPage() {
 
             <div className="p-4 space-y-4">
               <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-3">
-                <div className="text-sm font-medium text-gray-900 dark:text-white">{showShipModal.shipping?.country ? getCountryFlag(showShipModal.shipping.country) + ' ' : ''}Zamowienie #{showShipModal.id}</div>
+                <div className="text-sm font-medium text-gray-900 dark:text-white flex items-center gap-1.5">{showShipModal.shipping?.country && <img src={`https://flagcdn.com/20x15/${showShipModal.shipping.country.toLowerCase()}.png`} alt={showShipModal.shipping.country} className="w-5 h-3.5 object-cover rounded-sm" />}Zamowienie #{showShipModal.id}</div>
                 <div className="text-xs text-gray-500 dark:text-gray-400">
                   {showShipModal.itemsCount} produktow • {showShipModal.totalGross} {showShipModal.currency}
                 </div>
