@@ -678,21 +678,24 @@ export default function MESPage() {
     const isAvailable = available && available.stan >= needed;
     const isPartial = available && available.stan > 0 && available.stan < needed;
 
-    const colors = {
-      gotowe: isAvailable ? 'bg-green-500' : isPartial ? 'bg-yellow-500' : 'bg-gray-300',
-      polprodukty: isAvailable ? 'bg-blue-500' : isPartial ? 'bg-blue-300' : 'bg-gray-300',
-      wykroje: isAvailable ? 'bg-purple-500' : isPartial ? 'bg-purple-300' : 'bg-gray-300',
-      surowce: isAvailable ? 'bg-orange-500' : isPartial ? 'bg-orange-300' : 'bg-gray-300'
+    const styles = {
+      gotowe: { bg: isAvailable ? 'bg-green-100 text-green-700 border-green-300' : isPartial ? 'bg-yellow-100 text-yellow-700 border-yellow-300' : 'bg-gray-100 text-gray-400 border-gray-200', icon: '📦', label: 'Gotowe produkty' },
+      polprodukty: { bg: isAvailable ? 'bg-blue-100 text-blue-700 border-blue-300' : isPartial ? 'bg-blue-50 text-blue-400 border-blue-200' : 'bg-gray-100 text-gray-400 border-gray-200', icon: '🔧', label: 'Polprodukty' },
+      wykroje: { bg: isAvailable ? 'bg-amber-100 text-amber-700 border-amber-300' : isPartial ? 'bg-amber-50 text-amber-400 border-amber-200' : 'bg-gray-100 text-gray-400 border-gray-200', icon: '✂️', label: 'Wykroje' },
+      surowce: { bg: isAvailable ? 'bg-orange-100 text-orange-700 border-orange-300' : isPartial ? 'bg-orange-50 text-orange-400 border-orange-200' : 'bg-gray-100 text-gray-400 border-gray-200', icon: '🧱', label: 'Surowce' }
     };
 
-    const labels = { gotowe: 'GOT', polprodukty: 'POL', wykroje: 'WYK', surowce: 'SUR' };
+    const s = styles[kategoria];
+    const stan = available ? available.stan : 0;
 
     return (
       <div
-        className={`w-8 h-8 rounded flex items-center justify-center text-[10px] font-bold text-white ${colors[kategoria]}`}
-        title={`${labels[kategoria]}: ${available ? available.stan : 0} szt. (potrzeba: ${needed})`}
+        className={`px-2 py-1 rounded border text-[10px] font-semibold flex items-center gap-1 ${s.bg}`}
+        title={`${s.label}: ${stan} szt. (potrzeba: ${needed})`}
       >
-        {labels[kategoria]}
+        <span>{s.icon}</span>
+        <span>{s.label}</span>
+        <span className="opacity-60">({stan})</span>
       </div>
     );
   };
