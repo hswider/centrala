@@ -3,6 +3,27 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 
+function IngredientQtyInput({ value, onChange }) {
+  const [localVal, setLocalVal] = useState(String(value));
+  useEffect(() => { setLocalVal(String(value)); }, [value]);
+  return (
+    <input
+      type="number"
+      value={localVal}
+      onChange={(e) => setLocalVal(e.target.value)}
+      onBlur={() => {
+        const parsed = parseFloat(localVal) || 1;
+        if (parsed !== value) onChange(parsed);
+        else setLocalVal(String(value));
+      }}
+      onKeyDown={(e) => { if (e.key === 'Enter') e.target.blur(); }}
+      className="w-16 px-2 py-1 text-center border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm"
+      min="0.01"
+      step="0.01"
+    />
+  );
+}
+
 export default function MagazynyPage() {
   const [activeTab, setActiveTab] = useState('gotowe');
   const [showAddModal, setShowAddModal] = useState(false);
@@ -3449,13 +3470,9 @@ export default function MagazynyPage() {
                                   <span className="text-sm text-gray-900 dark:text-white">{ing.nazwa}</span>
                                 </td>
                                 <td className="px-2 sm:px-3 py-2 text-center">
-                                  <input
-                                    type="number"
+                                  <IngredientQtyInput
                                     value={ing.quantity}
-                                    onChange={(e) => handleUpdateIngredientQty(ing.id, parseFloat(e.target.value) || 1)}
-                                    className="w-16 px-2 py-1 text-center border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm"
-                                    min="0.01"
-                                    step="0.01"
+                                    onChange={(newQty) => handleUpdateIngredientQty(ing.id, newQty)}
                                   />
                                 </td>
                                 <td className="px-2 sm:px-3 py-2 text-right text-sm text-gray-600 dark:text-gray-400 whitespace-nowrap">
