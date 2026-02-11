@@ -1043,7 +1043,7 @@ export default function MESPage() {
               Brak zamowien w tym dziale
             </div>
           ) : (
-            <div className="divide-y divide-gray-100 dark:divide-gray-700">
+            <div className="divide-y-2 divide-gray-200 dark:divide-gray-600">
               {visibleOrders.map((order) => {
                 const hasAlerts = order.items?.some(i => i.alerts && i.alerts.length > 0);
                 return (
