@@ -859,16 +859,6 @@ export default function MESPage() {
                 Anulowane ({deptStatusCounts.canceled})
               </button>
 
-              <span className="text-gray-300 dark:text-gray-600 flex-shrink-0">|</span>
-              <span className="text-gray-400 dark:text-gray-500 flex-shrink-0">Magazyny:</span>
-              <div className="flex items-center gap-0.5 flex-shrink-0">
-                <div className="w-5 h-5 rounded bg-green-500 flex items-center justify-center text-white text-[7px] font-bold">GOT</div>
-                <div className="w-5 h-5 rounded bg-blue-500 flex items-center justify-center text-white text-[7px] font-bold">POL</div>
-                <div className="w-5 h-5 rounded bg-purple-500 flex items-center justify-center text-white text-[7px] font-bold">WYK</div>
-                <div className="w-5 h-5 rounded bg-orange-500 flex items-center justify-center text-white text-[7px] font-bold">SUR</div>
-                <div className="w-4 h-4 rounded bg-gray-300 ml-0.5"></div>
-              </div>
-
               {/* Apilo/BL */}
               {deptOmsStatuses.length > 0 && (
                 <>
