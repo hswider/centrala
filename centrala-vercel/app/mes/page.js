@@ -53,7 +53,8 @@ export default function MESPage() {
   const [expandedOrder, setExpandedOrder] = useState(null);
   const [expandedItem, setExpandedItem] = useState(null);
   const [selectedOrders, setSelectedOrders] = useState(new Set());
-  const [visibleCount, setVisibleCount] = useState(50);
+  const [perPage, setPerPage] = useState(50);
+  const [currentPage, setCurrentPage] = useState(1);
   const [dateFrom, setDateFrom] = useState(() => {
     const d = new Date(); d.setDate(d.getDate() - 30);
     return d.toISOString().split('T')[0];
@@ -306,9 +307,10 @@ export default function MESPage() {
     fetchCarrierAccounts();
   }, []);
 
-  // Clear selection when department/filter changes
+  // Clear selection and reset page when department/filter changes
   useEffect(() => {
     setSelectedOrders(new Set());
+    setCurrentPage(1);
   }, [department, secondaryFilter]);
 
   const toggleSelectOrder = (id) => {
@@ -447,7 +449,9 @@ export default function MESPage() {
     return orders.filter(o => o.department === department);
   })();
 
-  const visibleOrders = filteredOrders.slice(0, visibleCount);
+  const totalPages = Math.ceil(filteredOrders.length / perPage);
+  const safePage = Math.min(currentPage, totalPages || 1);
+  const visibleOrders = filteredOrders.slice((safePage - 1) * perPage, safePage * perPage);
 
   const getStatusBadge = (status) => {
     switch (status) {
@@ -659,14 +663,14 @@ export default function MESPage() {
                   ? secondaryFilter === 'shipped' ? 'Wyslane' : secondaryFilter === 'canceled' ? 'Anulowane' : 'Nieoplacone'
                   : DEPARTMENTS.find(d => d.key === department)?.label || 'Zamowienia'
                 }
-                {' '}({visibleOrders.length}{filteredOrders.length > visibleCount ? ` z ${filteredOrders.length}` : ''})
+                {' '}({filteredOrders.length})
               </h2>
               <div className="flex items-center gap-1 ml-2">
-                {[50, 100, 250, 500].map(n => (
+                {[50, 100, 250].map(n => (
                   <button
                     key={n}
-                    onClick={() => setVisibleCount(n)}
-                    className={`px-2 py-0.5 text-xs rounded ${visibleCount === n ? 'bg-blue-600 text-white' : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'}`}
+                    onClick={() => { setPerPage(n); setCurrentPage(1); }}
+                    className={`px-2 py-0.5 text-xs rounded ${perPage === n ? 'bg-blue-600 text-white' : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'}`}
                   >
                     {n}
                   </button>
@@ -948,6 +952,65 @@ export default function MESPage() {
                   </div>
                 );
               })}
+            </div>
+          )}
+
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="px-4 py-3 border-t border-gray-200 dark:border-gray-700 flex items-center justify-between">
+              <span className="text-sm text-gray-500 dark:text-gray-400">
+                {(safePage - 1) * perPage + 1}–{Math.min(safePage * perPage, filteredOrders.length)} z {filteredOrders.length}
+              </span>
+              <div className="flex items-center gap-1">
+                <button
+                  onClick={() => setCurrentPage(1)}
+                  disabled={safePage === 1}
+                  className="px-2 py-1 text-xs rounded bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  &laquo;
+                </button>
+                <button
+                  onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                  disabled={safePage === 1}
+                  className="px-2 py-1 text-xs rounded bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  &lsaquo; Poprzednia
+                </button>
+                {Array.from({ length: totalPages }, (_, i) => i + 1)
+                  .filter(p => p === 1 || p === totalPages || Math.abs(p - safePage) <= 2)
+                  .reduce((acc, p, i, arr) => {
+                    if (i > 0 && p - arr[i - 1] > 1) acc.push('...');
+                    acc.push(p);
+                    return acc;
+                  }, [])
+                  .map((p, i) =>
+                    p === '...' ? (
+                      <span key={`dot-${i}`} className="px-1 text-xs text-gray-400">...</span>
+                    ) : (
+                      <button
+                        key={p}
+                        onClick={() => setCurrentPage(p)}
+                        className={`px-2.5 py-1 text-xs rounded ${safePage === p ? 'bg-blue-600 text-white' : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'}`}
+                      >
+                        {p}
+                      </button>
+                    )
+                  )}
+                <button
+                  onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                  disabled={safePage === totalPages}
+                  className="px-2 py-1 text-xs rounded bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  Nastepna &rsaquo;
+                </button>
+                <button
+                  onClick={() => setCurrentPage(totalPages)}
+                  disabled={safePage === totalPages}
+                  className="px-2 py-1 text-xs rounded bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  &raquo;
+                </button>
+              </div>
             </div>
           )}
         </div>
