@@ -990,6 +990,17 @@ export default function MESPage() {
                     {/* Szczegoly produktow */}
                     {(
                       <div className="px-4 pb-4 bg-gray-50 dark:bg-gray-700/30">
+                        {/* Uwagi klienta */}
+                        {order.notes && order.notes.length > 0 && (
+                          <div className="mb-2 p-2 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded text-xs">
+                            <span className="font-bold text-yellow-700 dark:text-yellow-400">Uwagi: </span>
+                            {order.notes.map((note, nIdx) => (
+                              <span key={nIdx} className="text-yellow-800 dark:text-yellow-300">
+                                {nIdx > 0 && ' | '}{note.comment}
+                              </span>
+                            ))}
+                          </div>
+                        )}
                         <div className="space-y-2">
                           {order.items.map((item, idx) => (
                             <div

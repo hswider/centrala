@@ -83,7 +83,7 @@ export async function GET(request) {
         ? await sql`
             SELECT
               id, external_id, channel_label, channel_platform,
-              ordered_at, shipping_date, items, customer, shipping,
+              ordered_at, shipping_date, items, customer, shipping, notes,
               total_gross, currency, delivery_status, payment_status, is_canceled
             FROM orders
             WHERE ordered_at >= ${dateFrom} AND ordered_at < ${dateTo + 'T23:59:59'}
@@ -93,7 +93,7 @@ export async function GET(request) {
         : await sql`
             SELECT
               id, external_id, channel_label, channel_platform,
-              ordered_at, shipping_date, items, customer, shipping,
+              ordered_at, shipping_date, items, customer, shipping, notes,
               total_gross, currency, delivery_status, payment_status, is_canceled
             FROM orders
             WHERE ordered_at >= ${dateFrom}
@@ -104,7 +104,7 @@ export async function GET(request) {
         ? await sql`
             SELECT
               id, external_id, channel_label, channel_platform,
-              ordered_at, shipping_date, items, customer, shipping,
+              ordered_at, shipping_date, items, customer, shipping, notes,
               total_gross, currency, delivery_status, payment_status, is_canceled
             FROM orders
             WHERE ordered_at >= ${dateFrom} AND ordered_at < ${dateTo + 'T23:59:59'}
@@ -114,7 +114,7 @@ export async function GET(request) {
         : await sql`
             SELECT
               id, external_id, channel_label, channel_platform,
-              ordered_at, shipping_date, items, customer, shipping,
+              ordered_at, shipping_date, items, customer, shipping, notes,
               total_gross, currency, delivery_status, payment_status, is_canceled
             FROM orders
             WHERE ordered_at >= ${dateFrom}
@@ -349,6 +349,7 @@ export async function GET(request) {
         shippingDate: order.shipping_date,
         customer: order.customer,
         shipping: order.shipping,
+        notes: order.notes || [],
         totalGross: order.total_gross,
         currency: order.currency,
         deliveryStatus: order.delivery_status,
