@@ -843,11 +843,7 @@ export default function MESPage() {
                           {order.items.map((item, idx) => (
                             <div
                               key={idx}
-                              className={`bg-white dark:bg-gray-800 rounded-lg p-3 border ${
-                                item.productionStatus === 'ready' ? 'border-green-200 dark:border-green-800' :
-                                item.productionStatus === 'partial' ? 'border-yellow-200 dark:border-yellow-800' :
-                                'border-red-200 dark:border-red-800'
-                              }`}
+                              className="bg-white dark:bg-gray-800 rounded-lg p-3 border border-gray-200 dark:border-gray-700"
                             >
                               <div className="flex items-start gap-3">
                                 {/* Obrazek */}
@@ -972,16 +968,10 @@ export default function MESPage() {
                           ) : (
                             <button
                               onClick={(e) => { e.stopPropagation(); setShowShipModal(order); }}
-                              className={`px-3 py-1.5 text-xs font-medium rounded flex items-center gap-1 ${
-                                order.orderStatus === 'ready_to_ship'
-                                  ? 'bg-green-600 text-white hover:bg-green-700'
-                                  : order.orderStatus === 'unpaid'
-                                  ? 'bg-yellow-500 text-white hover:bg-yellow-600'
-                                  : 'bg-orange-500 text-white hover:bg-orange-600'
-                              }`}
+                              className="px-3 py-1.5 text-xs font-medium rounded flex items-center gap-1 bg-gray-600 text-white hover:bg-gray-700"
                             >
                               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" /></svg>
-                              {order.orderStatus === 'ready_to_ship' ? 'Wyslij z kurierem' : 'Przygotuj przesylke'}
+                              Przygotuj przesylke
                             </button>
                           )}
                           <a
