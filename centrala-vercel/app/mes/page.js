@@ -19,6 +19,31 @@ const DEPT_BADGE_COLORS = {
   wielopak: 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400',
 };
 
+const CHANNEL_FLAGS = {
+  'Dobrelegowiska': '🇵🇱',
+  'POOMKIDS': '🇵🇱',
+  'POOM-furniture': '🇵🇱',
+  'Somilo': '🇵🇱',
+  'allegro dobrelegowiska': '🇵🇱',
+  'Amazon DE Agnieszka': '🇩🇪',
+  'Gutekissen OTTO': '🇩🇪',
+  'Gutekissen': '🇩🇪',
+  'Amazon FR Agnieszka': '🇫🇷',
+  'Amazon ES Agnieszka': '🇪🇸',
+  'Amazon BE Agnieszka': '🇧🇪',
+  'Amazon IT Agnieszka': '🇮🇹',
+  'Amazon SE Agnieszka': '🇸🇪',
+  'Amazon NL Agnieszka': '🇳🇱',
+};
+
+function getChannelFlag(channelLabel) {
+  if (!channelLabel) return '';
+  for (const [key, flag] of Object.entries(CHANNEL_FLAGS)) {
+    if (channelLabel.toLowerCase().includes(key.toLowerCase())) return flag;
+  }
+  return '';
+}
+
 export default function MESPage() {
   const [orders, setOrders] = useState([]);
   const [stats, setStats] = useState(null);
@@ -718,7 +743,7 @@ export default function MESPage() {
                             </span>
                           )}
                           <span className="text-xs text-gray-500 dark:text-gray-400">
-                            {order.channelLabel || order.channelPlatform}
+                            {getChannelFlag(order.channelLabel)} {order.channelLabel || order.channelPlatform}
                           </span>
                           {getStatusBadge(order.orderStatus)}
                           {/* Department badge */}
