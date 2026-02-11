@@ -431,7 +431,12 @@ export async function GET(request) {
         shippingDate: order.shipping_date,
         customer: order.customer,
         shipping: order.shipping,
-        notes: order.notes || [],
+        notes: (() => {
+          const n = order.notes;
+          if (!n) return [];
+          if (typeof n === 'string') { try { return JSON.parse(n); } catch { return []; } }
+          return Array.isArray(n) ? n : [];
+        })(),
         totalGross: order.total_gross,
         currency: order.currency,
         deliveryStatus: order.delivery_status,

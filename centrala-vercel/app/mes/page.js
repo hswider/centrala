@@ -1120,10 +1120,10 @@ export default function MESPage() {
                             <span className="text-blue-500 dark:text-blue-400"> • Wys: {new Date(order.shippingDate).toLocaleDateString('pl-PL', { day: '2-digit', month: '2-digit', year: 'numeric' })}</span>
                           )}
                         </div>
-                        {order.notes && order.notes.length > 0 && (
+                        {order.notes && order.notes.filter(n => n.comment && n.comment.trim()).length > 0 && (
                           <div className="mt-1 text-xs text-yellow-700 dark:text-yellow-400 bg-yellow-50 dark:bg-yellow-900/20 px-2 py-1 rounded border border-yellow-200 dark:border-yellow-800">
                             <span className="font-bold">Uwagi: </span>
-                            {order.notes.map((n, i) => <span key={i}>{i > 0 && ' | '}{n.comment}</span>)}
+                            {order.notes.filter(n => n.comment && n.comment.trim()).map((n, i) => <span key={i}>{i > 0 && ' | '}{n.comment}</span>)}
                           </div>
                         )}
                       </div>
