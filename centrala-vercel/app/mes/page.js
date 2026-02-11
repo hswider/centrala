@@ -597,7 +597,7 @@ export default function MESPage() {
 
         {/* Summary stat cards - like /magazyny */}
         {stats && (
-          <div className="grid grid-cols-2 lg:grid-cols-6 gap-3 mb-4">
+          <div className="grid grid-cols-2 lg:grid-cols-7 gap-3 mb-4">
             {DEPARTMENTS.map(dept => {
               const count = getDeptCount(dept.key);
               return (
