@@ -591,7 +591,10 @@ export default function MESPage() {
     : departmentOrders;
 
   const afterColorFilter = colorFilter
-    ? afterChannelFilter.filter(o => getOrderColor(o) === colorFilter)
+    ? afterChannelFilter.filter(o => {
+        const c = getOrderColor(o);
+        return colorFilter === 'Nieznany' ? c === null : c === colorFilter;
+      })
     : afterChannelFilter;
 
   // Color counts (only for krojownia)
