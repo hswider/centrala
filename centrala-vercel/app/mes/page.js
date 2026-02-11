@@ -634,7 +634,7 @@ export default function MESPage() {
         {/* Production cells tabs */}
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow dark:shadow-gray-900 mb-3">
           <div className="px-4 pt-2 pb-0">
-            <span className="text-[10px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Gniazda produkcyjne</span>
+            <span className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Gniazda produkcyjne</span>
           </div>
           <div className="grid grid-cols-2 lg:grid-cols-4">
             {TABS_PRODUCTION.map(dept => {
