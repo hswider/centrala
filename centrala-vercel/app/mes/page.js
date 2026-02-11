@@ -600,10 +600,9 @@ export default function MESPage() {
           </div>
         </div>
 
-        {/* Combined stat cards + tab bar */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow dark:shadow-gray-900 mb-4">
-          {/* General tabs row */}
-          <div className="grid grid-cols-2 lg:grid-cols-3 border-b border-gray-200 dark:border-gray-700">
+        {/* General tabs */}
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow dark:shadow-gray-900 mb-3">
+          <div className="grid grid-cols-2 lg:grid-cols-3">
             {TABS_GENERAL.map(dept => {
               const isActive = department === dept.key;
               const count = getDeptCount(dept.key);
@@ -630,11 +629,14 @@ export default function MESPage() {
               );
             })}
           </div>
-          {/* Production cells row */}
+        </div>
+
+        {/* Production cells tabs */}
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow dark:shadow-gray-900 mb-3">
           <div className="px-4 pt-2 pb-0">
             <span className="text-[10px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Gniazda produkcyjne</span>
           </div>
-          <div className="grid grid-cols-2 lg:grid-cols-4 border-b border-gray-100 dark:border-gray-700">
+          <div className="grid grid-cols-2 lg:grid-cols-4">
             {TABS_PRODUCTION.map(dept => {
               const isActive = department === dept.key;
               const count = getDeptCount(dept.key);
@@ -661,9 +663,13 @@ export default function MESPage() {
               );
             })}
           </div>
-          {/* Secondary filters row inside the tab bar */}
+        </div>
+
+        {/* Lista zamowien with status filters on top */}
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow dark:shadow-gray-900 overflow-hidden">
+          {/* Statusy filter bar */}
           {stats && (
-            <div className="flex items-center gap-3 px-4 py-2 border-t border-gray-50 dark:border-gray-700/50 text-xs">
+            <div className="flex items-center gap-3 px-4 py-2 border-b border-gray-100 dark:border-gray-700 text-xs">
               <span className="text-gray-400 dark:text-gray-500 font-medium">Statusy:</span>
               <button
                 onClick={() => setSecondaryFilter(secondaryFilter === 'needs_production' ? null : 'needs_production')}
@@ -708,7 +714,7 @@ export default function MESPage() {
           )}
           {/* Apilo/BL status bar */}
           {deptOmsStatuses.length > 0 && (
-            <div className="flex items-center gap-1.5 px-4 py-2 border-t border-gray-100 dark:border-gray-700/50 text-xs flex-wrap">
+            <div className="flex items-center gap-1.5 px-4 py-2 border-b border-gray-100 dark:border-gray-700 text-xs flex-wrap">
               <span className="text-gray-400 dark:text-gray-500 font-medium mr-1">Apilo/BL:</span>
               {deptOmsStatuses.map(s => {
                 const colorMap = {
@@ -737,10 +743,6 @@ export default function MESPage() {
               })}
             </div>
           )}
-        </div>
-
-        {/* Lista zamowien */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow dark:shadow-gray-900 overflow-hidden">
           <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between gap-3 flex-wrap">
             <div className="flex items-center gap-3">
               <input
