@@ -675,17 +675,17 @@ export default function MESPage() {
       case 'unpaid':
         return <span className="px-2 py-0.5 text-xs font-bold bg-yellow-100 text-yellow-800 rounded">NIEOPLACONE</span>;
       case 'ready':
-        return <span className="px-2 py-0.5 text-xs font-bold bg-green-100 text-green-800 rounded">Z PRODUKTOW GOTOWYCH</span>;
+        return <span className="px-2 py-0.5 text-xs font-bold bg-green-100 text-green-800 rounded">📦 Gotowe produkty</span>;
       case 'partial':
         return <span className="px-2 py-0.5 text-xs font-bold bg-yellow-100 text-yellow-800 rounded">CZESCIOWO</span>;
       case 'needs_production':
         return <span className="px-2 py-0.5 text-xs font-bold bg-red-100 text-red-800 rounded">DO PRODUKCJI</span>;
       case 'from_polprodukty':
-        return <span className="px-2 py-0.5 text-xs font-bold bg-blue-100 text-blue-800 rounded">Z POLPRODUKTOW</span>;
+        return <span className="px-2 py-0.5 text-xs font-bold bg-blue-100 text-blue-800 rounded">🔧 Polprodukty</span>;
       case 'from_wykroje':
-        return <span className="px-2 py-0.5 text-xs font-bold bg-purple-100 text-purple-800 rounded">Z WYKROJOW</span>;
+        return <span className="px-2 py-0.5 text-xs font-bold bg-amber-100 text-amber-800 rounded">✂️ Wykroje</span>;
       case 'from_surowce':
-        return <span className="px-2 py-0.5 text-xs font-bold bg-orange-100 text-orange-800 rounded">Z SUROWCOW</span>;
+        return <span className="px-2 py-0.5 text-xs font-bold bg-orange-100 text-orange-800 rounded">🧱 Surowce</span>;
       default:
         return <span className="px-2 py-0.5 text-xs font-medium bg-gray-100 text-gray-800 rounded">{status}</span>;
     }
