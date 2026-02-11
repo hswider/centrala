@@ -638,7 +638,7 @@ export default function MESPage() {
               {stats.omsStatuses && stats.omsStatuses.length > 0 && (
                 <>
                   <span className="text-gray-300 dark:text-gray-600">|</span>
-                  <span className="text-gray-400 dark:text-gray-500 font-medium">Apilo:</span>
+                  <span className="text-gray-400 dark:text-gray-500 font-medium">Apilo/BL:</span>
                   <div className="flex items-center gap-1 flex-wrap">
                     {stats.omsStatuses.map(s => {
                       const colorMap = {
