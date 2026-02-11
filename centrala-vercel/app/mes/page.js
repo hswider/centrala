@@ -2,15 +2,20 @@
 
 import { useState, useEffect } from 'react';
 
-const DEPARTMENTS = [
+const TABS_GENERAL = [
   { key: 'wszystkie', label: 'Wszystkie', icon: '📋', desc: 'Wszystkie zamowienia', textColor: 'text-blue-600', borderColor: 'border-blue-500', bgLight: 'bg-blue-50' },
   { key: 'poczekalnia', label: 'Poczekalnia', icon: '⏳', desc: 'Anulowane / Nieoplacone', textColor: 'text-gray-600', borderColor: 'border-gray-400', bgLight: 'bg-gray-50' },
+  { key: 'wielopak', label: 'Wielopak', icon: '📑', desc: 'Wiecej niz 1 produkt', textColor: 'text-orange-600', borderColor: 'border-orange-500', bgLight: 'bg-orange-50' },
+];
+
+const TABS_PRODUCTION = [
   { key: 'krojownia', label: 'Krojownia', icon: '✂️', desc: 'Brak w magazynach GOT/POL/WYK', textColor: 'text-red-600', borderColor: 'border-red-500', bgLight: 'bg-red-50' },
   { key: 'szwalnia', label: 'Szwalnia', icon: '🧵', desc: 'Dostepne w wykrojach', textColor: 'text-purple-600', borderColor: 'border-purple-500', bgLight: 'bg-purple-50' },
   { key: 'polprodukty', label: 'Polprodukty', icon: '🔧', desc: 'Dostepne w polproduktach', textColor: 'text-amber-600', borderColor: 'border-amber-500', bgLight: 'bg-amber-50' },
   { key: 'gotowe', label: 'Gotowe produkty', icon: '📦', desc: 'Gotowe do wysylki', textColor: 'text-green-600', borderColor: 'border-green-500', bgLight: 'bg-green-50' },
-  { key: 'wielopak', label: 'Wielopak', icon: '📑', desc: 'Wiecej niz 1 produkt', textColor: 'text-orange-600', borderColor: 'border-orange-500', bgLight: 'bg-orange-50' },
 ];
+
+const DEPARTMENTS = [...TABS_GENERAL, ...TABS_PRODUCTION];
 
 const DEPT_BADGE_COLORS = {
   krojownia: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400',
@@ -597,8 +602,40 @@ export default function MESPage() {
 
         {/* Combined stat cards + tab bar */}
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow dark:shadow-gray-900 mb-4">
-          <div className="grid grid-cols-2 lg:grid-cols-7 border-b border-gray-100 dark:border-gray-700">
-            {DEPARTMENTS.map(dept => {
+          {/* General tabs row */}
+          <div className="grid grid-cols-2 lg:grid-cols-3 border-b border-gray-200 dark:border-gray-700">
+            {TABS_GENERAL.map(dept => {
+              const isActive = department === dept.key;
+              const count = getDeptCount(dept.key);
+              return (
+                <button
+                  key={dept.key}
+                  onClick={() => { setDepartment(dept.key); setSecondaryFilter(null); }}
+                  className={`flex flex-col items-start p-3 lg:p-4 transition-colors border-b-2 text-left ${
+                    isActive
+                      ? `${dept.borderColor} ${dept.bgLight}`
+                      : 'border-transparent hover:bg-gray-50 dark:hover:bg-gray-700'
+                  }`}
+                >
+                  <span className={`text-xs truncate ${isActive ? dept.textColor : 'text-gray-500 dark:text-gray-400'}`}>
+                    {dept.icon} {dept.label}
+                  </span>
+                  <span className={`text-xl lg:text-2xl font-bold ${isActive ? dept.textColor : 'text-gray-400 dark:text-gray-500'}`}>
+                    {count}
+                  </span>
+                  <span className="text-[10px] text-gray-400 dark:text-gray-500 -mt-1 truncate w-full">
+                    {dept.desc}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+          {/* Production cells row */}
+          <div className="px-4 pt-2 pb-0">
+            <span className="text-[10px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Gniazda produkcyjne</span>
+          </div>
+          <div className="grid grid-cols-2 lg:grid-cols-4 border-b border-gray-100 dark:border-gray-700">
+            {TABS_PRODUCTION.map(dept => {
               const isActive = department === dept.key;
               const count = getDeptCount(dept.key);
               return (
