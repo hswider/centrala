@@ -727,108 +727,114 @@ export default function MESPage() {
 
         {/* Lista zamowien with status filters on top */}
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow dark:shadow-gray-900 overflow-hidden">
-          {/* Statusy filter bar */}
-          {stats && (
-            <div className="flex items-center gap-3 px-4 py-2 border-b border-gray-100 dark:border-gray-700 text-xs">
-              <span className="text-gray-400 dark:text-gray-500 font-medium">Statusy:</span>
+          {/* Combined filter bar - scrollable carousel */}
+          <div className="overflow-x-auto border-b border-gray-100 dark:border-gray-700">
+            <div className="flex items-center gap-1.5 px-4 py-2 text-xs whitespace-nowrap min-w-0">
+              {/* Statusy */}
+              <span className="text-gray-400 dark:text-gray-500 font-medium flex-shrink-0">Statusy:</span>
               <button
                 onClick={() => setSecondaryFilter(secondaryFilter === 'needs_production' ? null : 'needs_production')}
-                className={`px-2.5 py-1 rounded transition-colors ${secondaryFilter === 'needs_production' ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 font-bold' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'}`}
+                className={`px-2 py-1 rounded transition-colors flex-shrink-0 ${secondaryFilter === 'needs_production' ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 font-bold' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'}`}
               >
                 Do produkcji ({deptStatusCounts.needsProduction})
               </button>
               <button
                 onClick={() => setSecondaryFilter(secondaryFilter === 'partial' ? null : 'partial')}
-                className={`px-2.5 py-1 rounded transition-colors ${secondaryFilter === 'partial' ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400 font-bold' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'}`}
+                className={`px-2 py-1 rounded transition-colors flex-shrink-0 ${secondaryFilter === 'partial' ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400 font-bold' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'}`}
               >
                 Czesciowo ({deptStatusCounts.partial})
               </button>
               <button
                 onClick={() => setSecondaryFilter(secondaryFilter === 'ready_to_ship' ? null : 'ready_to_ship')}
-                className={`px-2.5 py-1 rounded transition-colors ${secondaryFilter === 'ready_to_ship' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 font-bold' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'}`}
+                className={`px-2 py-1 rounded transition-colors flex-shrink-0 ${secondaryFilter === 'ready_to_ship' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 font-bold' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'}`}
               >
                 Gotowe do wysylki ({deptStatusCounts.readyToShip})
               </button>
               <button
                 onClick={() => setSecondaryFilter(secondaryFilter === 'shipped' ? null : 'shipped')}
-                className={`px-2.5 py-1 rounded transition-colors ${secondaryFilter === 'shipped' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 font-bold' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'}`}
+                className={`px-2 py-1 rounded transition-colors flex-shrink-0 ${secondaryFilter === 'shipped' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 font-bold' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'}`}
               >
                 Zrealizowane ({deptStatusCounts.shipped})
               </button>
               <button
                 onClick={() => setSecondaryFilter(secondaryFilter === 'canceled' ? null : 'canceled')}
-                className={`px-2.5 py-1 rounded transition-colors ${secondaryFilter === 'canceled' ? 'bg-gray-200 text-gray-700 dark:bg-gray-600 dark:text-gray-200 font-bold' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'}`}
+                className={`px-2 py-1 rounded transition-colors flex-shrink-0 ${secondaryFilter === 'canceled' ? 'bg-gray-200 text-gray-700 dark:bg-gray-600 dark:text-gray-200 font-bold' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'}`}
               >
                 Anulowane ({deptStatusCounts.canceled})
               </button>
-              <span className="text-gray-300 dark:text-gray-600">|</span>
-              <span className="text-gray-400 dark:text-gray-500">Magazyny:</span>
-              <div className="flex items-center gap-0.5">
+
+              <span className="text-gray-300 dark:text-gray-600 flex-shrink-0">|</span>
+              <span className="text-gray-400 dark:text-gray-500 flex-shrink-0">Magazyny:</span>
+              <div className="flex items-center gap-0.5 flex-shrink-0">
                 <div className="w-5 h-5 rounded bg-green-500 flex items-center justify-center text-white text-[7px] font-bold">GOT</div>
                 <div className="w-5 h-5 rounded bg-blue-500 flex items-center justify-center text-white text-[7px] font-bold">POL</div>
                 <div className="w-5 h-5 rounded bg-purple-500 flex items-center justify-center text-white text-[7px] font-bold">WYK</div>
                 <div className="w-5 h-5 rounded bg-orange-500 flex items-center justify-center text-white text-[7px] font-bold">SUR</div>
                 <div className="w-4 h-4 rounded bg-gray-300 ml-0.5"></div>
               </div>
-            </div>
-          )}
-          {/* Apilo/BL status bar */}
-          {deptOmsStatuses.length > 0 && (
-            <div className="flex items-center gap-1.5 px-4 py-2 border-b border-gray-100 dark:border-gray-700 text-xs flex-wrap">
-              <span className="text-gray-400 dark:text-gray-500 font-medium mr-1">Apilo/BL:</span>
-              {deptOmsStatuses.map(s => {
-                const colorMap = {
-                  blue: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
-                  yellow: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400',
-                  green: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',
-                  red: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400',
-                  orange: 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400',
-                  purple: 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400',
-                  gray: 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300',
-                };
-                const isActive = secondaryFilter === s.status;
-                return (
+
+              {/* Apilo/BL */}
+              {deptOmsStatuses.length > 0 && (
+                <>
+                  <span className="text-gray-300 dark:text-gray-600 flex-shrink-0">|</span>
+                  <span className="text-gray-400 dark:text-gray-500 font-medium flex-shrink-0">Apilo/BL:</span>
+                  {deptOmsStatuses.map(s => {
+                    const colorMap = {
+                      blue: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
+                      yellow: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400',
+                      green: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',
+                      red: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400',
+                      orange: 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400',
+                      purple: 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400',
+                      gray: 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300',
+                    };
+                    const isActive = secondaryFilter === s.status;
+                    return (
+                      <button
+                        key={s.status}
+                        onClick={() => setSecondaryFilter(isActive ? null : s.status)}
+                        className={`px-1.5 py-0.5 rounded transition-colors flex-shrink-0 ${
+                          isActive
+                            ? `${colorMap[s.color] || colorMap.gray} font-bold ring-1 ring-current`
+                            : `${colorMap[s.color] || colorMap.gray} opacity-70 hover:opacity-100`
+                        }`}
+                      >
+                        {s.label} ({s.count})
+                      </button>
+                    );
+                  })}
+                </>
+              )}
+
+              {/* Kanal */}
+              {channelCounts.length > 1 && (
+                <>
+                  <span className="text-gray-300 dark:text-gray-600 flex-shrink-0">|</span>
+                  <span className="text-gray-400 dark:text-gray-500 font-medium flex-shrink-0">Kanal:</span>
                   <button
-                    key={s.status}
-                    onClick={() => setSecondaryFilter(isActive ? null : s.status)}
-                    className={`px-1.5 py-0.5 rounded transition-colors whitespace-nowrap ${
-                      isActive
-                        ? `${colorMap[s.color] || colorMap.gray} font-bold ring-1 ring-current`
-                        : `${colorMap[s.color] || colorMap.gray} opacity-70 hover:opacity-100`
-                    }`}
+                    onClick={() => setChannelFilter(null)}
+                    className={`px-2 py-1 rounded transition-colors flex items-center gap-1 flex-shrink-0 ${!channelFilter ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 font-bold' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'}`}
                   >
-                    {s.label} ({s.count})
+                    Wszystkie ({departmentOrders.length})
                   </button>
-                );
-              })}
+                  {channelCounts.map(ch => (
+                    <button
+                      key={ch.key}
+                      onClick={() => setChannelFilter(channelFilter === ch.key ? null : ch.key)}
+                      className={`px-2 py-1 rounded transition-colors flex items-center gap-1 flex-shrink-0 ${channelFilter === ch.key ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 font-bold' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'}`}
+                    >
+                      {ch.icon ? (
+                        <img src={ch.icon} alt={ch.key} className="w-4 h-4 rounded-full object-cover" />
+                      ) : (
+                        <span className="w-4 h-4 bg-gray-400 rounded-full flex items-center justify-center text-white text-[8px] font-bold">{ch.key.charAt(0)}</span>
+                      )}
+                      {ch.key} ({ch.count})
+                    </button>
+                  ))}
+                </>
+              )}
             </div>
-          )}
-          {/* Channel filter bar */}
-          {channelCounts.length > 1 && (
-            <div className="flex items-center gap-1.5 px-4 py-2 border-b border-gray-100 dark:border-gray-700 text-xs flex-wrap">
-              <span className="text-gray-400 dark:text-gray-500 font-medium mr-1">Kanal:</span>
-              <button
-                onClick={() => setChannelFilter(null)}
-                className={`px-2 py-1 rounded transition-colors flex items-center gap-1 ${!channelFilter ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 font-bold' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'}`}
-              >
-                Wszystkie ({departmentOrders.length})
-              </button>
-              {channelCounts.map(ch => (
-                <button
-                  key={ch.key}
-                  onClick={() => setChannelFilter(channelFilter === ch.key ? null : ch.key)}
-                  className={`px-2 py-1 rounded transition-colors flex items-center gap-1 ${channelFilter === ch.key ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 font-bold' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'}`}
-                >
-                  {ch.icon ? (
-                    <img src={ch.icon} alt={ch.key} className="w-4 h-4 rounded-full object-cover" />
-                  ) : (
-                    <span className="w-4 h-4 bg-gray-400 rounded-full flex items-center justify-center text-white text-[8px] font-bold">{ch.key.charAt(0)}</span>
-                  )}
-                  {ch.key} ({ch.count})
-                </button>
-              ))}
-            </div>
-          )}
+          </div>
           <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between gap-3 flex-wrap">
             <div className="flex items-center gap-3">
               <input
