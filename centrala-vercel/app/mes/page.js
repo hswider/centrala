@@ -559,7 +559,7 @@ export default function MESPage() {
       case 'unpaid':
         return <span className="px-2 py-0.5 text-xs font-bold bg-yellow-100 text-yellow-800 rounded">NIEOPLACONE</span>;
       case 'ready':
-        return <span className="px-2 py-0.5 text-xs font-bold bg-green-100 text-green-800 rounded">DOSTEPNE</span>;
+        return <span className="px-2 py-0.5 text-xs font-bold bg-green-100 text-green-800 rounded">Z PRODUKTOW GOTOWYCH</span>;
       case 'partial':
         return <span className="px-2 py-0.5 text-xs font-bold bg-yellow-100 text-yellow-800 rounded">CZESCIOWO</span>;
       case 'needs_production':
