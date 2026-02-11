@@ -1120,6 +1120,12 @@ export default function MESPage() {
                             <span className="text-blue-500 dark:text-blue-400"> • Wys: {new Date(order.shippingDate).toLocaleDateString('pl-PL', { day: '2-digit', month: '2-digit', year: 'numeric' })}</span>
                           )}
                         </div>
+                        {order.notes && order.notes.length > 0 && (
+                          <div className="mt-1 text-xs text-yellow-700 dark:text-yellow-400 bg-yellow-50 dark:bg-yellow-900/20 px-2 py-1 rounded border border-yellow-200 dark:border-yellow-800">
+                            <span className="font-bold">Uwagi: </span>
+                            {order.notes.map((n, i) => <span key={i}>{i > 0 && ' | '}{n.comment}</span>)}
+                          </div>
+                        )}
                       </div>
                     </div>
 
@@ -1128,17 +1134,6 @@ export default function MESPage() {
                       <div className={`px-4 pb-4 ${doneOrders.has(order.id) ? 'bg-green-50 dark:bg-green-900/20' : 'bg-gray-50 dark:bg-gray-700/30'}`}>
                         {!doneOrders.has(order.id) && (
                           <>
-                        {/* Uwagi klienta */}
-                        {order.notes && order.notes.length > 0 && (
-                          <div className="mb-2 p-2 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded text-xs">
-                            <span className="font-bold text-yellow-700 dark:text-yellow-400">Uwagi: </span>
-                            {order.notes.map((note, nIdx) => (
-                              <span key={nIdx} className="text-yellow-800 dark:text-yellow-300">
-                                {nIdx > 0 && ' | '}{note.comment}
-                              </span>
-                            ))}
-                          </div>
-                        )}
                         <div className="space-y-2">
                           {order.items.map((item, idx) => (
                             <div
