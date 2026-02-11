@@ -1304,7 +1304,7 @@ export default function MESPage() {
                             }}
                             className={`px-3 py-1.5 text-xs font-medium rounded flex items-center gap-1 ${doneOrders.has(order.id) ? 'bg-green-600 text-white hover:bg-green-700' : 'bg-green-100 text-green-700 hover:bg-green-200 dark:bg-green-900/30 dark:text-green-400 dark:hover:bg-green-900/50'}`}
                           >
-                            ✓ Wykonane
+                            {doneOrders.has(order.id) ? '✓ Wykonane' : 'Oznacz jako wykonane'}
                           </button>
                         </div>
                       </div>
