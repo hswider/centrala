@@ -595,46 +595,34 @@ export default function MESPage() {
           </div>
         </div>
 
-        {/* Summary stat cards - like /magazyny */}
-        {stats && (
-          <div className="grid grid-cols-2 lg:grid-cols-7 gap-3 mb-4">
+        {/* Combined stat cards + tab bar */}
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow dark:shadow-gray-900 mb-4">
+          <div className="grid grid-cols-2 lg:grid-cols-7 border-b border-gray-100 dark:border-gray-700">
             {DEPARTMENTS.map(dept => {
+              const isActive = department === dept.key;
               const count = getDeptCount(dept.key);
               return (
-                <div
+                <button
                   key={dept.key}
-                  className={`bg-white dark:bg-gray-800 rounded-lg shadow dark:shadow-gray-900 p-3 lg:p-4 border-l-4 ${dept.borderColor} cursor-pointer transition-colors hover:bg-gray-50 dark:hover:bg-gray-700`}
                   onClick={() => { setDepartment(dept.key); setSecondaryFilter(null); }}
+                  className={`flex flex-col items-start p-3 lg:p-4 transition-colors border-b-2 text-left ${
+                    isActive
+                      ? `${dept.borderColor} ${dept.bgLight}`
+                      : 'border-transparent hover:bg-gray-50 dark:hover:bg-gray-700'
+                  }`}
                 >
-                  <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{dept.icon} {dept.label}</p>
-                  <p className={`text-xl lg:text-2xl font-bold ${dept.textColor}`}>{count}</p>
-                  <p className="text-[10px] text-gray-400 dark:text-gray-500 -mt-1">{dept.desc}</p>
-                </div>
+                  <span className={`text-xs truncate ${isActive ? dept.textColor : 'text-gray-500 dark:text-gray-400'}`}>
+                    {dept.icon} {dept.label}
+                  </span>
+                  <span className={`text-xl lg:text-2xl font-bold ${isActive ? dept.textColor : 'text-gray-400 dark:text-gray-500'}`}>
+                    {count}
+                  </span>
+                  <span className="text-[10px] text-gray-400 dark:text-gray-500 -mt-1 truncate w-full">
+                    {dept.desc}
+                  </span>
+                </button>
               );
             })}
-          </div>
-        )}
-
-        {/* Tab bar - like /magazyny */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow dark:shadow-gray-900 mb-4">
-          <div className="flex border-b border-gray-100 dark:border-gray-700 overflow-x-auto">
-            {DEPARTMENTS.map(dept => (
-              <button
-                key={dept.key}
-                onClick={() => { setDepartment(dept.key); setSecondaryFilter(null); }}
-                className={`flex-1 flex items-center justify-center gap-2 py-3 text-sm font-medium transition-colors whitespace-nowrap px-4 ${
-                  !secondaryFilter && department === dept.key
-                    ? `${dept.textColor} border-b-2 ${dept.borderColor} ${dept.bgLight}`
-                    : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
-                }`}
-              >
-                <span>{dept.icon}</span>
-                <span className="hidden sm:inline">{dept.label}</span>
-                <span className={`text-xs ${!secondaryFilter && department === dept.key ? dept.textColor : 'text-gray-400'}`}>
-                  ({getDeptCount(dept.key)})
-                </span>
-              </button>
-            ))}
           </div>
           {/* Secondary filters row inside the tab bar */}
           {stats && (
