@@ -751,6 +751,11 @@ export default function MESPage() {
                           <span className="text-xs text-gray-500 dark:text-gray-400">
                             {order.channelLabel || order.channelPlatform}
                           </span>
+                          {order.omsStatus && (
+                            <span className="px-1.5 py-0.5 text-[10px] font-medium bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 rounded border border-gray-200 dark:border-gray-600">
+                              {order.omsStatus}
+                            </span>
+                          )}
                           {getStatusBadge(order.orderStatus)}
                           {/* Department badge */}
                           {order.department && DEPT_BADGE_COLORS[order.department] && (

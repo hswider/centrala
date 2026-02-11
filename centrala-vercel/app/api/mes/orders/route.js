@@ -2,6 +2,26 @@ import { NextResponse } from 'next/server';
 import { sql } from '@vercel/postgres';
 import { initDatabase } from '@/lib/db';
 
+const OMS_STATUS_MAP = {
+  4: 'Niepotwierdzone', 1: 'Nowy', 7: 'W realizacji', 10: 'Do wysłania',
+  13: 'Wysłane', 19: 'Anulowane', 16: 'Zduplikowane',
+  22: 'PALETY-NOWE', 113: 'PALETY-W REALIZACJI', 166: 'PILNE - PALETY', 169: 'BARDZO PILNE - PALETY',
+  25: 'PIKÓWKI-NOWE', 116: 'PIKÓWKI-W REALIZACJI', 103: 'PILNE - PIKÓWKI', 106: 'BARDZO PILNE - PIKÓWKI',
+  28: 'ŁAWKI-NOWE', 119: 'ŁAWKI-W REALIZACJI', 172: 'PILNE - ŁAWKI', 175: 'BARDZO PILNE - ŁAWKI',
+  199: 'ŁAWKI SIEDZISKA-NOWE', 205: 'ŁAWKI SIEDZISKA-W REALIZACJI', 178: 'PILNE - ŁAWKI SIEDZISKA', 181: 'BARDZO PILNE - ŁAWKI SIEDZISKA',
+  31: 'POOM KIDS-NOWE', 122: 'POOM KIDS-W REALIZACJI', 228: 'PILNE - POOM KIDS', 225: 'BARDZO PILNE - POOM KIDS',
+  46: 'LEGOWISKA-NOWE', 131: 'LEGOWISKA-W REALIZACJI', 184: 'PILNE - LEGOWISKA', 187: 'BARDZO PILNE - LEGOWISKA',
+  57: 'SARIS GARAGE-NOWE', 125: 'SARIS GARAGE-W REALIZACJI', 220: 'SARIS GARAGE BARDZO PILNE',
+  209: 'SARIS GARAGE NIESTANDARDY - Nowe', 212: 'SARIS GARAGE NIESTANDARDY - W REALIZACJI',
+  82: 'MEBLE OGRODOWE-NOWE', 128: 'MEBLE OGRODOWE-W REALIZACJI',
+  134: 'INDYWIDUALNE-NOWE', 137: 'INDYWIDUALNE-W REALIZACJI',
+  155: 'HOUSE NOWE', 158: 'HOUSE PRODUKCJA', 161: 'HOUSE WYPRODUKOWANE',
+  85: 'MEBLE DOSYŁKA', 110: 'Dosyłka', 60: 'ETYKIETY DO ZR',
+  97: 'ZAM DO WYJAŚ', 100: 'WYJAŚNIONE', 214: 'UPS DO WYJASNIENIA', 217: 'UPS WYJASNIONE', 233: 'DO WYJASNIENIA KAROLA',
+  63: 'ODSTĄPIENIE OD UMOWY', 81: 'BEZ ODBIORU', 223: 'ZWROT NIEMCY', 69: 'BARCZEWO WRÓCIŁO', 78: 'ZWRÓCONE ŚRODKI', 231: 'WRÓCIŁO POLSKA',
+  188: 'AMAZON W BLu',
+};
+
 export async function GET(request) {
   try {
     await initDatabase();
@@ -46,10 +66,7 @@ export async function GET(request) {
               ordered_at, items, customer, shipping,
               total_gross, currency, delivery_status, payment_status, is_canceled
             FROM orders
-            WHERE payment_status = 'PAID'
-              AND ordered_at >= ${dateFrom} AND ordered_at < ${dateTo + 'T23:59:59'}
-              AND (delivery_status IS NULL OR delivery_status NOT IN (13, 19, 16))
-              AND is_canceled = false
+            WHERE ordered_at >= ${dateFrom} AND ordered_at < ${dateTo + 'T23:59:59'}
             ORDER BY ordered_at DESC
             LIMIT ${limit}
           `
@@ -59,10 +76,7 @@ export async function GET(request) {
               ordered_at, items, customer, shipping,
               total_gross, currency, delivery_status, payment_status, is_canceled
             FROM orders
-            WHERE payment_status = 'PAID'
-              AND ordered_at >= ${dateFrom}
-              AND (delivery_status IS NULL OR delivery_status NOT IN (13, 19, 16))
-              AND is_canceled = false
+            WHERE ordered_at >= ${dateFrom}
             ORDER BY ordered_at DESC
             LIMIT ${limit}
           `);
@@ -296,6 +310,7 @@ export async function GET(request) {
         totalGross: order.total_gross,
         currency: order.currency,
         deliveryStatus: order.delivery_status,
+        omsStatus: OMS_STATUS_MAP[order.delivery_status] || (order.delivery_status != null ? `#${order.delivery_status}` : null),
         paymentStatus: order.payment_status,
         isCanceled,
         isPaid,
