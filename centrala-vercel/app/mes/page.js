@@ -1129,6 +1129,8 @@ export default function MESPage() {
                     {/* Szczegoly produktow */}
                     {(
                       <div className={`px-4 pb-4 ${doneOrders.has(order.id) ? 'bg-green-50 dark:bg-green-900/20' : 'bg-gray-50 dark:bg-gray-700/30'}`}>
+                        {!doneOrders.has(order.id) && (
+                          <>
                         {/* Uwagi klienta */}
                         {order.notes && order.notes.length > 0 && (
                           <div className="mb-2 p-2 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded text-xs">
@@ -1239,9 +1241,11 @@ export default function MESPage() {
                             </div>
                           ))}
                         </div>
+                          </>
+                        )}
 
                         {/* Akcje */}
-                        <div className="mt-3 flex items-center gap-2 flex-wrap">
+                        <div className={`${doneOrders.has(order.id) ? '' : 'mt-3'} flex items-center gap-2 flex-wrap`}>
                           {shipments[order.id] ? (
                             <div className="flex items-center gap-2 bg-green-50 dark:bg-green-900/20 px-3 py-2 rounded-lg">
                               <img src={getCourierLogo(shipments[order.id].courier)} alt="" className="w-8 h-8 object-contain" />
@@ -1285,12 +1289,18 @@ export default function MESPage() {
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
+                              const wasDone = doneOrders.has(order.id);
                               setDoneOrders(prev => {
                                 const next = new Set(prev);
-                                if (next.has(order.id)) next.delete(order.id);
+                                if (wasDone) next.delete(order.id);
                                 else next.add(order.id);
                                 return next;
                               });
+                              if (!wasDone) {
+                                setExpandedOrder(null);
+                              } else {
+                                setExpandedOrder(order.id);
+                              }
                             }}
                             className={`px-3 py-1.5 text-xs font-medium rounded flex items-center gap-1 ${doneOrders.has(order.id) ? 'bg-green-600 text-white hover:bg-green-700' : 'bg-green-100 text-green-700 hover:bg-green-200 dark:bg-green-900/30 dark:text-green-400 dark:hover:bg-green-900/50'}`}
                           >
