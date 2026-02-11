@@ -96,6 +96,84 @@ function getChannelKey(platform, channelLabel) {
   return channelLabel || platform || 'Inne';
 }
 
+// Multilingual color map → Polish name
+const COLOR_MAP = {
+  // Czarny
+  'czarny': 'Czarny', 'czarna': 'Czarny', 'czarne': 'Czarny', 'black': 'Czarny',
+  'schwarz': 'Czarny', 'černá': 'Czarny', 'nero': 'Czarny', 'negro': 'Czarny', 'noir': 'Czarny', 'zwart': 'Czarny',
+  // Bialy
+  'biały': 'Bialy', 'biała': 'Bialy', 'białe': 'Bialy', 'white': 'Bialy',
+  'weiß': 'Bialy', 'weiss': 'Bialy', 'bílá': 'Bialy', 'bianco': 'Bialy', 'blanco': 'Bialy', 'blanc': 'Bialy', 'wit': 'Bialy',
+  // Kremowy
+  'kremowy': 'Kremowy', 'kremowa': 'Kremowy', 'krem': 'Kremowy', 'cream': 'Kremowy', 'creme': 'Kremowy', 'ecru': 'Kremowy',
+  // Szary
+  'jasnoszary': 'Jasnoszary', 'j.szary': 'Jasnoszary', 'j.sz': 'Jasnoszary', 'light grey': 'Jasnoszary', 'light gray': 'Jasnoszary', 'hellgrau': 'Jasnoszary',
+  'ciemnoszary': 'Ciemnoszary', 'c.szary': 'Ciemnoszary', 'c.sz': 'Ciemnoszary', 'c. szary': 'Ciemnoszary', 'dark grey': 'Ciemnoszary', 'dark gray': 'Ciemnoszary', 'dunkelgrau': 'Ciemnoszary', 'antracyt': 'Ciemnoszary', 'anthrazit': 'Ciemnoszary', 'pepper': 'Ciemnoszary',
+  'szary': 'Szary', 'szara': 'Szary', 'szare': 'Szary', 'grey': 'Szary', 'gray': 'Szary',
+  'grau': 'Szary', 'šedá': 'Szary', 'grigio': 'Szary', 'gris': 'Szary', 'grijs': 'Szary',
+  'silver': 'Szary', 'srebro': 'Szary', 'srebrny': 'Szary', 'silber': 'Szary', 'platyna': 'Szary',
+  'blue-grey': 'Szary',
+  // Bezowy
+  'beżowy': 'Bezowy', 'beżowa': 'Bezowy', 'beż': 'Bezowy', 'beige': 'Bezowy', 'sand': 'Bezowy',
+  // Brazowy
+  'brązowy': 'Brazowy', 'brązowa': 'Brazowy', 'brąz': 'Brazowy', 'brown': 'Brazowy',
+  'braun': 'Brazowy', 'hnědá': 'Brazowy', 'marrone': 'Brazowy', 'marrón': 'Brazowy', 'brun': 'Brazowy', 'bruin': 'Brazowy',
+  'camel': 'Brazowy', 'chocolate': 'Brazowy', 'cynamon': 'Brazowy', 'cinnamon': 'Brazowy',
+  // Czerwony
+  'czerwony': 'Czerwony', 'czerwona': 'Czerwony', 'czerwone': 'Czerwony', 'red': 'Czerwony',
+  'rot': 'Czerwony', 'červená': 'Czerwony', 'rosso': 'Czerwony', 'rojo': 'Czerwony', 'rouge': 'Czerwony', 'rood': 'Czerwony',
+  'bordo': 'Bordowy', 'bordowy': 'Bordowy', 'burgundy': 'Bordowy', 'bordeaux': 'Bordowy',
+  // Niebieski
+  'niebieski': 'Niebieski', 'niebieska': 'Niebieski', 'blue': 'Niebieski',
+  'blau': 'Niebieski', 'modrá': 'Niebieski', 'blu': 'Niebieski', 'azul': 'Niebieski', 'bleu': 'Niebieski', 'blauw': 'Niebieski',
+  'cobalt': 'Niebieski', 'kobalt': 'Niebieski',
+  // Granatowy
+  'granatowy': 'Granatowy', 'granat': 'Granatowy', 'navy': 'Granatowy', 'dark blue': 'Granatowy', 'morski': 'Granatowy',
+  'dunkelblau': 'Granatowy', 'marine': 'Granatowy',
+  // Zielony
+  'zielony': 'Zielony', 'zielona': 'Zielony', 'green': 'Zielony',
+  'grün': 'Zielony', 'zelená': 'Zielony', 'verde': 'Zielony', 'vert': 'Zielony', 'groen': 'Zielony',
+  'butelka': 'Zielony', 'ciemnozielony': 'Zielony', 'szmaragd': 'Zielony', 'szmaragdowy': 'Zielony', 'lime': 'Zielony', 'olive': 'Zielony', 'oliwkowy': 'Zielony',
+  // Rozowy
+  'różowy': 'Rozowy', 'różowa': 'Rozowy', 'pink': 'Rozowy', 'rosa': 'Rozowy',
+  'flamingo': 'Rozowy', 'pudrowy': 'Rozowy', 'brzoskwiniowy': 'Rozowy', 'peach': 'Rozowy',
+  // Zolty
+  'żółty': 'Zolty', 'żółta': 'Zolty', 'yellow': 'Zolty', 'gelb': 'Zolty', 'giallo': 'Zolty', 'amarillo': 'Zolty', 'jaune': 'Zolty', 'geel': 'Zolty',
+  'musztardowy': 'Zolty', 'mustard': 'Zolty',
+  // Pomaranczowy
+  'pomarańczowy': 'Pomaranczowy', 'orange': 'Pomaranczowy', 'arancione': 'Pomaranczowy',
+  // Fioletowy
+  'fioletowy': 'Fioletowy', 'fioletowa': 'Fioletowy', 'purple': 'Fioletowy', 'violet': 'Fioletowy', 'lila': 'Fioletowy',
+};
+
+const COLOR_SORTED_KEYS = Object.keys(COLOR_MAP).sort((a, b) => b.length - a.length);
+
+const COLOR_DOT = {
+  'Czarny': 'bg-gray-900', 'Bialy': 'bg-white border border-gray-300', 'Kremowy': 'bg-amber-50 border border-amber-200',
+  'Szary': 'bg-gray-400', 'Jasnoszary': 'bg-gray-300', 'Ciemnoszary': 'bg-gray-600',
+  'Bezowy': 'bg-amber-200', 'Brazowy': 'bg-amber-800', 'Czerwony': 'bg-red-500', 'Bordowy': 'bg-red-900',
+  'Niebieski': 'bg-blue-500', 'Granatowy': 'bg-blue-900', 'Zielony': 'bg-green-600',
+  'Rozowy': 'bg-pink-400', 'Zolty': 'bg-yellow-400', 'Pomaranczowy': 'bg-orange-500', 'Fioletowy': 'bg-purple-500',
+};
+
+function extractColor(productName) {
+  if (!productName) return null;
+  const lower = productName.toLowerCase();
+  for (const key of COLOR_SORTED_KEYS) {
+    if (lower.includes(key)) return COLOR_MAP[key];
+  }
+  return null;
+}
+
+function getOrderColor(order) {
+  if (!order.items || order.items.length === 0) return null;
+  for (const item of order.items) {
+    const color = extractColor(item.name);
+    if (color) return color;
+  }
+  return null;
+}
+
 export default function MESPage() {
   const [orders, setOrders] = useState([]);
   const [stats, setStats] = useState(null);
@@ -103,6 +181,7 @@ export default function MESPage() {
   const [department, setDepartment] = useState('wszystkie');
   const [secondaryFilter, setSecondaryFilter] = useState(null);
   const [channelFilter, setChannelFilter] = useState(null);
+  const [colorFilter, setColorFilter] = useState(null);
   const [expandedOrder, setExpandedOrder] = useState(null);
   const [expandedItem, setExpandedItem] = useState(null);
   const [selectedOrders, setSelectedOrders] = useState(new Set());
@@ -367,7 +446,7 @@ export default function MESPage() {
   useEffect(() => {
     setSelectedOrders(new Set());
     setCurrentPage(1);
-  }, [department, secondaryFilter, channelFilter]);
+  }, [department, secondaryFilter, channelFilter, colorFilter]);
 
   const toggleSelectOrder = (id) => {
     setSelectedOrders(prev => {
@@ -511,13 +590,30 @@ export default function MESPage() {
     ? departmentOrders.filter(o => getChannelKey(o.channelPlatform, o.channelLabel) === channelFilter)
     : departmentOrders;
 
-  const filteredOrders = (() => {
-    if (!secondaryFilter) return afterChannelFilter;
-    if (['shipped', 'canceled', 'unpaid', 'needs_production', 'partial', 'ready_to_ship'].includes(secondaryFilter)) {
-      return afterChannelFilter.filter(o => o.orderStatus === secondaryFilter);
+  const afterColorFilter = colorFilter
+    ? afterChannelFilter.filter(o => getOrderColor(o) === colorFilter)
+    : afterChannelFilter;
+
+  // Color counts (only for krojownia)
+  const colorCounts = (() => {
+    if (department !== 'krojownia') return [];
+    const counts = {};
+    for (const o of afterChannelFilter) {
+      const color = getOrderColor(o);
+      const key = color || 'Nieznany';
+      if (!counts[key]) counts[key] = { key, count: 0 };
+      counts[key].count++;
     }
-    if (typeof secondaryFilter === 'number') return afterChannelFilter.filter(o => o.deliveryStatus === secondaryFilter);
-    return afterChannelFilter;
+    return Object.values(counts).sort((a, b) => b.count - a.count);
+  })();
+
+  const filteredOrders = (() => {
+    if (!secondaryFilter) return afterColorFilter;
+    if (['shipped', 'canceled', 'unpaid', 'needs_production', 'partial', 'ready_to_ship'].includes(secondaryFilter)) {
+      return afterColorFilter.filter(o => o.orderStatus === secondaryFilter);
+    }
+    if (typeof secondaryFilter === 'number') return afterColorFilter.filter(o => o.deliveryStatus === secondaryFilter);
+    return afterColorFilter;
   })();
 
   // Status counts scoped to current department tab
@@ -669,7 +765,7 @@ export default function MESPage() {
               return (
                 <button
                   key={dept.key}
-                  onClick={() => { setDepartment(dept.key); setSecondaryFilter(null); }}
+                  onClick={() => { setDepartment(dept.key); setSecondaryFilter(null); setColorFilter(null); }}
                   className={`flex flex-col items-start p-3 lg:p-4 transition-colors border-b-2 text-left ${
                     isActive
                       ? `${dept.borderColor} ${dept.bgLight}`
@@ -703,7 +799,7 @@ export default function MESPage() {
               return (
                 <button
                   key={dept.key}
-                  onClick={() => { setDepartment(dept.key); setSecondaryFilter(null); }}
+                  onClick={() => { setDepartment(dept.key); setSecondaryFilter(null); setColorFilter(null); }}
                   className={`flex flex-col items-start p-3 lg:p-4 transition-colors border-b-2 text-left ${
                     isActive
                       ? `${dept.borderColor} ${dept.bgLight}`
@@ -829,6 +925,30 @@ export default function MESPage() {
                         <span className="w-4 h-4 bg-gray-400 rounded-full flex items-center justify-center text-white text-[8px] font-bold">{ch.key.charAt(0)}</span>
                       )}
                       {ch.key} ({ch.count})
+                    </button>
+                  ))}
+                </>
+              )}
+
+              {/* Kolor - only for krojownia */}
+              {department === 'krojownia' && colorCounts.length > 0 && (
+                <>
+                  <span className="text-gray-300 dark:text-gray-600 flex-shrink-0">|</span>
+                  <span className="text-gray-400 dark:text-gray-500 font-medium flex-shrink-0">Kolor:</span>
+                  <button
+                    onClick={() => setColorFilter(null)}
+                    className={`px-2 py-1 rounded transition-colors flex items-center gap-1 flex-shrink-0 ${!colorFilter ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 font-bold' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'}`}
+                  >
+                    Wszystkie
+                  </button>
+                  {colorCounts.map(c => (
+                    <button
+                      key={c.key}
+                      onClick={() => setColorFilter(colorFilter === c.key ? null : c.key)}
+                      className={`px-2 py-1 rounded transition-colors flex items-center gap-1.5 flex-shrink-0 ${colorFilter === c.key ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 font-bold' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'}`}
+                    >
+                      <span className={`w-3 h-3 rounded-full flex-shrink-0 ${COLOR_DOT[c.key] || 'bg-gray-400'}`}></span>
+                      {c.key} ({c.count})
                     </button>
                   ))}
                 </>
