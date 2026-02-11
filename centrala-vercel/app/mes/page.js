@@ -439,19 +439,40 @@ export default function MESPage() {
     doc.save(`mes_zamowienia_${new Date().toISOString().slice(0, 10)}.pdf`);
   };
 
-  // Client-side filtering by department or secondary filter
+  // Client-side filtering: department first, then secondary filter on top
+  const departmentOrders = department === 'wszystkie' ? orders : orders.filter(o => o.department === department);
+
   const filteredOrders = (() => {
-    if (secondaryFilter) {
-      if (['shipped', 'canceled', 'unpaid', 'needs_production', 'partial', 'ready_to_ship'].includes(secondaryFilter)) {
-        return orders.filter(o => o.orderStatus === secondaryFilter);
+    if (!secondaryFilter) return departmentOrders;
+    if (['shipped', 'canceled', 'unpaid', 'needs_production', 'partial', 'ready_to_ship'].includes(secondaryFilter)) {
+      return departmentOrders.filter(o => o.orderStatus === secondaryFilter);
+    }
+    if (typeof secondaryFilter === 'number') return departmentOrders.filter(o => o.deliveryStatus === secondaryFilter);
+    return departmentOrders;
+  })();
+
+  // Status counts scoped to current department tab
+  const deptStatusCounts = {
+    needsProduction: departmentOrders.filter(o => o.orderStatus === 'needs_production').length,
+    partial: departmentOrders.filter(o => o.orderStatus === 'partial').length,
+    readyToShip: departmentOrders.filter(o => o.orderStatus === 'ready_to_ship').length,
+    shipped: departmentOrders.filter(o => o.orderStatus === 'shipped').length,
+    canceled: departmentOrders.filter(o => o.orderStatus === 'canceled').length,
+  };
+
+  // OMS status counts scoped to current department tab
+  const deptOmsStatuses = (() => {
+    const counts = {};
+    for (const o of departmentOrders) {
+      if (o.deliveryStatus != null) {
+        const key = o.deliveryStatus;
+        if (!counts[key]) {
+          counts[key] = { status: key, label: o.omsStatus || `#${key}`, color: o.omsStatusColor || 'gray', count: 0 };
+        }
+        counts[key].count++;
       }
-      if (typeof secondaryFilter === 'number') return orders.filter(o => o.deliveryStatus === secondaryFilter);
-      return orders;
     }
-    if (department === 'wszystkie') {
-      return orders;
-    }
-    return orders.filter(o => o.department === department);
+    return Object.values(counts).sort((a, b) => b.count - a.count);
   })();
 
   const totalPages = Math.ceil(filteredOrders.length / perPage);
@@ -622,31 +643,31 @@ export default function MESPage() {
                 onClick={() => setSecondaryFilter(secondaryFilter === 'needs_production' ? null : 'needs_production')}
                 className={`px-2.5 py-1 rounded transition-colors ${secondaryFilter === 'needs_production' ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 font-bold' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'}`}
               >
-                Do produkcji ({stats.needsProduction || 0})
+                Do produkcji ({deptStatusCounts.needsProduction})
               </button>
               <button
                 onClick={() => setSecondaryFilter(secondaryFilter === 'partial' ? null : 'partial')}
                 className={`px-2.5 py-1 rounded transition-colors ${secondaryFilter === 'partial' ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400 font-bold' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'}`}
               >
-                Czesciowo ({stats.partial || 0})
+                Czesciowo ({deptStatusCounts.partial})
               </button>
               <button
                 onClick={() => setSecondaryFilter(secondaryFilter === 'ready_to_ship' ? null : 'ready_to_ship')}
                 className={`px-2.5 py-1 rounded transition-colors ${secondaryFilter === 'ready_to_ship' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 font-bold' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'}`}
               >
-                Gotowe do wysylki ({stats.readyToShip || 0})
+                Gotowe do wysylki ({deptStatusCounts.readyToShip})
               </button>
               <button
                 onClick={() => setSecondaryFilter(secondaryFilter === 'shipped' ? null : 'shipped')}
                 className={`px-2.5 py-1 rounded transition-colors ${secondaryFilter === 'shipped' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 font-bold' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'}`}
               >
-                Zrealizowane ({stats.shipped || 0})
+                Zrealizowane ({deptStatusCounts.shipped})
               </button>
               <button
                 onClick={() => setSecondaryFilter(secondaryFilter === 'canceled' ? null : 'canceled')}
                 className={`px-2.5 py-1 rounded transition-colors ${secondaryFilter === 'canceled' ? 'bg-gray-200 text-gray-700 dark:bg-gray-600 dark:text-gray-200 font-bold' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'}`}
               >
-                Anulowane ({stats.canceled || 0})
+                Anulowane ({deptStatusCounts.canceled})
               </button>
               <span className="text-gray-300 dark:text-gray-600">|</span>
               <span className="text-gray-400 dark:text-gray-500">Magazyny:</span>
@@ -660,10 +681,10 @@ export default function MESPage() {
             </div>
           )}
           {/* Apilo/BL status bar */}
-          {stats?.omsStatuses && stats.omsStatuses.length > 0 && (
+          {deptOmsStatuses.length > 0 && (
             <div className="flex items-center gap-1.5 px-4 py-2 border-t border-gray-100 dark:border-gray-700/50 text-xs flex-wrap">
               <span className="text-gray-400 dark:text-gray-500 font-medium mr-1">Apilo/BL:</span>
-              {stats.omsStatuses.map(s => {
+              {deptOmsStatuses.map(s => {
                 const colorMap = {
                   blue: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
                   yellow: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400',
