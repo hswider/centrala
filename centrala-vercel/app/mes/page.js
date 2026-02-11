@@ -29,6 +29,11 @@ export default function MESPage() {
   const [expandedItem, setExpandedItem] = useState(null);
   const [selectedOrders, setSelectedOrders] = useState(new Set());
   const [visibleCount, setVisibleCount] = useState(50);
+  const [dateFrom, setDateFrom] = useState(() => {
+    const d = new Date(); d.setDate(d.getDate() - 30);
+    return d.toISOString().split('T')[0];
+  });
+  const [dateTo, setDateTo] = useState('');
 
   // Shipping state
   const [shipments, setShipments] = useState({});
@@ -254,7 +259,9 @@ export default function MESPage() {
   const fetchOrders = async () => {
     try {
       setLoading(true);
-      const res = await fetch('/api/mes/orders?status=all&limit=500');
+      const params = new URLSearchParams({ status: 'all', limit: '500', dateFrom });
+      if (dateTo) params.set('dateTo', dateTo);
+      const res = await fetch(`/api/mes/orders?${params}`);
       const data = await res.json();
       if (data.success) {
         setOrders(data.orders);
@@ -510,13 +517,29 @@ export default function MESPage() {
               Zamowienia posortowane wg etapu produkcji
             </p>
           </div>
-          <button
-            onClick={fetchOrders}
-            disabled={loading}
-            className="px-4 py-2 text-sm font-medium bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
-          >
-            {loading ? 'Ladowanie...' : 'Odswiez'}
-          </button>
+          <div className="flex items-center gap-2 flex-wrap">
+            <label className="text-xs text-gray-500 dark:text-gray-400">Od:</label>
+            <input
+              type="date"
+              value={dateFrom}
+              onChange={(e) => setDateFrom(e.target.value)}
+              className="px-2 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+            />
+            <label className="text-xs text-gray-500 dark:text-gray-400">Do:</label>
+            <input
+              type="date"
+              value={dateTo}
+              onChange={(e) => setDateTo(e.target.value)}
+              className="px-2 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+            />
+            <button
+              onClick={fetchOrders}
+              disabled={loading}
+              className="px-4 py-2 text-sm font-medium bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
+            >
+              {loading ? 'Ladowanie...' : 'Odswiez'}
+            </button>
+          </div>
         </div>
 
         {/* Summary stat cards - like /magazyny */}

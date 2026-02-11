@@ -11,34 +11,61 @@ export async function GET(request) {
     const limit = parseInt(searchParams.get('limit')) || 500;
     const includeAll = status === 'all';
 
-    const februaryStart = '2026-02-01';
+    // Dynamic date range (default: last 30 days)
+    const dateFrom = searchParams.get('dateFrom') || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+    const dateTo = searchParams.get('dateTo') || null;
 
-    console.log('[MES API] Request params:', { status, limit, includeAll });
+    console.log('[MES API] Request params:', { status, limit, includeAll, dateFrom, dateTo });
 
     const orders = includeAll
-      ? await sql`
-          SELECT
-            id, external_id, channel_label, channel_platform,
-            ordered_at, items, customer, shipping,
-            total_gross, currency, delivery_status, payment_status, is_canceled
-          FROM orders
-          WHERE ordered_at >= ${februaryStart}
-          ORDER BY ordered_at DESC
-          LIMIT ${limit}
-        `
-      : await sql`
-          SELECT
-            id, external_id, channel_label, channel_platform,
-            ordered_at, items, customer, shipping,
-            total_gross, currency, delivery_status, payment_status, is_canceled
-          FROM orders
-          WHERE payment_status = 'PAID'
-            AND ordered_at >= ${februaryStart}
-            AND (delivery_status IS NULL OR delivery_status NOT IN (13, 19, 16))
-            AND is_canceled = false
-          ORDER BY ordered_at DESC
-          LIMIT ${limit}
-        `;
+      ? (dateTo
+        ? await sql`
+            SELECT
+              id, external_id, channel_label, channel_platform,
+              ordered_at, items, customer, shipping,
+              total_gross, currency, delivery_status, payment_status, is_canceled
+            FROM orders
+            WHERE ordered_at >= ${dateFrom} AND ordered_at < ${dateTo + 'T23:59:59'}
+            ORDER BY ordered_at DESC
+            LIMIT ${limit}
+          `
+        : await sql`
+            SELECT
+              id, external_id, channel_label, channel_platform,
+              ordered_at, items, customer, shipping,
+              total_gross, currency, delivery_status, payment_status, is_canceled
+            FROM orders
+            WHERE ordered_at >= ${dateFrom}
+            ORDER BY ordered_at DESC
+            LIMIT ${limit}
+          `)
+      : (dateTo
+        ? await sql`
+            SELECT
+              id, external_id, channel_label, channel_platform,
+              ordered_at, items, customer, shipping,
+              total_gross, currency, delivery_status, payment_status, is_canceled
+            FROM orders
+            WHERE payment_status = 'PAID'
+              AND ordered_at >= ${dateFrom} AND ordered_at < ${dateTo + 'T23:59:59'}
+              AND (delivery_status IS NULL OR delivery_status NOT IN (13, 19, 16))
+              AND is_canceled = false
+            ORDER BY ordered_at DESC
+            LIMIT ${limit}
+          `
+        : await sql`
+            SELECT
+              id, external_id, channel_label, channel_platform,
+              ordered_at, items, customer, shipping,
+              total_gross, currency, delivery_status, payment_status, is_canceled
+            FROM orders
+            WHERE payment_status = 'PAID'
+              AND ordered_at >= ${dateFrom}
+              AND (delivery_status IS NULL OR delivery_status NOT IN (13, 19, 16))
+              AND is_canceled = false
+            ORDER BY ordered_at DESC
+            LIMIT ${limit}
+          `);
 
     console.log('[MES API] Orders from DB:', orders.rows.length);
 
