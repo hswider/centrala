@@ -56,7 +56,7 @@ export default function MESPage() {
   const [perPage, setPerPage] = useState(50);
   const [currentPage, setCurrentPage] = useState(1);
   const [dateFrom, setDateFrom] = useState(() => {
-    const d = new Date(); d.setDate(d.getDate() - 30);
+    const d = new Date(); d.setDate(d.getDate() - 1);
     return d.toISOString().split('T')[0];
   });
   const [dateTo, setDateTo] = useState('');
