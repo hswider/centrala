@@ -642,6 +642,12 @@ export default function MESPage() {
               >
                 Zrealizowane ({stats.shipped || 0})
               </button>
+              <button
+                onClick={() => setSecondaryFilter(secondaryFilter === 'canceled' ? null : 'canceled')}
+                className={`px-2.5 py-1 rounded transition-colors ${secondaryFilter === 'canceled' ? 'bg-gray-200 text-gray-700 dark:bg-gray-600 dark:text-gray-200 font-bold' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'}`}
+              >
+                Anulowane ({stats.canceled || 0})
+              </button>
               <span className="text-gray-300 dark:text-gray-600">|</span>
               <span className="text-gray-400 dark:text-gray-500">Magazyny:</span>
               <div className="flex items-center gap-0.5">
