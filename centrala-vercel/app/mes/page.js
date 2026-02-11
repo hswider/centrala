@@ -666,28 +666,25 @@ export default function MESPage() {
 
   const getStatusBadge = (status) => {
     switch (status) {
-      case 'ready_to_ship':
-        return <span className="px-2 py-0.5 text-xs font-bold bg-green-100 text-green-800 rounded">GOTOWE DO WYSYLKI</span>;
       case 'shipped':
         return <span className="px-2 py-0.5 text-xs font-bold bg-blue-100 text-blue-800 rounded">WYSLANE</span>;
-      case 'canceled':
-        return <span className="px-2 py-0.5 text-xs font-bold bg-gray-200 text-gray-600 rounded line-through">ANULOWANE</span>;
       case 'unpaid':
         return <span className="px-2 py-0.5 text-xs font-bold bg-yellow-100 text-yellow-800 rounded">NIEOPLACONE</span>;
       case 'ready':
+      case 'ready_to_ship':
         return <span className="px-2 py-0.5 text-xs font-bold bg-green-100 text-green-800 rounded">📦 Gotowe produkty</span>;
-      case 'partial':
-        return <span className="px-2 py-0.5 text-xs font-bold bg-yellow-100 text-yellow-800 rounded">CZESCIOWO</span>;
-      case 'needs_production':
-        return <span className="px-2 py-0.5 text-xs font-bold bg-red-100 text-red-800 rounded">DO PRODUKCJI</span>;
       case 'from_polprodukty':
         return <span className="px-2 py-0.5 text-xs font-bold bg-blue-100 text-blue-800 rounded">🔧 Polprodukty</span>;
       case 'from_wykroje':
         return <span className="px-2 py-0.5 text-xs font-bold bg-amber-100 text-amber-800 rounded">✂️ Wykroje</span>;
       case 'from_surowce':
+      case 'needs_production':
         return <span className="px-2 py-0.5 text-xs font-bold bg-orange-100 text-orange-800 rounded">🧱 Surowce</span>;
+      case 'partial':
+        return <span className="px-2 py-0.5 text-xs font-bold bg-yellow-100 text-yellow-800 rounded">📦 Gotowe produkty</span>;
+      case 'canceled':
       default:
-        return <span className="px-2 py-0.5 text-xs font-medium bg-gray-100 text-gray-800 rounded">{status}</span>;
+        return null;
     }
   };
 
