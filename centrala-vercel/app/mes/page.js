@@ -895,36 +895,37 @@ export default function MESPage() {
                 </>
               )}
 
-              {/* Kanal */}
-              {channelCounts.length > 1 && (
-                <>
-                  <span className="text-gray-300 dark:text-gray-600 flex-shrink-0">|</span>
-                  <span className="text-gray-400 dark:text-gray-500 font-medium flex-shrink-0">Kanal:</span>
-                  <button
-                    onClick={() => setChannelFilter(null)}
-                    className={`px-2 py-1 rounded transition-colors flex items-center gap-1 flex-shrink-0 ${!channelFilter ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 font-bold' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'}`}
-                  >
-                    Wszystkie ({departmentOrders.length})
-                  </button>
-                  {channelCounts.map(ch => (
-                    <button
-                      key={ch.key}
-                      onClick={() => setChannelFilter(channelFilter === ch.key ? null : ch.key)}
-                      className={`px-2 py-1 rounded transition-colors flex items-center gap-1 flex-shrink-0 ${channelFilter === ch.key ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 font-bold' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'}`}
-                    >
-                      {ch.icon ? (
-                        <img src={ch.icon} alt={ch.key} className="w-4 h-4 rounded-full object-cover" />
-                      ) : (
-                        <span className="w-4 h-4 bg-gray-400 rounded-full flex items-center justify-center text-white text-[8px] font-bold">{ch.key.charAt(0)}</span>
-                      )}
-                      {ch.key} ({ch.count})
-                    </button>
-                  ))}
-                </>
-              )}
 
             </div>
           </div>
+          {/* Channel filter bar - separate */}
+          {channelCounts.length > 1 && (
+            <div className="overflow-x-auto border-b border-gray-100 dark:border-gray-700">
+              <div className="flex items-center gap-1.5 px-4 py-2 text-xs whitespace-nowrap min-w-0">
+                <span className="text-gray-400 dark:text-gray-500 font-medium flex-shrink-0">Kanal:</span>
+                <button
+                  onClick={() => setChannelFilter(null)}
+                  className={`px-2 py-1 rounded transition-colors flex items-center gap-1 flex-shrink-0 ${!channelFilter ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 font-bold' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'}`}
+                >
+                  Wszystkie ({departmentOrders.length})
+                </button>
+                {channelCounts.map(ch => (
+                  <button
+                    key={ch.key}
+                    onClick={() => setChannelFilter(channelFilter === ch.key ? null : ch.key)}
+                    className={`px-2 py-1 rounded transition-colors flex items-center gap-1 flex-shrink-0 ${channelFilter === ch.key ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 font-bold' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'}`}
+                  >
+                    {ch.icon ? (
+                      <img src={ch.icon} alt={ch.key} className="w-4 h-4 rounded-full object-cover" />
+                    ) : (
+                      <span className="w-4 h-4 bg-gray-400 rounded-full flex items-center justify-center text-white text-[8px] font-bold">{ch.key.charAt(0)}</span>
+                    )}
+                    {ch.key} ({ch.count})
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
           {/* Color filter bar - only for krojownia */}
           {department === 'krojownia' && colorCounts.length > 0 && (
             <div className="overflow-x-auto border-b border-gray-100 dark:border-gray-700">
