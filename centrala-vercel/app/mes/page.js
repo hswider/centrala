@@ -672,16 +672,15 @@ export default function MESPage() {
         return <span className="px-2 py-0.5 text-xs font-bold bg-yellow-100 text-yellow-800 rounded">NIEOPLACONE</span>;
       case 'ready':
       case 'ready_to_ship':
+      case 'partial':
         return <span className="px-2 py-0.5 text-xs font-bold bg-green-100 text-green-800 rounded">📦 Gotowe produkty</span>;
       case 'from_polprodukty':
-        return <span className="px-2 py-0.5 text-xs font-bold bg-blue-100 text-blue-800 rounded">🔧 Polprodukty</span>;
+        return <span className="px-2 py-0.5 text-xs font-bold bg-amber-100 text-amber-800 rounded">🔧 Polprodukty</span>;
       case 'from_wykroje':
-        return <span className="px-2 py-0.5 text-xs font-bold bg-amber-100 text-amber-800 rounded">✂️ Wykroje</span>;
+        return <span className="px-2 py-0.5 text-xs font-bold bg-purple-100 text-purple-800 rounded">🧵 Szwalnia</span>;
       case 'from_surowce':
       case 'needs_production':
-        return <span className="px-2 py-0.5 text-xs font-bold bg-orange-100 text-orange-800 rounded">🧱 Surowce</span>;
-      case 'partial':
-        return <span className="px-2 py-0.5 text-xs font-bold bg-yellow-100 text-yellow-800 rounded">📦 Gotowe produkty</span>;
+        return <span className="px-2 py-0.5 text-xs font-bold bg-red-100 text-red-800 rounded">✂️ Krojownia</span>;
       case 'canceled':
       default:
         return null;
