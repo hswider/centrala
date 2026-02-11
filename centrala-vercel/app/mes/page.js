@@ -827,8 +827,8 @@ export default function MESPage() {
           </div>
         </div>
 
-        {/* Lista zamowien with status filters on top */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow dark:shadow-gray-900 overflow-hidden">
+        {/* Filter bars */}
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow dark:shadow-gray-900 overflow-hidden mb-3">
           {/* Combined filter bar - scrollable carousel */}
           <div className="overflow-x-auto border-b border-gray-100 dark:border-gray-700">
             <div className="flex items-center gap-1.5 px-4 py-2 text-xs whitespace-nowrap min-w-0">
@@ -953,6 +953,10 @@ export default function MESPage() {
               </div>
             </div>
           )}
+        </div>
+
+        {/* Order list */}
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow dark:shadow-gray-900 overflow-hidden">
           <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between gap-3 flex-wrap">
             <div className="flex items-center gap-3">
               <input
