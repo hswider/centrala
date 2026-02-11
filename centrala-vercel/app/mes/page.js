@@ -438,9 +438,9 @@ export default function MESPage() {
   // Client-side filtering by department or secondary filter
   const filteredOrders = (() => {
     if (secondaryFilter) {
-      if (secondaryFilter === 'shipped') return orders.filter(o => o.isShipped);
-      if (secondaryFilter === 'canceled') return orders.filter(o => o.isCanceled);
-      if (secondaryFilter === 'unpaid') return orders.filter(o => !o.isPaid && !o.isCanceled && !o.isShipped);
+      if (['shipped', 'canceled', 'unpaid', 'needs_production', 'partial', 'ready_to_ship'].includes(secondaryFilter)) {
+        return orders.filter(o => o.orderStatus === secondaryFilter);
+      }
       if (typeof secondaryFilter === 'number') return orders.filter(o => o.deliveryStatus === secondaryFilter);
       return orders;
     }
@@ -616,24 +616,30 @@ export default function MESPage() {
           {/* Secondary filters row inside the tab bar */}
           {stats && (
             <div className="flex items-center gap-3 px-4 py-2 border-t border-gray-50 dark:border-gray-700/50 text-xs">
-              <span className="text-gray-400 dark:text-gray-500 font-medium">Inne:</span>
+              <span className="text-gray-400 dark:text-gray-500 font-medium">Statusy:</span>
+              <button
+                onClick={() => setSecondaryFilter(secondaryFilter === 'needs_production' ? null : 'needs_production')}
+                className={`px-2.5 py-1 rounded transition-colors ${secondaryFilter === 'needs_production' ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 font-bold' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'}`}
+              >
+                Do produkcji ({stats.needsProduction || 0})
+              </button>
+              <button
+                onClick={() => setSecondaryFilter(secondaryFilter === 'partial' ? null : 'partial')}
+                className={`px-2.5 py-1 rounded transition-colors ${secondaryFilter === 'partial' ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400 font-bold' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'}`}
+              >
+                Czesciowo ({stats.partial || 0})
+              </button>
+              <button
+                onClick={() => setSecondaryFilter(secondaryFilter === 'ready_to_ship' ? null : 'ready_to_ship')}
+                className={`px-2.5 py-1 rounded transition-colors ${secondaryFilter === 'ready_to_ship' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 font-bold' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'}`}
+              >
+                Gotowe do wysylki ({stats.readyToShip || 0})
+              </button>
               <button
                 onClick={() => setSecondaryFilter(secondaryFilter === 'shipped' ? null : 'shipped')}
                 className={`px-2.5 py-1 rounded transition-colors ${secondaryFilter === 'shipped' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 font-bold' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'}`}
               >
-                Wyslane ({stats.shipped || 0})
-              </button>
-              <button
-                onClick={() => setSecondaryFilter(secondaryFilter === 'canceled' ? null : 'canceled')}
-                className={`px-2.5 py-1 rounded transition-colors ${secondaryFilter === 'canceled' ? 'bg-gray-200 text-gray-700 dark:bg-gray-600 dark:text-gray-200 font-bold' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'}`}
-              >
-                Anulowane ({stats.canceled || 0})
-              </button>
-              <button
-                onClick={() => setSecondaryFilter(secondaryFilter === 'unpaid' ? null : 'unpaid')}
-                className={`px-2.5 py-1 rounded transition-colors ${secondaryFilter === 'unpaid' ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400 font-bold' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'}`}
-              >
-                Nieoplacone ({stats.unpaid || 0})
+                Zrealizowane ({stats.shipped || 0})
               </button>
               <span className="text-gray-300 dark:text-gray-600">|</span>
               <span className="text-gray-400 dark:text-gray-500">Magazyny:</span>
@@ -692,9 +698,12 @@ export default function MESPage() {
               />
               <h2 className="font-semibold text-gray-900 dark:text-white">
                 {secondaryFilter
-                  ? secondaryFilter === 'shipped' ? 'Wyslane' :
+                  ? secondaryFilter === 'shipped' ? 'Zrealizowane' :
                     secondaryFilter === 'canceled' ? 'Anulowane' :
                     secondaryFilter === 'unpaid' ? 'Nieoplacone' :
+                    secondaryFilter === 'needs_production' ? 'Do produkcji' :
+                    secondaryFilter === 'partial' ? 'Czesciowo' :
+                    secondaryFilter === 'ready_to_ship' ? 'Gotowe do wysylki' :
                     stats?.omsStatuses?.find(s => s.status === secondaryFilter)?.label || `Status #${secondaryFilter}`
                   : DEPARTMENTS.find(d => d.key === department)?.label || 'Zamowienia'
                 }
