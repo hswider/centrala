@@ -1158,7 +1158,7 @@ export default function MESPage() {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
           <div className="flex items-center gap-3">
             <h1 className="flex items-center gap-2 text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">
-              <img src="/poom-wood-logo.png" alt="Poom Wood" className="h-8 sm:h-10 w-auto" />
+              <img src="/poom-wood-logo.png" alt="Poom Wood" className="h-12 sm:h-14 w-auto" />
               MES
             </h1>
             <a
