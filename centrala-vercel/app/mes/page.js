@@ -1160,7 +1160,7 @@ export default function MESPage() {
                           {order.items.map((item, idx) => (
                             <div
                               key={idx}
-                              className="bg-white dark:bg-gray-800 rounded-lg p-3 border border-gray-200 dark:border-gray-700"
+                              className="rounded-lg p-3"
                             >
                               <div className="flex items-start gap-3">
                                 {/* Obrazek */}
