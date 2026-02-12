@@ -206,7 +206,11 @@ export default function MESSettingsPage() {
 
         {/* TODO notice */}
         <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-4 mb-4 text-sm text-amber-800 dark:text-amber-300">
-          <strong>Do dopracowania:</strong> Powiazanie szablonow wysylki klienta wzgledem SKU — obecny mechanizm dopasowania regul (regex na kanale/SKU) wymaga przemyslenia, aby lepiej odzwierciedlac rzeczywiste zaleznosci miedzy produktami a kontami kurierow.
+          <strong>Do dopracowania:</strong>
+          <ul className="list-disc list-inside mt-1 space-y-1">
+            <li>Powiazanie szablonow wysylki klienta wzgledem SKU — obecny mechanizm dopasowania regul (regex na kanale/SKU) wymaga przemyslenia, aby lepiej odzwierciedlac rzeczywiste zaleznosci miedzy produktami a kontami kurierow.</li>
+            <li>Wielopaki sa recznie przeklikiwane (szablony kurierow i kartonow z Apilo) — na ten moment nie wiemy jak to powiazac z automatycznymi regulami.</li>
+          </ul>
         </div>
 
         {/* Info */}
