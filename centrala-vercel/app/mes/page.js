@@ -221,6 +221,28 @@ export default function MESPage() {
   const [shipLoading, setShipLoading] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState(null);
 
+  // Inline order details (notes, customer, etc.)
+  const [orderDetails, setOrderDetails] = useState({});
+  const [detailsLoading, setDetailsLoading] = useState({});
+
+  const fetchOrderDetails = async (orderId) => {
+    if (orderDetails[orderId]) {
+      // Toggle off if already loaded
+      setOrderDetails(prev => { const next = { ...prev }; delete next[orderId]; return next; });
+      return;
+    }
+    setDetailsLoading(prev => ({ ...prev, [orderId]: true }));
+    try {
+      const res = await fetch(`/api/orders/${orderId}`);
+      const data = await res.json();
+      setOrderDetails(prev => ({ ...prev, [orderId]: data }));
+    } catch (err) {
+      console.error('Error fetching order details:', err);
+    } finally {
+      setDetailsLoading(prev => ({ ...prev, [orderId]: false }));
+    }
+  };
+
   // Apilo carriers state
   const [carrierAccounts, setCarrierAccounts] = useState([]);
   const [shippingMethods, setShippingMethods] = useState([]);
@@ -1295,11 +1317,26 @@ export default function MESPage() {
                               {shipments[order.id] ? 'Nowa przesylka' : 'Przygotuj przesylke'}
                             </button>
                           )}
+                          <button
+                            onClick={(e) => { e.stopPropagation(); fetchOrderDetails(order.id); }}
+                            className={`px-3 py-1.5 text-xs font-medium rounded flex items-center gap-1 ${orderDetails[order.id] ? 'bg-blue-600 text-white' : 'bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-gray-500'}`}
+                          >
+                            {detailsLoading[order.id] ? (
+                              <span className="animate-spin inline-block w-3 h-3 border-2 border-current border-t-transparent rounded-full"></span>
+                            ) : (
+                              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                            )}
+                            Szczegoly
+                          </button>
                           <a
                             href={`/zamowienia/${order.id}`}
-                            className="px-3 py-1.5 text-xs font-medium bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-200 rounded hover:bg-gray-300 dark:hover:bg-gray-500"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            onClick={(e) => e.stopPropagation()}
+                            className="px-2 py-1.5 text-xs text-gray-400 dark:text-gray-500 hover:text-blue-600 dark:hover:text-blue-400"
+                            title="Otworz w OMS"
                           >
-                            Szczegoly zamowienia
+                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>
                           </a>
                           <button
                             onClick={(e) => {
@@ -1322,6 +1359,53 @@ export default function MESPage() {
                             {doneOrders.has(order.id) ? '✓ Wykonane' : 'Oznacz jako wykonane'}
                           </button>
                         </div>
+
+                        {/* Inline order details panel */}
+                        {orderDetails[order.id] && (
+                          <div className="mt-3 p-3 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 text-xs space-y-3" onClick={e => e.stopPropagation()}>
+                            {/* Uwagi */}
+                            {orderDetails[order.id].notes && orderDetails[order.id].notes.length > 0 ? (
+                              <div className="bg-yellow-50 dark:bg-yellow-900/20 p-3 rounded-lg border border-yellow-200 dark:border-yellow-800">
+                                <div className="font-bold text-yellow-800 dark:text-yellow-300 mb-1">Uwagi</div>
+                                {orderDetails[order.id].notes.filter(n => n.comment && n.comment.trim()).map((n, i) => (
+                                  <div key={i} className="text-yellow-700 dark:text-yellow-400 mb-1">
+                                    <div>{n.comment}</div>
+                                    {n.createdAt && <div className="text-yellow-500 dark:text-yellow-600 text-[10px] mt-0.5">{new Date(n.createdAt).toLocaleString('pl-PL', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</div>}
+                                  </div>
+                                ))}
+                              </div>
+                            ) : (
+                              <div className="text-gray-400 dark:text-gray-500 italic">Brak uwag</div>
+                            )}
+
+                            {/* Adres dostawy */}
+                            {orderDetails[order.id].shipping && (
+                              <div>
+                                <div className="font-bold text-gray-700 dark:text-gray-300 mb-1">Adres dostawy</div>
+                                <div className="text-gray-600 dark:text-gray-400">
+                                  <div>{orderDetails[order.id].shipping.name}</div>
+                                  {orderDetails[order.id].shipping.companyName && <div>{orderDetails[order.id].shipping.companyName}</div>}
+                                  <div>{orderDetails[order.id].shipping.street} {orderDetails[order.id].shipping.streetNumber}</div>
+                                  <div>{orderDetails[order.id].shipping.zipCode} {orderDetails[order.id].shipping.city}, {orderDetails[order.id].shipping.country}</div>
+                                  {orderDetails[order.id].shipping.phone && <div className="text-gray-500">{orderDetails[order.id].shipping.phone}</div>}
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Platnosci */}
+                            {orderDetails[order.id].payments && orderDetails[order.id].payments.length > 0 && (
+                              <div>
+                                <div className="font-bold text-gray-700 dark:text-gray-300 mb-1">Platnosci</div>
+                                {orderDetails[order.id].payments.map((p, i) => (
+                                  <div key={i} className="flex justify-between text-gray-600 dark:text-gray-400">
+                                    <span>{p.date ? new Date(p.date).toLocaleDateString('pl-PL') : '-'}</span>
+                                    <span className="font-medium">{p.amount} {p.currency}</span>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>
