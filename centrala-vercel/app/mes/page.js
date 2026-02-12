@@ -1021,7 +1021,7 @@ export default function MESPage() {
 
         {/* General tabs */}
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow dark:shadow-gray-900 mb-3">
-          <div className="grid grid-cols-2 lg:grid-cols-3">
+          <div className="grid grid-cols-2">
             {TABS_GENERAL.map(dept => {
               const isActive = department === dept.key;
               const count = getDeptCount(dept.key);
