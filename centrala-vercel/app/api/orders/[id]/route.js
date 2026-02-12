@@ -83,7 +83,8 @@ export async function GET(request, { params }) {
 
     // If shipping data or send dates are missing, fetch from Apilo API
     const needsFetch = !order.shipping || !order.payments || order.payments.length === 0 ||
-                       (!order.dates?.sendDateMin && !order.dates?.sendDateMax);
+                       (!order.dates?.sendDateMin && !order.dates?.sendDateMax) ||
+                       !order.notes || order.notes.length === 0;
 
     if (needsFetch) {
       const tokens = await getTokens();
@@ -104,18 +105,17 @@ export async function GET(request, { params }) {
           order.dates.sendDateMin = apiloData.sendDateMin;
           order.dates.sendDateMax = apiloData.sendDateMax;
 
-          // Save send dates to database for future requests
-          if (apiloData.sendDateMin || apiloData.sendDateMax) {
-            try {
-              await sql`
-                UPDATE orders
-                SET send_date_min = ${apiloData.sendDateMin ? new Date(apiloData.sendDateMin) : null},
-                    send_date_max = ${apiloData.sendDateMax ? new Date(apiloData.sendDateMax) : null}
-                WHERE id = ${id}
-              `;
-            } catch (e) {
-              console.error('[API] Failed to save send dates:', e.message);
-            }
+          // Save send dates and notes to database for future requests
+          try {
+            await sql`
+              UPDATE orders
+              SET send_date_min = ${apiloData.sendDateMin ? new Date(apiloData.sendDateMin) : null},
+                  send_date_max = ${apiloData.sendDateMax ? new Date(apiloData.sendDateMax) : null},
+                  notes = ${JSON.stringify(apiloData.notes || [])}
+              WHERE id = ${id}
+            `;
+          } catch (e) {
+            console.error('[API] Failed to save order details:', e.message);
           }
         }
       }
