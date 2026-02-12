@@ -488,7 +488,13 @@ export default function MESPage() {
         // Refresh shipments to show green badge
         fetchShipments();
       } else if (data.error === 'NO_RULE_MATCH') {
-        // Fallback: open existing manual modal
+        // Show debug info and fallback to manual modal
+        if (data.debug) {
+          console.log('[QuickShip] NO_RULE_MATCH debug:', data.debug);
+          const d = data.debug;
+          const info = `Brak pasujacego szablonu.\n\nZamowienie: ${d.orderId}\nKanal: "${d.channelLabel}"\nSKU: ${(d.itemSkus || []).join(', ')}\nKraj wysylki: "${d.shippingCountry}"\nRegul: ${d.rulesCount}\n${(d.matches || []).map(m => `\nRegula "${m.rule}": kanal=${m.channelMatch}, sku=${m.skuMatch}, kraj=${m.countryMatch} (wzorzec kanalu="${m.ruleChannel}", wzorzec sku="${m.ruleSku}", kraje=${JSON.stringify(m.ruleCountries)})`).join('')}`;
+          alert(info);
+        }
         setShowShipModal(order);
         if (carrierAccounts.length === 0) {
           fetchCarrierAccounts();

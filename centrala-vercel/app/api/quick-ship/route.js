@@ -76,6 +76,10 @@ export async function POST(request) {
     const shipping = typeof order.shipping === 'string' ? JSON.parse(order.shipping) : (order.shipping || {});
     const shippingCountry = shipping.country || '';
 
+    const itemSkus = items.map(item => item.sku || '').filter(Boolean);
+
+    console.log(`[QuickShip] Order ${orderId}: channelLabel="${channelLabel}", SKUs=${JSON.stringify(itemSkus)}, shippingCountry="${shippingCountry}"`);
+
     // 2. Fetch active shipping rules ordered by priority DESC
     const { rows: rules } = await sql`
       SELECT * FROM shipping_rules
@@ -84,11 +88,16 @@ export async function POST(request) {
     `;
 
     if (rules.length === 0) {
-      return Response.json({ success: false, error: 'NO_RULE_MATCH', message: 'Brak zdefiniowanych regul wysylki' });
+      return Response.json({
+        success: false, error: 'NO_RULE_MATCH',
+        message: 'Brak zdefiniowanych regul wysylki',
+        debug: { orderId, channelLabel, itemSkus, shippingCountry, rulesCount: 0 }
+      });
     }
 
     // 3. Match rules
     let matchedRule = null;
+    const debugMatches = [];
     for (const rule of rules) {
       // Channel pattern check
       const channelMatch = matchesPattern(rule.channel_pattern, channelLabel);
@@ -105,6 +114,11 @@ export async function POST(request) {
         countryMatch = rule.country_codes.some(c => c.toLowerCase() === shippingCountry.toLowerCase());
       }
 
+      const matchResult = { rule: rule.name, channelMatch, skuMatch, countryMatch,
+        ruleChannel: rule.channel_pattern, ruleSku: rule.sku_pattern, ruleCountries: rule.country_codes };
+      debugMatches.push(matchResult);
+      console.log(`[QuickShip] Rule "${rule.name}": channel=${channelMatch}, sku=${skuMatch}, country=${countryMatch}`, JSON.stringify(matchResult));
+
       if (channelMatch && skuMatch && countryMatch) {
         matchedRule = rule;
         break;
@@ -112,7 +126,11 @@ export async function POST(request) {
     }
 
     if (!matchedRule) {
-      return Response.json({ success: false, error: 'NO_RULE_MATCH', message: 'Zaden rule nie pasuje do tego zamowienia' });
+      return Response.json({
+        success: false, error: 'NO_RULE_MATCH',
+        message: 'Zaden rule nie pasuje do tego zamowienia',
+        debug: { orderId, channelLabel, itemSkus, shippingCountry, rulesCount: rules.length, matches: debugMatches }
+      });
     }
 
     console.log(`[QuickShip] Matched rule "${matchedRule.name}" (id=${matchedRule.id}) for order ${orderId}`);
