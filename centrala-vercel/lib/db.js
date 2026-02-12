@@ -1086,7 +1086,7 @@ export async function saveOrders(orders) {
         shipping = EXCLUDED.shipping,
         invoice = EXCLUDED.invoice,
         payments = EXCLUDED.payments,
-        notes = EXCLUDED.notes,
+        notes = CASE WHEN EXCLUDED.notes IS NOT NULL AND EXCLUDED.notes != '[]'::jsonb THEN EXCLUDED.notes ELSE COALESCE(orders.notes, EXCLUDED.notes) END,
         is_invoice = EXCLUDED.is_invoice,
         is_canceled = EXCLUDED.is_canceled,
         synced_at = CURRENT_TIMESTAMP

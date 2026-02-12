@@ -511,38 +511,42 @@ export async function GET(request) {
       }
     };
 
-    // Background: enrich notes for orders missing them (max 20 per request)
+    // Enrich notes for orders missing them (max 10 per request, awaited so notes appear immediately)
     const ordersWithoutNotes = orders.rows.filter(o => {
       const n = o.notes;
       if (!n) return true;
       if (typeof n === 'string') { try { return JSON.parse(n).length === 0; } catch { return true; } }
       return Array.isArray(n) && n.length === 0;
-    }).slice(0, 20);
+    }).slice(0, 10);
 
     if (ordersWithoutNotes.length > 0) {
-      // Fire and forget - don't block response
-      (async () => {
-        try {
-          for (const o of ordersWithoutNotes) {
-            try {
-              const data = await apiloRequestDirect('GET', `/rest/api/orders/${o.id}/`);
-              const notes = (data?.orderNotes || []).map(n => ({
-                type: n.type,
-                comment: n.comment || '',
-                createdAt: n.createdAt
-              }));
-              if (notes.length > 0) {
-                await sql`UPDATE orders SET notes = ${JSON.stringify(notes)} WHERE id = ${String(o.id)}`;
-              }
-            } catch (e) {
-              // Skip individual order errors
+      try {
+        const enrichedIds = new Set();
+        for (const o of ordersWithoutNotes) {
+          try {
+            const data = await apiloRequestDirect('GET', `/rest/api/orders/${o.id}/`);
+            const notes = (data?.orderNotes || []).map(n => ({
+              type: n.type,
+              comment: n.comment || '',
+              createdAt: n.createdAt
+            }));
+            if (notes.length > 0) {
+              await sql`UPDATE orders SET notes = ${JSON.stringify(notes)} WHERE id = ${String(o.id)}`;
+              // Update in processedOrders so current response includes them
+              const orderInList = filteredOrders.find(fo => fo.id === String(o.id));
+              if (orderInList) orderInList.notes = notes;
+              enrichedIds.add(o.id);
             }
+          } catch (e) {
+            // Skip individual order errors
           }
-          console.log(`[MES API] Enriched notes for ${ordersWithoutNotes.length} orders`);
-        } catch (e) {
-          console.error('[MES API] Notes enrichment error:', e.message);
         }
-      })();
+        if (enrichedIds.size > 0) {
+          console.log(`[MES API] Enriched notes for ${enrichedIds.size} orders`);
+        }
+      } catch (e) {
+        console.error('[MES API] Notes enrichment error:', e.message);
+      }
     }
 
     return NextResponse.json({
