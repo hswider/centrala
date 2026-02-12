@@ -117,6 +117,7 @@ const COLOR_MAP = {
   'blue-grey': 'Szary',
   // Bezowy
   'beżowy': 'Bezowy', 'beżowa': 'Bezowy', 'beż': 'Bezowy', 'beige': 'Bezowy', 'sand': 'Bezowy',
+  'taupe': 'Taupe',
   // Brazowy - odcienie
   'ciemnobrązowy': 'Ciemnobrazowy', 'ciemny brązowy': 'Ciemnobrazowy', 'dark brown': 'Ciemnobrazowy', 'dunkelbraun': 'Ciemnobrazowy',
   'chocolate': 'Ciemnobrazowy', 'czekoladowy': 'Ciemnobrazowy', 'czekolada': 'Ciemnobrazowy',
@@ -166,7 +167,7 @@ const COLOR_SORTED_KEYS = Object.keys(COLOR_MAP).sort((a, b) => b.length - a.len
 const COLOR_DOT = {
   'Czarny': 'bg-gray-900', 'Bialy': 'bg-white border border-gray-300', 'Kremowy': 'bg-amber-50 border border-amber-200',
   'Szary': 'bg-gray-400', 'Jasnoszary': 'bg-gray-300', 'Ciemnoszary': 'bg-gray-600', 'Antracyt': 'bg-gray-700', 'Srebrny': 'bg-gray-350 border border-gray-300', 'Platynowy': 'bg-gray-300 border border-gray-400',
-  'Bezowy': 'bg-amber-200',
+  'Bezowy': 'bg-amber-200', 'Taupe': 'bg-stone-400',
   'Brazowy': 'bg-amber-800', 'Ciemnobrazowy': 'bg-amber-950', 'Jasnobrazowy': 'bg-amber-500',
   'Czerwony': 'bg-red-500', 'Bordowy': 'bg-red-900',
   'Niebieski': 'bg-blue-500', 'Jasnoniebieski': 'bg-blue-300', 'Turkusowy': 'bg-teal-400', 'Granatowy': 'bg-blue-900',
