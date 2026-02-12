@@ -499,6 +499,57 @@ export default function MESPage() {
     fetchOrders();
   }, [dateFrom, dateTo]);
 
+  // Barcode scanner listener — detects rapid keyboard input ending with Enter
+  const [scanHighlight, setScanHighlight] = useState(null);
+  useEffect(() => {
+    let buffer = '';
+    let lastKeyTime = 0;
+    const SCAN_SPEED_THRESHOLD = 50; // max ms between chars for scanner input
+    const MIN_SCAN_LENGTH = 5;       // min chars to count as barcode scan
+
+    const handleKeyDown = (e) => {
+      // Ignore if user is typing in an input/select/textarea
+      const tag = e.target.tagName;
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+
+      const now = Date.now();
+
+      if (e.key === 'Enter' && buffer.length >= MIN_SCAN_LENGTH) {
+        // Scan complete — search for this order
+        e.preventDefault();
+        const scannedId = buffer.trim();
+        setSearchQuery(scannedId);
+        setCurrentPage(1);
+        setScanHighlight(scannedId);
+        // Auto-clear highlight after 5s
+        setTimeout(() => setScanHighlight(null), 5000);
+        buffer = '';
+        return;
+      }
+
+      // If too slow, reset buffer
+      if (now - lastKeyTime > SCAN_SPEED_THRESHOLD && buffer.length > 0) {
+        buffer = '';
+      }
+
+      // Only accumulate printable characters
+      if (e.key.length === 1) {
+        buffer += e.key;
+        lastKeyTime = now;
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
+  // Clear scan highlight when search query changes manually
+  const handleSearchChange = (val) => {
+    setSearchQuery(val);
+    setCurrentPage(1);
+    if (scanHighlight) setScanHighlight(null);
+  };
+
   // Clear selection and reset page when department/filter changes
   useEffect(() => {
     setSelectedOrders(new Set());
@@ -1279,13 +1330,17 @@ export default function MESPage() {
                 <input
                   type="text"
                   value={searchQuery}
-                  onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1); }}
-                  placeholder="Szukaj: nr, SKU, nazwa..."
-                  className="pl-7 pr-6 py-1.5 text-xs border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white w-full focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                  onChange={(e) => handleSearchChange(e.target.value)}
+                  placeholder={scanHighlight ? `Zeskanowano: ${scanHighlight}` : 'Szukaj: nr, SKU, nazwa...'}
+                  className={`pl-7 pr-6 py-1.5 text-xs border rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white w-full focus:ring-1 focus:ring-blue-500 focus:border-blue-500 ${scanHighlight ? 'border-green-500 ring-1 ring-green-500' : 'border-gray-300 dark:border-gray-600'}`}
                 />
-                <svg className="w-3.5 h-3.5 absolute left-2 top-1/2 -translate-y-1/2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+                {scanHighlight ? (
+                  <svg className="w-3.5 h-3.5 absolute left-2 top-1/2 -translate-y-1/2 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" /></svg>
+                ) : (
+                  <svg className="w-3.5 h-3.5 absolute left-2 top-1/2 -translate-y-1/2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+                )}
                 {searchQuery && (
-                  <button onClick={() => setSearchQuery('')} className="absolute right-1.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 text-xs">✕</button>
+                  <button onClick={() => { setSearchQuery(''); setScanHighlight(null); }} className="absolute right-1.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 text-xs">✕</button>
                 )}
               </div>
               {selectedOrders.size > 0 && (
@@ -1329,7 +1384,8 @@ export default function MESPage() {
               {visibleOrders.map((order, orderIdx) => {
                 const hasAlerts = order.items?.some(i => i.alerts && i.alerts.length > 0);
                 const isDone = doneOrders.has(order.id);
-                const stripeBg = isDone ? 'bg-green-50 dark:bg-green-900/20' : orderIdx % 2 === 0 ? 'bg-white dark:bg-gray-800' : 'bg-gray-50 dark:bg-gray-750';
+                const isScanned = scanHighlight && String(order.id) === scanHighlight;
+                const stripeBg = isScanned ? 'bg-blue-50 dark:bg-blue-900/20 ring-2 ring-blue-500' : isDone ? 'bg-green-50 dark:bg-green-900/20' : orderIdx % 2 === 0 ? 'bg-white dark:bg-gray-800' : 'bg-gray-50 dark:bg-gray-750';
                 return (
                   <div key={order.id} className={stripeBg}>
                     {/* Naglowek zamowienia */}
