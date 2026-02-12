@@ -667,7 +667,6 @@ export default function MESPage() {
   const getStatusBadge = (status) => {
     switch (status) {
       case 'shipped':
-        return <span className="px-2 py-0.5 text-xs font-bold bg-blue-100 text-blue-800 rounded">WYSLANE</span>;
       case 'unpaid':
         return <span className="px-2 py-0.5 text-xs font-bold bg-yellow-100 text-yellow-800 rounded">NIEOPLACONE</span>;
       case 'ready':
@@ -1228,7 +1227,7 @@ export default function MESPage() {
 
                         {/* Akcje */}
                         <div className={`${doneOrders.has(order.id) ? '' : 'mt-3'} flex items-center gap-2 flex-wrap`}>
-                          {shipments[order.id] ? (
+                          {shipments[order.id] && (
                             <div className="flex items-center gap-2 bg-green-50 dark:bg-green-900/20 px-3 py-2 rounded-lg">
                               <img src={getCourierLogo(shipments[order.id].courier)} alt="" className="w-8 h-8 object-contain" />
                               <div className="text-xs">
@@ -1245,13 +1244,10 @@ export default function MESPage() {
                                 </a>
                               </div>
                             </div>
-                          ) : order.isCanceled ? (
+                          )}
+                          {order.isCanceled ? (
                             <span className="px-3 py-1.5 text-xs font-medium bg-gray-200 text-gray-500 rounded line-through">
                               Anulowane
-                            </span>
-                          ) : order.isShipped ? (
-                            <span className="px-3 py-1.5 text-xs font-medium bg-blue-100 text-blue-700 rounded">
-                              Wyslane (status: {order.deliveryStatus})
                             </span>
                           ) : (
                             <button
@@ -1259,7 +1255,7 @@ export default function MESPage() {
                               className="px-3 py-1.5 text-xs font-medium rounded flex items-center gap-1 bg-gray-600 text-white hover:bg-gray-700"
                             >
                               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" /></svg>
-                              Przygotuj przesylke
+                              {shipments[order.id] ? 'Nowa przesylka' : 'Przygotuj przesylke'}
                             </button>
                           )}
                           <a
