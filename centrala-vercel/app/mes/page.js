@@ -1099,12 +1099,6 @@ export default function MESPage() {
                             </span>
                           )}
                           {getStatusBadge(order.orderStatus)}
-                          {/* Department badge */}
-                          {order.department && DEPT_BADGE_COLORS[order.department] && (
-                            <span className={`px-1.5 py-0.5 text-[10px] font-bold rounded ${DEPT_BADGE_COLORS[order.department]}`}>
-                              {order.department === 'wielopak' ? 'WIELOPAK' : order.department.toUpperCase()}
-                            </span>
-                          )}
                           {/* Alert indicator */}
                           {hasAlerts && (
                             <span className="text-yellow-500 text-sm" title="Zamowienie wymaga uwagi">⚠</span>
