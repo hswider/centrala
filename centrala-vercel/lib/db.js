@@ -133,6 +133,14 @@ export async function initDatabase() {
     )
   `;
 
+  // MES done orders (persisted across sessions)
+  await sql`
+    CREATE TABLE IF NOT EXISTS mes_done_orders (
+      order_id VARCHAR(20) PRIMARY KEY,
+      done_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )
+  `;
+
   // Allegro OAuth tokens
   await sql`
     CREATE TABLE IF NOT EXISTS allegro_tokens (

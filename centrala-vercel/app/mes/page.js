@@ -216,6 +216,7 @@ export default function MESPage() {
   const [expandedItem, setExpandedItem] = useState(null);
   const [selectedOrders, setSelectedOrders] = useState(new Set());
   const [doneOrders, setDoneOrders] = useState(new Set());
+  const [doneFilter, setDoneFilter] = useState(null); // null = all, 'done' = wykonane, 'notdone' = niewykonane
   const [searchQuery, setSearchQuery] = useState('');
   const [perPage, setPerPage] = useState(50);
   const [currentPage, setCurrentPage] = useState(1);
@@ -490,8 +491,55 @@ export default function MESPage() {
     }
   };
 
+  // Load done orders from DB
+  const fetchDoneOrders = async () => {
+    try {
+      const res = await fetch('/api/mes/done');
+      const data = await res.json();
+      if (data.success && data.doneOrderIds) {
+        setDoneOrders(new Set(data.doneOrderIds));
+      }
+    } catch (err) {
+      console.error('Error fetching done orders:', err);
+    }
+  };
+
+  const toggleDoneOrder = async (orderId) => {
+    const wasDone = doneOrders.has(orderId);
+    // Optimistic update
+    setDoneOrders(prev => {
+      const next = new Set(prev);
+      if (wasDone) next.delete(orderId);
+      else next.add(orderId);
+      return next;
+    });
+    if (!wasDone) {
+      setExpandedOrder(null);
+    } else {
+      setExpandedOrder(orderId);
+    }
+    // Persist to DB
+    try {
+      await fetch('/api/mes/done', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ orderId, done: !wasDone })
+      });
+    } catch (err) {
+      console.error('Error saving done status:', err);
+      // Revert on error
+      setDoneOrders(prev => {
+        const next = new Set(prev);
+        if (wasDone) next.add(orderId);
+        else next.delete(orderId);
+        return next;
+      });
+    }
+  };
+
   useEffect(() => {
     fetchShipments();
+    fetchDoneOrders();
     // Carriers & templates deferred until shipment modal opens
   }, []);
 
@@ -554,7 +602,7 @@ export default function MESPage() {
   useEffect(() => {
     setSelectedOrders(new Set());
     setCurrentPage(1);
-  }, [department, secondaryFilter, channelFilter, colorFilter]);
+  }, [department, secondaryFilter, channelFilter, colorFilter, doneFilter]);
 
   const toggleSelectOrder = (id) => {
     setSelectedOrders(prev => {
@@ -924,13 +972,19 @@ export default function MESPage() {
     return Object.values(counts).sort((a, b) => b.count - a.count);
   })();
 
+  const afterDoneFilter = doneFilter
+    ? doneFilter === 'done'
+      ? afterColorFilter.filter(o => doneOrders.has(o.id))
+      : afterColorFilter.filter(o => !doneOrders.has(o.id))
+    : afterColorFilter;
+
   const afterSecondaryFilter = (() => {
-    if (!secondaryFilter) return afterColorFilter;
+    if (!secondaryFilter) return afterDoneFilter;
     if (['shipped', 'canceled', 'unpaid', 'needs_production', 'partial', 'ready_to_ship'].includes(secondaryFilter)) {
-      return afterColorFilter.filter(o => o.orderStatus === secondaryFilter);
+      return afterDoneFilter.filter(o => o.orderStatus === secondaryFilter);
     }
-    if (typeof secondaryFilter === 'number') return afterColorFilter.filter(o => o.deliveryStatus === secondaryFilter);
-    return afterColorFilter;
+    if (typeof secondaryFilter === 'number') return afterDoneFilter.filter(o => o.deliveryStatus === secondaryFilter);
+    return afterDoneFilter;
   })();
 
   const filteredOrders = (() => {
@@ -1289,6 +1343,40 @@ export default function MESPage() {
           </div>
         )}
 
+        {/* Done status filter bar */}
+        {(() => {
+          const doneCount = afterColorFilter.filter(o => doneOrders.has(o.id)).length;
+          const notDoneCount = afterColorFilter.length - doneCount;
+          if (doneCount === 0 && notDoneCount === afterColorFilter.length && !doneFilter) return null;
+          return (
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow dark:shadow-gray-900 overflow-hidden mb-3">
+              <div className="flex items-center gap-2 px-4 py-3 text-sm whitespace-nowrap">
+                <span className="text-gray-500 dark:text-gray-400 font-semibold flex-shrink-0">Status:</span>
+                <button
+                  onClick={() => setDoneFilter(null)}
+                  className={`px-3 py-1.5 rounded transition-colors flex items-center gap-1.5 flex-shrink-0 ${!doneFilter ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 font-bold' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'}`}
+                >
+                  Wszystkie ({afterColorFilter.length})
+                </button>
+                <button
+                  onClick={() => setDoneFilter(doneFilter === 'notdone' ? null : 'notdone')}
+                  className={`px-3 py-1.5 rounded transition-colors flex items-center gap-1.5 flex-shrink-0 ${doneFilter === 'notdone' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 font-bold' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'}`}
+                >
+                  <span className="w-3 h-3 rounded-full bg-gray-400 flex-shrink-0"></span>
+                  Niewykonane ({notDoneCount})
+                </button>
+                <button
+                  onClick={() => setDoneFilter(doneFilter === 'done' ? null : 'done')}
+                  className={`px-3 py-1.5 rounded transition-colors flex items-center gap-1.5 flex-shrink-0 ${doneFilter === 'done' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 font-bold' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'}`}
+                >
+                  <span className="w-3 h-3 rounded-full bg-green-500 flex-shrink-0"></span>
+                  Wykonane ({doneCount})
+                </button>
+              </div>
+            </div>
+          );
+        })()}
+
         {/* Order list */}
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow dark:shadow-gray-900 overflow-hidden">
           <div className="px-3 sm:px-4 py-3 border-b border-gray-100 dark:border-gray-700 space-y-2">
@@ -1611,21 +1699,7 @@ export default function MESPage() {
                             Szczegoly
                           </button>
                           <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              const wasDone = doneOrders.has(order.id);
-                              setDoneOrders(prev => {
-                                const next = new Set(prev);
-                                if (wasDone) next.delete(order.id);
-                                else next.add(order.id);
-                                return next;
-                              });
-                              if (!wasDone) {
-                                setExpandedOrder(null);
-                              } else {
-                                setExpandedOrder(order.id);
-                              }
-                            }}
+                            onClick={(e) => { e.stopPropagation(); toggleDoneOrder(order.id); }}
                             className={`px-3 py-1.5 text-xs font-medium rounded flex items-center gap-1 ${doneOrders.has(order.id) ? 'bg-green-600 text-white hover:bg-green-700' : 'bg-green-100 text-green-700 hover:bg-green-200 dark:bg-green-900/30 dark:text-green-400 dark:hover:bg-green-900/50'}`}
                           >
                             {doneOrders.has(order.id) ? '✓ Wykonane' : 'Oznacz jako wykonane'}
