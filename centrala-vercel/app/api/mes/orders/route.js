@@ -70,7 +70,7 @@ export async function GET(request) {
 
     const { searchParams } = new URL(request.url);
     const status = searchParams.get('status') || 'all';
-    const limit = Math.min(parseInt(searchParams.get('limit')) || 5000, 5000);
+    const limit = Math.min(parseInt(searchParams.get('limit')) || 500, 5000);
     const includeAll = status === 'all';
 
     // Dynamic date range (default: last 30 days)
@@ -79,63 +79,43 @@ export async function GET(request) {
 
     console.log('[MES API] Request params:', { status, limit, includeAll, dateFrom, dateTo });
 
-    const orders = includeAll
-      ? (dateTo
-        ? await sql`
-            SELECT
-              id, external_id, channel_label, channel_platform,
-              ordered_at, shipping_date, items, customer, shipping, notes,
-              total_gross, currency, delivery_status, payment_status, is_canceled
-            FROM orders
-            WHERE ordered_at >= ${dateFrom} AND ordered_at < ${dateTo + 'T23:59:59'}
-            ORDER BY ordered_at DESC
-            LIMIT ${limit}
-          `
-        : await sql`
-            SELECT
-              id, external_id, channel_label, channel_platform,
-              ordered_at, shipping_date, items, customer, shipping, notes,
-              total_gross, currency, delivery_status, payment_status, is_canceled
-            FROM orders
-            WHERE ordered_at >= ${dateFrom}
-            ORDER BY ordered_at DESC
-            LIMIT ${limit}
-          `)
-      : (dateTo
-        ? await sql`
-            SELECT
-              id, external_id, channel_label, channel_platform,
-              ordered_at, shipping_date, items, customer, shipping, notes,
-              total_gross, currency, delivery_status, payment_status, is_canceled
-            FROM orders
-            WHERE ordered_at >= ${dateFrom} AND ordered_at < ${dateTo + 'T23:59:59'}
-            ORDER BY ordered_at DESC
-            LIMIT ${limit}
-          `
-        : await sql`
-            SELECT
-              id, external_id, channel_label, channel_platform,
-              ordered_at, shipping_date, items, customer, shipping, notes,
-              total_gross, currency, delivery_status, payment_status, is_canceled
-            FROM orders
-            WHERE ordered_at >= ${dateFrom}
-            ORDER BY ordered_at DESC
-            LIMIT ${limit}
-          `);
+    // Run ALL three DB queries in parallel
+    const ordersQuery = dateTo
+      ? sql`
+          SELECT
+            id, external_id, channel_label, channel_platform,
+            ordered_at, shipping_date, items, customer, shipping, notes,
+            total_gross, currency, delivery_status, payment_status, is_canceled
+          FROM orders
+          WHERE ordered_at >= ${dateFrom} AND ordered_at < ${dateTo + 'T23:59:59'}
+          ORDER BY ordered_at DESC
+          LIMIT ${limit}
+        `
+      : sql`
+          SELECT
+            id, external_id, channel_label, channel_platform,
+            ordered_at, shipping_date, items, customer, shipping, notes,
+            total_gross, currency, delivery_status, payment_status, is_canceled
+          FROM orders
+          WHERE ordered_at >= ${dateFrom}
+          ORDER BY ordered_at DESC
+          LIMIT ${limit}
+        `;
+
+    const [orders, allInventory, recipes] = await Promise.all([
+      ordersQuery,
+      sql`SELECT id, sku, nazwa, stan, kategoria, cena FROM inventory`,
+      sql`
+        SELECT
+          r.product_id, r.ingredient_id, r.quantity,
+          i.sku as ingredient_sku, i.nazwa as ingredient_nazwa,
+          i.kategoria as ingredient_kategoria, i.stan as ingredient_stan
+        FROM recipes r
+        JOIN inventory i ON r.ingredient_id = i.id
+      `
+    ]);
 
     console.log('[MES API] Orders from DB:', orders.rows.length);
-
-    // Pobierz produkty z inventory ze stanem > 0
-    const inventory = await sql`
-      SELECT id, sku, nazwa, stan, kategoria, cena
-      FROM inventory
-      WHERE stan > 0
-    `;
-
-    // Pobierz WSZYSTKIE produkty (nawet stan=0) do lookup receptur kaskadowych
-    const allInventory = await sql`
-      SELECT id, sku, nazwa, stan, kategoria, cena FROM inventory
-    `;
 
     const inventoryMap = {
       gotowe: {},
@@ -144,24 +124,13 @@ export async function GET(request) {
       surowce: {}
     };
 
-    // Mapa ALL inventory by id (do kaskadowych receptur)
+    // Single pass: build all maps from one query
     const inventoryById = {};
-
-    inventory.rows.forEach(item => {
-      const key = (item.sku || '').toUpperCase().trim();
-      if (inventoryMap[item.kategoria]) {
-        inventoryMap[item.kategoria][key] = {
-          id: item.id,
-          sku: item.sku,
-          nazwa: item.nazwa,
-          stan: parseFloat(item.stan) || 0,
-          cena: parseFloat(item.cena) || 0
-        };
-      }
-    });
+    const gotoweRecipeLookup = {};
 
     allInventory.rows.forEach(item => {
-      inventoryById[item.id] = {
+      const key = (item.sku || '').toUpperCase().trim();
+      const parsed = {
         id: item.id,
         sku: item.sku,
         nazwa: item.nazwa,
@@ -169,24 +138,19 @@ export async function GET(request) {
         stan: parseFloat(item.stan) || 0,
         cena: parseFloat(item.cena) || 0
       };
-    });
 
-    // Mapa gotowe po SKU do lookup receptur (wlacznie ze stanem 0)
-    const gotoweRecipeLookup = {};
-    allInventory.rows.filter(i => i.kategoria === 'gotowe').forEach(item => {
-      const key = (item.sku || '').toUpperCase().trim();
-      gotoweRecipeLookup[key] = { id: item.id };
-    });
+      inventoryById[item.id] = parsed;
 
-    // Pobierz receptury
-    const recipes = await sql`
-      SELECT
-        r.product_id, r.ingredient_id, r.quantity,
-        i.sku as ingredient_sku, i.nazwa as ingredient_nazwa,
-        i.kategoria as ingredient_kategoria, i.stan as ingredient_stan
-      FROM recipes r
-      JOIN inventory i ON r.ingredient_id = i.id
-    `;
+      // Only add to inventoryMap if stan > 0
+      if (parsed.stan > 0 && inventoryMap[item.kategoria]) {
+        inventoryMap[item.kategoria][key] = parsed;
+      }
+
+      // Gotowe lookup (including stan=0)
+      if (item.kategoria === 'gotowe') {
+        gotoweRecipeLookup[key] = { id: item.id };
+      }
+    });
 
     const recipeMap = {};
     recipes.rows.forEach(r => {
@@ -511,42 +475,50 @@ export async function GET(request) {
       }
     };
 
-    // Enrich notes for orders missing them (max 10 per request, awaited so notes appear immediately)
+    // Enrich notes in parallel (max 5 awaited, rest fire-and-forget)
     const ordersWithoutNotes = orders.rows.filter(o => {
       const n = o.notes;
       if (!n) return true;
       if (typeof n === 'string') { try { return JSON.parse(n).length === 0; } catch { return true; } }
       return Array.isArray(n) && n.length === 0;
-    }).slice(0, 10);
+    });
 
-    if (ordersWithoutNotes.length > 0) {
+    const enrichBatch = ordersWithoutNotes.slice(0, 5);
+    const bgBatch = ordersWithoutNotes.slice(5, 15);
+
+    if (enrichBatch.length > 0) {
       try {
-        const enrichedIds = new Set();
-        for (const o of ordersWithoutNotes) {
-          try {
-            const data = await apiloRequestDirect('GET', `/rest/api/orders/${o.id}/`);
-            const notes = (data?.orderNotes || []).map(n => ({
-              type: n.type,
-              comment: n.comment || '',
-              createdAt: n.createdAt
-            }));
-            if (notes.length > 0) {
-              await sql`UPDATE orders SET notes = ${JSON.stringify(notes)} WHERE id = ${String(o.id)}`;
-              // Update in processedOrders so current response includes them
-              const orderInList = filteredOrders.find(fo => fo.id === String(o.id));
-              if (orderInList) orderInList.notes = notes;
-              enrichedIds.add(o.id);
-            }
-          } catch (e) {
-            // Skip individual order errors
+        const results = await Promise.allSettled(enrichBatch.map(async (o) => {
+          const data = await apiloRequestDirect('GET', `/rest/api/orders/${o.id}/`);
+          const notes = (data?.orderNotes || []).map(n => ({
+            type: n.type,
+            comment: n.comment || '',
+            createdAt: n.createdAt
+          }));
+          if (notes.length > 0) {
+            await sql`UPDATE orders SET notes = ${JSON.stringify(notes)} WHERE id = ${String(o.id)}`;
+            const orderInList = filteredOrders.find(fo => fo.id === String(o.id));
+            if (orderInList) orderInList.notes = notes;
+            return o.id;
           }
-        }
-        if (enrichedIds.size > 0) {
-          console.log(`[MES API] Enriched notes for ${enrichedIds.size} orders`);
-        }
+          return null;
+        }));
+        const enriched = results.filter(r => r.status === 'fulfilled' && r.value).length;
+        if (enriched > 0) console.log(`[MES API] Enriched notes for ${enriched} orders`);
       } catch (e) {
         console.error('[MES API] Notes enrichment error:', e.message);
       }
+    }
+
+    // Fire-and-forget for remaining orders
+    if (bgBatch.length > 0) {
+      Promise.allSettled(bgBatch.map(async (o) => {
+        try {
+          const data = await apiloRequestDirect('GET', `/rest/api/orders/${o.id}/`);
+          const notes = (data?.orderNotes || []).map(n => ({ type: n.type, comment: n.comment || '', createdAt: n.createdAt }));
+          if (notes.length > 0) await sql`UPDATE orders SET notes = ${JSON.stringify(notes)} WHERE id = ${String(o.id)}`;
+        } catch (e) { /* skip */ }
+      })).then(() => console.log(`[MES API] Background enriched ${bgBatch.length} orders`));
     }
 
     return NextResponse.json({

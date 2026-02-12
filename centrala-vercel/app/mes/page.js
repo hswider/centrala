@@ -464,7 +464,7 @@ export default function MESPage() {
   const fetchOrders = async () => {
     try {
       setLoading(true);
-      const params = new URLSearchParams({ status: 'all', limit: '5000', dateFrom });
+      const params = new URLSearchParams({ status: 'all', limit: '500', dateFrom });
       if (dateTo) params.set('dateTo', dateTo);
       const res = await fetch(`/api/mes/orders?${params}`);
       const data = await res.json();
@@ -481,8 +481,7 @@ export default function MESPage() {
 
   useEffect(() => {
     fetchShipments();
-    fetchTemplates();
-    fetchCarrierAccounts();
+    // Carriers & templates deferred until shipment modal opens
   }, []);
 
   useEffect(() => {
@@ -1310,7 +1309,7 @@ export default function MESPage() {
                             </span>
                           ) : (
                             <button
-                              onClick={(e) => { e.stopPropagation(); setShowShipModal(order); }}
+                              onClick={(e) => { e.stopPropagation(); setShowShipModal(order); if (carrierAccounts.length === 0) { fetchCarrierAccounts(); fetchTemplates(); } }}
                               className="px-3 py-1.5 text-xs font-medium rounded flex items-center gap-1 bg-gray-600 text-white hover:bg-gray-700"
                             >
                               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" /></svg>
