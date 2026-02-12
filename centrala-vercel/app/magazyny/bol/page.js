@@ -237,9 +237,9 @@ export default function BOMPage() {
       while (row[`Skladnik${ingredientNum}_SKU`] !== undefined || row[`Skladnik${ingredientNum}_Nazwa`] !== undefined) {
         const sku = row[`Skladnik${ingredientNum}_SKU`] || '';
         const nazwa = row[`Skladnik${ingredientNum}_Nazwa`] || '';
-        const ilosc = parseFloat(row[`Skladnik${ingredientNum}_Ilosc`]) || 0;
+        const ilosc = parseFloat(row[`Skladnik${ingredientNum}_Ilosc`]) || 1;
 
-        if ((sku || nazwa) && ilosc > 0) {
+        if (sku || nazwa) {
           row.ingredients.push({ sku, nazwa, ilosc });
         }
         ingredientNum++;
