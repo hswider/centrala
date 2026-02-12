@@ -668,15 +668,18 @@ export default function MESPage() {
 
   const filteredOrders = (() => {
     if (!searchQuery.trim()) return afterSecondaryFilter;
-    const q = searchQuery.trim().toLowerCase();
-    return afterSecondaryFilter.filter(o =>
-      String(o.id).toLowerCase().includes(q) ||
-      (o.externalId && o.externalId.toLowerCase().includes(q)) ||
-      (o.items && o.items.some(item =>
-        (item.name && item.name.toLowerCase().includes(q)) ||
-        (item.sku && item.sku.toLowerCase().includes(q))
-      ))
-    );
+    const words = searchQuery.trim().toLowerCase().split(/\s+/).filter(Boolean);
+    return afterSecondaryFilter.filter(o => {
+      // Build searchable text from all relevant fields
+      const text = [
+        String(o.id),
+        o.externalId || '',
+        o.channelLabel || '',
+        ...(o.items || []).flatMap(item => [item.name || '', item.sku || ''])
+      ].join(' ').toLowerCase();
+      // All words must match (any order)
+      return words.every(w => text.includes(w));
+    });
   })();
 
   // Status counts scoped to current department tab
@@ -745,11 +748,11 @@ export default function MESPage() {
 
     return (
       <div
-        className={`px-2 py-1 rounded border text-[10px] font-semibold flex items-center gap-1 ${s.bg}`}
+        className={`px-1.5 sm:px-2 py-1 rounded border text-[10px] font-semibold flex items-center gap-0.5 sm:gap-1 ${s.bg}`}
         title={`${s.label}: ${stan} szt. (potrzeba: ${needed})`}
       >
         <span>{s.icon}</span>
-        <span>{s.label}</span>
+        <span className="hidden sm:inline">{s.label}</span>
         <span className="opacity-60">({stan})</span>
       </div>
     );
@@ -789,30 +792,33 @@ export default function MESPage() {
     <div className="min-h-screen bg-gray-100 dark:bg-gray-900">
       <main className="w-full px-3 py-4 sm:px-6 sm:py-6 lg:px-8">
         {/* Header */}
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
           <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">MES</h1>
-          <div className="flex items-center gap-2 bg-white dark:bg-gray-800 px-4 py-2 rounded-lg shadow dark:shadow-gray-900 border border-gray-200 dark:border-gray-700">
-            <span className="text-sm font-bold text-gray-800 dark:text-white">Wybierz okres:</span>
-            <label className="text-xs text-gray-500 dark:text-gray-400">Od:</label>
-            <input
-              type="date"
-              value={dateFrom}
-              onChange={(e) => setDateFrom(e.target.value)}
-              className="px-2 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-            />
-            <label className="text-xs text-gray-500 dark:text-gray-400">Do:</label>
-            <input
-              type="date"
-              value={dateTo}
-              onChange={(e) => setDateTo(e.target.value)}
-              className="px-2 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-            />
+          <div className="flex items-center gap-2 bg-white dark:bg-gray-800 px-3 py-2 rounded-lg shadow dark:shadow-gray-900 border border-gray-200 dark:border-gray-700 flex-wrap sm:flex-nowrap">
+            <div className="flex items-center gap-1.5">
+              <label className="text-xs text-gray-500 dark:text-gray-400">Od:</label>
+              <input
+                type="date"
+                value={dateFrom}
+                onChange={(e) => setDateFrom(e.target.value)}
+                className="px-1.5 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white max-w-[140px]"
+              />
+            </div>
+            <div className="flex items-center gap-1.5">
+              <label className="text-xs text-gray-500 dark:text-gray-400">Do:</label>
+              <input
+                type="date"
+                value={dateTo}
+                onChange={(e) => setDateTo(e.target.value)}
+                className="px-1.5 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white max-w-[140px]"
+              />
+            </div>
             <button
               onClick={fetchOrders}
               disabled={loading}
-              className="px-4 py-2 text-sm font-medium bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
+              className="px-3 py-1.5 text-sm font-medium bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
             >
-              {loading ? 'Ladowanie...' : 'Odswiez'}
+              {loading ? '...' : 'Odswiez'}
             </button>
           </div>
         </div>
@@ -853,7 +859,7 @@ export default function MESPage() {
           <div className="px-4 pt-2 pb-0">
             <span className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Gniazda produkcyjne</span>
           </div>
-          <div className="flex flex-wrap lg:flex-nowrap">
+          <div className="flex overflow-x-auto">
             {TABS_PRODUCTION.map(dept => {
               const isActive = department === dept.key;
               const count = getDeptCount(dept.key);
@@ -861,19 +867,19 @@ export default function MESPage() {
                 <button
                   key={dept.key}
                   onClick={() => { setDepartment(dept.key); setSecondaryFilter(null); setColorFilter(null); }}
-                  className={`flex-1 min-w-0 flex flex-col items-start p-3 lg:p-4 transition-colors border-b-2 text-left ${
+                  className={`flex-1 min-w-[100px] flex flex-col items-start p-2.5 sm:p-3 lg:p-4 transition-colors border-b-2 text-left flex-shrink-0 sm:flex-shrink ${
                     isActive
                       ? `${dept.borderColor} ${dept.bgLight}`
                       : 'border-transparent hover:bg-gray-50 dark:hover:bg-gray-700'
                   }`}
                 >
-                  <span className={`text-xs truncate w-full ${isActive ? dept.textColor : 'text-gray-500 dark:text-gray-400'}`}>
+                  <span className={`text-[10px] sm:text-xs truncate w-full ${isActive ? dept.textColor : 'text-gray-500 dark:text-gray-400'}`}>
                     {dept.icon} {dept.label}
                   </span>
-                  <span className={`text-xl lg:text-2xl font-bold ${isActive ? dept.textColor : 'text-gray-400 dark:text-gray-500'}`}>
+                  <span className={`text-lg sm:text-xl lg:text-2xl font-bold ${isActive ? dept.textColor : 'text-gray-400 dark:text-gray-500'}`}>
                     {count}
                   </span>
-                  <span className="text-[10px] text-gray-400 dark:text-gray-500 -mt-1 truncate w-full">
+                  <span className="text-[10px] text-gray-400 dark:text-gray-500 -mt-1 truncate w-full hidden sm:block">
                     {dept.desc}
                   </span>
                 </button>
@@ -1015,8 +1021,8 @@ export default function MESPage() {
 
         {/* Order list */}
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow dark:shadow-gray-900 overflow-hidden">
-          <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between gap-3 flex-wrap">
-            <div className="flex items-center gap-3">
+          <div className="px-3 sm:px-4 py-3 border-b border-gray-100 dark:border-gray-700 space-y-2">
+            <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
               <input
                 type="checkbox"
                 checked={visibleOrders.length > 0 && visibleOrders.every(o => selectedOrders.has(o.id))}
@@ -1024,7 +1030,7 @@ export default function MESPage() {
                 className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
                 title="Zaznacz wszystkie"
               />
-              <h2 className="font-semibold text-gray-900 dark:text-white">
+              <h2 className="font-semibold text-sm sm:text-base text-gray-900 dark:text-white">
                 {secondaryFilter
                   ? secondaryFilter === 'shipped' ? 'Zrealizowane' :
                     secondaryFilter === 'canceled' ? 'Anulowane' :
@@ -1037,20 +1043,7 @@ export default function MESPage() {
                 }
                 {' '}({filteredOrders.length})
               </h2>
-              <div className="relative ml-2">
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1); }}
-                  placeholder="Szukaj: nr, SKU, nazwa..."
-                  className="pl-7 pr-2 py-1 text-xs border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white w-48 focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
-                />
-                <svg className="w-3.5 h-3.5 absolute left-2 top-1/2 -translate-y-1/2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
-                {searchQuery && (
-                  <button onClick={() => setSearchQuery('')} className="absolute right-1.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 text-xs">✕</button>
-                )}
-              </div>
-              <div className="flex items-center gap-1 ml-2">
+              <div className="flex items-center gap-1">
                 {[50, 100, 250].map(n => (
                   <button
                     key={n}
@@ -1062,31 +1055,46 @@ export default function MESPage() {
                 ))}
               </div>
             </div>
-            {selectedOrders.size > 0 && (
-              <div className="flex items-center gap-2 flex-wrap">
-                <span className="text-sm text-blue-700 dark:text-blue-300 font-medium">
-                  Zaznaczono: {selectedOrders.size}
-                </span>
-                <button
-                  onClick={() => setSelectedOrders(new Set())}
-                  className="text-xs text-gray-500 hover:text-gray-700 dark:text-gray-400 underline"
-                >
-                  Wyczysc
-                </button>
-                <button
-                  onClick={handleExportCSV}
-                  className="px-3 py-1.5 text-xs font-medium bg-green-600 text-white rounded hover:bg-green-700 flex items-center gap-1"
-                >
-                  CSV ({selectedOrders.size})
-                </button>
-                <button
-                  onClick={handleExportPDF}
-                  className="px-3 py-1.5 text-xs font-medium bg-red-600 text-white rounded hover:bg-red-700 flex items-center gap-1"
-                >
-                  PDF ({selectedOrders.size})
-                </button>
+            <div className="flex items-center gap-2 flex-wrap">
+              <div className="relative flex-1 min-w-[150px] max-w-xs">
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1); }}
+                  placeholder="Szukaj: nr, SKU, nazwa..."
+                  className="pl-7 pr-6 py-1.5 text-xs border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white w-full focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                />
+                <svg className="w-3.5 h-3.5 absolute left-2 top-1/2 -translate-y-1/2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+                {searchQuery && (
+                  <button onClick={() => setSearchQuery('')} className="absolute right-1.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 text-xs">✕</button>
+                )}
               </div>
-            )}
+              {selectedOrders.size > 0 && (
+                <>
+                  <span className="text-xs text-blue-700 dark:text-blue-300 font-medium">
+                    {selectedOrders.size} zazn.
+                  </span>
+                  <button
+                    onClick={() => setSelectedOrders(new Set())}
+                    className="text-xs text-gray-500 hover:text-gray-700 dark:text-gray-400 underline"
+                  >
+                    Wyczysc
+                  </button>
+                  <button
+                    onClick={handleExportCSV}
+                    className="px-2 py-1 text-xs font-medium bg-green-600 text-white rounded hover:bg-green-700"
+                  >
+                    CSV
+                  </button>
+                  <button
+                    onClick={handleExportPDF}
+                    className="px-2 py-1 text-xs font-medium bg-red-600 text-white rounded hover:bg-red-700"
+                  >
+                    PDF
+                  </button>
+                </>
+              )}
+            </div>
           </div>
 
           {loading ? (
@@ -1107,7 +1115,7 @@ export default function MESPage() {
                   <div key={order.id} className={stripeBg}>
                     {/* Naglowek zamowienia */}
                     <div
-                      className="px-4 py-3 cursor-pointer flex items-center gap-3"
+                      className="px-3 sm:px-4 py-2.5 sm:py-3 cursor-pointer flex items-center gap-2 sm:gap-3"
                       onClick={() => setExpandedOrder(expandedOrder === order.id ? null : order.id)}
                     >
                       <div className="flex-shrink-0" onClick={e => e.stopPropagation()}>
@@ -1119,7 +1127,7 @@ export default function MESPage() {
                         />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 flex-wrap">
+                        <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
                           {(() => {
                             const flagCode = getChannelFlagCode(order.channelLabel) || (order.shipping?.country?.toLowerCase());
                             return flagCode ? (
@@ -1131,15 +1139,15 @@ export default function MESPage() {
                               />
                             ) : null;
                           })()}
-                          <span className="font-mono text-sm font-medium text-gray-900 dark:text-white">
+                          <span className="font-mono text-xs sm:text-sm font-medium text-gray-900 dark:text-white">
                             #{order.id}
                           </span>
                           {order.externalId && (
-                            <span className="text-xs text-gray-400 dark:text-gray-500">
+                            <span className="text-[10px] sm:text-xs text-gray-400 dark:text-gray-500 hidden sm:inline">
                               ({order.externalId})
                             </span>
                           )}
-                          <span className="text-xs text-gray-500 dark:text-gray-400">
+                          <span className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400 truncate max-w-[120px] sm:max-w-none">
                             {order.channelLabel || order.channelPlatform}
                           </span>
                           {order.omsStatus && (
@@ -1178,7 +1186,7 @@ export default function MESPage() {
 
                     {/* Szczegoly produktow */}
                     {(
-                      <div className={`px-4 pb-4 ${isDone ? 'bg-green-50 dark:bg-green-900/20' : orderIdx % 2 === 0 ? 'bg-white dark:bg-gray-800' : 'bg-gray-50 dark:bg-gray-750'}`}>
+                      <div className={`px-3 sm:px-4 pb-3 sm:pb-4 ${isDone ? 'bg-green-50 dark:bg-green-900/20' : orderIdx % 2 === 0 ? 'bg-white dark:bg-gray-800' : 'bg-gray-50 dark:bg-gray-750'}`}>
                         {!doneOrders.has(order.id) && (
                           <>
                         <div className="space-y-2">
@@ -1284,9 +1292,9 @@ export default function MESPage() {
                         )}
 
                         {/* Akcje */}
-                        <div className={`${doneOrders.has(order.id) ? '' : 'mt-3'} flex items-center gap-2 flex-wrap`}>
+                        <div className={`${doneOrders.has(order.id) ? '' : 'mt-3'} flex items-center gap-1.5 sm:gap-2 flex-wrap`}>
                           {shipments[order.id] && (
-                            <div className="flex items-center gap-2 bg-green-50 dark:bg-green-900/20 px-3 py-2 rounded-lg">
+                            <div className="flex items-center gap-2 bg-green-50 dark:bg-green-900/20 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg">
                               <img src={getCourierLogo(shipments[order.id].courier)} alt="" className="w-8 h-8 object-contain" />
                               <div className="text-xs">
                                 <div className="font-medium text-green-700 dark:text-green-300">
