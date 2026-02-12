@@ -236,6 +236,10 @@ export default function MESPage() {
   const [shipLoading, setShipLoading] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState(null);
 
+  // Quick-ship state
+  const [quickShipLoading, setQuickShipLoading] = useState({});
+  const [quickShipError, setQuickShipError] = useState({});
+
   // Inline order details (notes, customer, etc.)
   const [orderDetails, setOrderDetails] = useState({});
   const [detailsLoading, setDetailsLoading] = useState({});
@@ -462,6 +466,41 @@ export default function MESPage() {
       alert('Blad tworzenia przesylki: ' + err.message);
     } finally {
       setShipLoading(false);
+    }
+  };
+
+  const handleQuickShip = async (order) => {
+    setQuickShipLoading(prev => ({ ...prev, [order.id]: true }));
+    setQuickShipError(prev => ({ ...prev, [order.id]: null }));
+    try {
+      const res = await fetch('/api/quick-ship', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ orderId: order.id })
+      });
+      const data = await res.json();
+
+      if (data.success) {
+        // Open label PDF in new tab
+        if (data.labelUrl) {
+          window.open(data.labelUrl, '_blank');
+        }
+        // Refresh shipments to show green badge
+        fetchShipments();
+      } else if (data.error === 'NO_RULE_MATCH') {
+        // Fallback: open existing manual modal
+        setShowShipModal(order);
+        if (carrierAccounts.length === 0) {
+          fetchCarrierAccounts();
+          fetchTemplates();
+        }
+      } else {
+        setQuickShipError(prev => ({ ...prev, [order.id]: data.error || 'Blad tworzenia przesylki' }));
+      }
+    } catch (err) {
+      setQuickShipError(prev => ({ ...prev, [order.id]: err.message }));
+    } finally {
+      setQuickShipLoading(prev => ({ ...prev, [order.id]: false }));
     }
   };
 
@@ -1117,10 +1156,19 @@ export default function MESPage() {
       <main className="w-full px-3 py-4 sm:px-6 sm:py-6 lg:px-8">
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
-          <h1 className="flex items-center gap-2 text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">
-            <img src="/poom-wood-logo.png" alt="Poom Wood" className="h-8 sm:h-10 w-auto" />
-            MES
-          </h1>
+          <div className="flex items-center gap-3">
+            <h1 className="flex items-center gap-2 text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">
+              <img src="/poom-wood-logo.png" alt="Poom Wood" className="h-8 sm:h-10 w-auto" />
+              MES
+            </h1>
+            <a
+              href="/mes/ustawienia"
+              className="p-1.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700"
+              title="Ustawienia regul wysylki"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+            </a>
+          </div>
           <div className="flex items-center gap-2 bg-white dark:bg-gray-800 px-3 py-2 rounded-lg shadow dark:shadow-gray-900 border border-gray-200 dark:border-gray-700 flex-wrap sm:flex-nowrap">
             <div className="flex items-center gap-1.5">
               <label className="text-xs text-gray-500 dark:text-gray-400">Od:</label>
@@ -1682,13 +1730,31 @@ export default function MESPage() {
                               Anulowane
                             </span>
                           ) : (
-                            <button
-                              onClick={(e) => { e.stopPropagation(); setShowShipModal(order); if (carrierAccounts.length === 0) { fetchCarrierAccounts(); fetchTemplates(); } }}
-                              className="px-3 py-1.5 text-xs font-medium rounded flex items-center gap-1 bg-gray-600 text-white hover:bg-gray-700"
-                            >
-                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" /></svg>
-                              {shipments[order.id] ? 'Nowa przesylka' : 'Przygotuj przesylke'}
-                            </button>
+                            <div className="flex items-center">
+                              <button
+                                onClick={(e) => { e.stopPropagation(); handleQuickShip(order); }}
+                                disabled={quickShipLoading[order.id]}
+                                className="px-3 py-1.5 text-xs font-medium rounded-l flex items-center gap-1 bg-green-600 text-white hover:bg-green-700 disabled:opacity-50"
+                                title="Szybka wysylka (auto-regula)"
+                              >
+                                {quickShipLoading[order.id] ? (
+                                  <span className="animate-spin inline-block w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full"></span>
+                                ) : (
+                                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+                                )}
+                                Nadaj
+                              </button>
+                              <button
+                                onClick={(e) => { e.stopPropagation(); setShowShipModal(order); if (carrierAccounts.length === 0) { fetchCarrierAccounts(); fetchTemplates(); } }}
+                                className="px-1.5 py-1.5 text-xs font-medium rounded-r border-l border-green-700 bg-green-600 text-white hover:bg-green-700"
+                                title="Reczna wysylka"
+                              >
+                                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+                              </button>
+                            </div>
+                          )}
+                          {quickShipError[order.id] && (
+                            <span className="text-xs text-red-600 dark:text-red-400">{quickShipError[order.id]}</span>
                           )}
                           <button
                             onClick={(e) => { e.stopPropagation(); fetchOrderDetails(order.id); }}

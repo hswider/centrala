@@ -1005,6 +1005,24 @@ export async function initDatabase() {
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )
   `;
+
+  // Shipping rules (quick-ship: auto-match order → carrier account)
+  await sql`
+    CREATE TABLE IF NOT EXISTS shipping_rules (
+      id SERIAL PRIMARY KEY,
+      name VARCHAR(255) NOT NULL,
+      priority INT DEFAULT 0,
+      channel_pattern VARCHAR(255),
+      sku_pattern VARCHAR(255),
+      country_codes TEXT[],
+      carrier_account_id INT NOT NULL,
+      carrier_account_name VARCHAR(255),
+      method_uuid VARCHAR(100),
+      is_active BOOLEAN DEFAULT true,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )
+  `;
 }
 
 // Token operations
