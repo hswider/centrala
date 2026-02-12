@@ -265,7 +265,7 @@ export default function BOMPage() {
       setImportData(parsed);
 
       // Create preview with matching status - search in ALL warehouses for the product
-      const allItems = [...(magazyny.gotowe || []), ...(magazyny.polprodukty || []), ...(magazyny.wykroje || [])];
+      const allItems = [...(magazyny.gotowe || []), ...(magazyny.polprodukty || []), ...(magazyny.wykroje || []), ...(magazyny.surowce || [])];
 
       const preview = parsed.map(row => {
         // Match by SKU first, then by name
@@ -274,10 +274,10 @@ export default function BOMPage() {
           (row.Nazwa && item.nazwa && item.nazwa === row.Nazwa)
         );
 
-        // Find ingredients in polprodukty, wykroje, surowce
+        // Find ingredients in all warehouses
         const ingredientMatches = row.ingredients.map(ing => {
           let found = null;
-          for (const kategoria of ['polprodukty', 'wykroje', 'surowce']) {
+          for (const kategoria of ['gotowe', 'polprodukty', 'wykroje', 'surowce']) {
             const match = magazyny[kategoria]?.find(item =>
               (ing.sku && item.sku && item.sku === ing.sku) ||
               (ing.nazwa && item.nazwa && item.nazwa === ing.nazwa)
