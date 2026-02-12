@@ -1074,10 +1074,12 @@ export default function MESPage() {
             </div>
           ) : (
             <div className="divide-y-2 divide-gray-200 dark:divide-gray-600">
-              {visibleOrders.map((order) => {
+              {visibleOrders.map((order, orderIdx) => {
                 const hasAlerts = order.items?.some(i => i.alerts && i.alerts.length > 0);
+                const isDone = doneOrders.has(order.id);
+                const stripeBg = isDone ? 'bg-green-50 dark:bg-green-900/20' : orderIdx % 2 === 0 ? 'bg-white dark:bg-gray-800' : 'bg-gray-50 dark:bg-gray-750';
                 return (
-                  <div key={order.id} className={`${doneOrders.has(order.id) ? 'bg-green-50 dark:bg-green-900/20' : selectedOrders.has(order.id) ? 'bg-blue-50 dark:bg-blue-900/20' : 'hover:bg-gray-50 dark:hover:bg-gray-700/50'}`}>
+                  <div key={order.id} className={stripeBg}>
                     {/* Naglowek zamowienia */}
                     <div
                       className="px-4 py-3 cursor-pointer flex items-center gap-3"
@@ -1151,7 +1153,7 @@ export default function MESPage() {
 
                     {/* Szczegoly produktow */}
                     {(
-                      <div className={`px-4 pb-4 ${doneOrders.has(order.id) ? 'bg-green-50 dark:bg-green-900/20' : 'bg-gray-50 dark:bg-gray-700/30'}`}>
+                      <div className={`px-4 pb-4 ${isDone ? 'bg-green-50 dark:bg-green-900/20' : orderIdx % 2 === 0 ? 'bg-white dark:bg-gray-800' : 'bg-gray-50 dark:bg-gray-750'}`}>
                         {!doneOrders.has(order.id) && (
                           <>
                         <div className="space-y-2">
