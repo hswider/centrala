@@ -201,6 +201,7 @@ export default function MESPage() {
   const [expandedItem, setExpandedItem] = useState(null);
   const [selectedOrders, setSelectedOrders] = useState(new Set());
   const [doneOrders, setDoneOrders] = useState(new Set());
+  const [searchQuery, setSearchQuery] = useState('');
   const [perPage, setPerPage] = useState(50);
   const [currentPage, setCurrentPage] = useState(1);
   const [dateFrom, setDateFrom] = useState(() => {
@@ -627,13 +628,26 @@ export default function MESPage() {
     return Object.values(counts).sort((a, b) => b.count - a.count);
   })();
 
-  const filteredOrders = (() => {
+  const afterSecondaryFilter = (() => {
     if (!secondaryFilter) return afterColorFilter;
     if (['shipped', 'canceled', 'unpaid', 'needs_production', 'partial', 'ready_to_ship'].includes(secondaryFilter)) {
       return afterColorFilter.filter(o => o.orderStatus === secondaryFilter);
     }
     if (typeof secondaryFilter === 'number') return afterColorFilter.filter(o => o.deliveryStatus === secondaryFilter);
     return afterColorFilter;
+  })();
+
+  const filteredOrders = (() => {
+    if (!searchQuery.trim()) return afterSecondaryFilter;
+    const q = searchQuery.trim().toLowerCase();
+    return afterSecondaryFilter.filter(o =>
+      String(o.id).toLowerCase().includes(q) ||
+      (o.externalId && o.externalId.toLowerCase().includes(q)) ||
+      (o.items && o.items.some(item =>
+        (item.name && item.name.toLowerCase().includes(q)) ||
+        (item.sku && item.sku.toLowerCase().includes(q))
+      ))
+    );
   })();
 
   // Status counts scoped to current department tab
@@ -994,6 +1008,19 @@ export default function MESPage() {
                 }
                 {' '}({filteredOrders.length})
               </h2>
+              <div className="relative ml-2">
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1); }}
+                  placeholder="Szukaj: nr, SKU, nazwa..."
+                  className="pl-7 pr-2 py-1 text-xs border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white w-48 focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                />
+                <svg className="w-3.5 h-3.5 absolute left-2 top-1/2 -translate-y-1/2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+                {searchQuery && (
+                  <button onClick={() => setSearchQuery('')} className="absolute right-1.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 text-xs">✕</button>
+                )}
+              </div>
               <div className="flex items-center gap-1 ml-2">
                 {[50, 100, 250].map(n => (
                   <button
