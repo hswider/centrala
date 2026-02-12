@@ -185,10 +185,21 @@ function extractColor(productName) {
 }
 
 function getOrderColor(order) {
-  if (!order.items || order.items.length === 0) return null;
-  for (const item of order.items) {
-    const color = extractColor(item.name);
-    if (color) return color;
+  // Check item names first
+  if (order.items) {
+    for (const item of order.items) {
+      const color = extractColor(item.name);
+      if (color) return color;
+    }
+  }
+  // Then check notes/uwagi
+  if (order.notes) {
+    for (const note of order.notes) {
+      if (note.comment) {
+        const color = extractColor(note.comment);
+        if (color) return color;
+      }
+    }
   }
   return null;
 }
