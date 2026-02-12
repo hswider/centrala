@@ -566,63 +566,245 @@ export default function MESPage() {
     if (selected.length === 0) return;
 
     const { jsPDF } = await import('jspdf');
+    const JsBarcode = (await import('jsbarcode')).default;
+
     const doc = new jsPDF('p', 'mm', 'a4');
     const pageWidth = 210;
-    const margin = 15;
+    const margin = 10;
     const contentWidth = pageWidth - margin * 2;
-    let y = 20;
+    const totalPages = Math.ceil(selected.length / 1); // calculated after
+    let y = margin;
+    let pageNum = 1;
 
-    // Title
-    doc.setFontSize(16);
-    doc.text('MES - Zamowienia do produkcji', margin, y);
-    y += 8;
-    doc.setFontSize(10);
-    doc.text(`Data: ${new Date().toLocaleDateString('pl-PL')} | Zamowien: ${selected.length}`, margin, y);
-    y += 10;
+    // Helper: generate barcode as data URL
+    const generateBarcode = (text) => {
+      try {
+        const canvas = document.createElement('canvas');
+        JsBarcode(canvas, String(text), {
+          format: 'CODE128',
+          width: 1.5,
+          height: 40,
+          displayValue: false,
+          margin: 0
+        });
+        return canvas.toDataURL('image/png');
+      } catch (e) {
+        return null;
+      }
+    };
+
+    // Helper: wrap text and return lines
+    const wrapText = (text, maxWidth, fontSize) => {
+      doc.setFontSize(fontSize);
+      return doc.splitTextToSize(text, maxWidth);
+    };
+
+    // Helper: format date
+    const fmtDate = (d) => {
+      if (!d) return '-';
+      const dt = new Date(d);
+      return dt.toLocaleDateString('pl-PL', { day: '2-digit', month: '2-digit', year: 'numeric' }) + ' ' +
+             dt.toLocaleTimeString('pl-PL', { hour: '2-digit', minute: '2-digit' });
+    };
+
+    const fmtDateShort = (d) => {
+      if (!d) return '-';
+      return new Date(d).toLocaleDateString('pl-PL', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    };
+
+    // Helper: check space and add page if needed
+    const ensureSpace = (needed) => {
+      if (y + needed > 287) {
+        // Footer
+        doc.setFontSize(7);
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(128);
+        doc.text('Druk: centrala-poom.vercel.app', margin, 293);
+        doc.text(`Strona ${pageNum}`, pageWidth - margin, 293, { align: 'right' });
+        doc.setTextColor(0);
+        doc.addPage();
+        y = margin;
+        pageNum++;
+      }
+    };
 
     selected.forEach((order, orderIdx) => {
-      // Check if we need a new page
-      if (y > 260) {
-        doc.addPage();
-        y = 20;
-      }
+      // Estimate space needed for this order
+      if (orderIdx > 0) ensureSpace(60);
 
-      // Order header
-      doc.setFillColor(240, 240, 240);
-      doc.rect(margin, y - 5, contentWidth, 8, 'F');
+      const startY = y;
+      const barcodeWidth = 45;
+      const barcodeHeight = 15;
+      const headerTextWidth = contentWidth - barcodeWidth - 5;
+
+      // === ORDER HEADER (numbered box) ===
+      // Number badge
+      doc.setFillColor(0, 0, 0);
+      doc.rect(margin, y, 8, 7, 'F');
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(255, 255, 255);
+      doc.text(`${orderIdx + 1}.`, margin + 1.5, y + 5);
+      doc.setTextColor(0, 0, 0);
+
+      // Order ID bold
       doc.setFontSize(11);
       doc.setFont('helvetica', 'bold');
-      const countryTag = order.shipping?.country ? ` [${order.shipping.country.toUpperCase()}]` : '';
-      doc.text(`#${order.id}  |  ${order.channelLabel || order.channelPlatform || ''}${countryTag}`, margin + 2, y);
+      doc.text(`${order.id}`, margin + 10, y + 5);
+
+      // Channel info on same line
+      const idWidth = doc.getTextWidth(`${order.id}`);
+      doc.setFontSize(8);
+      doc.setFont('helvetica', 'normal');
+      const channelText = ` | ${order.channelLabel || order.channelPlatform || ''} | ${order.externalId || ''}`;
+      doc.text(channelText, margin + 10 + idWidth + 1, y + 5);
+
+      // Barcode on the right
+      const barcodeImg = generateBarcode(order.id);
+      if (barcodeImg) {
+        doc.addImage(barcodeImg, 'PNG', pageWidth - margin - barcodeWidth, y, barcodeWidth, barcodeHeight);
+      }
+
       y += 8;
 
-      // Items table header
-      doc.setFillColor(220, 220, 220);
-      doc.rect(margin, y - 4, contentWidth, 6, 'F');
-      doc.setFontSize(8);
-      doc.setFont('helvetica', 'bold');
-      doc.text('Nazwa produktu', margin + 2, y);
-      doc.text('SKU', margin + 120, y);
-      doc.text('Ilosc', margin + 160, y);
-      y += 5;
-
+      // Second line: payment, dates, invoice
+      doc.setFontSize(7);
       doc.setFont('helvetica', 'normal');
-      (order.items || []).forEach(item => {
-        if (item.isShipping) return;
-        if (y > 275) {
-          doc.addPage();
-          y = 20;
-        }
-        doc.setFontSize(8);
-        const name = (item.name || '').substring(0, 70);
-        doc.text(name, margin + 2, y);
-        doc.text(item.sku || '-', margin + 120, y);
-        doc.text(String(item.quantity || 1), margin + 160, y);
-        y += 5;
+      const paymentText = order.isPaid ? 'rozliczone' : 'nierozliczone';
+      const invoiceText = order.isCanceled ? 'Anulowane' : 'Klient chce fakture: Nie';
+      const metaLine = `Sposob platnosci: ${paymentText} | Data zamowienia: ${fmtDate(order.orderedAt)} | Data wysylki: ${fmtDateShort(order.shippingDate)} | ${invoiceText}`;
+      const metaLines = wrapText(metaLine, headerTextWidth, 7);
+      metaLines.forEach(line => {
+        doc.text(line, margin + 1, y);
+        y += 3.2;
       });
 
-      y += 5;
+      y += 1;
+
+      // === SHIPPING DATA ===
+      const ship = order.shipping || order.customer || {};
+      if (ship.name || ship.street || ship.city) {
+        doc.setFontSize(7.5);
+        doc.setFont('helvetica', 'bold');
+        doc.text('Dane wysylki: ', margin + 1, y);
+        const labelW = doc.getTextWidth('Dane wysylki: ');
+        doc.setFont('helvetica', 'normal');
+        const addrParts = [
+          ship.name,
+          ship.companyName,
+          [ship.street, ship.streetNumber].filter(Boolean).join(' '),
+          [ship.zipCode, ship.city].filter(Boolean).join(' '),
+          ship.country,
+          ship.phone,
+          ship.email
+        ].filter(Boolean).join(' | ');
+        const addrLines = wrapText(addrParts, contentWidth - labelW - 2, 7.5);
+        if (addrLines.length > 0) {
+          doc.text(addrLines[0], margin + 1 + labelW, y);
+          for (let i = 1; i < addrLines.length; i++) {
+            y += 3.5;
+            doc.text(addrLines[i], margin + 1, y);
+          }
+        }
+        y += 5;
+      }
+
+      // === NOTES (if any) ===
+      const notesWithComments = (order.notes || []).filter(n => n.comment && n.comment.trim());
+      if (notesWithComments.length > 0) {
+        doc.setFontSize(7.5);
+        doc.setFont('helvetica', 'bold');
+        doc.text('Uwagi: ', margin + 1, y);
+        const uwLabelW = doc.getTextWidth('Uwagi: ');
+        doc.setFont('helvetica', 'normal');
+        const notesText = notesWithComments.map(n => n.comment.trim()).join(' | ');
+        const notesLines = wrapText(notesText, contentWidth - uwLabelW - 2, 7.5);
+        if (notesLines.length > 0) {
+          doc.text(notesLines[0], margin + 1 + uwLabelW, y);
+          for (let i = 1; i < notesLines.length; i++) {
+            y += 3.5;
+            doc.text(notesLines[i], margin + 1, y);
+          }
+        }
+        y += 5;
+      }
+
+      // === ITEMS TABLE ===
+      const colLp = margin + 1;
+      const colName = margin + 10;
+      const colSku = margin + 120;
+      const colEan = margin + 148;
+      const colQty = margin + contentWidth - 5;
+
+      // Table header
+      doc.setDrawColor(0);
+      doc.setLineWidth(0.3);
+      doc.line(margin, y - 1, margin + contentWidth, y - 1);
+      doc.setFontSize(7.5);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Lp.', colLp, y + 2.5);
+      doc.text('Nazwa', colName, y + 2.5);
+      doc.text('SKU', colSku, y + 2.5);
+      doc.text('EAN', colEan, y + 2.5);
+      doc.text('Ilosc', colQty, y + 2.5, { align: 'right' });
+      y += 4;
+      doc.line(margin, y, margin + contentWidth, y);
+      y += 1;
+
+      // Table rows
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(7);
+      const items = (order.items || []);
+      items.forEach((item, idx) => {
+        ensureSpace(8);
+
+        const nameText = `(${item.name || '-'})`;
+        const nameLines = wrapText(nameText, colSku - colName - 2, 7);
+        const rowHeight = Math.max(nameLines.length * 3.2, 4);
+
+        doc.text(`${idx + 1}.`, colLp, y + 3);
+
+        // Name (multi-line)
+        nameLines.forEach((line, li) => {
+          doc.text(line, colName, y + 3 + li * 3.2);
+        });
+
+        // SKU
+        const skuText = item.sku || '-';
+        const skuLines = wrapText(skuText, colEan - colSku - 2, 7);
+        skuLines.forEach((line, li) => {
+          doc.text(line, colSku, y + 3 + li * 3.2);
+        });
+
+        // EAN
+        doc.text(item.ean || '-', colEan, y + 3);
+
+        // Quantity
+        doc.text(String(item.quantity || 1), colQty, y + 3, { align: 'right' });
+
+        y += rowHeight + 1.5;
+        doc.setDrawColor(200);
+        doc.setLineWidth(0.1);
+        doc.line(margin, y, margin + contentWidth, y);
+        y += 0.5;
+      });
+
+      y += 3;
+
+      // Border around entire order block
+      doc.setDrawColor(0);
+      doc.setLineWidth(0.4);
+      doc.rect(margin, startY - 1, contentWidth, y - startY + 1);
+
+      y += 4;
     });
+
+    // Final page footer
+    doc.setFontSize(7);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(128);
+    doc.text('Druk: centrala-poom.vercel.app', margin, 293);
+    doc.text(`Strona ${pageNum}`, pageWidth - margin, 293, { align: 'right' });
 
     const pdfUrl = doc.output('bloburl');
     window.open(pdfUrl, '_blank');
