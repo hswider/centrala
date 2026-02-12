@@ -1072,7 +1072,7 @@ export default function MESPage() {
 
     return (
       <div
-        className={`px-1.5 sm:px-2 py-1 rounded border text-[10px] font-semibold flex items-center gap-0.5 sm:gap-1 ${s.bg}`}
+        className={`px-1.5 sm:px-2.5 py-1 rounded-md border text-[11px] font-semibold flex items-center gap-0.5 sm:gap-1 ${s.bg}`}
         title={`${s.label}: ${stan} szt. (potrzeba: ${needed})`}
       >
         <span>{s.icon}</span>
@@ -1118,7 +1118,7 @@ export default function MESPage() {
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
           <h1 className="flex items-center gap-2 text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">
-            <img src="/poom-wood-logo.png" alt="Poom Wood" className="h-8 sm:h-10 w-auto" />
+            <img src="/poom-wood-logo.png" alt="Poom Wood" className="h-10 sm:h-12 w-auto" />
             MES
           </h1>
           <div className="flex items-center gap-2 bg-white dark:bg-gray-800 px-3 py-2 rounded-lg shadow dark:shadow-gray-900 border border-gray-200 dark:border-gray-700 flex-wrap sm:flex-nowrap">
@@ -1219,36 +1219,36 @@ export default function MESPage() {
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow dark:shadow-gray-900 overflow-hidden mb-3">
           {/* Combined filter bar - scrollable carousel */}
           <div className="overflow-x-auto border-b border-gray-100 dark:border-gray-700">
-            <div className="flex items-center gap-1.5 px-4 py-2 text-xs whitespace-nowrap min-w-0">
+            <div className="flex items-center gap-1.5 px-4 py-2.5 text-xs whitespace-nowrap min-w-0">
               {/* Statusy */}
-              <span className="text-gray-400 dark:text-gray-500 font-medium flex-shrink-0">Statusy:</span>
+              <span className="text-gray-400 dark:text-gray-500 font-semibold flex-shrink-0">Statusy:</span>
               <button
                 onClick={() => setSecondaryFilter(secondaryFilter === 'needs_production' ? null : 'needs_production')}
-                className={`px-2 py-1 rounded transition-colors flex-shrink-0 ${secondaryFilter === 'needs_production' ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 font-bold' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'}`}
+                className={`px-2.5 py-1.5 rounded-full transition-colors flex-shrink-0 ${secondaryFilter === 'needs_production' ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 font-bold' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'}`}
               >
                 Do produkcji ({deptStatusCounts.needsProduction})
               </button>
               <button
                 onClick={() => setSecondaryFilter(secondaryFilter === 'partial' ? null : 'partial')}
-                className={`px-2 py-1 rounded transition-colors flex-shrink-0 ${secondaryFilter === 'partial' ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400 font-bold' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'}`}
+                className={`px-2.5 py-1.5 rounded-full transition-colors flex-shrink-0 ${secondaryFilter === 'partial' ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400 font-bold' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'}`}
               >
                 Czesciowo ({deptStatusCounts.partial})
               </button>
               <button
                 onClick={() => setSecondaryFilter(secondaryFilter === 'ready_to_ship' ? null : 'ready_to_ship')}
-                className={`px-2 py-1 rounded transition-colors flex-shrink-0 ${secondaryFilter === 'ready_to_ship' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 font-bold' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'}`}
+                className={`px-2.5 py-1.5 rounded-full transition-colors flex-shrink-0 ${secondaryFilter === 'ready_to_ship' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 font-bold' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'}`}
               >
                 Gotowe do wysylki ({deptStatusCounts.readyToShip})
               </button>
               <button
                 onClick={() => setSecondaryFilter(secondaryFilter === 'shipped' ? null : 'shipped')}
-                className={`px-2 py-1 rounded transition-colors flex-shrink-0 ${secondaryFilter === 'shipped' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 font-bold' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'}`}
+                className={`px-2.5 py-1.5 rounded-full transition-colors flex-shrink-0 ${secondaryFilter === 'shipped' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 font-bold' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'}`}
               >
                 Zrealizowane ({deptStatusCounts.shipped})
               </button>
               <button
                 onClick={() => setSecondaryFilter(secondaryFilter === 'canceled' ? null : 'canceled')}
-                className={`px-2 py-1 rounded transition-colors flex-shrink-0 ${secondaryFilter === 'canceled' ? 'bg-gray-200 text-gray-700 dark:bg-gray-600 dark:text-gray-200 font-bold' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'}`}
+                className={`px-2.5 py-1.5 rounded-full transition-colors flex-shrink-0 ${secondaryFilter === 'canceled' ? 'bg-gray-200 text-gray-700 dark:bg-gray-600 dark:text-gray-200 font-bold' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'}`}
               >
                 Anulowane ({deptStatusCounts.canceled})
               </button>
@@ -1256,8 +1256,8 @@ export default function MESPage() {
               {/* Apilo/BL */}
               {deptOmsStatuses.length > 0 && (
                 <>
-                  <span className="text-gray-300 dark:text-gray-600 flex-shrink-0">|</span>
-                  <span className="text-gray-400 dark:text-gray-500 font-medium flex-shrink-0">Apilo/BL:</span>
+                  <span className="text-gray-300 dark:text-gray-600 flex-shrink-0 mx-1">|</span>
+                  <span className="text-gray-400 dark:text-gray-500 font-semibold flex-shrink-0">Apilo/BL:</span>
                   {deptOmsStatuses.map(s => {
                     const colorMap = {
                       blue: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
@@ -1273,7 +1273,7 @@ export default function MESPage() {
                       <button
                         key={s.status}
                         onClick={() => setSecondaryFilter(isActive ? null : s.status)}
-                        className={`px-1.5 py-0.5 rounded transition-colors flex-shrink-0 ${
+                        className={`px-2.5 py-1.5 rounded-full transition-colors flex-shrink-0 ${
                           isActive
                             ? `${colorMap[s.color] || colorMap.gray} font-bold ring-1 ring-current`
                             : `${colorMap[s.color] || colorMap.gray} opacity-70 hover:opacity-100`
@@ -1292,11 +1292,11 @@ export default function MESPage() {
           {/* Channel filter bar - separate */}
           {channelCounts.length > 1 && (
             <div className="overflow-x-auto border-b border-gray-100 dark:border-gray-700">
-              <div className="flex items-center gap-1.5 px-4 py-2 text-xs whitespace-nowrap min-w-0">
-                <span className="text-gray-400 dark:text-gray-500 font-medium flex-shrink-0">Kanal:</span>
+              <div className="flex items-center gap-1.5 px-4 py-2.5 text-xs whitespace-nowrap min-w-0">
+                <span className="text-gray-400 dark:text-gray-500 font-semibold flex-shrink-0">Kanal:</span>
                 <button
                   onClick={() => setChannelFilter(null)}
-                  className={`px-2 py-1 rounded transition-colors flex items-center gap-1 flex-shrink-0 ${!channelFilter ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 font-bold' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'}`}
+                  className={`px-2.5 py-1.5 rounded-full transition-colors flex items-center gap-1 flex-shrink-0 ${!channelFilter ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 font-bold' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'}`}
                 >
                   Wszystkie ({departmentOrders.length})
                 </button>
@@ -1304,7 +1304,7 @@ export default function MESPage() {
                   <button
                     key={ch.key}
                     onClick={() => setChannelFilter(channelFilter === ch.key ? null : ch.key)}
-                    className={`px-2 py-1 rounded transition-colors flex items-center gap-1 flex-shrink-0 ${channelFilter === ch.key ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 font-bold' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'}`}
+                    className={`px-2.5 py-1.5 rounded-full transition-colors flex items-center gap-1 flex-shrink-0 ${channelFilter === ch.key ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 font-bold' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'}`}
                   >
                     {ch.icon ? (
                       <img src={ch.icon} alt={ch.key} className="w-4 h-4 rounded-full object-cover" />
@@ -1447,13 +1447,13 @@ export default function MESPage() {
                   </button>
                   <button
                     onClick={handleExportCSV}
-                    className="px-2 py-1 text-xs font-medium bg-green-600 text-white rounded hover:bg-green-700"
+                    className="px-2.5 py-1 text-xs font-medium bg-green-600 text-white rounded-lg shadow-sm hover:bg-green-700"
                   >
                     CSV
                   </button>
                   <button
                     onClick={handleExportPDF}
-                    className="px-2 py-1 text-xs font-medium bg-red-600 text-white rounded hover:bg-red-700"
+                    className="px-2.5 py-1 text-xs font-medium bg-red-600 text-white rounded-lg shadow-sm hover:bg-red-700"
                   >
                     PDF
                   </button>
@@ -1471,17 +1471,18 @@ export default function MESPage() {
               Brak zamowien w tym dziale
             </div>
           ) : (
-            <div className="divide-y-2 divide-gray-200 dark:divide-gray-600">
+            <div className="p-2 sm:p-3 space-y-2">
               {visibleOrders.map((order, orderIdx) => {
                 const hasAlerts = order.items?.some(i => i.alerts && i.alerts.length > 0);
                 const isDone = doneOrders.has(order.id);
                 const isScanned = scanHighlight && String(order.id) === scanHighlight;
-                const stripeBg = isScanned ? 'bg-blue-50 dark:bg-blue-900/20 ring-2 ring-blue-500' : isDone ? 'bg-green-50 dark:bg-green-900/20' : orderIdx % 2 === 0 ? 'bg-white dark:bg-gray-800' : 'bg-gray-50 dark:bg-gray-750';
+                const statusBorder = isScanned ? 'border-blue-500 ring-2 ring-blue-500' : isDone ? 'border-l-green-500' : order.orderStatus === 'ready_to_ship' ? 'border-l-green-400' : order.orderStatus === 'needs_production' ? 'border-l-red-400' : order.orderStatus === 'shipped' ? 'border-l-blue-400' : 'border-l-gray-300 dark:border-l-gray-600';
+                const stripeBg = isScanned ? 'bg-blue-50 dark:bg-blue-900/20' : isDone ? 'bg-green-50 dark:bg-green-900/20' : 'bg-white dark:bg-gray-800';
                 return (
-                  <div key={order.id} className={stripeBg}>
+                  <div key={order.id} className={`border border-gray-200 dark:border-gray-700 border-l-4 ${statusBorder} rounded-lg overflow-hidden ${stripeBg}`}>
                     {/* Naglowek zamowienia */}
                     <div
-                      className="px-3 sm:px-4 py-2.5 sm:py-3 cursor-pointer flex items-center gap-2 sm:gap-3"
+                      className="px-3 sm:px-4 py-3 sm:py-3.5 cursor-pointer flex items-center gap-2 sm:gap-3"
                       onClick={() => setExpandedOrder(expandedOrder === order.id ? null : order.id)}
                     >
                       <div className="flex-shrink-0" onClick={e => e.stopPropagation()}>
@@ -1517,7 +1518,7 @@ export default function MESPage() {
                             {order.channelLabel || order.channelPlatform}
                           </span>
                           {order.omsStatus && (
-                            <span className={`px-1.5 py-0.5 text-[10px] font-medium rounded ${
+                            <span className={`px-2 py-0.5 text-[10px] font-medium rounded-md ${
                               order.omsStatusColor === 'blue' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300' :
                               order.omsStatusColor === 'yellow' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300' :
                               order.omsStatusColor === 'green' ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300' :
@@ -1542,7 +1543,7 @@ export default function MESPage() {
                           )}
                         </div>
                         {order.notes && order.notes.filter(n => n.comment && n.comment.trim()).length > 0 && (
-                          <div className="mt-1 text-xs text-yellow-700 dark:text-yellow-400 bg-yellow-50 dark:bg-yellow-900/20 px-2 py-1 rounded border border-yellow-200 dark:border-yellow-800">
+                          <div className="mt-1.5 text-xs text-yellow-700 dark:text-yellow-400 bg-yellow-50/80 dark:bg-yellow-900/20 px-2.5 py-1.5 rounded-md border border-yellow-200/70 dark:border-yellow-800">
                             <span className="font-bold">Uwagi: </span>
                             {order.notes.filter(n => n.comment && n.comment.trim()).map((n, i) => <span key={i}>{i > 0 && ' | '}{n.comment}</span>)}
                           </div>
@@ -1552,18 +1553,18 @@ export default function MESPage() {
 
                     {/* Szczegoly produktow */}
                     {(
-                      <div className={`px-3 sm:px-4 pb-3 sm:pb-4 ${isDone ? 'bg-green-50 dark:bg-green-900/20' : orderIdx % 2 === 0 ? 'bg-white dark:bg-gray-800' : 'bg-gray-50 dark:bg-gray-750'}`}>
+                      <div className="px-3 sm:px-4 pb-3 sm:pb-4">
                         {!doneOrders.has(order.id) && (
                           <>
                         <div className="space-y-2">
                           {order.items.map((item, idx) => (
                             <div
                               key={idx}
-                              className="rounded-lg p-3"
+                              className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-3"
                             >
                               <div className="flex items-start gap-3">
                                 {/* Obrazek */}
-                                <div className="w-12 h-12 flex-shrink-0 bg-gray-100 dark:bg-gray-700 rounded overflow-hidden">
+                                <div className="w-14 h-14 flex-shrink-0 bg-gray-100 dark:bg-gray-700 rounded-md overflow-hidden">
                                   {item.image ? (
                                     <img src={item.image} alt="" className="w-full h-full object-cover" />
                                   ) : (
@@ -1575,10 +1576,10 @@ export default function MESPage() {
                                 <div className="flex-1 min-w-0">
                                   <div className="flex items-start justify-between gap-2">
                                     <div>
-                                      <div className="text-sm text-gray-900 dark:text-white line-clamp-1">
-                                        <span className="font-bold">{item.quantity} szt.</span> {item.name}
+                                      <div className="text-sm font-medium text-gray-900 dark:text-white line-clamp-1">
+                                        <span className="font-bold text-gray-900 dark:text-white">{item.quantity} szt.</span> {item.name}
                                       </div>
-                                      <div className="text-xs text-gray-400 dark:text-gray-500">
+                                      <div className="text-[11px] text-gray-400 dark:text-gray-500 mt-0.5">
                                         SKU: {item.sku || '-'}
                                       </div>
                                     </div>
@@ -1658,7 +1659,7 @@ export default function MESPage() {
                         )}
 
                         {/* Akcje */}
-                        <div className={`${doneOrders.has(order.id) ? '' : 'mt-3'} flex items-center gap-1.5 sm:gap-2 flex-wrap`}>
+                        <div className={`${doneOrders.has(order.id) ? '' : 'mt-3'} flex items-center gap-2 flex-wrap`}>
                           {shipments[order.id] && (
                             <div className="flex items-center gap-2 bg-green-50 dark:bg-green-900/20 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg">
                               <img src={getCourierLogo(shipments[order.id].courier)} alt="" className="w-8 h-8 object-contain" />
@@ -1678,13 +1679,13 @@ export default function MESPage() {
                             </div>
                           )}
                           {order.isCanceled ? (
-                            <span className="px-3 py-1.5 text-xs font-medium bg-gray-200 text-gray-500 rounded line-through">
+                            <span className="px-3 py-1.5 text-xs font-medium bg-gray-200 text-gray-500 rounded-lg line-through">
                               Anulowane
                             </span>
                           ) : (
                             <button
                               onClick={(e) => { e.stopPropagation(); setShowShipModal(order); if (carrierAccounts.length === 0) { fetchCarrierAccounts(); fetchTemplates(); } }}
-                              className="px-3 py-1.5 text-xs font-medium rounded flex items-center gap-1 bg-gray-600 text-white hover:bg-gray-700"
+                              className="px-3 py-1.5 text-xs font-medium rounded-lg shadow-sm flex items-center gap-1 bg-gray-600 text-white hover:bg-gray-700"
                             >
                               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" /></svg>
                               {shipments[order.id] ? 'Nowa przesylka' : 'Przygotuj przesylke'}
@@ -1692,7 +1693,7 @@ export default function MESPage() {
                           )}
                           <button
                             onClick={(e) => { e.stopPropagation(); fetchOrderDetails(order.id); }}
-                            className={`px-3 py-1.5 text-xs font-medium rounded flex items-center gap-1 ${orderDetails[order.id] ? 'bg-blue-600 text-white' : 'bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-gray-500'}`}
+                            className={`px-3 py-1.5 text-xs font-medium rounded-lg flex items-center gap-1 ${orderDetails[order.id] ? 'bg-blue-600 text-white shadow-sm' : 'bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-gray-500'}`}
                           >
                             {detailsLoading[order.id] ? (
                               <span className="animate-spin inline-block w-3 h-3 border-2 border-current border-t-transparent rounded-full"></span>
@@ -1703,7 +1704,7 @@ export default function MESPage() {
                           </button>
                           <button
                             onClick={(e) => { e.stopPropagation(); toggleDoneOrder(order.id); }}
-                            className={`px-3 py-1.5 text-xs font-medium rounded flex items-center gap-1 ${doneOrders.has(order.id) ? 'bg-green-600 text-white hover:bg-green-700' : 'bg-green-100 text-green-700 hover:bg-green-200 dark:bg-green-900/30 dark:text-green-400 dark:hover:bg-green-900/50'}`}
+                            className={`px-3 py-1.5 text-xs font-medium rounded-lg shadow-sm flex items-center gap-1 ${doneOrders.has(order.id) ? 'bg-green-600 text-white hover:bg-green-700' : 'bg-green-100 text-green-700 hover:bg-green-200 dark:bg-green-900/30 dark:text-green-400 dark:hover:bg-green-900/50'}`}
                           >
                             {doneOrders.has(order.id) ? '✓ Wykonane' : 'Oznacz jako wykonane'}
                           </button>
