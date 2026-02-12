@@ -140,7 +140,8 @@ const COLOR_MAP = {
   'dunkelblau': 'Granatowy', 'marine': 'Granatowy',
   // Zielony - odcienie
   'ciemnozielony': 'Ciemnozielony', 'ciemny zielony': 'Ciemnozielony', 'dark green': 'Ciemnozielony', 'dunkelgrün': 'Ciemnozielony',
-  'butelka': 'Ciemnozielony', 'butelkowy': 'Ciemnozielony', 'szmaragd': 'Ciemnozielony', 'szmaragdowy': 'Ciemnozielony',
+  'butelka': 'Ciemnozielony', 'butelkowy': 'Ciemnozielony',
+  'szmaragd': 'Szmaragdowy', 'szmaragdowy': 'Szmaragdowy', 'smaragd': 'Szmaragdowy',
   'jasnozielony': 'Jasnozielony', 'jasny zielony': 'Jasnozielony', 'light green': 'Jasnozielony', 'hellgrün': 'Jasnozielony', 'lime': 'Jasnozielony',
   'oliwkowy': 'Oliwkowy', 'olive': 'Oliwkowy', 'oliv': 'Oliwkowy', 'khaki': 'Oliwkowy',
   'zielony': 'Zielony', 'zielona': 'Zielony', 'green': 'Zielony',
@@ -168,7 +169,7 @@ const COLOR_DOT = {
   'Brazowy': 'bg-amber-800', 'Ciemnobrazowy': 'bg-amber-950', 'Jasnobrazowy': 'bg-amber-500',
   'Czerwony': 'bg-red-500', 'Bordowy': 'bg-red-900',
   'Niebieski': 'bg-blue-500', 'Jasnoniebieski': 'bg-blue-300', 'Turkusowy': 'bg-teal-400', 'Granatowy': 'bg-blue-900',
-  'Zielony': 'bg-green-500', 'Ciemnozielony': 'bg-green-800', 'Jasnozielony': 'bg-green-300', 'Oliwkowy': 'bg-yellow-700',
+  'Zielony': 'bg-green-500', 'Ciemnozielony': 'bg-green-800', 'Szmaragdowy': 'bg-emerald-600', 'Jasnozielony': 'bg-green-300', 'Oliwkowy': 'bg-yellow-700',
   'Rozowy': 'bg-pink-400', 'Pudrowy roz': 'bg-pink-200', 'Brzoskwiniowy': 'bg-orange-300',
   'Zolty': 'bg-yellow-400', 'Musztardowy': 'bg-yellow-600',
   'Pomaranczowy': 'bg-orange-500',
