@@ -204,6 +204,11 @@ export default function MESSettingsPage() {
           </button>
         </div>
 
+        {/* TODO notice */}
+        <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-4 mb-4 text-sm text-amber-800 dark:text-amber-300">
+          <strong>Do dopracowania:</strong> Powiazanie szablonow wysylki klienta wzgledem SKU — obecny mechanizm dopasowania regul (regex na kanale/SKU) wymaga przemyslenia, aby lepiej odzwierciedlac rzeczywiste zaleznosci miedzy produktami a kontami kurierow.
+        </div>
+
         {/* Info */}
         <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4 mb-6 text-sm text-blue-800 dark:text-blue-300">
           <strong>Jak to dziala:</strong> Reguly sa sprawdzane od najwyzszego priorytetu. Pierwsza pasujaca regula automatycznie tworzy przesylke na podanym koncie kuriera.
