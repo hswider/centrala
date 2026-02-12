@@ -793,7 +793,10 @@ export default function MESPage() {
       <main className="w-full px-3 py-4 sm:px-6 sm:py-6 lg:px-8">
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
-          <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">MES</h1>
+          <h1 className="flex items-center gap-2 text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">
+            <img src="/poom-wood-logo.png" alt="Poom Wood" className="h-8 sm:h-10 w-auto" />
+            MES
+          </h1>
           <div className="flex items-center gap-2 bg-white dark:bg-gray-800 px-3 py-2 rounded-lg shadow dark:shadow-gray-900 border border-gray-200 dark:border-gray-700 flex-wrap sm:flex-nowrap">
             <div className="flex items-center gap-1.5">
               <label className="text-xs text-gray-500 dark:text-gray-400">Od:</label>
