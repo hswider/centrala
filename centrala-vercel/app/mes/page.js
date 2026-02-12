@@ -386,6 +386,7 @@ export default function MESPage() {
         body: JSON.stringify({
           action: 'create',
           carrierAccountId: shipForm.carrierAccountId,
+          carrierName: carrierAccounts.find(c => c.id === shipForm.carrierAccountId)?.name || '',
           orderId: showShipModal.id,
           method: shipForm.methodUuid,
           addressReceiver: {
@@ -429,9 +430,12 @@ export default function MESPage() {
 
   const getTrackingUrl = (courier, tracking) => {
     if (!tracking) return null;
-    if (courier === 'inpost') return `https://inpost.pl/sledzenie-przesylek?number=${tracking}`;
-    if (courier?.startsWith('dhl')) return `https://www.dhl.com/pl-pl/home/tracking.html?tracking-id=${tracking}`;
-    if (courier === 'ups') return `https://www.ups.com/track?tracknum=${tracking}`;
+    const c = courier?.toLowerCase() || '';
+    if (c.includes('inpost')) return `https://inpost.pl/sledzenie-przesylek?number=${tracking}`;
+    if (c.includes('dhl')) return `https://www.dhl.com/pl-pl/home/tracking.html?tracking-id=${tracking}`;
+    if (c.includes('ups')) return `https://www.ups.com/track?tracknum=${tracking}`;
+    if (c.includes('dpd')) return `https://tracktrace.dpd.com.pl/parcelDetails?p1=${tracking}`;
+    if (c.includes('fedex')) return `https://www.fedex.com/fedextrack/?trknbr=${tracking}`;
     return null;
   };
 
@@ -1265,7 +1269,7 @@ export default function MESPage() {
                               <img src={getCourierLogo(shipments[order.id].courier)} alt="" className="w-8 h-8 object-contain" />
                               <div className="text-xs">
                                 <div className="font-medium text-green-700 dark:text-green-300">
-                                  {shipments[order.id].courier?.toUpperCase()} • {shipments[order.id].status}
+                                  {shipments[order.id].courier} • {shipments[order.id].status}
                                 </div>
                                 <a
                                   href={getTrackingUrl(shipments[order.id].courier, shipments[order.id].tracking_number)}

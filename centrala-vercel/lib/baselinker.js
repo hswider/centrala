@@ -110,8 +110,13 @@ async function mapOrderToDTO(order, statuses = {}, fetchImages = false) {
       image = await getProductImage(product.storage_id, product.product_id, product.variant_id);
     }
 
+    // Append variant attributes (e.g. "Farbe: Oliva | Farbe: Dunkelbraun") to product name
+    const baseName = product.name || 'Unknown';
+    const variantSuffix = product.attributes || '';
+    const fullName = variantSuffix ? `${baseName} | ${variantSuffix}` : baseName;
+
     return {
-      name: product.name || 'Unknown',
+      name: fullName,
       sku: product.sku || '',
       ean: product.ean || '',
       quantity: product.quantity || 1,

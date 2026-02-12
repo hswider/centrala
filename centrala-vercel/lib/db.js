@@ -926,7 +926,7 @@ export async function initDatabase() {
     CREATE TABLE IF NOT EXISTS shipments (
       id SERIAL PRIMARY KEY,
       order_id VARCHAR(20),
-      courier VARCHAR(20) NOT NULL,
+      courier VARCHAR(255) NOT NULL,
       tracking_number VARCHAR(100),
       label_url TEXT,
       label_data TEXT,
@@ -950,6 +950,9 @@ export async function initDatabase() {
       updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )
   `;
+
+  // Widen courier column for carrier account names from Apilo
+  await sql`ALTER TABLE shipments ALTER COLUMN courier TYPE VARCHAR(255)`;
 
   // Courier rules table (automatic courier assignment)
   await sql`
