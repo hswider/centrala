@@ -1577,7 +1577,6 @@ export default function MESPage() {
                               {order.omsStatus}
                             </span>
                           )}
-                          {getStatusBadge(order.orderStatus)}
                           {/* Alert indicator */}
                           {hasAlerts && (
                             <span className="text-yellow-500 text-sm" title="Zamowienie wymaga uwagi">⚠</span>
