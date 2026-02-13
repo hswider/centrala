@@ -182,12 +182,12 @@ export async function POST(request) {
     // 6. Parse dimensions from carrier account name
     const dimensions = parseDimensionsFromName(matchedRule.carrier_account_name) || { length: 30, width: 20, height: 10 };
 
-    // 7. Build content description from order items
+    // 7. Build content description from order items (Apilo max 30 chars)
     const contentDescription = items
-      .map(item => item.name || item.sku || '')
+      .map(item => item.sku || item.name || '')
       .filter(Boolean)
       .join(', ')
-      .substring(0, 200) || 'Towar';
+      .substring(0, 30) || 'Towar';
 
     // 8. Create shipment via Apilo
     const result = await createShipment({
