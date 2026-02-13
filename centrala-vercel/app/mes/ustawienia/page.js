@@ -21,7 +21,8 @@ export default function MESSettingsPage() {
     sku_pattern: '',
     carrier_account_id: '',
     carrier_account_name: '',
-    method_uuid: ''
+    method_uuid: '',
+    weight_kg: 1
   });
 
   const fetchRules = async () => {
@@ -99,7 +100,8 @@ export default function MESSettingsPage() {
       sku_pattern: rule.sku_pattern || '',
       carrier_account_id: rule.carrier_account_id || '',
       carrier_account_name: rule.carrier_account_name || '',
-      method_uuid: rule.method_uuid || ''
+      method_uuid: rule.method_uuid || '',
+      weight_kg: rule.weight_kg || 1
     });
     if (rule.carrier_account_id) {
       fetchShippingMethods(rule.carrier_account_id);
@@ -131,7 +133,8 @@ export default function MESSettingsPage() {
         ...form,
         carrier_account_id: parseInt(form.carrier_account_id),
         priority: parseInt(form.priority) || 0,
-        method_uuid: form.method_uuid || null
+        method_uuid: form.method_uuid || null,
+        weight_kg: parseFloat(form.weight_kg) || 1
       };
 
       if (editingRule) {
@@ -342,6 +345,20 @@ export default function MESSettingsPage() {
                       className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm"
                     />
                     <p className="text-xs text-gray-500 mt-1">Puste = pasuje do kazdego SKU</p>
+                  </div>
+
+                  {/* Weight */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Waga (kg)</label>
+                    <input
+                      type="number"
+                      step="0.1"
+                      min="0.1"
+                      value={form.weight_kg}
+                      onChange={e => setForm(prev => ({ ...prev, weight_kg: e.target.value }))}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">Waga paczki w kilogramach</p>
                   </div>
 
                   {/* Carrier account */}

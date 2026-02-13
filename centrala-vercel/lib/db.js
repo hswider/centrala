@@ -1023,6 +1023,11 @@ export async function initDatabase() {
       updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )
   `;
+
+  // Add weight_kg column if missing
+  try {
+    await sql`ALTER TABLE shipping_rules ADD COLUMN IF NOT EXISTS weight_kg DECIMAL(10,2) DEFAULT 1`;
+  } catch (e) { /* column may already exist */ }
 }
 
 // Token operations

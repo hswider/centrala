@@ -46,10 +46,10 @@ export async function POST(request) {
       priority,
       channel_pattern,
       sku_pattern,
-      country_codes,
       carrier_account_id,
       carrier_account_name,
-      method_uuid
+      method_uuid,
+      weight_kg
     } = body;
 
     if (!name || !carrier_account_id) {
@@ -58,12 +58,12 @@ export async function POST(request) {
 
     const { rows } = await sql`
       INSERT INTO shipping_rules (
-        name, priority, channel_pattern, sku_pattern, country_codes,
-        carrier_account_id, carrier_account_name, method_uuid
+        name, priority, channel_pattern, sku_pattern,
+        carrier_account_id, carrier_account_name, method_uuid, weight_kg
       ) VALUES (
         ${name}, ${priority || 0}, ${channel_pattern || null}, ${sku_pattern || null},
-        ${country_codes && country_codes.length > 0 ? country_codes : null},
-        ${carrier_account_id}, ${carrier_account_name || null}, ${method_uuid || null}
+        ${carrier_account_id}, ${carrier_account_name || null}, ${method_uuid || null},
+        ${weight_kg || 1}
       )
       RETURNING *
     `;
@@ -92,10 +92,10 @@ export async function PUT(request) {
       priority,
       channel_pattern,
       sku_pattern,
-      country_codes,
       carrier_account_id,
       carrier_account_name,
-      method_uuid
+      method_uuid,
+      weight_kg
     } = body;
 
     if (!id) {
@@ -108,10 +108,10 @@ export async function PUT(request) {
         priority = COALESCE(${priority}, priority),
         channel_pattern = ${channel_pattern !== undefined ? channel_pattern || null : null},
         sku_pattern = ${sku_pattern !== undefined ? sku_pattern || null : null},
-        country_codes = ${country_codes && country_codes.length > 0 ? country_codes : null},
         carrier_account_id = COALESCE(${carrier_account_id}, carrier_account_id),
         carrier_account_name = COALESCE(${carrier_account_name}, carrier_account_name),
         method_uuid = ${method_uuid !== undefined ? method_uuid || null : null},
+        weight_kg = COALESCE(${weight_kg}, weight_kg),
         updated_at = CURRENT_TIMESTAMP
       WHERE id = ${id} AND is_active = true
       RETURNING *
