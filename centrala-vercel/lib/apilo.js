@@ -480,11 +480,14 @@ export async function createShipment(shipmentData) {
 
   // Auto-fetch method options to get required template value
   let shipmentOptions = shipmentData.options || [];
-  if (!Array.isArray(shipmentOptions) || shipmentOptions.length === 0) {
+  if (!Array.isArray(shipmentOptions)) shipmentOptions = [];
+
+  // Always try to auto-resolve template if not already provided
+  const hasTemplate = shipmentOptions.some(o => o.id === 'template');
+  if (!hasTemplate) {
     try {
       const methodOpts = await getShippingMethodOptions(shipmentData.carrierAccountId, shipmentData.method);
       const optionsDef = methodOpts?.options?.properties || [];
-      shipmentOptions = [];
       for (const prop of optionsDef) {
         if (prop.id === 'template' && prop.choices && prop.choices.length > 0) {
           shipmentOptions.push({
@@ -497,7 +500,6 @@ export async function createShipment(shipmentData) {
       console.log('[Apilo createShipment] Auto-resolved options:', JSON.stringify(shipmentOptions));
     } catch (e) {
       console.warn('[Apilo createShipment] Could not fetch method options:', e.message);
-      shipmentOptions = [];
     }
   }
 

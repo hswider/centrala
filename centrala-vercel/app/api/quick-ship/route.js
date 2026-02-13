@@ -182,7 +182,14 @@ export async function POST(request) {
     // 6. Parse dimensions from carrier account name
     const dimensions = parseDimensionsFromName(matchedRule.carrier_account_name) || { length: 30, width: 20, height: 10 };
 
-    // 7. Create shipment via Apilo
+    // 7. Build content description from order items
+    const contentDescription = items
+      .map(item => item.name || item.sku || '')
+      .filter(Boolean)
+      .join(', ')
+      .substring(0, 200) || 'Towar';
+
+    // 8. Create shipment via Apilo
     const result = await createShipment({
       carrierAccountId: matchedRule.carrier_account_id,
       orderId,
@@ -191,7 +198,10 @@ export async function POST(request) {
       parcels: [{
         weight: 1,
         dimensions
-      }]
+      }],
+      options: [
+        { id: 'content', type: 'string', value: contentDescription }
+      ]
     });
 
     // 7. Extract shipment ID from response
