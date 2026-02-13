@@ -481,9 +481,9 @@ export default function MESPage() {
       const data = await res.json();
 
       if (data.success) {
-        // Open label PDF in new tab
+        // Open label PDF in new tab (delay to let Apilo generate the label)
         if (data.labelUrl) {
-          window.open(data.labelUrl, '_blank');
+          setTimeout(() => window.open(data.labelUrl, '_blank'), 2000);
         }
         // Refresh shipments to show green badge
         fetchShipments();
