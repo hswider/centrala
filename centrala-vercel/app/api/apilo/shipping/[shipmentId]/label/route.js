@@ -118,7 +118,7 @@ export async function GET(request, { params }) {
 
     // Fetch PDF binary via media UUID
     const pdfResponse = await fetch(`${baseUrl}/rest/api/media/${mediaUuid}/`, {
-      headers: { 'Authorization': `Bearer ${token}`, 'Accept': 'application/pdf' }
+      headers: { 'Authorization': `Bearer ${token}`, 'Accept': '*/*' }
     });
 
     if (!pdfResponse.ok) {
