@@ -492,7 +492,7 @@ export default function MESPage() {
         if (data.debug) {
           console.log('[QuickShip] NO_RULE_MATCH debug:', data.debug);
           const d = data.debug;
-          const info = `Brak pasujacego szablonu.\n\nZamowienie: ${d.orderId}\nKanal: "${d.channelLabel}"\nSKU: ${(d.itemSkus || []).join(', ')}\nKraj wysylki: "${d.shippingCountry}"\nRegul: ${d.rulesCount}\n${(d.matches || []).map(m => `\nRegula "${m.rule}": kanal=${m.channelMatch}, sku=${m.skuMatch}, kraj=${m.countryMatch} (wzorzec kanalu="${m.ruleChannel}", wzorzec sku="${m.ruleSku}", kraje=${JSON.stringify(m.ruleCountries)})`).join('')}`;
+          const info = `Brak pasujacego szablonu.\n\nZamowienie: ${d.orderId}\nKanal: "${d.channelLabel}"\nSKU: ${(d.itemSkus || []).join(', ')}\nRegul: ${d.rulesCount}\n${(d.matches || []).map(m => `\nRegula "${m.rule}": kanal=${m.channelMatch}, sku=${m.skuMatch} (wzorzec kanalu="${m.ruleChannel}", wzorzec sku="${m.ruleSku}")`).join('')}`;
           alert(info);
         }
         setShowShipModal(order);

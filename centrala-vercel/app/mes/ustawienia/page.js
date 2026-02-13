@@ -19,7 +19,6 @@ export default function MESSettingsPage() {
     priority: 0,
     channel_pattern: '',
     sku_pattern: '',
-    country_codes: '',
     carrier_account_id: '',
     carrier_account_name: '',
     method_uuid: ''
@@ -83,7 +82,6 @@ export default function MESSettingsPage() {
       priority: 0,
       channel_pattern: '',
       sku_pattern: '',
-      country_codes: '',
       carrier_account_id: '',
       carrier_account_name: '',
       method_uuid: ''
@@ -99,7 +97,6 @@ export default function MESSettingsPage() {
       priority: rule.priority || 0,
       channel_pattern: rule.channel_pattern || '',
       sku_pattern: rule.sku_pattern || '',
-      country_codes: rule.country_codes ? rule.country_codes.join(', ') : '',
       carrier_account_id: rule.carrier_account_id || '',
       carrier_account_name: rule.carrier_account_name || '',
       method_uuid: rule.method_uuid || ''
@@ -130,15 +127,10 @@ export default function MESSettingsPage() {
 
     setSaving(true);
     try {
-      const countryCodes = form.country_codes
-        ? form.country_codes.split(',').map(c => c.trim()).filter(Boolean)
-        : [];
-
       const payload = {
         ...form,
         carrier_account_id: parseInt(form.carrier_account_id),
         priority: parseInt(form.priority) || 0,
-        country_codes: countryCodes,
         method_uuid: form.method_uuid || null
       };
 
@@ -236,7 +228,6 @@ export default function MESSettingsPage() {
                     <th className="px-4 py-3 text-left font-medium text-gray-600 dark:text-gray-300">Nazwa</th>
                     <th className="px-4 py-3 text-left font-medium text-gray-600 dark:text-gray-300">Wzorzec kanalu</th>
                     <th className="px-4 py-3 text-left font-medium text-gray-600 dark:text-gray-300">Wzorzec SKU</th>
-                    <th className="px-4 py-3 text-left font-medium text-gray-600 dark:text-gray-300">Kraje</th>
                     <th className="px-4 py-3 text-left font-medium text-gray-600 dark:text-gray-300">Konto kuriera</th>
                     <th className="px-4 py-3 text-left font-medium text-gray-600 dark:text-gray-300">Akcje</th>
                   </tr>
@@ -260,13 +251,6 @@ export default function MESSettingsPage() {
                       <td className="px-4 py-3">
                         {rule.sku_pattern ? (
                           <code className="text-xs bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded">{rule.sku_pattern}</code>
-                        ) : (
-                          <span className="text-gray-400">—</span>
-                        )}
-                      </td>
-                      <td className="px-4 py-3">
-                        {rule.country_codes && rule.country_codes.length > 0 ? (
-                          <span className="text-xs">{rule.country_codes.join(', ')}</span>
                         ) : (
                           <span className="text-gray-400">—</span>
                         )}
@@ -358,19 +342,6 @@ export default function MESSettingsPage() {
                       className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm"
                     />
                     <p className="text-xs text-gray-500 mt-1">Puste = pasuje do kazdego SKU</p>
-                  </div>
-
-                  {/* Country codes */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Kody krajow (opcjonalnie)</label>
-                    <input
-                      type="text"
-                      value={form.country_codes}
-                      onChange={e => setForm(prev => ({ ...prev, country_codes: e.target.value }))}
-                      placeholder="np. PL, DE, FR"
-                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm"
-                    />
-                    <p className="text-xs text-gray-500 mt-1">Rozdzielone przecinkami. Puste = wszystkie kraje.</p>
                   </div>
 
                   {/* Carrier account */}

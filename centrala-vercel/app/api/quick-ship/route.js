@@ -74,11 +74,10 @@ export async function POST(request) {
     const channelLabel = order.channel_label || '';
     const items = typeof order.items === 'string' ? JSON.parse(order.items) : (order.items || []);
     const shipping = typeof order.shipping === 'string' ? JSON.parse(order.shipping) : (order.shipping || {});
-    const shippingCountry = shipping.country || '';
 
     const itemSkus = items.map(item => item.sku || '').filter(Boolean);
 
-    console.log(`[QuickShip] Order ${orderId}: channelLabel="${channelLabel}", SKUs=${JSON.stringify(itemSkus)}, shippingCountry="${shippingCountry}"`);
+    console.log(`[QuickShip] Order ${orderId}: channelLabel="${channelLabel}", SKUs=${JSON.stringify(itemSkus)}`);
 
     // 2. Fetch active shipping rules ordered by priority DESC
     const { rows: rules } = await sql`
@@ -91,35 +90,26 @@ export async function POST(request) {
       return Response.json({
         success: false, error: 'NO_RULE_MATCH',
         message: 'Brak zdefiniowanych regul wysylki',
-        debug: { orderId, channelLabel, itemSkus, shippingCountry, rulesCount: 0 }
+        debug: { orderId, channelLabel, itemSkus, rulesCount: 0 }
       });
     }
 
-    // 3. Match rules
+    // 3. Match rules (channel + SKU only)
     let matchedRule = null;
     const debugMatches = [];
     for (const rule of rules) {
-      // Channel pattern check
       const channelMatch = matchesPattern(rule.channel_pattern, channelLabel);
 
-      // SKU pattern check - match against any item SKU
       let skuMatch = true;
       if (rule.sku_pattern) {
         skuMatch = items.some(item => matchesPattern(rule.sku_pattern, item.sku || item.name || ''));
       }
 
-      // Country check
-      let countryMatch = true;
-      if (rule.country_codes && rule.country_codes.length > 0) {
-        countryMatch = rule.country_codes.some(c => c.toLowerCase() === shippingCountry.toLowerCase());
-      }
+      debugMatches.push({ rule: rule.name, channelMatch, skuMatch,
+        ruleChannel: rule.channel_pattern, ruleSku: rule.sku_pattern });
+      console.log(`[QuickShip] Rule "${rule.name}": channel=${channelMatch}, sku=${skuMatch}`);
 
-      const matchResult = { rule: rule.name, channelMatch, skuMatch, countryMatch,
-        ruleChannel: rule.channel_pattern, ruleSku: rule.sku_pattern, ruleCountries: rule.country_codes };
-      debugMatches.push(matchResult);
-      console.log(`[QuickShip] Rule "${rule.name}": channel=${channelMatch}, sku=${skuMatch}, country=${countryMatch}`, JSON.stringify(matchResult));
-
-      if (channelMatch && skuMatch && countryMatch) {
+      if (channelMatch && skuMatch) {
         matchedRule = rule;
         break;
       }
@@ -129,7 +119,7 @@ export async function POST(request) {
       return Response.json({
         success: false, error: 'NO_RULE_MATCH',
         message: 'Zaden rule nie pasuje do tego zamowienia',
-        debug: { orderId, channelLabel, itemSkus, shippingCountry, rulesCount: rules.length, matches: debugMatches }
+        debug: { orderId, channelLabel, itemSkus, rulesCount: rules.length, matches: debugMatches }
       });
     }
 
