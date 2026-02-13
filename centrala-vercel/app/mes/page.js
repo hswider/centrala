@@ -501,6 +501,10 @@ export default function MESPage() {
           fetchTemplates();
         }
       } else {
+        const apiloDetails = data.details?.responseData
+          ? `\n\nSzczegoly Apilo: ${JSON.stringify(data.details.responseData, null, 2)}`
+          : '';
+        alert(`Blad: ${data.error}${apiloDetails}`);
         setQuickShipError(prev => ({ ...prev, [order.id]: data.error || 'Blad tworzenia przesylki' }));
       }
     } catch (err) {
