@@ -481,12 +481,10 @@ export default function MESPage() {
       const data = await res.json();
 
       if (data.success) {
-        // Open label PDF in new tab (delay to let Apilo generate the label)
-        if (data.labelUrl) {
-          setTimeout(() => window.open(data.labelUrl, '_blank'), 2000);
-        }
-        // Refresh shipments to show green badge
+        // Refresh shipments to show green badge + label button
         fetchShipments();
+      } else if (data.error === 'SHIPMENT_EXISTS') {
+        alert(data.message);
       } else if (data.error === 'NO_RULE_MATCH') {
         // Show debug info and fallback to manual modal
         if (data.debug) {
@@ -1731,6 +1729,17 @@ export default function MESPage() {
                                   {shipments[order.id].tracking_number}
                                 </a>
                               </div>
+                              {shipments[order.id].courier_shipment_id && (
+                                <a
+                                  href={`/api/apilo/shipping/${shipments[order.id].courier_shipment_id}/label?orderId=${order.id}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  onClick={e => e.stopPropagation()}
+                                  className="ml-1 px-2 py-1 text-[10px] font-medium bg-blue-600 text-white rounded hover:bg-blue-700"
+                                >
+                                  Etykieta
+                                </a>
+                              )}
                             </div>
                           )}
                           {order.isCanceled ? (

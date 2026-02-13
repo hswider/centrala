@@ -18,47 +18,73 @@ export async function GET(request, { params }) {
     let mediaUuid = null;
     let resolvedOrderId = orderId;
 
-    const sleep = (ms) => new Promise(r => setTimeout(r, ms));
-
-    // Try to get label with retries (Apilo needs time to generate after shipment creation)
-    const MAX_RETRIES = 4;
-    for (let attempt = 0; attempt < MAX_RETRIES && !mediaUuid; attempt++) {
-      if (attempt > 0) {
-        console.log(`[Label] Retry ${attempt}/${MAX_RETRIES}, waiting 3s...`);
-        await sleep(3000);
+    // Resolve orderId from local DB if not provided
+    if (!resolvedOrderId) {
+      try {
+        const { rows } = await sql`
+          SELECT order_id FROM shipments WHERE courier_shipment_id = ${shipmentId.toString()} LIMIT 1
+        `;
+        if (rows.length > 0) resolvedOrderId = rows[0].order_id;
+      } catch (e) {
+        console.warn('[Label] DB lookup failed:', e.message);
       }
+    }
 
-      // Strategy 1: orderId provided in query param
-      if (resolvedOrderId) {
-        try {
-          const shipment = await apiloRequestDirect('GET', `/rest/api/orders/${resolvedOrderId}/shipment/${shipmentId}/`);
-          mediaUuid = shipment?.media;
-        } catch (e) {
-          console.warn('[Label] Shipment fetch via orderId param failed:', e.message);
-        }
+    // Strategy 1: Get shipment details and read media UUID
+    if (resolvedOrderId) {
+      try {
+        const shipment = await apiloRequestDirect('GET', `/rest/api/orders/${resolvedOrderId}/shipment/${shipmentId}/`);
+        console.log('[Label] Shipment fields:', JSON.stringify(Object.keys(shipment || {})));
+        mediaUuid = shipment?.media;
+
+        // Strategy 2: If media is null, try label/document fields
+        if (!mediaUuid && shipment?.label) mediaUuid = shipment.label;
+        if (!mediaUuid && shipment?.documents?.[0]?.media) mediaUuid = shipment.documents[0].media;
+      } catch (e) {
+        console.warn('[Label] Shipment fetch failed:', e.message);
       }
+    }
 
-      // Strategy 2: look up orderId from local DB
-      if (!mediaUuid) {
-        try {
-          const { rows } = await sql`
-            SELECT order_id FROM shipments WHERE courier_shipment_id = ${shipmentId.toString()} LIMIT 1
-          `;
-          if (rows.length > 0) {
-            resolvedOrderId = rows[0].order_id;
-            const shipment = await apiloRequestDirect('GET', `/rest/api/orders/${resolvedOrderId}/shipment/${shipmentId}/`);
-            mediaUuid = shipment?.media;
+    // Strategy 3: Try direct shipment label endpoint
+    if (!mediaUuid && resolvedOrderId) {
+      try {
+        const { getAccessToken } = await import('../../../../../../lib/apilo');
+        const token = await getAccessToken();
+        const baseUrl = process.env.APILO_BASE_URL || 'https://poom.apilo.com';
+
+        const labelRes = await fetch(`${baseUrl}/rest/api/orders/${resolvedOrderId}/shipment/${shipmentId}/label/`, {
+          headers: { 'Authorization': `Bearer ${token}`, 'Accept': 'application/pdf' }
+        });
+
+        if (labelRes.ok) {
+          const contentType = labelRes.headers.get('content-type') || '';
+          if (contentType.includes('pdf')) {
+            // Direct PDF response
+            const pdfBuffer = await labelRes.arrayBuffer();
+            return new Response(pdfBuffer, {
+              headers: {
+                'Content-Type': 'application/pdf',
+                'Content-Disposition': `inline; filename="label-${shipmentId}.pdf"`
+              }
+            });
+          } else {
+            // Maybe JSON with media UUID
+            const labelData = await labelRes.json();
+            console.log('[Label] Direct label endpoint response:', JSON.stringify(labelData));
+            mediaUuid = labelData?.media || labelData?.uuid;
           }
-        } catch (e) {
-          console.warn('[Label] Shipment fetch via local DB failed:', e.message);
+        } else {
+          console.warn('[Label] Direct label endpoint:', labelRes.status, labelRes.statusText);
         }
+      } catch (e) {
+        console.warn('[Label] Direct label endpoint failed:', e.message);
       }
     }
 
     if (!mediaUuid) {
       return Response.json({
         success: false,
-        error: 'Nie znaleziono etykiety. Sprobuj ponownie za chwile - Apilo moze potrzebowac wiecej czasu na wygenerowanie.',
+        error: 'Nie znaleziono etykiety. Pobierz ja recznie z panelu Apilo.',
         shipmentId,
         orderId: resolvedOrderId
       }, { status: 404 });

@@ -60,6 +60,23 @@ export async function POST(request) {
       return Response.json({ success: false, error: 'orderId jest wymagane' }, { status: 400 });
     }
 
+    // 0. Check for existing shipment to prevent duplicates
+    const { rows: existingShipments } = await sql`
+      SELECT id, courier_shipment_id, tracking_number, courier FROM shipments
+      WHERE order_id = ${orderId} AND status != 'canceled'
+      ORDER BY created_at DESC LIMIT 1
+    `;
+    if (existingShipments.length > 0) {
+      const existing = existingShipments[0];
+      return Response.json({
+        success: false,
+        error: 'SHIPMENT_EXISTS',
+        message: `Przesylka juz istnieje: ${existing.courier} (${existing.tracking_number || existing.courier_shipment_id})`,
+        shipmentId: existing.courier_shipment_id,
+        trackingNumber: existing.tracking_number
+      });
+    }
+
     // 1. Fetch order from DB
     const { rows: orderRows } = await sql`
       SELECT id, channel_label, channel_platform, items, shipping, customer
