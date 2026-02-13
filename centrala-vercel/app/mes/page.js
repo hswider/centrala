@@ -105,7 +105,7 @@ const COLOR_MAP = {
   'biały': 'Bialy', 'biała': 'Bialy', 'białe': 'Bialy', 'white': 'Bialy',
   'weiß': 'Bialy', 'weiss': 'Bialy', 'bílá': 'Bialy', 'bianco': 'Bialy', 'blanco': 'Bialy', 'blanc': 'Bialy', 'wit': 'Bialy',
   // Kremowy
-  'kremowy': 'Kremowy', 'kremowa': 'Kremowy', 'krem': 'Kremowy', 'cream': 'Kremowy', 'creme': 'Kremowy', 'crème': 'Kremowy', 'ecru': 'Kremowy', 'krämfärgad': 'Kremowy',
+  'kremowy': 'Kremowy', 'kremowa': 'Kremowy', 'krem': 'Kremowy', 'cream': 'Kremowy', 'creme': 'Kremowy', 'crème': 'Kremowy', 'crema': 'Kremowy', 'ecru': 'Kremowy', 'krämfärgad': 'Kremowy',
   // Szary - odcienie
   'jasnoszary': 'Jasnoszary', 'j.szary': 'Jasnoszary', 'j.sz': 'Jasnoszary', 'light grey': 'Jasnoszary', 'light gray': 'Jasnoszary', 'hellgrau': 'Jasnoszary',
   'antracyt': 'Antracyt', 'anthrazit': 'Antracyt', 'antracit': 'Antracyt', 'anthracite': 'Antracyt',
@@ -156,7 +156,7 @@ const COLOR_MAP = {
   'musztardowy': 'Musztardowy', 'mustard': 'Musztardowy', 'senf': 'Musztardowy',
   'żółty': 'Zolty', 'żółta': 'Zolty', 'yellow': 'Zolty', 'gelb': 'Zolty', 'giallo': 'Zolty', 'amarillo': 'Zolty', 'jaune': 'Zolty', 'geel': 'Zolty',
   // Pomaranczowy
-  'pomarańczowy': 'Pomaranczowy', 'orange': 'Pomaranczowy', 'arancione': 'Pomaranczowy',
+  'pomarańczowy': 'Pomaranczowy', 'pomarańcza': 'Pomaranczowy', 'pomarancza': 'Pomaranczowy', 'orange': 'Pomaranczowy', 'arancione': 'Pomaranczowy', 'naranja': 'Pomaranczowy',
   // Fioletowy - odcienie
   'lawendowy': 'Lawendowy', 'lavender': 'Lawendowy', 'lavendel': 'Lawendowy',
   'fioletowy': 'Fioletowy', 'fioletowa': 'Fioletowy', 'purple': 'Fioletowy', 'violet': 'Fioletowy', 'viola': 'Fioletowy', 'lila': 'Fioletowy',
