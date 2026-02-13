@@ -1,6 +1,6 @@
 import { sql } from '@vercel/postgres';
-import { initDatabase } from '../../../lib/db';
-import { createShipment, getShippingMethods } from '../../../lib/apilo';
+import { initDatabase, getTokens } from '../../../lib/db';
+import { createShipment, getShippingMethods, apiloRequestDirect } from '../../../lib/apilo';
 
 // Normalize Apilo array responses
 function normalizeArray(data) {
@@ -145,25 +145,49 @@ export async function POST(request) {
       }, { status: 400 });
     }
 
-    // 5. Parse dimensions from carrier account name
+    // 5. Fetch fresh shipping address from Apilo (local DB may be incomplete)
+    let address = {
+      type: 'house',
+      name: shipping.name || '',
+      streetName: shipping.street || '',
+      streetNumber: shipping.streetNumber || '',
+      zipCode: shipping.zipCode || '',
+      city: shipping.city || '',
+      country: shipping.country || 'PL',
+      phone: shipping.phone || '',
+      email: shipping.email || ''
+    };
+
+    if (!address.streetName || !address.name) {
+      try {
+        const apiloOrder = await apiloRequestDirect('GET', `/rest/api/orders/${orderId}/`);
+        const addr = apiloOrder?.addressDelivery || apiloOrder?.addressCustomer || {};
+        address = {
+          type: 'house',
+          name: addr.name || address.name,
+          streetName: addr.streetName || address.streetName,
+          streetNumber: addr.streetNumber || address.streetNumber,
+          zipCode: addr.zipCode || address.zipCode,
+          city: addr.city || address.city,
+          country: addr.country || address.country || 'PL',
+          phone: addr.phone || address.phone,
+          email: addr.email || address.email
+        };
+        console.log(`[QuickShip] Fetched address from Apilo: ${address.name}, ${address.streetName} ${address.streetNumber}, ${address.zipCode} ${address.city}`);
+      } catch (e) {
+        console.warn('[QuickShip] Could not fetch address from Apilo:', e.message);
+      }
+    }
+
+    // 6. Parse dimensions from carrier account name
     const dimensions = parseDimensionsFromName(matchedRule.carrier_account_name) || { length: 30, width: 20, height: 10 };
 
-    // 6. Create shipment via Apilo
+    // 7. Create shipment via Apilo
     const result = await createShipment({
       carrierAccountId: matchedRule.carrier_account_id,
       orderId,
       method: methodUuid,
-      addressReceiver: {
-        type: 'house',
-        name: shipping.name || '',
-        streetName: shipping.street || '',
-        streetNumber: shipping.streetNumber || '',
-        zipCode: shipping.zipCode || '',
-        city: shipping.city || '',
-        country: shipping.country || 'PL',
-        phone: shipping.phone || '',
-        email: shipping.email || ''
-      },
+      addressReceiver: address,
       parcels: [{
         weight: 1,
         dimensions
