@@ -116,9 +116,13 @@ export async function GET(request, { params }) {
       }, { status: 404 });
     }
 
-    // Fetch PDF binary via media UUID
+    // Fetch PDF binary via media UUID (Apilo requires Content-Type: application/json)
     const pdfResponse = await fetch(`${baseUrl}/rest/api/media/${mediaUuid}/`, {
-      headers: { 'Authorization': `Bearer ${token}`, 'Accept': '*/*' }
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      }
     });
 
     if (!pdfResponse.ok) {
